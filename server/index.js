@@ -4,7 +4,7 @@ const cors = require('cors')
 const app = express()
 const PORT = 3001
 
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'] }))
+app.use(cors({ origin: '*' }))
 app.use(express.json())
 
 const UNSPLASH_CLIENT_ID = 'cPcT6cuBJ_5rSEbmhbMWzv4DnyicLdm4S2j1LSPkrR8'
