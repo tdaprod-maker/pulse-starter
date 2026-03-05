@@ -1,0 +1,104 @@
+{
+  "id": "editorial-card",
+  "name": "Editorial Card",
+  "category": "instagram-post",
+  "ratio": "1:1",
+  "width": 1080,
+  "height": 1080,
+  "background": "#FFFFFF",
+  "styleMap": {
+    "background": "#FFFFFF",
+    "accentColor": "#FF6F5E",
+    "titleColor": "#0C0C0D",
+    "labelColor": "#6D6D6E",
+    "bodyColor": "#6D6D6E",
+    "titleFont": "Inter",
+    "titleSize": 80,
+    "titleWeight": 700,
+    "titleLineHeight": 1.1,
+    "labelSize": 20,
+    "labelWeight": 400,
+    "labelLetterSpacing": 4,
+    "bodySize": 28,
+    "bodyWeight": 400,
+    "bodyLineHeight": 1.6
+  },
+  "grid": {
+    "leftMargin": 120,
+    "rightMargin": 120,
+    "topMargin": 120,
+    "contentWidth": 840,
+    "bodyWidth": 680,
+    "spacingBase": 8,
+    "gapAccentToLabel": 32,
+    "gapLabelToTitle": 48,
+    "gapTitleToBody": 40,
+    "alignment": "left"
+  },
+  "compositionPattern": "editorial-card",
+  "elements": [
+    {
+      "id": "accent-bar",
+      "type": "shape",
+      "x": 120,
+      "y": 120,
+      "width": 840,
+      "height": 4,
+      "props": { "fill": "#FF6F5E", "cornerRadius": 0 }
+    },
+    {
+      "id": "label",
+      "type": "text",
+      "x": 120,
+      "y": 156,
+      "width": 840,
+      "height": 28,
+      "props": {
+        "text": "CATEGORIA",
+        "fontSize": 20,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "normal",
+        "lineHeight": 1.4,
+        "letterSpacing": 4,
+        "align": "left",
+        "fill": "#6D6D6E"
+      }
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 120,
+      "y": 232,
+      "width": 840,
+      "height": 176,
+      "props": {
+        "text": "Título do\nSeu Post",
+        "fontSize": 80,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "bold",
+        "lineHeight": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "fill": "#0C0C0D"
+      }
+    },
+    {
+      "id": "body",
+      "type": "text",
+      "x": 120,
+      "y": 448,
+      "width": 680,
+      "height": 90,
+      "props": {
+        "text": "Texto descritivo que complementa e expande o título principal do seu post.",
+        "fontSize": 28,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "normal",
+        "lineHeight": 1.6,
+        "letterSpacing": 0,
+        "align": "left",
+        "fill": "#6D6D6E"
+      }
+    }
+  ]
+}

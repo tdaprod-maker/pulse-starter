@@ -1,0 +1,66 @@
+{
+  "id": "big-statement",
+  "name": "Big Statement",
+  "category": "instagram-post",
+  "ratio": "1:1",
+  "width": 1080,
+  "height": 1080,
+  "background": "#0C0C0D",
+  "styleMap": {
+    "background": "#0C0C0D",
+    "accentColor": "#FFCA1D",
+    "line1Color": "#FFFFFF",
+    "line2Color": "#FFCA1D",
+    "font": "Inter",
+    "fontSize": 240,
+    "fontWeight": 700,
+    "lineHeight": 1.0
+  },
+  "grid": {
+    "leftMargin": 120,
+    "rightBleed": 0,
+    "alignment": "left",
+    "gapTopToText": 40,
+    "gapBetweenLines": 0,
+    "opticalCenterShift": -16
+  },
+  "compositionPattern": "dominant-left",
+  "elements": [
+    {
+      "id": "line1",
+      "type": "text",
+      "x": 120,
+      "y": 112,
+      "width": 960,
+      "height": 240,
+      "props": {
+        "text": "FAÇA",
+        "fontSize": 240,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "bold",
+        "lineHeight": 1.0,
+        "align": "left",
+        "fill": "#FFFFFF",
+        "autoFit": true
+      }
+    },
+    {
+      "id": "line2",
+      "type": "text",
+      "x": 120,
+      "y": 352,
+      "width": 960,
+      "height": 240,
+      "props": {
+        "text": "MAIS.",
+        "fontSize": 240,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "bold",
+        "lineHeight": 1.0,
+        "align": "left",
+        "fill": "#FFCA1D",
+        "autoFit": true
+      }
+    }
+  ]
+}

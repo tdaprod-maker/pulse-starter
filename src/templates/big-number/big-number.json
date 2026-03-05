@@ -1,0 +1,72 @@
+{
+  "id": "big-number",
+  "name": "Big Number",
+  "category": "instagram-post",
+  "ratio": "1:1",
+  "width": 1080,
+  "height": 1080,
+  "background": "#0C0C0D",
+  "styleMap": {
+    "background": "#0C0C0D",
+    "numberColor": "#3A5AFF",
+    "captionColor": "#FFFFFF",
+    "font": "Inter",
+    "numberFontSize": 560,
+    "captionFontSize": 32,
+    "numberFontWeight": 700,
+    "captionFontWeight": 400,
+    "numberLineHeight": 1.0,
+    "captionLineHeight": 1.4,
+    "letterSpacing": 0,
+    "alignment": "center"
+  },
+  "grid": {
+    "leftMargin": 120,
+    "rightMargin": 120,
+    "numberWidth": "full-canvas",
+    "captionWidth": 840,
+    "verticalPosition": "optical-center",
+    "opticalShift": -16,
+    "gap": 32,
+    "decorativeElements": 0
+  },
+  "compositionPattern": "number-hero",
+  "elements": [
+    {
+      "id": "number",
+      "type": "text",
+      "x": 0,
+      "y": 206,
+      "width": 1080,
+      "height": 560,
+      "props": {
+        "text": "42",
+        "fontSize": 560,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "bold",
+        "lineHeight": 1.0,
+        "letterSpacing": 0,
+        "align": "center",
+        "fill": "#3A5AFF"
+      }
+    },
+    {
+      "id": "caption",
+      "type": "text",
+      "x": 120,
+      "y": 798,
+      "width": 840,
+      "height": 45,
+      "props": {
+        "text": "projetos entregues este ano.",
+        "fontSize": 32,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "normal",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "fill": "#FFFFFF"
+      }
+    }
+  ]
+}

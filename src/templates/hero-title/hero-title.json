@@ -1,0 +1,83 @@
+{
+  "id": "hero-title",
+  "name": "Hero Title",
+  "category": "instagram-post",
+  "ratio": "1:1",
+  "width": 1080,
+  "height": 1080,
+  "background": "#0C0C0D",
+  "styleMap": {
+    "background": "#0C0C0D",
+    "accentColor": "#3A5AFF",
+    "titleColor": "#FFFFFF",
+    "subtitleColor": "#6D6D6E",
+    "titleFont": "Inter",
+    "titleSize": 88,
+    "titleWeight": 700,
+    "titleLineHeight": 1.1,
+    "subtitleSize": 28,
+    "subtitleWeight": 400,
+    "subtitleLineHeight": 1.6
+  },
+  "grid": {
+    "safeZone": 120,
+    "safeZonePercent": "11.1%",
+    "titleWidthPercent": "78%",
+    "subtitleWidthPercent": "63%",
+    "spacingBase": 8,
+    "gapAccentToTitle": 24,
+    "gapTitleToSubtitle": 48,
+    "opticalCenterShift": -16
+  },
+  "compositionPattern": "centered-hierarchy",
+  "elements": [
+    {
+      "id": "accent-line",
+      "type": "shape",
+      "x": 516,
+      "y": 364,
+      "width": 48,
+      "height": 4,
+      "props": {
+        "fill": "#3A5AFF",
+        "cornerRadius": 2
+      }
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 120,
+      "y": 392,
+      "width": 840,
+      "height": 194,
+      "props": {
+        "text": "Seu Título\nImpactante",
+        "fontSize": 88,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "bold",
+        "lineHeight": 1.1,
+        "align": "center",
+        "fill": "#FFFFFF"
+      }
+    },
+    {
+      "id": "subtitle",
+      "type": "text",
+      "x": 200,
+      "y": 634,
+      "width": 680,
+      "height": 45,
+      "props": {
+        "text": "Uma descrição clara e objetiva do seu conteúdo",
+        "fontSize": 28,
+        "fontFamily": "Inter, sans-serif",
+        "fontStyle": "normal",
+        "lineHeight": 1.6,
+        "align": "center",
+        "fill": "#6D6D6E",
+        "layoutAfter": "title",
+        "layoutGap": 48
+      }
+    }
+  ]
+}

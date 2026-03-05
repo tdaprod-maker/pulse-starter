@@ -1,0 +1,6 @@
+/* Estilos globais do Pulse — use Tailwind para componentes */
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
