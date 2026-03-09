@@ -209,7 +209,7 @@ app.post('/generate-image', async (req, res) => {
   }
 })
 
-app.listen(PORT, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Proxy server running on http://0.0.0.0:${PORT}`)
   console.log('Using Unsplash API')
 })
