@@ -1,6 +1,14 @@
 const express = require('express')
 const cors = require('cors')
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason)
+})
+
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -178,34 +186,39 @@ async function fetchWithRetry(query, maxAttempts = 3) {
 }
 
 app.post('/generate-image', async (req, res) => {
-  const { prompt } = req.body
-  if (!prompt) {
-    return res.status(400).json({ error: 'prompt is required' })
-  }
-
-  const translatedPrompt = translateToEnglish(prompt)
-  if (translatedPrompt !== prompt.toLowerCase().trim()) {
-    console.log(`Translated: "${prompt}" → "${translatedPrompt}"`)
-  }
-  console.log(`Fetching Unsplash image for: "${translatedPrompt}"`)
-
   try {
-    const result = await fetchWithRetry(translatedPrompt)
-    console.log('Image fetched successfully')
-    return res.json(result)
-  } catch (err) {
-    const fallbackQuery = prompt.trim().split(/\s+/)[0]
-    console.log(`All attempts failed. Trying fallback query: "${fallbackQuery}"`)
-    try {
-      const result = await fetchWithRetry(fallbackQuery)
-      console.log('Image fetched successfully with fallback query')
-      return res.json(result)
-    } catch (fallbackErr) {
-      const isTimeout = fallbackErr.name === 'AbortError'
-      const message = isTimeout ? 'Request timed out after 60s' : fallbackErr.message
-      console.error(`Fallback also failed: ${message}`)
-      return res.status(502).json({ error: message })
+    const { prompt } = req.body
+    if (!prompt) {
+      return res.status(400).json({ error: 'prompt is required' })
     }
+
+    const translatedPrompt = translateToEnglish(prompt)
+    if (translatedPrompt !== prompt.toLowerCase().trim()) {
+      console.log(`Translated: "${prompt}" → "${translatedPrompt}"`)
+    }
+    console.log(`Fetching Unsplash image for: "${translatedPrompt}"`)
+
+    try {
+      const result = await fetchWithRetry(translatedPrompt)
+      console.log('Image fetched successfully')
+      return res.json(result)
+    } catch (err) {
+      const fallbackQuery = prompt.trim().split(/\s+/)[0]
+      console.log(`All attempts failed. Trying fallback query: "${fallbackQuery}"`)
+      try {
+        const result = await fetchWithRetry(fallbackQuery)
+        console.log('Image fetched successfully with fallback query')
+        return res.json(result)
+      } catch (fallbackErr) {
+        const isTimeout = fallbackErr.name === 'AbortError'
+        const message = isTimeout ? 'Request timed out after 60s' : fallbackErr.message
+        console.error(`Fallback also failed: ${message}`)
+        return res.status(502).json({ error: message })
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error in /generate-image:', err)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 })
 
