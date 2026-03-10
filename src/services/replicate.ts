@@ -8,3 +8,4 @@ export async function generateImage(imagePrompt: string): Promise<string> {
   const data = await res.json()
   return data.image
 }
+// cache bust Seg  9 Mar 2026 22:59:49 -03
