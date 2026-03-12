@@ -111,6 +111,27 @@ const PT_TO_EN = {
   'minimalismo':   'minimalism',
 }
 
+// ─── Mapeamento de tema → collection ID do Unsplash ──────────────────────────
+const THEME_COLLECTION_MAP = [
+  { keywords: ['workout', 'weightlifting', 'gym', 'running', 'cycling', 'swimming', 'soccer', 'basketball', 'tennis', 'yoga', 'pilates', 'sport', 'sports', 'athlete', 'competition', 'championship', 'fitness', 'exercise', 'training'], collection: '317099' },
+  { keywords: ['food', 'nutrition', 'diet', 'coffee', 'lunch', 'dinner', 'breakfast', 'dessert', 'fruit', 'vegetables', 'healthy food', 'meal', 'recipe', 'cooking', 'eating'], collection: '3330448' },
+  { keywords: ['business', 'work', 'office', 'meeting', 'leadership', 'entrepreneurship', 'startup', 'finance', 'investment', 'marketing', 'sales', 'team', 'productivity', 'corporate'], collection: '3330445' },
+  { keywords: ['nature', 'mountain', 'beach', 'forest', 'landscape', 'outdoor', 'wilderness', 'adventure', 'travel'], collection: '3330448' },
+]
+
+const STOP_WORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of',
+  'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+  'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+  'should', 'may', 'might', 'can', 'about', 'into', 'over', 'after',
+  'this', 'that', 'these', 'those', 'my', 'your', 'his', 'her', 'its',
+  'our', 'their', 'i', 'me', 'you', 'he', 'she', 'it', 'we', 'they',
+  'how', 'when', 'where', 'why', 'what', 'which', 'who', 'very', 'more',
+  'most', 'some', 'any', 'all', 'each', 'every', 'both', 'few', 'more',
+  'other', 'such', 'own', 'same', 'than', 'too', 'just', 'also', 'make',
+  'making', 'get', 'getting', 'use', 'using', 'show', 'showing',
+])
+
 function translateToEnglish(prompt) {
   let result = prompt.toLowerCase().trim()
 
@@ -126,17 +147,68 @@ function translateToEnglish(prompt) {
   return result.trim() || prompt
 }
 
-async function generateWithUnsplash(query) {
-  const searchUrl = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=squarish&client_id=${UNSPLASH_CLIENT_ID}`
+// Extrai as palavras-chave mais relevantes do prompt traduzido
+function extractKeywords(translatedPrompt) {
+  const words = translatedPrompt.toLowerCase().split(/\s+/)
+  const keywords = words.filter(w => w.length > 3 && !STOP_WORDS.has(w))
+  return keywords.slice(0, 4).join(' ') || translatedPrompt
+}
 
-  const metaRes = await fetchWithTimeout(searchUrl)
-  if (!metaRes.ok) {
-    const body = await metaRes.text()
-    throw new Error(`Unsplash API returned ${metaRes.status}: ${body}`)
+// Detecta o ID de collection do Unsplash com base nas palavras do prompt
+function detectThemeCollection(translatedPrompt) {
+  const lower = translatedPrompt.toLowerCase()
+  for (const { keywords, collection } of THEME_COLLECTION_MAP) {
+    if (keywords.some(kw => lower.includes(kw))) {
+      return collection
+    }
+  }
+  return null
+}
+
+// Extrai query genérica de fallback (primeiras 1-2 palavras relevantes)
+function extractGenericQuery(translatedPrompt) {
+  const words = translatedPrompt.toLowerCase().split(/\s+/)
+  const keywords = words.filter(w => w.length > 3 && !STOP_WORDS.has(w))
+  return keywords.slice(0, 1).join(' ') || words[0] || translatedPrompt
+}
+
+async function searchUnsplashImages(query, collectionId = null, perPage = 15) {
+  let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&orientation=squarish&content_filter=high&client_id=${UNSPLASH_CLIENT_ID}`
+  if (collectionId) {
+    url += `&collections=${collectionId}`
   }
 
-  const data = await metaRes.json()
-  const imageUrl = data.urls.regular
+  const res = await fetchWithTimeout(url)
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Unsplash API returned ${res.status}: ${body}`)
+  }
+
+  const data = await res.json()
+  return data.results || []
+}
+
+async function generateWithUnsplash(translatedPrompt) {
+  const keywordQuery = extractKeywords(translatedPrompt)
+  const collectionId = detectThemeCollection(translatedPrompt)
+
+  console.log(`Keyword query: "${keywordQuery}"${collectionId ? ` (collection: ${collectionId})` : ''}`)
+
+  let results = await searchUnsplashImages(keywordQuery, collectionId)
+
+  // Fallback para query mais genérica se menos de 3 resultados
+  if (results.length < 3) {
+    const genericQuery = extractGenericQuery(translatedPrompt)
+    console.log(`Only ${results.length} results for "${keywordQuery}", trying generic fallback: "${genericQuery}"`)
+    results = await searchUnsplashImages(genericQuery)
+  }
+
+  if (results.length === 0) {
+    throw new Error('No images found on Unsplash')
+  }
+
+  const photo = results[Math.floor(Math.random() * results.length)]
+  const imageUrl = photo.urls.regular
 
   const imgRes = await fetchWithTimeout(imageUrl)
   if (!imgRes.ok) throw new Error(`Failed to download image: ${imgRes.status}`)
@@ -147,11 +219,11 @@ async function generateWithUnsplash(query) {
   return { image: `data:${contentType};base64,${base64}` }
 }
 
-async function fetchWithRetry(query, maxAttempts = 3) {
+async function fetchWithRetry(translatedPrompt, maxAttempts = 3) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    console.log(`Attempt ${attempt}/${maxAttempts} for query: "${query}"`)
+    console.log(`Attempt ${attempt}/${maxAttempts} for prompt: "${translatedPrompt}"`)
     try {
-      const result = await generateWithUnsplash(query)
+      const result = await generateWithUnsplash(translatedPrompt)
       return result
     } catch (err) {
       const isTimeout = err.name === 'AbortError'
@@ -187,18 +259,10 @@ export default async function handler(req, res) {
       console.log('Image fetched successfully')
       return res.json(result)
     } catch (err) {
-      const fallbackQuery = prompt.trim().split(/\s+/)[0]
-      console.log(`All attempts failed. Trying fallback query: "${fallbackQuery}"`)
-      try {
-        const result = await fetchWithRetry(fallbackQuery)
-        console.log('Image fetched successfully with fallback query')
-        return res.json(result)
-      } catch (fallbackErr) {
-        const isTimeout = fallbackErr.name === 'AbortError'
-        const message = isTimeout ? 'Request timed out after 60s' : fallbackErr.message
-        console.error(`Fallback also failed: ${message}`)
-        return res.status(502).json({ error: message })
-      }
+      const isTimeout = err.name === 'AbortError'
+      const message = isTimeout ? 'Request timed out after 60s' : err.message
+      console.error(`All attempts failed: ${message}`)
+      return res.status(502).json({ error: message })
     }
   } catch (err) {
     console.error('Unexpected error in /api/generate-image:', err)
