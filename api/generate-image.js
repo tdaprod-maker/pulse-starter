@@ -189,17 +189,16 @@ async function searchUnsplashImages(query, collectionId = null, perPage = 15) {
 }
 
 async function generateWithUnsplash(translatedPrompt) {
-  const keywordQuery = extractKeywords(translatedPrompt)
   const collectionId = detectThemeCollection(translatedPrompt)
 
-  console.log(`Keyword query: "${keywordQuery}"${collectionId ? ` (collection: ${collectionId})` : ''}`)
+  console.log(`Query: "${translatedPrompt}"${collectionId ? ` (collection: ${collectionId})` : ''}`)
 
-  let results = await searchUnsplashImages(keywordQuery, collectionId)
+  let results = await searchUnsplashImages(translatedPrompt, collectionId)
 
   // Fallback para query mais genérica se menos de 3 resultados
   if (results.length < 3) {
     const genericQuery = extractGenericQuery(translatedPrompt)
-    console.log(`Only ${results.length} results for "${keywordQuery}", trying generic fallback: "${genericQuery}"`)
+    console.log(`Only ${results.length} results for "${translatedPrompt}", trying generic fallback: "${genericQuery}"`)
     results = await searchUnsplashImages(genericQuery)
   }
 
