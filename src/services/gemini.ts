@@ -52,9 +52,12 @@ REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 OUTRAS REGRAS:
 - Escreva em português do Brasil com tom adequado ao contexto descrito
 - Para big-statement: as duas linhas devem ter peso visual equilibrado
-- imagePrompt: descreva em inglês (max 20 palavras) uma cena fotográfica/abstrata para o fundo do post.
-  Deve ser escuro, cinematográfico, sem texto, sem rostos. Complementar à cor de destaque escolhida.
-  Ex: "dark moody tech studio, deep blue ambient light, bokeh background, cinematic"
+- imagePrompt: descreva em inglês (max 8 palavras) o tema principal do post como uma cena fotográfica real e reconhecível.
+  Foque no objeto ou contexto central — sem adjetivos de estilo, sem "cinematic", sem "dark".
+  Ex: para comida → "italian chicken parmesan dish close up"
+      para esporte → "soccer ball on grass field"
+      para negócios → "business people networking handshake office"
+      para motivação → "person running at sunrise mountain trail"
 
 Descrição do usuário: "${userInput}"
 
