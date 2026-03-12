@@ -1,4 +1,4 @@
-const UNSPLASH_CLIENT_ID = 'cPcT6cuBJ_5rSEbmhbMWzv4DnyicLdm4S2j1LSPkrR8'
+const PEXELS_API_KEY = 'kqiTYhKPlcZ6NdAugwHpNEZ17YiqEMrSzCooKJX05Mh7mMpiUPLDxUlR'
 const TIMEOUT_MS = 60000
 
 async function fetchWithTimeout(url, options = {}) {
@@ -11,7 +11,7 @@ async function fetchWithTimeout(url, options = {}) {
   }
 }
 
-// ─── Tradução PT → EN para melhorar relevância no Unsplash ───────────────────
+// ─── Tradução PT → EN para melhorar relevância no Pexels ────────────────────
 const PT_TO_EN = {
   // Fitness / Esporte
   'treino':        'workout',
@@ -111,13 +111,6 @@ const PT_TO_EN = {
   'minimalismo':   'minimalism',
 }
 
-// ─── Mapeamento de tema → collection ID do Unsplash ──────────────────────────
-const THEME_COLLECTION_MAP = [
-  { keywords: ['workout', 'weightlifting', 'gym', 'running', 'cycling', 'swimming', 'soccer', 'basketball', 'tennis', 'yoga', 'pilates', 'sport', 'sports', 'athlete', 'competition', 'championship', 'fitness', 'exercise', 'training'], collection: '317099' },
-  { keywords: ['food', 'nutrition', 'diet', 'coffee', 'lunch', 'dinner', 'breakfast', 'dessert', 'fruit', 'vegetables', 'healthy food', 'meal', 'recipe', 'cooking', 'eating'], collection: '3330448' },
-  { keywords: ['business', 'work', 'office', 'meeting', 'leadership', 'entrepreneurship', 'startup', 'finance', 'investment', 'marketing', 'sales', 'team', 'productivity', 'corporate'], collection: '3330445' },
-  { keywords: ['nature', 'mountain', 'beach', 'forest', 'landscape', 'outdoor', 'wilderness', 'adventure', 'travel'], collection: '3330448' },
-]
 
 const STOP_WORDS = new Set([
   'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of',
@@ -147,24 +140,6 @@ function translateToEnglish(prompt) {
   return result.trim() || prompt
 }
 
-// Extrai as palavras-chave mais relevantes do prompt traduzido
-function extractKeywords(translatedPrompt) {
-  const words = translatedPrompt.toLowerCase().split(/\s+/)
-  const keywords = words.filter(w => w.length > 3 && !STOP_WORDS.has(w))
-  return keywords.slice(0, 4).join(' ') || translatedPrompt
-}
-
-// Detecta o ID de collection do Unsplash com base nas palavras do prompt
-function detectThemeCollection(translatedPrompt) {
-  const lower = translatedPrompt.toLowerCase()
-  for (const { keywords, collection } of THEME_COLLECTION_MAP) {
-    if (keywords.some(kw => lower.includes(kw))) {
-      return collection
-    }
-  }
-  return null
-}
-
 // ─── Fallback map: termos específicos → queries genéricas garantidas ─────────
 const FALLBACK_MAP = [
   { terms: ['feijoada', 'parmegiana', 'brigadeiro', 'coxinha', 'churrasco'], fallback: 'brazilian food' },
@@ -189,34 +164,31 @@ function lookupFallbackMap(translatedPrompt) {
   return null
 }
 
-async function searchUnsplashImages(query, collectionId = null, perPage = 15) {
-  let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&orientation=squarish&content_filter=high&client_id=${UNSPLASH_CLIENT_ID}`
-  if (collectionId) {
-    url += `&collections=${collectionId}`
-  }
+async function searchPexelsImages(query, perPage = 15) {
+  const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&orientation=square`
 
-  const res = await fetchWithTimeout(url)
+  const res = await fetchWithTimeout(url, {
+    headers: { Authorization: PEXELS_API_KEY },
+  })
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Unsplash API returned ${res.status}: ${body}`)
+    throw new Error(`Pexels API returned ${res.status}: ${body}`)
   }
 
   const data = await res.json()
-  return data.results || []
+  return data.photos || []
 }
 
-async function generateWithUnsplash(translatedPrompt) {
-  const collectionId = detectThemeCollection(translatedPrompt)
+async function generateWithPexels(translatedPrompt) {
+  // Nível 1: query completa
+  console.log(`[L1] Query: "${translatedPrompt}"`)
+  let results = await searchPexelsImages(translatedPrompt)
 
-  // Nível 1: query completa com collection
-  console.log(`[L1] Query: "${translatedPrompt}"${collectionId ? ` (collection: ${collectionId})` : ''}`)
-  let results = await searchUnsplashImages(translatedPrompt, collectionId)
-
-  // Nível 2: primeira palavra-chave sem collection
+  // Nível 2: primeira palavra-chave
   if (results.length < 3) {
     const firstKeyword = extractFirstKeyword(translatedPrompt)
     console.log(`[L2] Only ${results.length} results, trying first keyword: "${firstKeyword}"`)
-    results = await searchUnsplashImages(firstKeyword)
+    results = await searchPexelsImages(firstKeyword)
   }
 
   // Nível 3: FALLBACK_MAP → termo genérico garantido
@@ -224,16 +196,16 @@ async function generateWithUnsplash(translatedPrompt) {
     const mappedFallback = lookupFallbackMap(translatedPrompt)
     if (mappedFallback) {
       console.log(`[L3] Still ${results.length} results, trying mapped fallback: "${mappedFallback}"`)
-      results = await searchUnsplashImages(mappedFallback)
+      results = await searchPexelsImages(mappedFallback)
     }
   }
 
   if (results.length === 0) {
-    throw new Error('No images found on Unsplash')
+    throw new Error('No images found on Pexels')
   }
 
   const photo = results[Math.floor(Math.random() * results.length)]
-  const imageUrl = photo.urls.regular
+  const imageUrl = photo.src.large2x
 
   const imgRes = await fetchWithTimeout(imageUrl)
   if (!imgRes.ok) throw new Error(`Failed to download image: ${imgRes.status}`)
@@ -248,7 +220,7 @@ async function fetchWithRetry(translatedPrompt, maxAttempts = 3) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     console.log(`Attempt ${attempt}/${maxAttempts} for prompt: "${translatedPrompt}"`)
     try {
-      const result = await generateWithUnsplash(translatedPrompt)
+      const result = await generateWithPexels(translatedPrompt)
       return result
     } catch (err) {
       const isTimeout = err.name === 'AbortError'
@@ -277,7 +249,7 @@ export default async function handler(req, res) {
     if (translatedPrompt !== prompt.toLowerCase().trim()) {
       console.log(`Translated: "${prompt}" → "${translatedPrompt}"`)
     }
-    console.log(`Fetching Unsplash image for: "${translatedPrompt}"`)
+    console.log(`Fetching Pexels image for: "${translatedPrompt}"`)
 
     try {
       const result = await fetchWithRetry(translatedPrompt)
