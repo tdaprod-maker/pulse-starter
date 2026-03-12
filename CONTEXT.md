@@ -12,7 +12,7 @@ O usuário descreve em linguagem natural (português) o que quer publicar — ex
 - O template mais adequado (hero, editorial, minimalista etc.)
 - Os textos em português do Brasil
 - A cor de destaque
-- Uma imagem de fundo cinematográfica via Unsplash
+- Uma imagem de fundo via Pexels
 
 O resultado é exportável como PNG ou JPEG em 2× resolução, pronto para publicar.
 
@@ -43,7 +43,7 @@ O resultado é exportável como PNG ou JPEG em 2× resolução, pronto para publ
 | Serviço | Uso |
 |---|---|
 | Google Gemini 2.5-Flash | Geração de conteúdo (textos, template, cor, prompt de imagem) |
-| Unsplash API | Busca e download de imagem de fundo |
+| Pexels API | Busca e download de imagem de fundo |
 
 ---
 
@@ -52,7 +52,7 @@ O resultado é exportável como PNG ou JPEG em 2× resolução, pronto para publ
 ```
 pulse/
 ├── api/
-│   └── generate-image.js        # Vercel API Route — busca imagem no Unsplash
+│   └── generate-image.js        # Vercel API Route — busca imagem no Pexels
 ├── server/
 │   └── index.js                 # Express dev server (mesma lógica da API Route)
 ├── src/
@@ -108,11 +108,12 @@ pulse/
 - **Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=...`
 - **Config:** temperature 0.8, maxOutputTokens 500, thinkingBudget 0
 
-### Unsplash
+### Pexels
 - **Arquivo:** `api/generate-image.js`
-- **Chave:** hardcoded na constante `UNSPLASH_CLIENT_ID` (linha 1)
-- **Endpoint usado:** `https://api.unsplash.com/search/photos` (GET)
-- **Parâmetros:** `query`, `per_page=15`, `orientation=squarish`, `content_filter=high`, `collections` (opcional)
+- **Chave:** hardcoded na constante `PEXELS_API_KEY` (linha 1)
+- **Endpoint:** `https://api.pexels.com/v1/search` (GET)
+- **Parâmetros:** `query`, `per_page=15`, `orientation=square`
+- **Header:** `Authorization: PEXELS_API_KEY`
 
 ### Variáveis de Ambiente
 Atualmente **não há `.env`** no projeto — as chaves estão hardcoded no código.
@@ -138,11 +139,8 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 - [x] Editor de canvas com React Konva (seleção, edição inline, zoom)
 - [x] 5 templates × 4 formatos = 20 variantes (1:1, 4:5, 9:16, 16:9)
 - [x] Geração de conteúdo via Gemini (texto + cor + template)
-- [x] Busca de imagem de fundo via Unsplash com keyword extraction
-- [x] Tradução PT→EN para melhorar relevância no Unsplash
-- [x] Filtro de conteúdo (content_filter=high) no Unsplash
-- [x] Detecção de tema com collection IDs (fitness/food/business/nature)
-- [x] Fallback automático se busca retorna < 3 resultados
+- [x] Busca de imagem de fundo via Pexels com cascade fallback (3 níveis)
+- [x] Tradução PT→EN para melhorar relevância no Pexels
 - [x] Export PNG e JPEG em 2× resolução
 - [x] Upload manual de imagem de fundo
 - [x] Upload e posicionamento de logo
@@ -153,7 +151,7 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 - [x] Persistência de logo ao trocar de template
 
 ### Em Progresso / Recente
-- Melhoria na lógica de busca do Unsplash (keyword extraction, collections, content_filter) — concluído no commit `752a515`
+- Migração de Unsplash para Pexels com cascade fallback (3 níveis) — concluído no commit `deb8215`
 
 ---
 
@@ -164,7 +162,7 @@ _(Não há roadmap formal documentado — baseado na evolução recente dos comm
 - Mover chaves de API para variáveis de ambiente (`.env` / Vercel env vars)
 - Possivelmente adicionar mais templates ou verticais
 - Melhorias no sistema de temas (ThemeContext existe mas pode estar subutilizado)
-- Possível substituição do Unsplash por geração de imagem com IA (Replicate/Stable Diffusion) — o arquivo `replicate.ts` sugere que isso foi cogitado
+- Possível substituição do Pexels por geração de imagem com IA (Replicate/Stable Diffusion) — o arquivo `replicate.ts` sugere que isso foi cogitado
 
 ---
 
@@ -176,8 +174,8 @@ O editor usa `react-konva` para renderização 2D. Isso permite export direto vi
 ### Templates como fábricas de variantes
 Cada template é uma função (`makeHeroTitleVariants`, etc.) que retorna um array de 4 objetos `Template`, um por aspect ratio. Isso evita duplicação e centraliza a lógica de layout por template.
 
-### API Route (Vercel) como proxy para Unsplash
-A chave do Unsplash fica no servidor (`api/generate-image.js`), nunca exposta ao frontend. O `replicate.ts` simplesmente chama `/api/generate-image` com o prompt.
+### API Route (Vercel) como proxy para Pexels
+A chave do Pexels fica no servidor (`api/generate-image.js`), nunca exposta ao frontend. O `replicate.ts` simplesmente chama `/api/generate-image` com o prompt.
 
 ### Zustand para estado global
 O store centraliza todos os templates carregados e o estado do editor. Logo é preservado ao trocar de template (`addTemplate` faz upsert preservando `logoImage`, `logoSize`, `logoX`, `logoY`). `backgroundImage` **não** é preservado — se limpa ao trocar de template/formato.
@@ -196,14 +194,14 @@ Inter, Playfair Display, Space Grotesk, Montserrat, Lora, Oswald, Raleway, Bebas
 ### Prompt engineering do Gemini
 O prompt é detalhado com regras por template, regras de seleção de cor, e instrução para `imagePrompt` em inglês. Resposta sempre em JSON. Parse robusto aceita JSON puro, markdown code block, ou objeto JSON embutido em texto livre.
 
-### Unsplash: `/search/photos` (não `/photos/random`)
-Desde o commit `752a515`, a API usa `/search/photos` ao invés de `/photos/random`, permitindo verificar quantidade de resultados e fazer fallback se necessário. A foto é escolhida aleatoriamente do pool retornado.
+### Pexels: cascade fallback em 3 níveis
+A busca tenta: (1) query completa do imagePrompt, (2) primeira palavra-chave relevante, (3) termo genérico via `FALLBACK_MAP`. A foto é escolhida aleatoriamente do pool retornado (`photo.src.large2x`).
 
 ---
 
 ## 9. Bugs Conhecidos
 
-- Chaves de API (`UNSPLASH_CLIENT_ID`, `API_KEY` Gemini) estão hardcoded no código-fonte — expostas no repositório GitHub público
+- Chaves de API (`PEXELS_API_KEY`, `API_KEY` Gemini) estão hardcoded no código-fonte — expostas no repositório GitHub público
 - A URL de produção da Vercel não está documentada em nenhum arquivo do projeto
 - `replicate.ts` tem comentário de cache bust manual (`// cache bust Seg 9 Mar 2026...`) — indica workaround para problema de deploy da Vercel
 - `VITE_SERVER_URL` referenciado em commits antigos pode causar confusão (não está mais em uso)
@@ -266,13 +264,13 @@ AIPanel aplica resultado:
 
 ---
 
-## 12. IDs das Collections do Unsplash Configuradas
+## 12. FALLBACK_MAP do Pexels
 
-| Tema | Collection ID |
+| Termos específicos | Query genérica usada |
 |---|---|
-| Fitness / Esporte | `317099` |
-| Comida / Nutrição | `3330448` |
-| Negócios / Trabalho | `3330445` |
-| Natureza | `3330448` |
+| feijoada, parmegiana, brigadeiro, coxinha, churrasco | `brazilian food` |
+| baseball, beisebol, cricket, rugby, lacrosse | `sport athlete` |
+| networking, leadership, entrepreneurship, startup | `business people meeting` |
+| meditation, wellness, mindfulness | `person relaxing nature` |
 
-Detecção feita em `detectThemeCollection()` em `api/generate-image.js` por presença de palavras-chave no prompt traduzido.
+Lógica em `lookupFallbackMap()` em `api/generate-image.js` — ativada no nível 3 da cascata.
