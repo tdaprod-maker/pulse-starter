@@ -165,11 +165,28 @@ function detectThemeCollection(translatedPrompt) {
   return null
 }
 
-// Extrai query genérica de fallback (primeiras 1-2 palavras relevantes)
-function extractGenericQuery(translatedPrompt) {
+// ─── Fallback map: termos específicos → queries genéricas garantidas ─────────
+const FALLBACK_MAP = [
+  { terms: ['feijoada', 'parmegiana', 'brigadeiro', 'coxinha', 'churrasco'], fallback: 'brazilian food' },
+  { terms: ['baseball', 'beisebol', 'cricket', 'rugby', 'lacrosse'],         fallback: 'sport athlete' },
+  { terms: ['networking', 'leadership', 'entrepreneurship', 'startup'],       fallback: 'business people meeting' },
+  { terms: ['meditation', 'wellness', 'mindfulness'],                         fallback: 'person relaxing nature' },
+]
+
+// Nível 2: primeira palavra relevante do prompt
+function extractFirstKeyword(translatedPrompt) {
   const words = translatedPrompt.toLowerCase().split(/\s+/)
   const keywords = words.filter(w => w.length > 3 && !STOP_WORDS.has(w))
-  return keywords.slice(0, 1).join(' ') || words[0] || translatedPrompt
+  return keywords[0] || words[0] || translatedPrompt
+}
+
+// Nível 3: verifica FALLBACK_MAP e retorna termo genérico, ou null se não encontrar
+function lookupFallbackMap(translatedPrompt) {
+  const lower = translatedPrompt.toLowerCase()
+  for (const { terms, fallback } of FALLBACK_MAP) {
+    if (terms.some(t => lower.includes(t))) return fallback
+  }
+  return null
 }
 
 async function searchUnsplashImages(query, collectionId = null, perPage = 15) {
@@ -191,15 +208,24 @@ async function searchUnsplashImages(query, collectionId = null, perPage = 15) {
 async function generateWithUnsplash(translatedPrompt) {
   const collectionId = detectThemeCollection(translatedPrompt)
 
-  console.log(`Query: "${translatedPrompt}"${collectionId ? ` (collection: ${collectionId})` : ''}`)
-
+  // Nível 1: query completa com collection
+  console.log(`[L1] Query: "${translatedPrompt}"${collectionId ? ` (collection: ${collectionId})` : ''}`)
   let results = await searchUnsplashImages(translatedPrompt, collectionId)
 
-  // Fallback para query mais genérica se menos de 3 resultados
+  // Nível 2: primeira palavra-chave sem collection
   if (results.length < 3) {
-    const genericQuery = extractGenericQuery(translatedPrompt)
-    console.log(`Only ${results.length} results for "${translatedPrompt}", trying generic fallback: "${genericQuery}"`)
-    results = await searchUnsplashImages(genericQuery)
+    const firstKeyword = extractFirstKeyword(translatedPrompt)
+    console.log(`[L2] Only ${results.length} results, trying first keyword: "${firstKeyword}"`)
+    results = await searchUnsplashImages(firstKeyword)
+  }
+
+  // Nível 3: FALLBACK_MAP → termo genérico garantido
+  if (results.length < 3) {
+    const mappedFallback = lookupFallbackMap(translatedPrompt)
+    if (mappedFallback) {
+      console.log(`[L3] Still ${results.length} results, trying mapped fallback: "${mappedFallback}"`)
+      results = await searchUnsplashImages(mappedFallback)
+    }
   }
 
   if (results.length === 0) {
