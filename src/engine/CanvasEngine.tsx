@@ -114,6 +114,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
       // offset do usuário está em CSS pixels — converte para coordenadas do canvas
       bgImgX = (template.width  - bgImgW) / 2 + bgOffsetX / autoScale
       bgImgY = (template.height - bgImgH) / 2 + bgOffsetY / autoScale
+      console.log('[BG GEOM]', { bgImgX, bgImgY, bgImgW, bgImgH, autoScale, bgZoom })
     }
 
     // ── Overlay opacity por template ───────────────────────────────────────────
