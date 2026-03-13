@@ -86,7 +86,8 @@ pulse/
 │   │   ├── big-statement/variants.ts
 │   │   ├── editorial-card/variants.ts
 │   │   ├── minimal-type/variants.ts
-│   │   └── big-number/variants.ts
+│   │   ├── big-number/variants.ts
+│   │   └── food-promo/variants.ts
 │   ├── themes/
 │   │   └── index.ts             # Cores e fontes do design system
 │   └── export/
@@ -149,6 +150,7 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 - [x] Seletor de fontes (8 opções)
 - [x] Deploy na Vercel com API Routes
 - [x] Persistência de logo ao trocar de template
+- [x] Template Food Promo — fundo foto full, tipografia Bebas Neue, subtitle com pill escura
 
 ### Em Progresso / Recente
 - Migração de Unsplash para Pexels com cascade fallback (3 níveis) — concluído no commit `deb8215`
@@ -159,10 +161,9 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 
 _(Não há roadmap formal documentado — baseado na evolução recente dos commits)_
 
+- Controle manual de tamanho de fonte por elemento no PropertiesPanel
+- Templates por segmento: bebidas, fitness, negócios
 - Mover chaves de API para variáveis de ambiente (`.env` / Vercel env vars)
-- Possivelmente adicionar mais templates ou verticais
-- Melhorias no sistema de temas (ThemeContext existe mas pode estar subutilizado)
-- Possível substituição do Pexels por geração de imagem com IA (Replicate/Stable Diffusion) — o arquivo `replicate.ts` sugere que isso foi cogitado
 
 ---
 
@@ -205,6 +206,7 @@ A busca tenta: (1) query completa do imagePrompt, (2) primeira palavra-chave rel
 - A URL de produção da Vercel não está documentada em nenhum arquivo do projeto
 - `replicate.ts` tem comentário de cache bust manual (`// cache bust Seg 9 Mar 2026...`) — indica workaround para problema de deploy da Vercel
 - `VITE_SERVER_URL` referenciado em commits antigos pode causar confusão (não está mais em uso)
+- Pexels não tem acervo de pratos brasileiros específicos (feijoada, parmegiana) — imagem do produto deve ser enviada pelo usuário para resultado profissional
 
 ---
 
