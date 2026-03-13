@@ -182,42 +182,39 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
           }}
         >
           <Layer ref={layerRef}>
-            {/* Fundo sólido — primeira camada, sempre presente */}
-            <Rect
-              name="bg-rect"
-              x={0}
-              y={0}
-              width={template.width}
-              height={template.height}
-              fill={template.background ?? '#ffffff'}
-              listening={false}
-            />
-
-            {/* Imagem de fundo em Konva: incluída no export via stage.toDataURL() */}
-            {bgImg && (
-              <KonvaImage
-                name="bg-image"
-                image={bgImg}
-                x={bgImgX}
-                y={bgImgY}
-                width={bgImgW}
-                height={bgImgH}
-                listening={false}
-              />
-            )}
-
-            {/* Overlay escuro sobre a imagem — melhora legibilidade do texto */}
-            {bgImg && (
+            {/* Fundo: cor sólida quando não há imagem; foto + overlay quando há */}
+            {!bgImg ? (
               <Rect
-                name="bg-overlay"
+                name="bg-rect"
                 x={0}
                 y={0}
                 width={template.width}
                 height={template.height}
-                fill="#000000"
-                opacity={overlayOpacity}
+                fill={template.background ?? '#ffffff'}
                 listening={false}
               />
+            ) : (
+              <>
+                <KonvaImage
+                  name="bg-image"
+                  image={bgImg}
+                  x={bgImgX}
+                  y={bgImgY}
+                  width={bgImgW}
+                  height={bgImgH}
+                  listening={false}
+                />
+                <Rect
+                  name="bg-overlay"
+                  x={0}
+                  y={0}
+                  width={template.width}
+                  height={template.height}
+                  fill="#000000"
+                  opacity={overlayOpacity}
+                  listening={false}
+                />
+              </>
             )}
 
             {template.elements.map((el) =>
