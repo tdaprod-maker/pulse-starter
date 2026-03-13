@@ -35,8 +35,13 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     const [bgImg, setBgImg] = useState<HTMLImageElement | null>(null)
     useEffect(() => {
       if (!template.backgroundImage) { setBgImg(null); return }
+      console.log('[BG] loading image, length:', template.backgroundImage.length)
       const img = new window.Image()
-      img.onload = () => setBgImg(img)
+      img.onload = () => {
+        console.log('[BG] image loaded:', img.naturalWidth, img.naturalHeight)
+        setBgImg(img)
+      }
+      img.onerror = (e) => console.error('[BG] image error:', e)
       img.src = template.backgroundImage
     }, [template.backgroundImage])
 
