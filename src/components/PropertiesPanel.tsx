@@ -75,6 +75,7 @@ function TextField({ el, templateId }: TextFieldProps) {
   const text       = (el.props.text       as string) ?? ''
   const fill       = (el.props.fill       as string) ?? '#ffffff'
   const fontFamily = (el.props.fontFamily as string) ?? 'Inter, sans-serif'
+  const fontSize   = (el.props.fontSize   as number) ?? 24
 
   useEffect(() => {
     const ta = textRef.current
@@ -93,6 +94,11 @@ function TextField({ el, templateId }: TextFieldProps) {
 
   function handleFont(e: React.ChangeEvent<HTMLSelectElement>) {
     updateElement(templateId, el.id, { props: { ...el.props, fontFamily: e.target.value } })
+  }
+
+  function handleFontSize(value: number) {
+    const clamped = Math.min(300, Math.max(8, value))
+    updateElement(templateId, el.id, { props: { ...el.props, fontSize: clamped } })
   }
 
   return (
@@ -117,6 +123,39 @@ function TextField({ el, templateId }: TextFieldProps) {
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
+      </div>
+
+      {/* Tamanho de fonte */}
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] font-medium text-gray-500 select-none">Tamanho</span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => handleFontSize(fontSize - 4)}
+            className="text-xs px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors select-none"
+          >
+            A-
+          </button>
+          <input
+            type="number"
+            min={8}
+            max={300}
+            step={2}
+            value={fontSize}
+            onChange={(e) => handleFontSize(Number(e.target.value))}
+            className="
+              w-16 bg-gray-800 border border-gray-700
+              focus:border-[#3A5AFF] focus:outline-none
+              text-white text-xs rounded px-2 py-0.5
+              text-center transition-colors
+            "
+          />
+          <button
+            onClick={() => handleFontSize(fontSize + 4)}
+            className="text-xs px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors select-none"
+          >
+            A+
+          </button>
+        </div>
       </div>
 
       {/* Textarea */}
