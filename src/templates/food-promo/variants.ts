@@ -44,7 +44,7 @@ export function makeFoodPromoVariants(_theme: Theme): Template[] {
       y: 0,
       width: canvasW,
       height: canvasH,
-      props: { fill: BG_DEFAULT, cornerRadius: 0 },
+      props: { fill: 'rgba(0,0,0,0)', cornerRadius: 0 },
     },
     {
       id: 'label',
