@@ -103,6 +103,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     // Equivalente ao object-fit: cover — escala a imagem para cobrir o canvas
     // inteiro mantendo proporção, depois aplica zoom e offset do usuário.
     let bgImgX = 0, bgImgY = 0, bgImgW = 0, bgImgH = 0
+    console.log('[BG RENDER]', { bgImg: !!bgImg, backgroundImage: !!template.backgroundImage })
     if (bgImg) {
       const coverScale = Math.max(
         template.width  / bgImg.naturalWidth,
