@@ -82,6 +82,18 @@ export function makeFoodPromoVariants(_theme: Theme): Template[] {
       },
     },
     {
+      id: 'subtitle-bg',
+      type: 'shape' as const,
+      x: MX,
+      y: SUBTITLE_Y - 8,
+      width: CONTENT_W,
+      height: SUBTITLE_H + 16,
+      props: {
+        fill: 'rgba(0,0,0,0.45)',
+        cornerRadius: 6,
+      },
+    },
+    {
       id: 'subtitle',
       type: 'text' as const,
       x: MX,
