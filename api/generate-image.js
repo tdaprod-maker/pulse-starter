@@ -146,6 +146,14 @@ const FALLBACK_MAP = [
   { terms: ['baseball', 'beisebol', 'cricket', 'rugby', 'lacrosse'],         fallback: 'sport athlete' },
   { terms: ['networking', 'leadership', 'entrepreneurship', 'startup'],       fallback: 'business people meeting' },
   { terms: ['meditation', 'wellness', 'mindfulness'],                         fallback: 'person relaxing nature' },
+  // Pratos específicos → fotos de comida garantidas no Pexels
+  { terms: ['parmesan', 'parmegiana', 'milanese', 'schnitzel', 'chicken breast'], fallback: 'grilled chicken dish plate' },
+  { terms: ['fillet', 'filet', 'steak', 'beef'],                              fallback: 'beef steak plate restaurant' },
+  { terms: ['pasta', 'spaghetti', 'lasagna', 'lasagne'],                      fallback: 'pasta dish italian food' },
+  { terms: ['pizza'],                                                          fallback: 'pizza slice close up' },
+  { terms: ['burger', 'hamburguer', 'hamburger'],                             fallback: 'burger sandwich close up' },
+  { terms: ['sushi', 'temaki', 'sashimi'],                                    fallback: 'sushi japanese food' },
+  { terms: ['salad', 'salada'],                                               fallback: 'fresh salad bowl' },
 ]
 
 // Nível 2: primeira palavra relevante do prompt
