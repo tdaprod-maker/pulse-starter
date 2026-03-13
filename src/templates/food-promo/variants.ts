@@ -5,7 +5,7 @@ import type { Theme } from '../../themes'
 const BG_DEFAULT    = '#1A1A1A'
 const TEXT_WHITE    = '#FFFFFF'
 const LABEL_COLOR   = 'rgba(255,255,255,0.7)'
-const ACCENT_DEFAULT = '#FF6F5E'
+
 
 // ─── Tipografia ───────────────────────────────────────────────────────────────
 const textH = (fs: number, lh: number, lines: number) => Math.ceil(fs * lh * lines)
