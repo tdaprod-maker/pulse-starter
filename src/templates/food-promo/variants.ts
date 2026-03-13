@@ -92,7 +92,7 @@ export function makeFoodPromoVariants(_theme: Theme): Template[] {
         text: 'R$ 49,90 · Peça agora!',
         fontSize: SUBTITLE_FS,
         fontFamily: 'Montserrat',
-        fontStyle: 'normal',
+        fontStyle: 'bold',
         lineHeight: SUBTITLE_LH,
         align: 'center',
         fill: '#FFFFFF',
