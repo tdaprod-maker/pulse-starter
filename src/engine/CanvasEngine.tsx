@@ -103,7 +103,6 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     // Equivalente ao object-fit: cover — escala a imagem para cobrir o canvas
     // inteiro mantendo proporção, depois aplica zoom e offset do usuário.
     let bgImgX = 0, bgImgY = 0, bgImgW = 0, bgImgH = 0
-    console.log('[BG RENDER]', { bgImg: !!bgImg, backgroundImage: !!template.backgroundImage })
     if (bgImg) {
       const coverScale = Math.max(
         template.width  / bgImg.naturalWidth,
@@ -115,7 +114,6 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
       // offset do usuário está em CSS pixels — converte para coordenadas do canvas
       bgImgX = (template.width  - bgImgW) / 2 + bgOffsetX / autoScale
       bgImgY = (template.height - bgImgH) / 2 + bgOffsetY / autoScale
-      console.log('[BG GEOM]', { templateId: template.id, templateW: template.width, templateH: template.height, bgImgX, bgImgY, bgImgW, bgImgH, autoScale, bgZoom })
     }
 
     // ── Overlay opacity por template ───────────────────────────────────────────
@@ -131,8 +129,6 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     const logoH      = logoSize * logoAspect
     const logoX      = template.logoX ?? (template.width  - logoSize - 16)
     const logoY      = template.logoY ?? (template.height - logoH    - 16)
-
-    console.log('[BG BRANCH]', { hasBgImg: !!bgImg, templateId: template.id })
 
     return (
       <div style={{

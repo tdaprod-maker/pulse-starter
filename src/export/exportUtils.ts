@@ -44,8 +44,6 @@ export function exportToPng(
   fileName = 'pulse-export-2x.png',
   options: Pick<ExportOptions, 'pixelRatio' | 'transparent'> = {}
 ): void {
-  console.log('[EXPORT] nodes in layer:', stage.findOne('Layer')?.getChildren().length)
-  console.log('[EXPORT] bg-image node:', stage.findOne('.bg-image'))
   const { pixelRatio = 2, transparent = false } = options
 
   if (transparent) {
@@ -84,8 +82,6 @@ export function exportToJpeg(
   fileName = 'pulse-export-2x.jpg',
   options: Pick<ExportOptions, 'pixelRatio' | 'quality'> = {}
 ): void {
-  console.log('[EXPORT] nodes in layer:', stage.findOne('Layer')?.getChildren().length)
-  console.log('[EXPORT] bg-image node:', stage.findOne('.bg-image'))
   const { pixelRatio = 2, quality = 0.92 } = options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dataURL = (stage as any).toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality })
