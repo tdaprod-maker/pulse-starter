@@ -89,7 +89,8 @@ export function makeFoodPromoVariants(_theme: Theme): Template[] {
       width: CONTENT_W,
       height: SUBTITLE_H + 16,
       props: {
-        fill: 'rgba(0,0,0,0.45)',
+        fill: '#000000',
+        opacity: 0.45,
         cornerRadius: 6,
       },
     },

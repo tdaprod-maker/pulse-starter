@@ -368,6 +368,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         height={el.height}
         fill={(el.props.fill as string) ?? '#e5e7eb'}
         cornerRadius={(el.props.cornerRadius as number) ?? 0}
+        opacity={(el.props.opacity as number) ?? 1}
         draggable
         onClick={() => onSelect?.(el.id)}
         stroke={selectionStroke}
