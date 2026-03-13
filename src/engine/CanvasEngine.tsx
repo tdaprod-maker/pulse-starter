@@ -31,6 +31,15 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
 
     const { setTemplateImageStyle, setTemplateImageOffset, setTemplateLogoPosition } = useStore()
 
+    // ── Background image preload ───────────────────────────────────────────────
+    const [bgImg, setBgImg] = useState<HTMLImageElement | null>(null)
+    useEffect(() => {
+      if (!template.backgroundImage) { setBgImg(null); return }
+      const img = new window.Image()
+      img.onload = () => setBgImg(img)
+      img.src = template.backgroundImage
+    }, [template.backgroundImage])
+
     // ── Logo image preload ────────────────────────────────────────────────────
     const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null)
     useEffect(() => {
@@ -42,7 +51,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
 
     // ── Drag state (background image pan) ────────────────────────────────────
     const [dragging, setDragging] = useState(false)
-    const dragActiveRef   = useRef(false)
+    const dragActiveRef    = useRef(false)
     const currentOffsetRef = useRef({ x: 0, y: 0 })
 
     // ── Layout dinâmico ───────────────────────────────────────────────────────
@@ -85,6 +94,30 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     const bgOffsetY = template.backgroundOffsetY ?? 0
     const bgZoom    = template.backgroundZoom ?? 100
 
+    // ── Background image cover geometry ───────────────────────────────────────
+    // Equivalente ao object-fit: cover — escala a imagem para cobrir o canvas
+    // inteiro mantendo proporção, depois aplica zoom e offset do usuário.
+    let bgImgX = 0, bgImgY = 0, bgImgW = 0, bgImgH = 0
+    if (bgImg) {
+      const coverScale = Math.max(
+        template.width  / bgImg.naturalWidth,
+        template.height / bgImg.naturalHeight,
+      )
+      const totalScale = coverScale * (bgZoom / 100)
+      bgImgW = bgImg.naturalWidth  * totalScale
+      bgImgH = bgImg.naturalHeight * totalScale
+      // offset do usuário está em CSS pixels — converte para coordenadas do canvas
+      bgImgX = (template.width  - bgImgW) / 2 + bgOffsetX / autoScale
+      bgImgY = (template.height - bgImgH) / 2 + bgOffsetY / autoScale
+    }
+
+    // ── Overlay opacity por template ───────────────────────────────────────────
+    const overlayOpacity =
+      template.id.startsWith('editorial-card') ? 0.6
+      : template.id.startsWith('hero-title')   ? 0.65
+      : template.id.startsWith('food-promo')   ? 0.35
+      : 0.5
+
     // ── Logo positioning ──────────────────────────────────────────────────────
     const logoSize   = template.logoSize ?? 120
     const logoAspect = logoImg ? logoImg.height / logoImg.width : 1
@@ -93,70 +126,18 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     const logoY      = template.logoY ?? (template.height - logoH    - 16)
 
     return (
-      // Wrapper posicionado: <img> HTML atrás do canvas Konva.
-      // Isso elimina CORS/tainted-canvas — o <img> carrega a URL diretamente
-      // sem passar pelo pipeline de pixels do canvas.
       <div style={{
         position: 'relative',
         width: w,
         height: h,
-        overflow: 'hidden',
         cursor: template.backgroundImage ? (dragging ? 'grabbing' : 'grab') : 'default',
       }}>
-
-        {/* Fundo sólido via CSS — sempre visível, inclusive enquanto a imagem carrega */}
-        <div
-          style={{
-            position:   'absolute',
-            inset:      0,
-            background: template.background ?? '#ffffff',
-          }}
-        />
-
-        {/* Imagem de fundo em HTML puro: object-fit cover + overlay escuro */}
-        {template.backgroundImage && (
-          <>
-            <img
-              src={template.backgroundImage}
-              draggable={false}
-              style={{
-                position:        'absolute',
-                inset:           0,
-                width:           '100%',
-                height:          '100%',
-                objectFit:       'cover',
-                objectPosition:  `center ${template.backgroundAlign ?? 'center'}`,
-                transform:       `translate(${bgOffsetX}px, ${bgOffsetY}px) scale(${bgZoom / 100})`,
-                transformOrigin: 'center center',
-                display:         'block',
-                userSelect:      'none',
-                pointerEvents:   'none',
-              }}
-            />
-            <div
-              style={{
-                position:   'absolute',
-                inset:      0,
-                background: template.id.startsWith('editorial-card')
-                  ? 'rgba(0,0,0,0.6)'
-                  : template.id.startsWith('hero-title')
-                    ? 'rgba(0,0,0,0.65)'
-                    : template.id.startsWith('food-promo')
-                      ? 'rgba(0,0,0,0.35)'
-                      : 'rgba(0,0,0,0.5)',
-              }}
-            />
-          </>
-        )}
-
-        {/* Stage Konva — canvas transparente; texto/shapes renderizam por cima da imagem */}
         <Stage
           ref={ref}
           width={w}
           height={h}
           scaleX={autoScale}
           scaleY={autoScale}
-          style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'transparent' }}
           onClick={(e) => {
             if (e.target === e.target.getStage()) onSelectElement?.(null)
           }}
@@ -194,32 +175,55 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
           }}
         >
           <Layer ref={layerRef}>
-            {/* bg-rect apenas quando não há imagem de fundo — preenche o canvas com a cor sólida */}
-            {!template.backgroundImage && (
+            {/* Fundo sólido — primeira camada, sempre presente */}
+            <Rect
+              name="bg-rect"
+              x={0}
+              y={0}
+              width={template.width}
+              height={template.height}
+              fill={template.background ?? '#ffffff'}
+              listening={false}
+            />
+
+            {/* Imagem de fundo em Konva: incluída no export via stage.toDataURL() */}
+            {bgImg && (
+              <KonvaImage
+                name="bg-image"
+                image={bgImg}
+                x={bgImgX}
+                y={bgImgY}
+                width={bgImgW}
+                height={bgImgH}
+                listening={false}
+              />
+            )}
+
+            {/* Overlay escuro sobre a imagem — melhora legibilidade do texto */}
+            {bgImg && (
               <Rect
-                name="bg-rect"
+                name="bg-overlay"
                 x={0}
                 y={0}
                 width={template.width}
                 height={template.height}
-                fill={template.background ?? '#ffffff'}
+                fill="#000000"
+                opacity={overlayOpacity}
+                listening={false}
               />
             )}
 
-            {template.elements.map((el) => {
-              // bg-color é o fundo sólido do food-promo: ocultado quando há imagem de fundo
-              // para não bloquear a foto do produto
-              if (el.id === 'bg-color' && template.backgroundImage) return null
-              return renderElement(el, {
-                selectedId:   selectedElementId,
-                editingId:    editingElementId,
-                onSelect:     onSelectElement,
+            {template.elements.map((el) =>
+              renderElement(el, {
+                selectedId:      selectedElementId,
+                editingId:       editingElementId,
+                onSelect:        onSelectElement,
                 onEditStart,
                 overrideY,
-                templateId:   template.id,
+                templateId:      template.id,
                 backgroundImage: template.backgroundImage,
               })
-            })}
+            )}
 
             {/* Logotipo — renderizado no Konva para ser incluído no export */}
             {logoImg && (
