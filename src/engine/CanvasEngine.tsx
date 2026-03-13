@@ -342,6 +342,9 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         align={(el.props.align as 'left' | 'center' | 'right') ?? 'left'}
         wrap={(el.props.wrap as 'word' | 'char' | 'none') ?? 'word'}
         fill={fill}
+        shadowColor={(el.props.shadowColor as string) ?? undefined}
+        shadowBlur={(el.props.shadowBlur as number) ?? undefined}
+        shadowOpacity={(el.props.shadowOpacity as number) ?? undefined}
         opacity={isEditing ? 0 : 1}
         draggable={!isEditing}
         onClick={() => onSelect?.(el.id)}

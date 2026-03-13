@@ -95,7 +95,10 @@ export function makeFoodPromoVariants(_theme: Theme): Template[] {
         fontStyle: 'normal',
         lineHeight: SUBTITLE_LH,
         align: 'center',
-        fill: ACCENT_DEFAULT,
+        fill: TEXT_WHITE,
+        shadowColor: 'black',
+        shadowBlur: 8,
+        shadowOpacity: 0.8,
       },
     },
   ]
