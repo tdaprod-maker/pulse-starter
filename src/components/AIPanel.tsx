@@ -18,6 +18,7 @@ const ACCENT_ELEMENT: Record<string, string> = {
   'editorial-card': 'accent-bar',
   'minimal-type':  'phrase',
   'big-number':    'number',
+  'food-promo':    'bg-color',
 }
 
 // ─── Normaliza nomes que a IA pode retornar levemente errados ─────────────────

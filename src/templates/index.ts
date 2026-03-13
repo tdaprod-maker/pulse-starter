@@ -3,6 +3,7 @@ import { makeBigStatementVariants }  from './big-statement/variants'
 import { makeEditorialCardVariants } from './editorial-card/variants'
 import { makeMinimalTypeVariants }   from './minimal-type/variants'
 import { makeBigNumberVariants }     from './big-number/variants'
+import { makeFoodPromoVariants }     from './food-promo/variants'
 import type { Template } from '../state/useStore'
 import type { Theme } from '../themes'
 
@@ -44,6 +45,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Big Number',
     category: 'instagram-post',
     getVariants: makeBigNumberVariants,
+  },
+  {
+    id: 'food-promo',
+    name: 'Food Promo',
+    category: 'instagram-post',
+    getVariants: makeFoodPromoVariants,
   },
 ]
 

@@ -141,7 +141,9 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
                   ? 'rgba(0,0,0,0.6)'
                   : template.id.startsWith('hero-title')
                     ? 'rgba(0,0,0,0.65)'
-                    : 'rgba(0,0,0,0.5)',
+                    : template.id.startsWith('food-promo')
+                      ? 'rgba(0,0,0,0.35)'
+                      : 'rgba(0,0,0,0.5)',
               }}
             />
           </>
@@ -204,8 +206,11 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
               />
             )}
 
-            {template.elements.map((el) =>
-              renderElement(el, {
+            {template.elements.map((el) => {
+              // bg-color é o fundo sólido do food-promo: ocultado quando há imagem de fundo
+              // para não bloquear a foto do produto
+              if (el.id === 'bg-color' && template.backgroundImage) return null
+              return renderElement(el, {
                 selectedId:   selectedElementId,
                 editingId:    editingElementId,
                 onSelect:     onSelectElement,
@@ -214,7 +219,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
                 templateId:   template.id,
                 backgroundImage: template.backgroundImage,
               })
-            )}
+            })}
 
             {/* Logotipo — renderizado no Konva para ser incluído no export */}
             {logoImg && (

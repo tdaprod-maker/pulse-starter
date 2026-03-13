@@ -37,12 +37,16 @@ TEMPLATES DISPONÍVEIS:
 - "big-number"     → número em destaque + legenda, ideal para estatísticas ou conquistas
   Campos: number (1 número ou símbolo, ex: "42", "3×", "98%"), caption (5-10 palavras)
 
+- "food-promo"     → template para restaurantes e delivery, com nome do prato em destaque, chamada e preço
+  Campos: label (categoria em maiúsculas, ex: "PIZZA", "HAMBÚRGUER"), title (nome do prato, 1-3 palavras EM MAIÚSCULAS), subtitle (preço ou chamada, ex: "R$ 49,90" ou "Peça agora!")
+
 REGRAS DE SELEÇÃO DE TEMPLATE:
 - "minimal-type"   → somente para frases curtas, pensamentos, citações ou conteúdo contemplativo
 - "hero-title"     → quando há um título principal acompanhado de explicação ou subtítulo descritivo
 - "big-statement"  → para declarações ousadas, lançamentos ou afirmações de impacto máximo
 - "editorial-card" → para conteúdo informativo, artigos, dicas ou textos com contexto e corpo
 - "big-number"     → obrigatório quando o conteúdo contém dados, estatísticas, porcentagens ou conquistas numéricas
+- "food-promo"     → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida
 
 REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 - #3A5AFF (azul)   → tech, negócios, profissional, inovação, produtividade
