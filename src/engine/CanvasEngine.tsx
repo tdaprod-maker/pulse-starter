@@ -215,8 +215,10 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
               </>
             )}
 
-            {template.elements.map((el) =>
-              renderElement(el, {
+            {template.elements.map((el) => {
+              // bg-color é o fundo sólido do food-promo: oculto quando há foto de fundo
+              if (el.id === 'bg-color' && bgImg) return null
+              return renderElement(el, {
                 selectedId:      selectedElementId,
                 editingId:       editingElementId,
                 onSelect:        onSelectElement,
@@ -225,7 +227,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
                 templateId:      template.id,
                 backgroundImage: template.backgroundImage,
               })
-            )}
+            })}
 
             {/* Logotipo — renderizado no Konva para ser incluído no export */}
             {logoImg && (
