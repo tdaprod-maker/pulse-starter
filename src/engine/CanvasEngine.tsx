@@ -132,6 +132,8 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     const logoX      = template.logoX ?? (template.width  - logoSize - 16)
     const logoY      = template.logoY ?? (template.height - logoH    - 16)
 
+    console.log('[BG BRANCH]', { hasBgImg: !!bgImg, templateId: template.id })
+
     return (
       <div style={{
         position: 'relative',
