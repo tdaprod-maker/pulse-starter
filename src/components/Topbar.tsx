@@ -1,55 +1,69 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useTheme } from '../contexts/ThemeContext'
-
-const links = [
-  { to: '/', label: 'Editor' },
-  { to: '/templates', label: 'Templates' },
-]
 
 export function Topbar() {
   const { pathname } = useLocation()
-  const { theme } = useTheme()
 
   return (
-    <header className="h-14 bg-gray-950 text-white flex items-center px-6 gap-8 shadow-md">
-      <span className="text-xl font-bold text-indigo-400 tracking-tight">Pulse</span>
+    <header style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 24px',
+      height: '52px',
+      background: 'var(--bg-panel)',
+      borderBottom: '1px solid var(--border)',
+      position: 'relative',
+      zIndex: 50,
+    }}>
+      {/* Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <img
+          src="/logo-pulse.png"
+          alt="Pulse"
+          style={{ height: '28px', mixBlendMode: 'screen' }}
+        />
+      </div>
 
-      <nav className="flex gap-4">
-        {links.map((l) => (
-          <Link
-            key={l.to}
-            to={l.to}
-            className={`text-sm font-medium hover:text-indigo-300 transition ${
-              pathname === l.to ? 'text-indigo-400' : 'text-gray-300'
-            }`}
-          >
-            {l.label}
-          </Link>
-        ))}
+      {/* Nav central */}
+      <nav style={{ display: 'flex', gap: '4px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+        {[
+          { label: 'Editor', to: '/' },
+          { label: 'Templates', to: '/templates' },
+        ].map(({ label, to }) => {
+          const active = pathname === to || (to === '/' && pathname === '/editor')
+          return (
+            <Link
+              key={to}
+              to={to}
+              style={{
+                padding: '6px 16px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: active ? 600 : 400,
+                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                background: active ? 'var(--bg-surface)' : 'transparent',
+                border: active ? '1px solid var(--border-active)' : '1px solid transparent',
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {label}
+            </Link>
+          )
+        })}
       </nav>
 
-      <div className="ml-auto flex items-center gap-2">
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-800 border border-gray-700"
-          title={`Tema ativo: ${theme.name}`}
-        >
-          {/* Palheta de cores do tema */}
-          <div className="flex gap-1">
-            <span
-              className="w-3 h-3 rounded-full border border-gray-600"
-              style={{ background: theme.colors.accent }}
-            />
-            <span
-              className="w-3 h-3 rounded-full border border-gray-600"
-              style={{ background: theme.colors.accentAlt }}
-            />
-            <span
-              className="w-3 h-3 rounded-full border border-gray-600"
-              style={{ background: theme.colors.coral }}
-            />
-          </div>
-          <span className="text-xs text-gray-300 font-medium">{theme.name}</span>
-        </div>
+      {/* Badge versão */}
+      <div style={{
+        fontSize: '11px',
+        color: 'var(--text-muted)',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '6px',
+        padding: '4px 10px',
+        letterSpacing: '0.05em',
+      }}>
+        BETA
       </div>
     </header>
   )

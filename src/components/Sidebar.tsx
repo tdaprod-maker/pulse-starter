@@ -22,52 +22,111 @@ export function Sidebar() {
   const [expandedId, setExpandedId] = useState<string | null>('hero-title')
 
   function handleSelectVariant(variant: Template) {
-    addTemplate(variant)          // upserts: refreshes definition, keeps backgroundImage
+    addTemplate(variant)
     setActiveTemplate(variant.id)
   }
 
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col p-4 gap-3 overflow-y-auto">
-      <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 px-1">
+    <aside style={{
+      width: '200px',
+      background: 'var(--bg-panel)',
+      borderRight: '1px solid var(--border)',
+      padding: '16px 12px',
+      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <p style={{
+        fontSize: '10px',
+        fontWeight: 600,
+        letterSpacing: '0.12em',
+        color: 'var(--text-muted)',
+        marginBottom: '12px',
+        paddingLeft: '4px',
+        textTransform: 'uppercase',
+      }}>
         Templates
-      </h2>
+      </p>
 
       {templateRegistry.map((def) => {
         const variants = def.getVariants(theme)
+        const isExpanded = expandedId === def.id
+
         return (
           <div key={def.id}>
             <button
-              onClick={() =>
-                setExpandedId(expandedId === def.id ? null : def.id)
-              }
-              className="w-full text-left px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition flex items-center justify-between"
+              onClick={() => setExpandedId(isExpanded ? null : def.id)}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 10px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                color: isExpanded ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontSize: '13px',
+                fontWeight: 500,
+                transition: 'background 0.15s',
+                fontFamily: 'inherit',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
-              <span className="text-sm font-medium">{def.name}</span>
-              <span className="text-gray-500 text-xs">
-                {expandedId === def.id ? '▲' : '▼'}
-              </span>
+              <span>{def.name}</span>
+              <span style={{ fontSize: '10px', opacity: 0.5 }}>{isExpanded ? '▲' : '▼'}</span>
             </button>
 
-            {expandedId === def.id && (
-              <ul className="mt-1 flex flex-col gap-1 pl-3">
-                {variants.map((v) => (
-                  <li key={v.id}>
+            {isExpanded && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+                marginBottom: '8px',
+                paddingLeft: '8px',
+              }}>
+                {variants.map((v) => {
+                  const active = activeTemplateId === v.id
+                  return (
                     <button
+                      key={v.id}
                       onClick={() => handleSelectVariant(v)}
-                      className={`w-full text-left px-3 py-1.5 rounded-md transition text-xs flex items-center justify-between ${
-                        activeTemplateId === v.id
-                          ? 'bg-[#3A5AFF] text-white'
-                          : 'bg-gray-700 hover:bg-[#3A5AFF]'
-                      }`}
+                      style={{
+                        width: '100%',
+                        background: active ? 'var(--accent-glow)' : 'transparent',
+                        border: active ? '1px solid var(--border-active)' : '1px solid transparent',
+                        borderRadius: '6px',
+                        padding: '5px 8px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                        transition: 'all 0.15s',
+                        fontFamily: 'inherit',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.color = 'var(--text-secondary)'
+                          e.currentTarget.style.background = 'var(--bg-hover)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.color = 'var(--text-muted)'
+                          e.currentTarget.style.background = 'transparent'
+                        }
+                      }}
                     >
                       <span>{ratioLabel(v)}</span>
-                      <span className="text-gray-400">
-                        {v.width}×{v.height}
-                      </span>
+                      <span style={{ opacity: 0.5 }}>{v.width}×{v.height}</span>
                     </button>
-                  </li>
-                ))}
-              </ul>
+                  )
+                })}
+              </div>
             )}
           </div>
         )
