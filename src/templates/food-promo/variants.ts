@@ -14,20 +14,20 @@ const LABEL_FS = 28
 const LABEL_LH = 1.5
 const LABEL_H  = textH(LABEL_FS, LABEL_LH, 1)  // 42px
 
-const TITLE_FS = 140
+const TITLE_FS = 110
 const TITLE_LH = 1.1
-const TITLE_H  = textH(TITLE_FS, TITLE_LH, 2)  // 308px
+const TITLE_H  = textH(TITLE_FS, TITLE_LH, 2)  // 242px
 
-const SUBTITLE_FS = 36
+const SUBTITLE_FS = 42
 const SUBTITLE_LH = 1.5
-const SUBTITLE_H  = textH(SUBTITLE_FS, SUBTITLE_LH, 1)  // 54px
+const SUBTITLE_H  = textH(SUBTITLE_FS, SUBTITLE_LH, 1)  // 63px
 
 // ─── Layout 1080px de largura ─────────────────────────────────────────────────
 const MX       = 60
 const CONTENT_W = 1080 - MX * 2  // 960px
 
 const LABEL_Y   = 80
-const TITLE_Y   = 200
+const TITLE_Y   = 220
 const SUBTITLE_Y = TITLE_Y + TITLE_H + 40  // 548px
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
