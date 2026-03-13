@@ -67,9 +67,9 @@ export function makeFoodPromoVariants(_theme: Theme): Template[] {
     {
       id: 'title',
       type: 'text' as const,
-      x: MX,
+      x: 0,
       y: TITLE_Y,
-      width: CONTENT_W,
+      width: 1080,
       height: TITLE_H,
       props: {
         text: 'NOME DO\nPRATO',
