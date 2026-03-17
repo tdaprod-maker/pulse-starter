@@ -10,7 +10,7 @@ export function LogoSection({ template }: LogoSectionProps) {
   const { setTemplateLogo, setTemplateLogoStyle } = useStore()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const logoSize = template.logoSize ?? 300
+  const logoSize = template.logoSize ?? 400
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -68,7 +68,7 @@ export function LogoSection({ template }: LogoSectionProps) {
             <input
               type="range"
               min={60}
-              max={800}
+              max={1080}
               step={4}
               value={logoSize}
               onChange={(e) => setTemplateLogoStyle(template.id, Number(e.target.value))}

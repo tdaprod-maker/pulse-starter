@@ -113,7 +113,7 @@ export function AIPanel() {
           const base64 = reader.result as string
           allVariants.forEach(v => {
             useStore.getState().setTemplateLogo(v.id, base64)
-            useStore.getState().setTemplateLogoStyle(v.id, 300)
+            useStore.getState().setTemplateLogoStyle(v.id, 400)
           })
         }
         reader.readAsDataURL(blob)
