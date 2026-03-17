@@ -21,7 +21,7 @@ export function Topbar() {
     }}>
 
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
         <img
           src="/logo-pulse.svg"
           alt="Pulse"
@@ -33,7 +33,7 @@ export function Topbar() {
             display: 'block',
           }}
         />
-      </div>
+      </Link>
 
       {/* Nav central */}
       <nav style={{
