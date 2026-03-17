@@ -23,7 +23,6 @@ const ACCENT_ELEMENT: Record<string, string> = {
   'big-number':     'number',
   'food-promo':     'bg-color',
   'tech-news':      'category-line',
-  'tech-statement': 'phrase',
   'tech-product':   'accent-strip',
 }
 
