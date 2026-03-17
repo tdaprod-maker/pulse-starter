@@ -244,7 +244,7 @@ export function EditorPage() {
         overflowY: 'auto',
       }}>
         {/* AIPanel sempre visível — gera e ativa o template automaticamente */}
-        <AIPanel />
+        <AIPanel stageRef={stageRef} />
 
         {activeTemplate ? (
           <>

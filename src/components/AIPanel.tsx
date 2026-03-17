@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { generatePostContent } from '../services/gemini'
@@ -6,7 +6,8 @@ import type { AIResponse } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
-import { loadBrandConfig } from '../services/brandKit'
+import { loadBrandConfig, savePost, uploadThumbnail } from '../services/brandKit'
+import type Konva from 'konva'
 
 // ─── Qual elemento de cada template recebe a accentColor ─────────────────────
 // IDs corretos conforme variants.ts de cada template:
@@ -35,7 +36,11 @@ function normalizeTemplateId(raw: string): string {
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
-export function AIPanel() {
+interface AIPanelProps {
+  stageRef?: React.RefObject<Konva.Stage | null>
+}
+
+export function AIPanel({ stageRef }: AIPanelProps) {
   const [prompt, setPrompt]   = useState('')
   const [status, setStatus]   = useState<'idle' | 'loading' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -177,6 +182,31 @@ export function AIPanel() {
       }
 
       setStatus('idle')
+
+      // Salva o post no histórico
+      try {
+        const { data: userData } = await supabase.auth.getUser()
+        const email = userData.user?.email ?? ''
+        if (email) {
+          const postId = await savePost(email, {
+            template_id: result.template,
+            texts: result.texts as Record<string, string>,
+            accent_color: result.accentColor,
+            image_prompt: result.imagePrompt,
+          })
+
+          if (postId && stageRef?.current) {
+            const thumbDataUrl = stageRef.current.toDataURL({
+              pixelRatio: 0.3,
+              mimeType: 'image/jpeg',
+              quality: 0.7,
+            })
+            await uploadThumbnail(postId, email, thumbDataUrl)
+          }
+        }
+      } catch (e) {
+        console.error('Failed to save post:', e)
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Erro desconhecido')
       setStatus('error')
