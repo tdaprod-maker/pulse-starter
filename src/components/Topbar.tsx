@@ -22,13 +22,11 @@ export function Topbar() {
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <img
-          src="/logo-pulse.png"
+          src="/logo-pulse.svg"
           alt="Pulse"
           style={{
-            height: '52px',
-            mixBlendMode: 'screen',
-            filter: 'brightness(1.2) contrast(1.1)',
-            marginLeft: '-12px',
+            height: '36px',
+            display: 'block',
           }}
         />
       </div>
