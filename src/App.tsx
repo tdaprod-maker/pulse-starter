@@ -8,7 +8,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <div className="flex flex-col h-screen bg-gray-900">
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)' }}>
           <Topbar />
           <Routes>
             <Route path="/" element={<EditorPage />} />

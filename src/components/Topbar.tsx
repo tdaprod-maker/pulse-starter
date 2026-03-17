@@ -25,7 +25,8 @@ export function Topbar() {
           src="/logo-pulse.png"
           alt="Pulse"
           style={{
-            height: '36px',
+            height: '44px',
+            display: 'block',
             mixBlendMode: 'screen',
             filter: 'brightness(1.1)',
           }}
