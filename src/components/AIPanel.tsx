@@ -8,17 +8,23 @@ import { useTheme } from '../contexts/ThemeContext'
 
 // ─── Qual elemento de cada template recebe a accentColor ─────────────────────
 // IDs corretos conforme variants.ts de cada template:
-// hero-title:    'accent-bar' (shape barra vertical azul)
-// editorial-card: 'accent-bar' (shape barra coral)
-// minimal-type:  'phrase'  (text — muda cor da frase)
-// big-number:    'number'  (text — muda cor do número)
-// big-statement: excluído — line2 usa amarelo do design system (#FFCA1D)
+// hero-title:     'accent-bar'   (shape barra vertical azul)
+// editorial-card: 'accent-bar'   (shape barra coral)
+// minimal-type:   'phrase'       (text — muda cor da frase)
+// big-number:     'number'       (text — muda cor do número)
+// big-statement:  excluído — line2 usa amarelo do design system (#FFCA1D)
+// tech-news:      'category-line' (shape rect horizontal azul)
+// tech-statement: 'phrase'        (text — muda cor da frase)
+// tech-product:   'accent-strip'  (shape faixa vertical esquerda)
 const ACCENT_ELEMENT: Record<string, string> = {
-  'hero-title':    'accent-bar',
+  'hero-title':     'accent-bar',
   'editorial-card': 'accent-bar',
-  'minimal-type':  'phrase',
-  'big-number':    'number',
-  'food-promo':    'bg-color',
+  'minimal-type':   'phrase',
+  'big-number':     'number',
+  'food-promo':     'bg-color',
+  'tech-news':      'category-line',
+  'tech-statement': 'phrase',
+  'tech-product':   'accent-strip',
 }
 
 // ─── Normaliza nomes que a IA pode retornar levemente errados ─────────────────
@@ -61,38 +67,37 @@ export function AIPanel() {
     addTemplate(variant)
     setActiveTemplate(variant.id)
 
-    // Lê o template do store (com os props canônicos, recém adicionado)
-    const stored = useStore.getState().templates.find((t) => t.id === variant.id) ?? variant
-
-    // Aplica os textos campo a campo
-    Object.entries(result.texts).forEach(([fieldId, text]) => {
-      const el = stored.elements.find((e) => e.id === fieldId)
-      if (el && el.type === 'text') {
-        updateElement(variant.id, fieldId, {
-          props: { ...el.props, text: String(text) },
-        })
-      }
-    })
-
-    // Relê do store APÓS as atualizações de texto (Zustand set() é síncrono).
-    // Necessário porque `stored` é um snapshot antigo: se o elemento de destaque
-    // for o mesmo que um campo de texto (ex: minimal-type → phrase), usar
-    // `stored.elements` espalharia os props velhos e reverteria o texto recém-aplicado.
-    const afterTexts = useStore.getState().templates.find((t) => t.id === variant.id) ?? stored
-
-    // Aplica a cor de destaque ao elemento correto do template
+    // ── Popula TODAS as variantes com os mesmos textos e accentColor ───────────
+    // Isso garante que ao trocar de formato (1:1 → 9:16) o conteúdo já está lá.
+    const accentId    = ACCENT_ELEMENT[templateId]
     const accentColor = result.accentColor
-    if (accentColor) {
-      const accentId = ACCENT_ELEMENT[templateId]
-      if (accentId) {
-        const accentEl = afterTexts.elements.find((e) => e.id === accentId)
+
+    for (const v of allVariants) {
+      // A variante ativa já foi inserida acima — só garante as demais no store
+      if (v.id !== variant.id) addTemplate(v)
+
+      const snap = useStore.getState().templates.find((t) => t.id === v.id) ?? v
+
+      // Aplica textos
+      Object.entries(result.texts).forEach(([fieldId, text]) => {
+        const el = snap.elements.find((e) => e.id === fieldId)
+        if (el && el.type === 'text') {
+          updateElement(v.id, fieldId, { props: { ...el.props, text: String(text) } })
+        }
+      })
+
+      // Aplica accentColor (relê snap pós-texto para não sobrescrever texto recém-aplicado)
+      if (accentColor && accentId) {
+        const snapAfter = useStore.getState().templates.find((t) => t.id === v.id) ?? snap
+        const accentEl  = snapAfter.elements.find((e) => e.id === accentId)
         if (accentEl) {
-          updateElement(variant.id, accentId, {
-            props: { ...accentEl.props, fill: accentColor },
-          })
+          updateElement(v.id, accentId, { props: { ...accentEl.props, fill: accentColor } })
         }
       }
     }
+
+    // Restaura o foco na variante ativa
+    setActiveTemplate(variant.id)
   }
 
   // ── Handler principal ──────────────────────────────────────────────────────
