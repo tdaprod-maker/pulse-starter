@@ -75,6 +75,34 @@ export function Sidebar() {
           </>
         )
       })}
+
+      <div style={{
+        marginTop: 'auto',
+        paddingTop: '16px',
+        borderTop: '1px solid var(--border)',
+        padding: '16px 10px',
+      }}>
+        <p style={{
+          fontSize: '10px',
+          color: 'var(--text-muted)',
+          margin: 0,
+          lineHeight: 1.6,
+        }}>
+          Desenvolvido por{' '}
+          <a
+            href="https://agente17.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: 'var(--accent)',
+              textDecoration: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Agente 17
+          </a>
+        </p>
+      </div>
     </aside>
   )
 }
