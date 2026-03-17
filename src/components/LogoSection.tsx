@@ -10,7 +10,7 @@ export function LogoSection({ template }: LogoSectionProps) {
   const { setTemplateLogo, setTemplateLogoStyle } = useStore()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const logoSize = template.logoSize ?? 120
+  const logoSize = template.logoSize ?? 200
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
