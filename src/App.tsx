@@ -5,6 +5,7 @@ import { Topbar } from './components/Topbar'
 import { EditorPage } from './pages/EditorPage'
 import { TemplatesPage } from './pages/TemplatesPage'
 import { LoginPage } from './pages/LoginPage'
+import { BrandPage } from './pages/BrandPage'
 import { supabase } from './lib/supabase'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<EditorPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/brand" element={<BrandPage />} />
           </Routes>
         </div>
       </BrowserRouter>

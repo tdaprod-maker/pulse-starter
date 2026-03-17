@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
 export function Topbar() {
   const { pathname } = useLocation()
@@ -77,6 +78,55 @@ export function Topbar() {
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <a
+          href="/brand"
+          style={{
+            padding: '6px 14px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.08)',
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'
+            ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.16)'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.08)'
+          }}
+        >
+          Brand Kit
+        </a>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.08)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.3)'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)'
+          }}
+        >
+          Sair
+        </button>
         <div style={{
           fontSize: '10px',
           fontWeight: 600,
