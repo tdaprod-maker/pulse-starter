@@ -1,0 +1,58 @@
+import { supabase } from '../lib/supabase'
+
+export interface BrandConfig {
+  brand_name: string
+  logo_url: string | null
+  color_primary: string
+  color_secondary: string
+  color_accent: string
+  font_title: string
+  font_body: string
+}
+
+export const DEFAULT_BRAND: BrandConfig = {
+  brand_name: 'AGENTE 17',
+  logo_url: null,
+  color_primary: '#3A5AFF',
+  color_secondary: '#5B8FD4',
+  color_accent: '#FFCA1D',
+  font_title: 'Bebas Neue',
+  font_body: 'Inter',
+}
+
+export async function loadBrandConfig(userEmail: string): Promise<BrandConfig> {
+  const { data, error } = await supabase
+    .from('brand_config')
+    .select('*')
+    .eq('user_email', userEmail)
+    .single()
+
+  if (error || !data) return DEFAULT_BRAND
+  return data as BrandConfig
+}
+
+export async function saveBrandConfig(
+  userEmail: string,
+  config: Partial<BrandConfig>
+): Promise<void> {
+  await supabase
+    .from('brand_config')
+    .upsert({ user_email: userEmail, ...config, updated_at: new Date().toISOString() })
+}
+
+export async function uploadMedia(
+  file: File,
+  path: string
+): Promise<string | null> {
+  const { error } = await supabase.storage
+    .from('media')
+    .upload(path, file, { upsert: true })
+
+  if (error) return null
+
+  const { data } = supabase.storage
+    .from('media')
+    .getPublicUrl(path)
+
+  return data.publicUrl
+}
