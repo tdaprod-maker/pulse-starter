@@ -136,7 +136,23 @@ export function AIPanel() {
       if (result.imagePrompt) {
         const url      = await generateImage(result.imagePrompt)
         const activeId = useStore.getState().activeTemplateId
-        if (activeId) setTemplateBackground(activeId, url)
+        if (activeId) {
+          setTemplateBackground(activeId, url)
+          // Aplica a mesma imagem em todas as variantes do template
+          const state = useStore.getState()
+          const currentTemplate = state.templates.find(t => t.id === activeId)
+          if (currentTemplate) {
+            const templateBase = templateRegistry.find(d => activeId.startsWith(d.id))
+            if (templateBase) {
+              const allVars = templateBase.getVariants(theme)
+              allVars.forEach(v => {
+                if (v.id !== activeId) {
+                  setTemplateBackground(v.id, url)
+                }
+              })
+            }
+          }
+        }
       }
 
       setStatus('idle')

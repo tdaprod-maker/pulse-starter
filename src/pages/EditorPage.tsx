@@ -72,7 +72,7 @@ export function EditorPage() {
   // Scale dinâmico: o canvas ocupa a maior área possível mantendo proporção
   // Reserva ~160px na altura para os mini previews
   const CANVAS_PADDING = 48
-  const MINI_ROW_H = 160
+  const MINI_ROW_H = 200
   const canvasScale = activeTemplate
     ? Math.min(
         (containerW - CANVAS_PADDING) / activeTemplate.width,
@@ -159,7 +159,7 @@ export function EditorPage() {
                 justifyContent: 'center',
               }}>
                 {allVariants.map((v) => {
-                  const miniScale = Math.min(120 / v.width, 120 / v.height)
+                  const miniScale = Math.min(160 / v.width, 160 / v.height)
                   const isActive = v.id === activeTemplate.id
                   const storedVariant = templates.find((t) => t.id === v.id) ?? v
                   return (
