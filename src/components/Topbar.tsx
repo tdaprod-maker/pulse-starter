@@ -139,6 +139,25 @@ export function Topbar() {
         }}>
           BETA
         </div>
+        <span style={{
+          fontSize: '10px',
+          color: 'var(--text-muted)',
+        }}>
+          por{' '}
+          <a
+            href="https://agente17.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: 'var(--accent)',
+              textDecoration: 'none',
+              fontWeight: 600,
+              fontSize: '10px',
+            }}
+          >
+            Agente 17
+          </a>
+        </span>
       </div>
     </header>
   )
