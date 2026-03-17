@@ -84,21 +84,16 @@ export function Topbar() {
             padding: '6px 14px',
             borderRadius: '8px',
             fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.08)',
+            fontWeight: 600,
+            color: 'white',
+            background: 'var(--accent)',
+            border: 'none',
             textDecoration: 'none',
             transition: 'all 0.2s ease',
+            boxShadow: '0 2px 8px rgba(58,90,255,0.3)',
           }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'
-            ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.16)'
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'
-            ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.08)'
-          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.85' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
         >
           Brand Kit
         </Link>
