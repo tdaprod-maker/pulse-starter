@@ -278,20 +278,27 @@ AIPanel aplica resultado:
 
 ## 12. Decisões de Produto
 
-- **Modelo de negócio:** Pulse como MVP próprio → base para versões personalizadas por cliente
-- **Segmento primário:** empresas de IA, agentes e automação (estilo Agente 17)
+- **Modelo de negócio:** Pulse como MVP próprio (Agente 17) → base para versões personalizadas por cliente
+- **Segmento primário:** empresas de IA, agentes e automação
 - **Identidade visual de referência:** posts da Agente 17 — dark, bold, azul glacial
-- **Multi-formato:** mesmo conteúdo gerado uma vez deve popular todos os 4 formatos simultaneamente
+- **Persistência:** Supabase (auth + dados) + Supabase Storage (mídia)
+- **Usuários atuais:** 2 (plano gratuito Supabase)
 
 ---
 
 ## 13. FALLBACK_MAP do Pexels
 
-| Termos específicos | Query genérica usada |
+| Termos | Query genérica |
 |---|---|
-| feijoada, parmegiana, brigadeiro, coxinha, churrasco | `brazilian food` |
-| baseball, beisebol, cricket, rugby, lacrosse | `sport athlete` |
-| networking, leadership, entrepreneurship, startup | `business people meeting` |
-| meditation, wellness, mindfulness | `person relaxing nature` |
+| feijoada, parmegiana, brigadeiro... | `brazilian food` |
+| baseball, beisebol, cricket... | `sport athlete` |
+| networking, leadership, startup... | `business people meeting` |
+| meditation, wellness... | `person relaxing nature` |
+| summit, conference, forum... | `business conference speakers stage` |
+| artificial intelligence, machine learning... | `technology innovation digital` |
+| robot, automation... | `technology futuristic digital` |
+| data, analytics, algorithm... | `data technology abstract blue` |
+| innovation, disruption... | `business innovation technology` |
+| agent, agente, chatbot... | `technology digital interface` |
 
 Lógica em `lookupFallbackMap()` em `api/generate-image.js` — ativada no nível 3 da cascata.
