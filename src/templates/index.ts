@@ -20,6 +20,30 @@ export interface TemplateDefinition {
 
 export const templateRegistry: TemplateDefinition[] = [
   {
+    id: 'tech-statement',
+    name: 'Tech Statement',
+    category: 'instagram-post',
+    getVariants: makeTechStatementVariants,
+  },
+  {
+    id: 'tech-news',
+    name: 'Tech News',
+    category: 'instagram-post',
+    getVariants: makeTechNewsVariants,
+  },
+  {
+    id: 'tech-product',
+    name: 'Tech Product',
+    category: 'instagram-post',
+    getVariants: makeTechProductVariants,
+  },
+  {
+    id: 'food-promo',
+    name: 'Food Promo',
+    category: 'instagram-post',
+    getVariants: makeFoodPromoVariants,
+  },
+  {
     id: 'hero-title',
     name: 'Hero Title',
     category: 'instagram-post',
@@ -48,30 +72,6 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Big Number',
     category: 'instagram-post',
     getVariants: makeBigNumberVariants,
-  },
-  {
-    id: 'food-promo',
-    name: 'Food Promo',
-    category: 'instagram-post',
-    getVariants: makeFoodPromoVariants,
-  },
-  {
-    id: 'tech-news',
-    name: 'Tech News',
-    category: 'instagram-post',
-    getVariants: makeTechNewsVariants,
-  },
-  {
-    id: 'tech-statement',
-    name: 'Tech Statement',
-    category: 'instagram-post',
-    getVariants: makeTechStatementVariants,
-  },
-  {
-    id: 'tech-product',
-    name: 'Tech Product',
-    category: 'instagram-post',
-    getVariants: makeTechProductVariants,
   },
 ]
 

@@ -1,27 +1,15 @@
-import { useState } from 'react'
 import { templateRegistry } from '../templates/index'
 import { useStore } from '../state/useStore'
 import { useTheme } from '../contexts/ThemeContext'
 import type { Template } from '../state/useStore'
 
-const RATIO_LABELS: Record<string, string> = {
-  '1x1': '1:1',
-  '4x5': '4:5',
-  '9x16': '9:16',
-  '16x9': '16:9',
-}
-
-function ratioLabel(template: Template) {
-  const suffix = template.id.split('-').pop() ?? ''
-  return RATIO_LABELS[suffix] ?? `${template.width}×${template.height}`
-}
+const SEPARATOR_AFTER = 'food-promo'
 
 export function Sidebar() {
   const { addTemplate, setActiveTemplate, activeTemplateId } = useStore()
   const { theme } = useTheme()
-  const [expandedId, setExpandedId] = useState<string | null>('hero-title')
 
-  function handleSelectVariant(variant: Template) {
+  function handleSelectTemplate(variant: Template) {
     addTemplate(variant)
     setActiveTemplate(variant.id)
   }
@@ -54,71 +42,37 @@ export function Sidebar() {
 
       {templateRegistry.map((def) => {
         const variants = def.getVariants(theme)
-        const isExpanded = expandedId === def.id
+        const firstVariant = variants[0]
+        const isActive = activeTemplateId?.startsWith(def.id) ?? false
 
         return (
-          <div key={def.id}>
+          <>
             <button
+              key={def.id}
               className="template-btn"
-              onClick={() => setExpandedId(isExpanded ? null : def.id)}
+              onClick={() => handleSelectTemplate(firstVariant)}
               style={{
                 width: '100%',
-                background: 'transparent',
-                border: 'none',
+                background: isActive ? 'var(--accent-glow)' : 'transparent',
+                border: isActive ? '1px solid var(--border-active)' : '1px solid transparent',
                 borderRadius: '8px',
                 padding: '8px 10px',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
                 cursor: 'pointer',
-                color: isExpanded ? 'var(--text-primary)' : 'var(--text-secondary)',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                 fontSize: '13px',
-                fontWeight: 500,
+                fontWeight: isActive ? 600 : 500,
                 fontFamily: 'inherit',
+                textAlign: 'left',
               }}
             >
-              <span>{def.name}</span>
-              <span style={{ fontSize: '10px', opacity: 0.5 }}>{isExpanded ? '▲' : '▼'}</span>
+              {def.name}
             </button>
-
-            {isExpanded && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px',
-                marginBottom: '8px',
-                paddingLeft: '8px',
-              }}>
-                {variants.map((v) => {
-                  const active = activeTemplateId === v.id
-                  return (
-                    <button
-                      key={v.id}
-                      className="variant-btn"
-                      onClick={() => handleSelectVariant(v)}
-                      style={{
-                        width: '100%',
-                        background: active ? 'var(--accent-glow)' : 'transparent',
-                        border: active ? '1px solid var(--border-active)' : '1px solid transparent',
-                        borderRadius: '6px',
-                        padding: '5px 8px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        color: active ? 'var(--text-primary)' : 'var(--text-muted)',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      <span>{ratioLabel(v)}</span>
-                      <span style={{ opacity: 0.5 }}>{v.width}×{v.height}</span>
-                    </button>
-                  )
-                })}
-              </div>
+            {def.id === SEPARATOR_AFTER && (
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
             )}
-          </div>
+          </>
         )
       })}
     </aside>
