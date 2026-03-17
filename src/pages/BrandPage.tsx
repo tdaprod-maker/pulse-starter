@@ -27,7 +27,7 @@ export function BrandPage() {
     await saveBrandConfig(userEmail, config)
     setSaving(false)
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => navigate('/'), 1000)
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {

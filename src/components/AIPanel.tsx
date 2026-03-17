@@ -5,6 +5,8 @@ import { generatePostContent } from '../services/gemini'
 import type { AIResponse } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { useTheme } from '../contexts/ThemeContext'
+import { supabase } from '../lib/supabase'
+import { loadBrandConfig } from '../services/brandKit'
 
 // ─── Qual elemento de cada template recebe a accentColor ─────────────────────
 // IDs corretos conforme variants.ts de cada template:
@@ -42,7 +44,7 @@ export function AIPanel() {
   const { theme } = useTheme()
 
   // ── Aplica o resultado da IA no store ──────────────────────────────────────
-  function applyResult(result: AIResponse) {
+  async function applyResult(result: AIResponse) {
     const templateId = normalizeTemplateId(result.template)
     const def = templateRegistry.find((d) => d.id === templateId)
     if (!def) throw new Error(`Template "${result.template}" não reconhecido`)
@@ -97,6 +99,25 @@ export function AIPanel() {
 
     // Restaura o foco na variante ativa
     setActiveTemplate(variant.id)
+
+    // Carrega logo do Brand Kit e aplica em todas as variantes
+    const { data } = await supabase.auth.getUser()
+    const email = data.user?.email ?? ''
+    if (email) {
+      const brand = await loadBrandConfig(email)
+      if (brand.logo_url) {
+        const response = await fetch(brand.logo_url)
+        const blob = await response.blob()
+        const reader = new FileReader()
+        reader.onload = () => {
+          const base64 = reader.result as string
+          allVariants.forEach(v => {
+            useStore.getState().setTemplateLogo(v.id, base64)
+          })
+        }
+        reader.readAsDataURL(blob)
+      }
+    }
   }
 
   // ── Handler principal ──────────────────────────────────────────────────────
@@ -112,7 +133,7 @@ export function AIPanel() {
     try {
       // 1. Gera textos via Gemini
       const result = await generatePostContent(prompt.trim())
-      applyResult(result)
+      await applyResult(result)
 
       // Verificação de segurança: se o formato mudou após applyResult, restaura
       const afterId     = useStore.getState().activeTemplateId
