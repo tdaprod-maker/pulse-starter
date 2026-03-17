@@ -87,7 +87,10 @@ pulse/
 │   │   ├── editorial-card/variants.ts
 │   │   ├── minimal-type/variants.ts
 │   │   ├── big-number/variants.ts
-│   │   └── food-promo/variants.ts
+│   │   ├── food-promo/variants.ts
+│   │   ├── tech-news/variants.ts
+│   │   ├── tech-statement/variants.ts
+│   │   └── tech-product/variants.ts
 │   ├── themes/
 │   │   └── index.ts             # Cores e fontes do design system
 │   └── export/
@@ -155,6 +158,10 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 - [x] Logo oficial Pulse adicionado em public/logo-pulse.png (1920×1080, RGBA)
 - [x] Controle de tamanho de fonte por elemento no PropertiesPanel
 - [x] Export com imagem de fundo funcionando (KonvaImage dentro do Stage)
+- [x] 3 templates tech/IA criados: Tech News, Tech Statement, Tech Product
+- [x] Multi-formato simultâneo: gerar uma vez popula todos os 4 formatos
+- [x] Visualização dos 4 formatos em grade com preview principal + miniaturas
+- [x] Imagem de fundo propagada para todos os formatos automaticamente
 
 ### Em Progresso / Recente
 - Migração de Unsplash para Pexels com cascade fallback (3 níveis) — concluído no commit `deb8215`
@@ -163,13 +170,10 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 
 ## 7. Próximos Passos Planejados
 
-- Redesign completo da UI com visual moderno (logo maior, glassmorphism, animações)
-- Templates específicos para tech/IA/negócios baseados na identidade visual Agente 17:
-  - News/Editorial (foto central + categoria + headline bold)
-  - Statement (só tipografia bold, fundo preto)
-  - Produto/Serviço (dark bg + screenshot + texto)
-- Multi-formato simultâneo: gerar uma vez, visualizar e exportar os 4 formatos
 - Mover chaves de API para variáveis de ambiente (`.env` / Vercel env vars)
+- Melhorar relevância das imagens do Pexels para prompts abstratos/filosóficos
+- Adicionar botão "Exportar todos os formatos" (baixa 4 PNGs de uma vez)
+- Refinamento visual dos templates tech (espaçamento, hierarquia)
 
 ---
 
