@@ -16,7 +16,7 @@ export function Topbar() {
       borderBottom: '1px solid rgba(91,143,212,0.12)',
       position: 'relative',
       zIndex: 50,
-      boxShadow: '0 1px 0 rgba(91,143,212,0.08), 0 4px 24px rgba(0,0,0,0.4)',
+      boxShadow: '0 1px 0 rgba(91,143,212,0.25), 0 2px 0 rgba(91,143,212,0.08), 0 4px 24px rgba(0,0,0,0.5)',
     }}>
 
       {/* Logo */}

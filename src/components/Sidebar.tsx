@@ -38,6 +38,7 @@ export function Sidebar() {
       display: 'flex',
       flexDirection: 'column',
       gap: '2px',
+      boxShadow: 'inset -1px 0 0 rgba(91,143,212,0.08)',
     }}>
       <p style={{
         fontSize: '10px',
