@@ -27,3 +27,79 @@ body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 2px; }
+
+/* Animações globais */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes float-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-float {
+  animation: float-up 0.4s ease forwards;
+}
+
+.btn-gerar {
+  background: linear-gradient(135deg, #3A5AFF 0%, #5B8FD4 100%);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-gerar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(58, 90, 255, 0.4);
+}
+
+.btn-gerar:active {
+  transform: translateY(0);
+}
+
+.btn-gerar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+.panel-glass {
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.canvas-area {
+  background: radial-gradient(ellipse at 30% 20%, rgba(58, 90, 255, 0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(91, 143, 212, 0.04) 0%, transparent 50%),
+              #07090f;
+}
+
+.template-btn {
+  transition: all 0.15s ease;
+}
+
+.template-btn:hover {
+  background: var(--bg-hover) !important;
+  transform: translateX(2px);
+}
+
+.variant-btn {
+  transition: all 0.15s ease;
+}
+
+.variant-btn:hover {
+  background: var(--accent-glow) !important;
+  border-color: var(--border-active) !important;
+  color: var(--text-primary) !important;
+}

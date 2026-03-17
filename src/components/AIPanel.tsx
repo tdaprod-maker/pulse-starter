@@ -182,17 +182,15 @@ export function AIPanel() {
       />
 
       <button
+        className="btn-gerar"
         onClick={handleGenerate}
         disabled={disabled}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85' }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
         style={{
-          width: '100%', background: 'var(--accent)',
+          width: '100%',
           border: 'none', borderRadius: '8px', padding: '10px',
           color: 'white', fontSize: '13px', fontWeight: 600,
           cursor: 'pointer', display: 'flex', alignItems: 'center',
           justifyContent: 'center', gap: '6px', fontFamily: 'inherit',
-          transition: 'opacity 0.15s',
           opacity: disabled ? 0.4 : 1,
         }}
       >

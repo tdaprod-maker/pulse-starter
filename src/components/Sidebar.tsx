@@ -28,13 +28,16 @@ export function Sidebar() {
 
   return (
     <aside style={{
-      width: '200px',
-      background: 'var(--bg-panel)',
-      borderRight: '1px solid var(--border)',
-      padding: '16px 12px',
+      width: '180px',
+      background: 'rgba(10,14,20,0.95)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      borderRight: '1px solid rgba(255,255,255,0.05)',
+      padding: '20px 10px',
       overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column',
+      gap: '2px',
     }}>
       <p style={{
         fontSize: '10px',
@@ -55,6 +58,7 @@ export function Sidebar() {
         return (
           <div key={def.id}>
             <button
+              className="template-btn"
               onClick={() => setExpandedId(isExpanded ? null : def.id)}
               style={{
                 width: '100%',
@@ -69,11 +73,8 @@ export function Sidebar() {
                 color: isExpanded ? 'var(--text-primary)' : 'var(--text-secondary)',
                 fontSize: '13px',
                 fontWeight: 500,
-                transition: 'background 0.15s',
                 fontFamily: 'inherit',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <span>{def.name}</span>
               <span style={{ fontSize: '10px', opacity: 0.5 }}>{isExpanded ? '▲' : '▼'}</span>
@@ -92,6 +93,7 @@ export function Sidebar() {
                   return (
                     <button
                       key={v.id}
+                      className="variant-btn"
                       onClick={() => handleSelectVariant(v)}
                       style={{
                         width: '100%',
@@ -105,20 +107,7 @@ export function Sidebar() {
                         cursor: 'pointer',
                         fontSize: '12px',
                         color: active ? 'var(--text-primary)' : 'var(--text-muted)',
-                        transition: 'all 0.15s',
                         fontFamily: 'inherit',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.color = 'var(--text-secondary)'
-                          e.currentTarget.style.background = 'var(--bg-hover)'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.color = 'var(--text-muted)'
-                          e.currentTarget.style.background = 'transparent'
-                        }
                       }}
                     >
                       <span>{ratioLabel(v)}</span>

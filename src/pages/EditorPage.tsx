@@ -106,7 +106,7 @@ export function EditorPage() {
     <div className="flex flex-1 overflow-hidden">
       <Sidebar />
 
-      <main ref={mainRef} className="flex-1 bg-gray-800 flex items-center justify-center overflow-hidden">
+      <main ref={mainRef} className="canvas-area flex-1 flex items-center justify-center overflow-hidden">
         {activeTemplate ? (
           <div className="shadow-2xl">
             <CanvasEngine
