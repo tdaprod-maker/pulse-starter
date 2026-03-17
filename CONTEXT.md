@@ -151,6 +151,10 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 - [x] Deploy na Vercel com API Routes
 - [x] Persistência de logo ao trocar de template
 - [x] Template Food Promo — fundo foto full, tipografia Bebas Neue, subtitle com pill escura
+- [x] Redesign dark premium — CSS variables, fonte Sora, Topbar/Sidebar modernizados
+- [x] Logo oficial Pulse adicionado em public/logo-pulse.png (1920×1080, RGBA)
+- [x] Controle de tamanho de fonte por elemento no PropertiesPanel
+- [x] Export com imagem de fundo funcionando (KonvaImage dentro do Stage)
 
 ### Em Progresso / Recente
 - Migração de Unsplash para Pexels com cascade fallback (3 níveis) — concluído no commit `deb8215`
@@ -159,10 +163,12 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 
 ## 7. Próximos Passos Planejados
 
-_(Não há roadmap formal documentado — baseado na evolução recente dos commits)_
-
-- Controle manual de tamanho de fonte por elemento no PropertiesPanel
-- Templates por segmento: bebidas, fitness, negócios
+- Redesign completo da UI com visual moderno (logo maior, glassmorphism, animações)
+- Templates específicos para tech/IA/negócios baseados na identidade visual Agente 17:
+  - News/Editorial (foto central + categoria + headline bold)
+  - Statement (só tipografia bold, fundo preto)
+  - Produto/Serviço (dark bg + screenshot + texto)
+- Multi-formato simultâneo: gerar uma vez, visualizar e exportar os 4 formatos
 - Mover chaves de API para variáveis de ambiente (`.env` / Vercel env vars)
 
 ---
@@ -266,7 +272,16 @@ AIPanel aplica resultado:
 
 ---
 
-## 12. FALLBACK_MAP do Pexels
+## 12. Decisões de Produto
+
+- **Modelo de negócio:** Pulse como MVP próprio → base para versões personalizadas por cliente
+- **Segmento primário:** empresas de IA, agentes e automação (estilo Agente 17)
+- **Identidade visual de referência:** posts da Agente 17 — dark, bold, azul glacial
+- **Multi-formato:** mesmo conteúdo gerado uma vez deve popular todos os 4 formatos simultaneamente
+
+---
+
+## 13. FALLBACK_MAP do Pexels
 
 | Termos específicos | Query genérica usada |
 |---|---|
