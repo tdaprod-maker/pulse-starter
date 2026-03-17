@@ -154,6 +154,14 @@ const FALLBACK_MAP = [
   { terms: ['burger', 'hamburguer', 'hamburger'],                             fallback: 'burger sandwich close up' },
   { terms: ['sushi', 'temaki', 'sashimi'],                                    fallback: 'sushi japanese food' },
   { terms: ['salad', 'salada'],                                               fallback: 'fresh salad bowl' },
+  // Tech / IA / Negócios
+  { terms: ['summit', 'conference', 'congress', 'forum'],                    fallback: 'business conference speakers stage' },
+  { terms: ['artificial intelligence', 'machine learning', 'deep learning'], fallback: 'technology innovation digital' },
+  { terms: ['robot', 'automation', 'autonomous'],                            fallback: 'technology futuristic digital' },
+  { terms: ['startup', 'entrepreneur', 'founder'],                           fallback: 'business people office modern' },
+  { terms: ['data', 'analytics', 'algorithm'],                               fallback: 'data technology abstract blue' },
+  { terms: ['innovation', 'disruption', 'transformation'],                   fallback: 'business innovation technology' },
+  { terms: ['agent', 'agente', 'chatbot', 'assistant'],                      fallback: 'technology digital interface' },
 ]
 
 // Nível 2: primeira palavra relevante do prompt
