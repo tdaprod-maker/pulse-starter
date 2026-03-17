@@ -1,9 +1,10 @@
-import { useRef, useState, useEffect, useLayoutEffect } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react'
 import type Konva from 'konva'
 import { useStore } from '../state/useStore'
 import type { CanvasElement } from '../state/useStore'
 import { CanvasEngine } from '../engine/CanvasEngine'
 import { makeHeroTitleVariants } from '../templates/hero-title/variants'
+import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
 import { Sidebar } from '../components/Sidebar'
 import { ExportPanel } from '../components/ExportPanel'
@@ -24,6 +25,7 @@ export function EditorPage() {
   const mainRef = useRef<HTMLElement>(null)
   const [containerW, setContainerW] = useState(800)
   const [containerH, setContainerH] = useState(600)
+  const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
 
   const {
     templates,
@@ -68,13 +70,23 @@ export function EditorPage() {
   }, [])
 
   // Scale dinâmico: o canvas ocupa a maior área possível mantendo proporção
+  // Reserva ~160px na altura para os mini previews
   const CANVAS_PADDING = 48
+  const MINI_ROW_H = 160
   const canvasScale = activeTemplate
     ? Math.min(
         (containerW - CANVAS_PADDING) / activeTemplate.width,
-        (containerH - CANVAS_PADDING) / activeTemplate.height,
+        (containerH - CANVAS_PADDING - MINI_ROW_H) / activeTemplate.height,
       )
     : 1
+
+  // Todas as variantes do template ativo (para o multi-format preview)
+  const allVariants = useMemo(() => {
+    if (!activeTemplate) return []
+    const def = templateRegistry.find((d) => activeTemplate.id.startsWith(d.id))
+    if (!def) return []
+    return def.getVariants(theme)
+  }, [activeTemplate, theme])
 
   function handleEditStart(el: CanvasElement) {
     const container = stageRef.current?.container()
@@ -84,14 +96,12 @@ export function EditorPage() {
       containerRect: container.getBoundingClientRect(),
       autoScale: canvasScale,
     })
-    // Seleciona o elemento para manter o contexto visual
     setSelectedElement(el.id)
   }
 
   function handleCommit(newText: string) {
     if (!editingState || !activeTemplateId) return
     const { el } = editingState
-    // Preserva todos os props do Design System — só o texto muda
     updateElement(activeTemplateId, el.id, {
       props: { ...el.props, text: newText },
     })
@@ -107,31 +117,105 @@ export function EditorPage() {
       <Sidebar />
 
       <main ref={mainRef} className="canvas-area" style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          position: 'relative',
-        }}>
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'auto',
+        position: 'relative',
+        gap: '24px',
+        padding: '24px',
+      }}>
         {activeTemplate ? (
-          <div style={{
+          <>
+            {/* Preview principal — formato ativo */}
+            <div style={{
               borderRadius: '12px',
-              boxShadow: '0 0 0 1px rgba(91,143,212,0.15), 0 24px 80px rgba(0,0,0,0.6)',
+              boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)',
               overflow: 'hidden',
               position: 'relative',
+              flexShrink: 0,
             }}>
-            <CanvasEngine
-              key={activeTemplate.id}
-              ref={stageRef}
-              template={activeTemplate}
-              scale={canvasScale}
-              selectedElementId={selectedElementId}
-              onSelectElement={setSelectedElement}
-              editingElementId={editingState?.el.id ?? null}
-              onEditStart={handleEditStart}
-            />
-          </div>
+              <CanvasEngine
+                key={activeTemplate.id}
+                ref={stageRef}
+                template={activeTemplate}
+                scale={canvasScale}
+                selectedElementId={selectedElementId}
+                onSelectElement={setSelectedElement}
+                editingElementId={editingState?.el.id ?? null}
+                onEditStart={handleEditStart}
+              />
+            </div>
+
+            {/* Mini previews dos outros formatos */}
+            {allVariants.length > 1 && (
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-end',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+              }}>
+                {allVariants.map((v) => {
+                  const miniScale = Math.min(120 / v.width, 120 / v.height)
+                  const isActive = v.id === activeTemplate.id
+                  const storedVariant = templates.find((t) => t.id === v.id) ?? v
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => setActiveTemplate(v.id)}
+                      style={{
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: isActive
+                          ? '2px solid var(--accent)'
+                          : '2px solid rgba(255,255,255,0.08)',
+                        boxShadow: isActive
+                          ? '0 0 12px rgba(58,90,255,0.4)'
+                          : 'none',
+                        transition: 'all 0.15s ease',
+                        flexShrink: 0,
+                        position: 'relative',
+                      }}
+                      title={v.id.split('-').pop()?.toUpperCase()}
+                    >
+                      <CanvasEngine
+                        key={v.id}
+                        ref={(el) => { variantRefs.current[v.id] = el }}
+                        template={storedVariant}
+                        scale={miniScale}
+                        selectedElementId={null}
+                        onSelectElement={() => {}}
+                        editingElementId={null}
+                        onEditStart={() => {}}
+                      />
+                      {/* Label do formato */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '4px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        fontSize: '9px',
+                        fontWeight: 600,
+                        color: 'white',
+                        background: 'rgba(0,0,0,0.7)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        letterSpacing: '0.05em',
+                        pointerEvents: 'none',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {v.id.split('-').pop()?.toUpperCase()}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
         ) : (
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Bem-vindo ao Pulse</p>
@@ -152,13 +236,13 @@ export function EditorPage() {
       )}
 
       <aside style={{
-          width: '280px',
-          background: 'var(--bg-panel)',
-          borderLeft: '1px solid var(--border)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-        }}>
+        width: '280px',
+        background: 'var(--bg-panel)',
+        borderLeft: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+      }}>
         {/* AIPanel sempre visível — gera e ativa o template automaticamente */}
         <AIPanel />
 
@@ -169,7 +253,7 @@ export function EditorPage() {
             <ExportPanel stageRef={stageRef} template={activeTemplate} />
           </>
         ) : (
-          <p className="p-4 text-xs text-gray-600">
+          <p style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
             Gere um post acima ou selecione um template na barra lateral.
           </p>
         )}
