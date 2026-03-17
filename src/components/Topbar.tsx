@@ -21,7 +21,7 @@ export function Topbar() {
     }}>
 
       {/* Logo */}
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }} onClick={e => { if (pathname === '/') e.preventDefault() }}>
         <img
           src="/logo-pulse.svg"
           alt="Pulse"
@@ -78,8 +78,8 @@ export function Topbar() {
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <a
-          href="/brand"
+        <Link
+          to="/brand"
           style={{
             padding: '6px 14px',
             borderRadius: '8px',
@@ -101,7 +101,7 @@ export function Topbar() {
           }}
         >
           Brand Kit
-        </a>
+        </Link>
         <button
           onClick={() => supabase.auth.signOut()}
           style={{
