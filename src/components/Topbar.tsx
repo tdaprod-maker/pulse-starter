@@ -25,7 +25,10 @@ export function Topbar() {
           src="/logo-pulse.svg"
           alt="Pulse"
           style={{
-            height: '36px',
+            height: '120px',
+            marginTop: '-38px',
+            marginBottom: '-38px',
+            marginLeft: '-20px',
             display: 'block',
           }}
         />
