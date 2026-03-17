@@ -124,7 +124,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
       : 0.5
 
     // ── Logo positioning ──────────────────────────────────────────────────────
-    const logoSize   = template.logoSize ?? 200
+    const logoSize   = template.logoSize ?? 300
     const logoAspect = logoImg ? logoImg.height / logoImg.width : 1
     const logoH      = logoSize * logoAspect
     const logoX      = template.logoX ?? (template.width  - logoSize - 16)
