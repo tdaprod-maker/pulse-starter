@@ -1,9 +1,12 @@
-import { makeHeroTitleVariants }     from './hero-title/variants'
-import { makeBigStatementVariants }  from './big-statement/variants'
-import { makeEditorialCardVariants } from './editorial-card/variants'
-import { makeMinimalTypeVariants }   from './minimal-type/variants'
-import { makeBigNumberVariants }     from './big-number/variants'
-import { makeFoodPromoVariants }     from './food-promo/variants'
+import { makeHeroTitleVariants }      from './hero-title/variants'
+import { makeBigStatementVariants }   from './big-statement/variants'
+import { makeEditorialCardVariants }  from './editorial-card/variants'
+import { makeMinimalTypeVariants }    from './minimal-type/variants'
+import { makeBigNumberVariants }      from './big-number/variants'
+import { makeFoodPromoVariants }      from './food-promo/variants'
+import { makeTechNewsVariants }       from './tech-news/variants'
+import { makeTechStatementVariants }  from './tech-statement/variants'
+import { makeTechProductVariants }    from './tech-product/variants'
 import type { Template } from '../state/useStore'
 import type { Theme } from '../themes'
 
@@ -51,6 +54,24 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'tech-news',
+    name: 'Tech News',
+    category: 'instagram-post',
+    getVariants: makeTechNewsVariants,
+  },
+  {
+    id: 'tech-statement',
+    name: 'Tech Statement',
+    category: 'instagram-post',
+    getVariants: makeTechStatementVariants,
+  },
+  {
+    id: 'tech-product',
+    name: 'Tech Product',
+    category: 'instagram-post',
+    getVariants: makeTechProductVariants,
   },
 ]
 
