@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import React, { type RefObject } from 'react'
 import type Konva from 'konva'
 import type { Template } from '../state/useStore'
 import { calcAutoScale } from '../engine/CanvasEngine'
@@ -39,51 +39,58 @@ export function ExportPanel({ stageRef, template }: ExportPanelProps) {
     exportToJpeg(stage, `${baseName}.jpg`, { pixelRatio: exportPixelRatio, quality: 0.92 })
   }
 
+  const btnBase: React.CSSProperties = {
+    width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+    padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
+    background: 'var(--bg-surface)', border: '1px solid var(--border)',
+    color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500,
+    fontFamily: 'inherit', transition: 'all 0.15s',
+  }
+  function btnEnter(e: React.MouseEvent<HTMLButtonElement>) {
+    e.currentTarget.style.background = 'var(--bg-hover)'
+    e.currentTarget.style.borderColor = 'var(--border-active)'
+    e.currentTarget.style.color = 'var(--text-primary)'
+  }
+  function btnLeave(e: React.MouseEvent<HTMLButtonElement>) {
+    e.currentTarget.style.background = 'var(--bg-surface)'
+    e.currentTarget.style.borderColor = 'var(--border)'
+    e.currentTarget.style.color = 'var(--text-secondary)'
+  }
+
   return (
-    <div className="flex flex-col p-4 gap-5">
+    <div style={{ display: 'flex', flexDirection: 'column', padding: '16px', gap: '12px', borderTop: '1px solid var(--border)' }}>
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
+        <h3 style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>
           Exportar
         </h3>
-        <p className="text-xs text-gray-600">
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
           {exportW} × {exportH} px · 2×
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {/* PNG */}
-        <button
-          onClick={handlePng}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-[#3A5AFF] transition text-sm text-white font-medium"
-        >
+        <button onClick={handlePng} style={btnBase} onMouseEnter={btnEnter} onMouseLeave={btnLeave}>
           <PngIcon />
           PNG 2×
         </button>
 
         {/* PNG Transparente */}
-        <button
-          onClick={handlePngTransparent}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-[#3A5AFF] transition text-sm text-white font-medium"
-        >
+        <button onClick={handlePngTransparent} style={btnBase} onMouseEnter={btnEnter} onMouseLeave={btnLeave}>
           <PngTransparentIcon />
           PNG Transparente
         </button>
 
         {/* JPEG */}
-        <button
-          onClick={handleJpeg}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-[#3A5AFF] transition text-sm text-white font-medium"
-        >
+        <button onClick={handleJpeg} style={btnBase} onMouseEnter={btnEnter} onMouseLeave={btnLeave}>
           <JpegIcon />
           JPEG 2×
         </button>
       </div>
 
-      <div className="mt-auto">
-        <p className="text-xs text-gray-600 leading-relaxed">
-          PNG preserva transparência. JPEG é menor em tamanho de arquivo.
-        </p>
-      </div>
+      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+        PNG preserva transparência. JPEG é menor em tamanho de arquivo.
+      </p>
     </div>
   )
 }

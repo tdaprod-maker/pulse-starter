@@ -103,12 +103,24 @@ export function EditorPage() {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       <Sidebar />
 
-      <main ref={mainRef} className="canvas-area flex-1 flex items-center justify-center overflow-hidden">
+      <main ref={mainRef} className="canvas-area" style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
         {activeTemplate ? (
-          <div className="shadow-2xl">
+          <div style={{
+              borderRadius: '12px',
+              boxShadow: '0 0 0 1px rgba(91,143,212,0.15), 0 24px 80px rgba(0,0,0,0.6)',
+              overflow: 'hidden',
+              position: 'relative',
+            }}>
             <CanvasEngine
               key={activeTemplate.id}
               ref={stageRef}
@@ -121,9 +133,9 @@ export function EditorPage() {
             />
           </div>
         ) : (
-          <div className="text-gray-400 text-center">
-            <p className="text-2xl font-semibold mb-2">Bem-vindo ao Pulse</p>
-            <p className="text-sm">Selecione um template na barra lateral para começar.</p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Bem-vindo ao Pulse</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Selecione um template na barra lateral para começar.</p>
           </div>
         )}
       </main>
@@ -139,7 +151,14 @@ export function EditorPage() {
         />
       )}
 
-      <aside className="w-64 bg-gray-900 border-l border-gray-800 flex flex-col overflow-y-auto">
+      <aside style={{
+          width: '280px',
+          background: 'var(--bg-panel)',
+          borderLeft: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowY: 'auto',
+        }}>
         {/* AIPanel sempre visível — gera e ativa o template automaticamente */}
         <AIPanel />
 

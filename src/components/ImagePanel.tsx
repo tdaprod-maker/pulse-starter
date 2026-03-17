@@ -40,40 +40,40 @@ export function ImagePanel({ template }: ImagePanelProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 border-b border-gray-800">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', borderBottom: '1px solid var(--border)' }}>
+      <h3 style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>
         Imagem
       </h3>
 
-      <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
 
       {template.backgroundImage ? (
-        <div className="flex flex-col gap-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Thumbnail */}
-          <div className="relative rounded-md overflow-hidden aspect-square">
+          <div style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', aspectRatio: '1' }}>
             <img
               src={template.backgroundImage}
-              className="w-full h-full object-cover"
               style={{
+                width: '100%', height: '100%', objectFit: 'cover',
                 objectPosition:  `center ${align}`,
                 transform:       `scale(${zoom / 100})`,
                 transformOrigin: `center ${align}`,
               }}
               alt="Imagem de fundo"
             />
-            <div className="absolute inset-0 bg-black/50" />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
           </div>
 
           {/* Hint interação direta */}
-          <p className="text-[10px] text-gray-600 leading-snug select-none">
+          <p style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.5, userSelect: 'none', margin: 0 }}>
             Arraste a imagem no canvas para reposicionar. Use o scroll do mouse para dar zoom.
           </p>
 
           {/* Zoom */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-500 select-none">Zoom</span>
-              <span className="text-xs text-gray-400 font-mono">{zoom}%</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', userSelect: 'none' }}>Zoom</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{zoom}%</span>
             </div>
             <input
               type="range"
@@ -82,24 +82,22 @@ export function ImagePanel({ template }: ImagePanelProps) {
               step={5}
               value={zoom}
               onChange={(e) => setTemplateImageStyle(template.id, Number(e.target.value), undefined)}
-              className="w-full accent-[#3A5AFF]"
+              style={{ width: '100%', accentColor: 'var(--accent)' }}
             />
           </div>
 
           {/* Alinhamento */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-gray-500 select-none">Alinhamento</span>
-            <div className="flex gap-1.5">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', userSelect: 'none' }}>Alinhamento</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
               {ALIGN_OPTIONS.map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setTemplateImageStyle(template.id, undefined, value)}
-                  className={`
-                    flex-1 text-xs py-1.5 rounded-md transition-colors
-                    ${align === value
-                      ? 'bg-[#3A5AFF] text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}
-                  `}
+                  style={align === value
+                    ? { flex: 1, fontSize: '12px', padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'var(--accent)', border: 'none', color: 'white', fontFamily: 'inherit', fontWeight: 500 }
+                    : { flex: 1, fontSize: '12px', padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontFamily: 'inherit', transition: 'all 0.15s' }
+                  }
                 >
                   {label}
                 </button>
@@ -111,23 +109,25 @@ export function ImagePanel({ template }: ImagePanelProps) {
           {hasOffset && (
             <button
               onClick={() => setTemplateImageOffset(template.id, 0, 0)}
-              className="text-xs py-1.5 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+              style={{ width: '100%', fontSize: '12px', padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s' }}
             >
               Resetar posição
             </button>
           )}
 
           {/* Ações */}
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => inputRef.current?.click()}
-              className="flex-1 text-xs px-2.5 py-1.5 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-colors"
+              style={{ flex: 1, fontSize: '12px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s' }}
             >
               Trocar
             </button>
             <button
               onClick={handleRemove}
-              className="text-xs px-2.5 py-1.5 rounded-md bg-gray-800 hover:bg-red-950 text-gray-500 hover:text-red-400 transition-colors"
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.6)'; e.currentTarget.style.color = 'rgb(239,68,68)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; e.currentTarget.style.color = 'rgba(239,68,68,0.6)' }}
+              style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: 'rgba(239,68,68,0.6)', fontFamily: 'inherit', transition: 'all 0.15s' }}
             >
               Remover
             </button>
@@ -136,17 +136,12 @@ export function ImagePanel({ template }: ImagePanelProps) {
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="
-            w-full flex flex-col items-center justify-center gap-2
-            border border-dashed border-gray-700
-            hover:border-[#3A5AFF] hover:bg-gray-800/40
-            rounded-md px-3 py-5
-            text-gray-600 hover:text-gray-300
-            transition-colors
-          "
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
+          style={{ width: '100%', padding: '20px', borderRadius: '8px', cursor: 'pointer', background: 'transparent', border: '1px dashed var(--border)', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '12px', fontFamily: 'inherit', transition: 'all 0.15s' }}
         >
           <UploadIcon />
-          <span className="text-xs">Carregar imagem</span>
+          <span>Carregar imagem</span>
         </button>
       )}
       <LogoSection template={template} />

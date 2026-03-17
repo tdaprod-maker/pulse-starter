@@ -48,14 +48,14 @@ function ColorPicker({ color, onChange, title = 'Cor' }: ColorPickerProps) {
   return (
     <label
       title={title}
-      className="relative flex-shrink-0 w-5 h-5 rounded cursor-pointer overflow-hidden border border-gray-600 hover:border-gray-400 transition-colors"
+      style={{ position: 'relative', flexShrink: 0, width: '18px', height: '18px', borderRadius: '4px', cursor: 'pointer', overflow: 'hidden', border: '1px solid var(--border-active)' }}
     >
-      <div className="w-full h-full" style={{ background: color }} />
+      <div style={{ width: '100%', height: '100%', background: color }} />
       <input
         type="color"
         value={color.startsWith('#') && color.length === 7 ? color : '#ffffff'}
         onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full p-0 border-0"
+        style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', padding: 0, border: 0 }}
       />
     </label>
   )
@@ -102,22 +102,17 @@ function TextField({ el, templateId }: TextFieldProps) {
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       {/* Linha: rótulo + cor + fonte */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-gray-500 flex-1 truncate select-none">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', userSelect: 'none' }}>
           {LABEL_MAP[el.id] ?? el.id}
         </span>
         <ColorPicker color={fill} onChange={handleColor} title="Cor do texto" />
         <select
           value={fontFamily}
           onChange={handleFont}
-          className="
-            bg-gray-800 border border-gray-700 rounded
-            text-gray-300 text-[11px] px-1 py-0.5
-            focus:border-[#3A5AFF] focus:outline-none
-            transition-colors max-w-[108px]
-          "
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-secondary)', fontSize: '11px', padding: '2px 4px', fontFamily: 'inherit', flex: 1 }}
         >
           {FONTS.map(({ value, label }) => (
             <option key={value} value={value}>{label}</option>
@@ -126,12 +121,12 @@ function TextField({ el, templateId }: TextFieldProps) {
       </div>
 
       {/* Tamanho de fonte */}
-      <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-medium text-gray-500 select-none">Tamanho</span>
-        <div className="flex items-center gap-1">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)', userSelect: 'none' }}>Tamanho</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button
             onClick={() => handleFontSize(fontSize - 4)}
-            className="text-xs px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors select-none"
+            style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '5px', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             A-
           </button>
@@ -142,16 +137,11 @@ function TextField({ el, templateId }: TextFieldProps) {
             step={2}
             value={fontSize}
             onChange={(e) => handleFontSize(Number(e.target.value))}
-            className="
-              w-16 bg-gray-800 border border-gray-700
-              focus:border-[#3A5AFF] focus:outline-none
-              text-white text-xs rounded px-2 py-0.5
-              text-center transition-colors
-            "
+            style={{ width: '52px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', color: 'var(--text-primary)', fontSize: '12px', padding: '2px 4px', textAlign: 'center', fontFamily: 'inherit' }}
           />
           <button
             onClick={() => handleFontSize(fontSize + 4)}
-            className="text-xs px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors select-none"
+            style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '5px', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             A+
           </button>
@@ -164,14 +154,10 @@ function TextField({ el, templateId }: TextFieldProps) {
         value={text}
         rows={1}
         onChange={handleText}
+        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)' }}
+        onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)' }}
         spellCheck={false}
-        className="
-          w-full bg-gray-800 border border-gray-700
-          focus:border-[#3A5AFF] focus:outline-none
-          text-white text-sm rounded-md px-2.5 py-1.5
-          resize-none overflow-hidden leading-snug
-          transition-colors placeholder-gray-600
-        "
+        style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', padding: '8px 10px', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5 }}
       />
     </div>
   )
@@ -195,12 +181,12 @@ function AccentSection({ template }: { template: Template }) {
   }
 
   return (
-    <div className="flex items-center gap-2 pt-1">
-      <span className="text-xs font-medium text-gray-500 flex-1 select-none">
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px' }}>
+      <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', flex: 1, userSelect: 'none' }}>
         Cor de destaque
       </span>
       <ColorPicker color={fill} onChange={handleColor} title="Cor de destaque" />
-      <span className="text-[10px] text-gray-600 font-mono uppercase">{fill}</span>
+      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace', textTransform: 'uppercase' }}>{fill}</span>
     </div>
   )
 }
@@ -212,8 +198,8 @@ export function PropertiesPanel({ template }: { template: Template }) {
   if (textEls.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-3 p-4 border-b border-gray-800">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', borderBottom: '1px solid var(--border)' }}>
+      <h3 style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>
         Textos
       </h3>
 
