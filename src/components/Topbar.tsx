@@ -20,15 +20,15 @@ export function Topbar() {
     }}>
 
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <img
           src="/logo-pulse.png"
           alt="Pulse"
           style={{
-            height: '44px',
-            display: 'block',
+            height: '52px',
             mixBlendMode: 'screen',
-            filter: 'brightness(1.1)',
+            filter: 'brightness(1.2) contrast(1.1)',
+            marginLeft: '-12px',
           }}
         />
       </div>
