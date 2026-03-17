@@ -152,8 +152,14 @@ export function AIPanel() {
   const disabled = loading || !prompt.trim()
 
   return (
-    <div className="flex flex-col gap-3 p-4 border-b border-gray-800">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: '12px',
+      padding: '16px', borderBottom: '1px solid var(--border)',
+    }}>
+      <h3 style={{
+        fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em',
+        color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0,
+      }}>
         Gerar com IA
       </h3>
 
@@ -161,27 +167,34 @@ export function AIPanel() {
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         onKeyDown={handleKeyDown}
+        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)' }}
+        onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)' }}
         disabled={loading}
         placeholder="Ex: lançamento de produto tech, tom sofisticado..."
         rows={3}
-        className="
-          w-full bg-gray-800 border border-gray-700
-          focus:border-[#3A5AFF] focus:outline-none
-          text-white text-sm rounded-md px-2.5 py-2
-          resize-none leading-snug transition-colors
-          placeholder-gray-600 disabled:opacity-50
-        "
+        style={{
+          width: '100%', background: 'var(--bg-surface)',
+          border: '1px solid var(--border)', borderRadius: '8px',
+          padding: '10px 12px', color: 'var(--text-primary)',
+          fontSize: '13px', fontFamily: 'inherit', resize: 'none',
+          outline: 'none', lineHeight: 1.5,
+        }}
       />
 
       <button
         onClick={handleGenerate}
         disabled={disabled}
-        className="
-          w-full flex items-center justify-center gap-2
-          bg-[#3A5AFF] hover:bg-[#2F4AE0] disabled:opacity-40
-          text-white text-sm font-semibold
-          rounded-md py-2 transition-colors
-        "
+        onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85' }}
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+        style={{
+          width: '100%', background: 'var(--accent)',
+          border: 'none', borderRadius: '8px', padding: '10px',
+          color: 'white', fontSize: '13px', fontWeight: 600,
+          cursor: 'pointer', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', gap: '6px', fontFamily: 'inherit',
+          transition: 'opacity 0.15s',
+          opacity: disabled ? 0.4 : 1,
+        }}
       >
         {loading ? (
           <>
@@ -200,7 +213,10 @@ export function AIPanel() {
         <p className="text-xs text-red-400 leading-snug">{errorMsg}</p>
       )}
 
-      <p className="text-[10px] text-gray-700 leading-snug select-none">
+      <p style={{
+        fontSize: '11px', color: 'var(--text-muted)',
+        textAlign: 'center', margin: 0,
+      }}>
         ⌘ Enter para gerar rapidamente
       </p>
     </div>
