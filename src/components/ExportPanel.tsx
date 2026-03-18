@@ -1,4 +1,4 @@
-import React, { type RefObject } from 'react'
+import React, { type RefObject, useState } from 'react'
 import type Konva from 'konva'
 import type { Template } from '../state/useStore'
 import { calcAutoScale } from '../engine/CanvasEngine'
@@ -7,9 +7,12 @@ import { exportToPng, exportToJpeg, buildFileName } from '../export/exportUtils'
 interface ExportPanelProps {
   stageRef: RefObject<Konva.Stage | null>
   template: Template
+  variantRefs?: RefObject<Record<string, Konva.Stage | null>>
+  allVariants?: Template[]
 }
 
-export function ExportPanel({ stageRef, template }: ExportPanelProps) {
+export function ExportPanel({ stageRef, template, variantRefs, allVariants }: ExportPanelProps) {
+  const [exportingAll, setExportingAll] = useState(false)
   const autoScale = calcAutoScale(template)
   // pixelRatio que produz exatamente 2× a resolução nativa do template
   const exportPixelRatio = 2 / autoScale
@@ -31,6 +34,21 @@ export function ExportPanel({ stageRef, template }: ExportPanelProps) {
       pixelRatio: exportPixelRatio,
       transparent: true,
     })
+  }
+
+  async function handleExportAll() {
+    if (!variantRefs?.current || !allVariants?.length) return
+    setExportingAll(true)
+    for (const variant of allVariants) {
+      const stage = variantRefs.current[variant.id]
+      if (!stage) continue
+      const variantAutoScale = calcAutoScale(variant)
+      const pixelRatio = 2 / variantAutoScale
+      const fileName = `${buildFileName(variant.name, '2x')}.png`
+      exportToPng(stage, fileName, { pixelRatio })
+      await new Promise(resolve => setTimeout(resolve, 300))
+    }
+    setExportingAll(false)
   }
 
   function handleJpeg() {
@@ -86,6 +104,20 @@ export function ExportPanel({ stageRef, template }: ExportPanelProps) {
           <JpegIcon />
           JPEG 2×
         </button>
+
+        {/* Exportar todos os formatos */}
+        {allVariants && allVariants.length > 1 && (
+          <button
+            onClick={handleExportAll}
+            disabled={exportingAll}
+            style={{ ...btnBase, opacity: exportingAll ? 0.6 : 1, cursor: exportingAll ? 'default' : 'pointer' }}
+            onMouseEnter={e => { if (!exportingAll) btnEnter(e) }}
+            onMouseLeave={e => { if (!exportingAll) btnLeave(e) }}
+          >
+            <AllFormatsIcon />
+            {exportingAll ? 'Exportando...' : `Todos os formatos (${allVariants.length}× PNG)`}
+          </button>
+        )}
       </div>
 
       <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
@@ -122,6 +154,16 @@ function JpegIcon() {
       <rect x="1" y="1" width="12" height="12" rx="2" stroke="#6D6D6E" strokeWidth="1.2" />
       <path d="M7 5v3.5a1.5 1.5 0 0 1-3 0" stroke="#6D6D6E" strokeWidth="1.2" strokeLinecap="round" />
       <path d="M9.5 9.5V5l-1.5 2.5 1.5 2" stroke="#6D6D6E" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function AllFormatsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
+      <rect x="1" y="3" width="8" height="8" rx="1.5" stroke="#6D6D6E" strokeWidth="1.2" />
+      <rect x="5" y="1" width="8" height="8" rx="1.5" stroke="#6D6D6E" strokeWidth="1.2" />
+      <path d="M5 9v2a1.5 1.5 0 0 0 1.5 1.5H12" stroke="#6D6D6E" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   )
 }
