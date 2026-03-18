@@ -45,7 +45,7 @@ export function AIPanel(_props: AIPanelProps) {
   const [status, setStatus]   = useState<'idle' | 'loading' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground } = useStore()
+  const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground, setTemplateImagePrompt } = useStore()
   const { theme } = useTheme()
 
   // ── Aplica o resultado da IA no store ──────────────────────────────────────
@@ -164,6 +164,7 @@ export function AIPanel(_props: AIPanelProps) {
         const activeId = useStore.getState().activeTemplateId
         if (activeId) {
           setTemplateBackground(activeId, url)
+          setTemplateImagePrompt(activeId, result.imagePrompt)
           // Aplica a mesma imagem em todas as variantes do template
           const state = useStore.getState()
           const currentTemplate = state.templates.find(t => t.id === activeId)
@@ -174,6 +175,7 @@ export function AIPanel(_props: AIPanelProps) {
               allVars.forEach(v => {
                 if (v.id !== activeId) {
                   setTemplateBackground(v.id, url)
+                  setTemplateImagePrompt(v.id, result.imagePrompt!)
                 }
               })
             }

@@ -1,6 +1,9 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
+import { generateImage } from '../services/replicate'
+import { templateRegistry } from '../templates/index'
+import { useTheme } from '../contexts/ThemeContext'
 import { LogoSection } from './LogoSection'
 
 interface ImagePanelProps {
@@ -16,6 +19,25 @@ const ALIGN_OPTIONS: { value: 'top' | 'center' | 'bottom'; label: string }[] = [
 export function ImagePanel({ template }: ImagePanelProps) {
   const { setTemplateBackground, setTemplateImageStyle, setTemplateImageOffset } = useStore()
   const inputRef = useRef<HTMLInputElement>(null)
+  const [regenerating, setRegenerating] = useState(false)
+  const { theme } = useTheme()
+
+  async function handleNewImage() {
+    if (!template.imagePrompt || regenerating) return
+    setRegenerating(true)
+    try {
+      const url = await generateImage(template.imagePrompt)
+      setTemplateBackground(template.id, url)
+      const templateBase = templateRegistry.find(d => template.id.startsWith(d.id))
+      if (templateBase) {
+        templateBase.getVariants(theme).forEach(v => {
+          if (v.id !== template.id) setTemplateBackground(v.id, url)
+        })
+      }
+    } finally {
+      setRegenerating(false)
+    }
+  }
 
   const zoom    = template.backgroundZoom    ?? 100
   const align   = template.backgroundAlign   ?? 'center'
@@ -112,6 +134,17 @@ export function ImagePanel({ template }: ImagePanelProps) {
               style={{ width: '100%', fontSize: '12px', padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s' }}
             >
               Resetar posição
+            </button>
+          )}
+
+          {/* Nova imagem via IA */}
+          {template.imagePrompt && (
+            <button
+              onClick={handleNewImage}
+              disabled={regenerating}
+              style={{ width: '100%', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', cursor: regenerating ? 'default' : 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s', opacity: regenerating ? 0.5 : 1 }}
+            >
+              {regenerating ? 'Buscando...' : 'Nova imagem'}
             </button>
           )}
 

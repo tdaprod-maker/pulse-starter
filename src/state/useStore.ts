@@ -17,6 +17,8 @@ export interface Template {
   backgroundOffsetX?: number
   /** Offset vertical da imagem de fundo em px (canvas display). Default: 0. */
   backgroundOffsetY?: number
+  /** Prompt usado para gerar a imagem de fundo via IA (para regeneração). */
+  imagePrompt?: string
   /** Data URL do logotipo (PNG com transparência suportado). */
   logoImage?: string
   /** Largura do logotipo em px (coordenadas do template). Default: 120. */
@@ -54,6 +56,7 @@ interface PulseStore {
   setTemplateLogo: (templateId: string, url: string | null) => void
   setTemplateLogoStyle: (templateId: string, size: number) => void
   setTemplateLogoPosition: (templateId: string, x: number, y: number) => void
+  setTemplateImagePrompt: (templateId: string, prompt: string) => void
 }
 
 export const useStore = create<PulseStore>((set) => ({
@@ -179,6 +182,12 @@ export const useStore = create<PulseStore>((set) => ({
     set((state) => ({
       templates: state.templates.map((t) =>
         t.id !== templateId ? t : { ...t, logoX: x, logoY: y }
+      ),
+    })),
+  setTemplateImagePrompt: (templateId, prompt) =>
+    set((state) => ({
+      templates: state.templates.map((t) =>
+        t.id !== templateId ? t : { ...t, imagePrompt: prompt }
       ),
     })),
 }))
