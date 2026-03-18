@@ -165,7 +165,10 @@ export function EditorPage() {
                   return (
                     <div
                       key={v.id}
-                      onClick={() => setActiveTemplate(v.id)}
+                      onClick={() => {
+                        if (!templates.find((t) => t.id === v.id)) addTemplate(v)
+                        setActiveTemplate(v.id)
+                      }}
                       style={{
                         cursor: 'pointer',
                         borderRadius: '8px',
