@@ -3,7 +3,7 @@ import type Konva from 'konva'
 import { useStore } from '../state/useStore'
 import type { CanvasElement } from '../state/useStore'
 import { CanvasEngine } from '../engine/CanvasEngine'
-import { makeHeroTitleVariants } from '../templates/hero-title/variants'
+import { makeTechStatementVariants } from '../templates/tech-statement/variants'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
 import { Sidebar } from '../components/Sidebar'
@@ -43,9 +43,9 @@ export function EditorPage() {
   // Seleciona Hero Title 1:1 como template padrão ao carregar
   useEffect(() => {
     if (!activeTemplateId) {
-      const heroTitle1x1 = makeHeroTitleVariants(theme)[0]
-      addTemplate(heroTitle1x1)
-      setActiveTemplate(heroTitle1x1.id)
+      const techStatement1x1 = makeTechStatementVariants(theme)[0]
+      addTemplate(techStatement1x1)
+      setActiveTemplate(techStatement1x1.id)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
