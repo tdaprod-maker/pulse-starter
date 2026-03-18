@@ -191,8 +191,8 @@ export function AIPanel({ stageRef }: AIPanelProps) {
           const postId = await savePost(email, {
             template_id: result.template,
             texts: result.texts as Record<string, string>,
-            accent_color: result.accentColor,
-            image_prompt: result.imagePrompt,
+            accent_color: result.accentColor ?? '',
+            image_prompt: result.imagePrompt ?? '',
           })
 
           if (postId && stageRef?.current) {
