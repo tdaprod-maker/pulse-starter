@@ -36,6 +36,9 @@ export function EditorPage() {
     updateElement,
     addTemplate,
     setActiveTemplate,
+    pendingPost,
+    setPendingPost,
+    setCaption,
   } = useStore()
 
   const { theme } = useTheme()
@@ -50,6 +53,58 @@ export function EditorPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Restaura post do histórico quando pendingPost é definido
+  const ACCENT_ELEMENT: Record<string, string> = {
+    'hero-title':     'accent-bar',
+    'editorial-card': 'accent-bar',
+    'minimal-type':   'phrase',
+    'big-number':     'number',
+    'food-promo':     'bg-color',
+    'tech-news':      'category-line',
+    'tech-product':   'accent-strip',
+  }
+
+  useEffect(() => {
+    if (!pendingPost) return
+
+    const def = templateRegistry.find((d) => pendingPost.template_id === d.id || pendingPost.template_id.startsWith(d.id))
+    if (!def) { setPendingPost(null); return }
+
+    const variants = def.getVariants(theme)
+    variants.forEach((v) => addTemplate(v))
+
+    const target = variants[0]
+    setActiveTemplate(target.id)
+
+    // Aplica textos em todas as variantes
+    variants.forEach((v) => {
+      const snap = useStore.getState().templates.find((t) => t.id === v.id) ?? v
+      Object.entries(pendingPost.texts).forEach(([fieldId, text]) => {
+        const el = snap.elements.find((e) => e.id === fieldId)
+        if (el && el.type === 'text') {
+          updateElement(v.id, fieldId, { props: { ...el.props, text } })
+        }
+      })
+
+      // Aplica accent_color
+      const accentId = ACCENT_ELEMENT[def.id]
+      if (accentId && pendingPost.accent_color) {
+        const snapAfter = useStore.getState().templates.find((t) => t.id === v.id) ?? snap
+        const accentEl = snapAfter.elements.find((e) => e.id === accentId)
+        if (accentEl) {
+          updateElement(v.id, accentId, { props: { ...accentEl.props, fill: pendingPost.accent_color } })
+        }
+      }
+    })
+
+    // Restaura legenda se existir no post (campo opcional, não presente em posts antigos)
+    const postWithCaption = pendingPost as typeof pendingPost & { caption?: { instagram: string; linkedin: string; hashtags: string } }
+    if (postWithCaption.caption) setCaption(postWithCaption.caption)
+
+    setPendingPost(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPost])
 
   // Cancela a edição ao trocar de template
   useEffect(() => {

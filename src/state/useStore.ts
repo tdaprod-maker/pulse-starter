@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import type { PostRecord } from '../services/brandKit'
 
 export interface Template {
   id: string
@@ -52,6 +53,7 @@ interface PulseStore {
   activeTemplateId: string | null
   selectedElementId: string | null
   caption: Caption | null
+  pendingPost: PostRecord | null
 
   setActiveTemplate: (id: string) => void
   setSelectedElement: (id: string | null) => void
@@ -66,6 +68,7 @@ interface PulseStore {
   setTemplateLogoPosition: (templateId: string, x: number, y: number) => void
   setTemplateImagePrompt: (templateId: string, prompt: string) => void
   setCaption: (caption: Caption | null) => void
+  setPendingPost: (post: PostRecord | null) => void
 }
 
 export const useStore = create<PulseStore>()(
@@ -75,6 +78,7 @@ export const useStore = create<PulseStore>()(
   activeTemplateId: null,
   selectedElementId: null,
   caption: null,
+  pendingPost: null,
 
   setActiveTemplate: (id) => set({ activeTemplateId: id, selectedElementId: null }),
   setSelectedElement: (id) => set({ selectedElementId: id }),
@@ -203,6 +207,7 @@ export const useStore = create<PulseStore>()(
       ),
     })),
   setCaption: (caption) => set({ caption }),
+  setPendingPost: (post) => set({ pendingPost: post }),
     }),
     {
       name: 'pulse-store',
@@ -210,6 +215,7 @@ export const useStore = create<PulseStore>()(
       partialize: (state) => ({
         activeTemplateId: state.activeTemplateId,
         caption: state.caption,
+        pendingPost: state.pendingPost,
         templates: state.templates.map(({ backgroundImage: _bg, logoImage: _logo, ...rest }) => rest),
       }),
     }

@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { loadPosts, deletePost } from '../services/brandKit'
 import type { PostRecord } from '../services/brandKit'
+import { useStore } from '../state/useStore'
 
 export function TemplatesPage() {
   const navigate = useNavigate()
+  const { setPendingPost } = useStore()
   const [posts, setPosts] = useState<PostRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -77,7 +79,7 @@ export function TemplatesPage() {
             {posts.map(post => (
               <div
                 key={post.id}
-                onClick={() => navigate('/')}
+                onClick={() => { setPendingPost(post); navigate('/') }}
                 style={{
                   position: 'relative',
                   background: 'var(--bg-panel)',
