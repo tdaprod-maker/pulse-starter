@@ -40,7 +40,7 @@ interface AIPanelProps {
   stageRef?: React.RefObject<Konva.Stage | null>
 }
 
-export function AIPanel({ stageRef }: AIPanelProps) {
+export function AIPanel(_props: AIPanelProps) {
   const [prompt, setPrompt]   = useState('')
   const [status, setStatus]   = useState<'idle' | 'loading' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -200,23 +200,9 @@ export function AIPanel({ stageRef }: AIPanelProps) {
             const activeTemplate = useStore.getState().templates.find(t => t.id === activeId)
             const bgImage = activeTemplate?.backgroundImage
 
-            if (bgImage && stageRef?.current) {
-              // Aguarda o próximo frame para garantir renderização
-              await new Promise(resolve => requestAnimationFrame(resolve))
-              await new Promise(resolve => setTimeout(resolve, 500))
-
-              try {
-                const thumbDataUrl = stageRef.current.toDataURL({
-                  pixelRatio: 0.28,
-                  mimeType: 'image/jpeg',
-                  quality: 0.6,
-                })
-                if (thumbDataUrl && thumbDataUrl.length > 1000) {
-                  await uploadThumbnail(postId, email, thumbDataUrl)
-                }
-              } catch(e) {
-                console.error('Thumbnail error:', e)
-              }
+            // Usa a imagem de fundo diretamente como thumbnail
+            if (bgImage && bgImage.startsWith('data:')) {
+              await uploadThumbnail(postId, email, bgImage)
             }
           }
         }
