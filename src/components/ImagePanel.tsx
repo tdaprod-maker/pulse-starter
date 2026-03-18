@@ -142,7 +142,7 @@ export function ImagePanel({ template }: ImagePanelProps) {
             <button
               onClick={handleNewImage}
               disabled={regenerating}
-              style={{ width: '100%', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', cursor: regenerating ? 'default' : 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s', opacity: regenerating ? 0.5 : 1 }}
+              style={{ width: '100%', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', cursor: regenerating ? 'default' : 'pointer', background: 'var(--accent)', border: '1px solid transparent', color: 'white', fontFamily: 'inherit', transition: 'all 0.15s', opacity: regenerating ? 0.5 : 1 }}
             >
               {regenerating ? 'Buscando...' : 'Nova imagem'}
             </button>
