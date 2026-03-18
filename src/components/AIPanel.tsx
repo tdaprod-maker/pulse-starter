@@ -40,10 +40,18 @@ interface AIPanelProps {
   stageRef?: React.RefObject<Konva.Stage | null>
 }
 
+function friendlyError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : ''
+  if (/gemini|generatecontent|api key|fetch/i.test(msg))
+    return 'Não foi possível conectar ao serviço de IA. Tente novamente.'
+  return 'Algo deu errado. Tente novamente em alguns instantes.'
+}
+
 export function AIPanel(_props: AIPanelProps) {
-  const [prompt, setPrompt]   = useState('')
-  const [status, setStatus]   = useState<'idle' | 'loading' | 'error'>('idle')
+  const [prompt, setPrompt]     = useState('')
+  const [status, setStatus]     = useState<'idle' | 'loading' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [saveWarning, setSaveWarning] = useState(false)
 
   const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground, setTemplateImagePrompt, setCaption } = useStore()
   const { theme } = useTheme()
@@ -158,28 +166,30 @@ export function AIPanel(_props: AIPanelProps) {
         }
       }
 
-      // 2. Gera imagem de fundo via proxy local → Pollinations.ai (base64)
+      // 2. Gera imagem de fundo — falha silenciosa, não interrompe o fluxo
       if (result.imagePrompt) {
-        const url      = await generateImage(result.imagePrompt)
-        const activeId = useStore.getState().activeTemplateId
-        if (activeId) {
-          setTemplateBackground(activeId, url)
-          setTemplateImagePrompt(activeId, result.imagePrompt)
-          // Aplica a mesma imagem em todas as variantes do template
-          const state = useStore.getState()
-          const currentTemplate = state.templates.find(t => t.id === activeId)
-          if (currentTemplate) {
-            const templateBase = templateRegistry.find(d => activeId.startsWith(d.id))
-            if (templateBase) {
-              const allVars = templateBase.getVariants(theme)
-              allVars.forEach(v => {
-                if (v.id !== activeId) {
-                  setTemplateBackground(v.id, url)
-                  setTemplateImagePrompt(v.id, result.imagePrompt!)
-                }
-              })
+        try {
+          const url      = await generateImage(result.imagePrompt)
+          const activeId = useStore.getState().activeTemplateId
+          if (activeId) {
+            setTemplateBackground(activeId, url)
+            setTemplateImagePrompt(activeId, result.imagePrompt)
+            const state = useStore.getState()
+            const currentTemplate = state.templates.find(t => t.id === activeId)
+            if (currentTemplate) {
+              const templateBase = templateRegistry.find(d => activeId.startsWith(d.id))
+              if (templateBase) {
+                templateBase.getVariants(theme).forEach(v => {
+                  if (v.id !== activeId) {
+                    setTemplateBackground(v.id, url)
+                    setTemplateImagePrompt(v.id, result.imagePrompt!)
+                  }
+                })
+              }
             }
           }
+        } catch (imgErr) {
+          console.error('Falha ao gerar imagem de fundo:', imgErr)
         }
       }
 
@@ -221,9 +231,11 @@ export function AIPanel(_props: AIPanelProps) {
         }
       } catch (e) {
         console.error('Failed to save post:', e)
+        setSaveWarning(true)
+        setTimeout(() => setSaveWarning(false), 5000)
       }
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Erro desconhecido')
+      setErrorMsg(friendlyError(err))
       setStatus('error')
     }
   }
@@ -305,6 +317,11 @@ export function AIPanel(_props: AIPanelProps) {
         ⌘ Enter para gerar rapidamente
       </p>
 
+      {saveWarning && (
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+          Post gerado, mas não foi possível salvar no histórico.
+        </p>
+      )}
     </div>
   )
 }
