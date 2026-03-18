@@ -6,7 +6,7 @@ import type { AIResponse } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
-import { loadBrandConfig, savePost, uploadThumbnail } from '../services/brandKit'
+import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import type Konva from 'konva'
 
 // ─── Qual elemento de cada template recebe a accentColor ─────────────────────
@@ -206,8 +206,12 @@ export function AIPanel(_props: AIPanelProps) {
             console.log('[THUMB] bgImage length:', bgImage?.length)
 
             if (bgImage && bgImage.startsWith('data:')) {
-              const result = await uploadThumbnail(postId, email, bgImage)
-              console.log('[THUMB] upload result:', result)
+              const thumbUrl = await uploadThumbnail(postId, email, bgImage)
+              console.log('[THUMB] upload result:', thumbUrl)
+              if (thumbUrl) {
+                await updatePostThumbnail(postId, thumbUrl)
+                console.log('[THUMB] post updated with thumbnail')
+              }
             }
           }
         }

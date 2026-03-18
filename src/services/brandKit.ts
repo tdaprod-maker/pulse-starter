@@ -110,3 +110,13 @@ export async function uploadThumbnail(
   const { data } = supabase.storage.from('media').getPublicUrl(path)
   return data.publicUrl
 }
+
+export async function updatePostThumbnail(
+  postId: string,
+  thumbnailUrl: string
+): Promise<void> {
+  await supabase
+    .from('posts')
+    .update({ thumbnail_url: thumbnailUrl })
+    .eq('id', postId)
+}
