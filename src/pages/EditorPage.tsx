@@ -11,6 +11,7 @@ import { ExportPanel } from '../components/ExportPanel'
 import { PropertiesPanel } from '../components/PropertiesPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { AIPanel } from '../components/AIPanel'
+import { CaptionPanel } from '../components/CaptionPanel'
 import { TextEditor } from '../components/TextEditor'
 
 interface EditingState {
@@ -218,6 +219,7 @@ export function EditorPage() {
                 })}
               </div>
             )}
+          <CaptionPanel />
           </>
         ) : (
           <div style={{ textAlign: 'center' }}>

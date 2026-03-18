@@ -40,10 +40,17 @@ export interface CanvasElement {
   props: Record<string, unknown>
 }
 
+export interface Caption {
+  instagram: string
+  linkedin: string
+  hashtags: string
+}
+
 interface PulseStore {
   templates: Template[]
   activeTemplateId: string | null
   selectedElementId: string | null
+  caption: Caption | null
 
   setActiveTemplate: (id: string) => void
   setSelectedElement: (id: string | null) => void
@@ -57,12 +64,14 @@ interface PulseStore {
   setTemplateLogoStyle: (templateId: string, size: number) => void
   setTemplateLogoPosition: (templateId: string, x: number, y: number) => void
   setTemplateImagePrompt: (templateId: string, prompt: string) => void
+  setCaption: (caption: Caption | null) => void
 }
 
 export const useStore = create<PulseStore>((set) => ({
   templates: [],
   activeTemplateId: null,
   selectedElementId: null,
+  caption: null,
 
   setActiveTemplate: (id) => set({ activeTemplateId: id, selectedElementId: null }),
   setSelectedElement: (id) => set({ selectedElementId: id }),
@@ -190,4 +199,5 @@ export const useStore = create<PulseStore>((set) => ({
         t.id !== templateId ? t : { ...t, imagePrompt: prompt }
       ),
     })),
+  setCaption: (caption) => set({ caption }),
 }))

@@ -40,20 +40,12 @@ interface AIPanelProps {
   stageRef?: React.RefObject<Konva.Stage | null>
 }
 
-interface Caption {
-  instagram: string
-  linkedin: string
-  hashtags: string
-}
-
 export function AIPanel(_props: AIPanelProps) {
   const [prompt, setPrompt]   = useState('')
   const [status, setStatus]   = useState<'idle' | 'loading' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
-  const [caption, setCaption] = useState<Caption | null>(null)
-  const [captionTab, setCaptionTab] = useState<'instagram' | 'linkedin'>('instagram')
 
-  const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground, setTemplateImagePrompt } = useStore()
+  const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground, setTemplateImagePrompt, setCaption } = useStore()
   const { theme } = useTheme()
 
   // ── Aplica o resultado da IA no store ──────────────────────────────────────
@@ -313,68 +305,6 @@ export function AIPanel(_props: AIPanelProps) {
         ⌘ Enter para gerar rapidamente
       </p>
 
-      {caption && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Legenda
-          </span>
-
-          {/* Abas */}
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {(['instagram', 'linkedin'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setCaptionTab(tab)}
-                style={{
-                  flex: 1, fontSize: '11px', padding: '5px', borderRadius: '6px',
-                  cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
-                  transition: 'all 0.15s',
-                  ...(captionTab === tab
-                    ? { background: 'var(--accent)', border: 'none', color: 'white' }
-                    : { background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
-                }}
-              >
-                {tab === 'instagram' ? 'Instagram' : 'LinkedIn'}
-              </button>
-            ))}
-          </div>
-
-          {/* Textarea legenda */}
-          <textarea
-            readOnly
-            value={caption[captionTab]}
-            rows={6}
-            style={{
-              width: '100%', background: 'var(--bg-surface)',
-              border: '1px solid var(--border)', borderRadius: '8px',
-              color: 'var(--text-primary)', fontSize: '12px',
-              padding: '8px 10px', fontFamily: 'inherit',
-              resize: 'none', outline: 'none', lineHeight: 1.6,
-            }}
-          />
-
-          {/* Hashtags */}
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0, wordBreak: 'break-word' }}>
-            {caption.hashtags}
-          </p>
-
-          {/* Botões copiar */}
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
-              onClick={() => navigator.clipboard.writeText(`${caption[captionTab]}\n\n${caption.hashtags}`)}
-              style={{ flex: 1, fontSize: '11px', padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s' }}
-            >
-              Copiar legenda
-            </button>
-            <button
-              onClick={() => navigator.clipboard.writeText(caption.hashtags)}
-              style={{ fontSize: '11px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s' }}
-            >
-              Copiar hashtags
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
