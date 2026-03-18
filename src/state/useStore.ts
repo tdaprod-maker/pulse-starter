@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 export interface Template {
   id: string
@@ -67,7 +68,9 @@ interface PulseStore {
   setCaption: (caption: Caption | null) => void
 }
 
-export const useStore = create<PulseStore>((set) => ({
+export const useStore = create<PulseStore>()(
+  persist(
+    (set) => ({
   templates: [],
   activeTemplateId: null,
   selectedElementId: null,
@@ -200,4 +203,15 @@ export const useStore = create<PulseStore>((set) => ({
       ),
     })),
   setCaption: (caption) => set({ caption }),
-}))
+    }),
+    {
+      name: 'pulse-store',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        activeTemplateId: state.activeTemplateId,
+        caption: state.caption,
+        templates: state.templates.map(({ backgroundImage: _bg, logoImage: _logo, ...rest }) => rest),
+      }),
+    }
+  )
+)
