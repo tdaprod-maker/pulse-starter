@@ -47,6 +47,7 @@ interface PulseStore {
   setSelectedElement: (id: string | null) => void
   addTemplate: (template: Template) => void
   updateElement: (templateId: string, elementId: string, props: Partial<CanvasElement>) => void
+  syncElementStyle: (templateId: string, elementId: string, props: Partial<CanvasElement['props']>) => void
   setTemplateBackground: (templateId: string, url: string | null) => void
   setTemplateImageStyle: (templateId: string, zoom?: number, align?: 'top' | 'center' | 'bottom') => void
   setTemplateImageOffset: (templateId: string, offsetX: number, offsetY: number) => void
@@ -94,6 +95,47 @@ export const useStore = create<PulseStore>((set) => ({
             }
       ),
     })),
+  syncElementStyle: (templateId, elementId, props) =>
+    set((state) => {
+      const lastHyphen = templateId.lastIndexOf('-')
+      const prefix = lastHyphen >= 0 ? templateId.substring(0, lastHyphen) : templateId
+
+      const activeEl = state.templates
+        .find((t) => t.id === templateId)
+        ?.elements.find((el) => el.id === elementId)
+      const currentFontSize = (activeEl?.props.fontSize as number) ?? 1
+
+      return {
+        templates: state.templates.map((t) => {
+          if (t.id === templateId) {
+            return {
+              ...t,
+              elements: t.elements.map((el) =>
+                el.id !== elementId ? el : { ...el, props: { ...el.props, ...props } }
+              ),
+            }
+          }
+
+          if (!t.id.startsWith(prefix)) return t
+
+          return {
+            ...t,
+            elements: t.elements.map((el) => {
+              if (el.id !== elementId) return el
+              const updatedProps: Record<string, unknown> = {}
+              if (props.fontFamily !== undefined) updatedProps.fontFamily = props.fontFamily
+              if (props.fill !== undefined) updatedProps.fill = props.fill
+              if (props.fontSize !== undefined) {
+                const ratio = (props.fontSize as number) / currentFontSize
+                const siblingFontSize = (el.props.fontSize as number) ?? currentFontSize
+                updatedProps.fontSize = Math.round(siblingFontSize * ratio)
+              }
+              return { ...el, props: { ...el.props, ...updatedProps } }
+            }),
+          }
+        }),
+      }
+    }),
   setTemplateBackground: (templateId, url) =>
     set((state) => ({
       templates: state.templates.map((t) =>

@@ -18,6 +18,8 @@ const LABEL_MAP: Record<string, string> = {
 
 const FONTS = [
   { value: 'Inter, sans-serif',         label: 'Inter'            },
+  { value: 'Public Sans, sans-serif',   label: 'Public Sans'      },
+  { value: 'Poppins, sans-serif',       label: 'Poppins'          },
   { value: 'Playfair Display, serif',   label: 'Playfair Display' },
   { value: 'Space Grotesk, sans-serif', label: 'Space Grotesk'    },
   { value: 'Montserrat, sans-serif',    label: 'Montserrat'       },
@@ -69,7 +71,7 @@ interface TextFieldProps {
 }
 
 function TextField({ el, templateId }: TextFieldProps) {
-  const { updateElement } = useStore()
+  const { updateElement, syncElementStyle } = useStore()
   const textRef = useRef<HTMLTextAreaElement>(null)
 
   const text       = (el.props.text       as string) ?? ''
@@ -89,16 +91,16 @@ function TextField({ el, templateId }: TextFieldProps) {
   }
 
   function handleColor(hex: string) {
-    updateElement(templateId, el.id, { props: { ...el.props, fill: hex } })
+    syncElementStyle(templateId, el.id, { fill: hex })
   }
 
   function handleFont(e: React.ChangeEvent<HTMLSelectElement>) {
-    updateElement(templateId, el.id, { props: { ...el.props, fontFamily: e.target.value } })
+    syncElementStyle(templateId, el.id, { fontFamily: e.target.value })
   }
 
   function handleFontSize(value: number) {
     const clamped = Math.min(300, Math.max(8, value))
-    updateElement(templateId, el.id, { props: { ...el.props, fontSize: clamped } })
+    syncElementStyle(templateId, el.id, { fontSize: clamped })
   }
 
   return (
