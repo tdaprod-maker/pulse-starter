@@ -137,7 +137,8 @@ export function BrandPage() {
                     style={{ ...inputStyle, flex: 1 }}
                   >
                     {['Inter', 'Sora', 'Montserrat', 'Space Grotesk',
-                      'Playfair Display', 'Oswald', 'Raleway', 'Bebas Neue', 'Lora']
+                      'Playfair Display', 'Oswald', 'Raleway', 'Bebas Neue', 'Lora',
+                      'Public Sans', 'Poppins']
                       .map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>
