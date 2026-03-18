@@ -6,6 +6,11 @@ export interface AIResponse {
   accentColor?: string
   /** Prompt em inglês para gerar a imagem de fundo via Replicate. */
   imagePrompt?: string
+  caption?: {
+    instagram: string
+    linkedin: string
+    hashtags: string
+  }
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -75,6 +80,13 @@ OUTRAS REGRAS:
       para negócios → "business people networking handshake office"
       para motivação → "person running at sunrise mountain trail"
 
+LEGENDA (campo "caption"):
+Gere legendas para redes sociais com base no conteúdo do post.
+- instagram: legenda direta, tom humano e envolvente, máximo 150 palavras, sem hashtags no corpo do texto.
+- linkedin: tom mais profissional e reflexivo, máximo 200 palavras, sem hashtags no corpo do texto.
+- hashtags: string com 5 a 8 hashtags relevantes separadas por espaço, misturando português e inglês. Ex: "#IA #automação #AItools #produtividade #inovação"
+- Se a descrição do usuário contiver palavras como "call to action", "cta", "link na bio" ou "acesse", adicione um CTA natural ao final de cada legenda. Caso contrário, NÃO inclua CTA.
+
 Descrição do usuário: "${userInput}"
 
 Responda SOMENTE com JSON válido, sem markdown:
@@ -82,7 +94,12 @@ Responda SOMENTE com JSON válido, sem markdown:
   "template": "nome-do-template",
   "texts": { "campo": "valor" },
   "accentColor": "#hexcolor",
-  "imagePrompt": "dark cinematic background description in english"
+  "imagePrompt": "scene description in english",
+  "caption": {
+    "instagram": "legenda para instagram",
+    "linkedin": "legenda para linkedin",
+    "hashtags": "#hashtag1 #hashtag2 #hashtag3"
+  }
 }`
 }
 
