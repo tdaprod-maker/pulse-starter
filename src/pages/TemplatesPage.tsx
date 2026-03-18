@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { loadPosts } from '../services/brandKit'
+import { loadPosts, deletePost } from '../services/brandKit'
 import type { PostRecord } from '../services/brandKit'
 
 export function TemplatesPage() {
   const navigate = useNavigate()
   const [posts, setPosts] = useState<PostRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -78,6 +79,7 @@ export function TemplatesPage() {
                 key={post.id}
                 onClick={() => navigate('/')}
                 style={{
+                  position: 'relative',
                   background: 'var(--bg-panel)',
                   border: '1px solid var(--border)',
                   borderRadius: '12px',
@@ -88,12 +90,53 @@ export function TemplatesPage() {
                 onMouseEnter={e => {
                   (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-active)'
                   ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'
+                  const btn = e.currentTarget.querySelector('button')
+                  if (btn) (btn as HTMLButtonElement).style.opacity = '1'
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'
                   ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'
+                  const btn = e.currentTarget.querySelector('button')
+                  if (btn && deletingId !== post.id) (btn as HTMLButtonElement).style.opacity = '0'
                 }}
               >
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    if (!confirm('Deletar este post?')) return
+                    setDeletingId(post.id!)
+                    await deletePost(post.id!)
+                    setPosts(prev => prev.filter(p => p.id !== post.id))
+                    setDeletingId(null)
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    zIndex: 10,
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: 'rgba(239,68,68,0.85)',
+                    border: 'none',
+                    color: 'white',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                    opacity: deletingId === post.id ? 1 : 0,
+                    transition: 'opacity 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={e => {
+                    if (deletingId !== post.id) e.currentTarget.style.opacity = '0'
+                  }}
+                >
+                  ×
+                </button>
+
                 {/* Thumbnail */}
                 <div style={{
                   aspectRatio: '1',

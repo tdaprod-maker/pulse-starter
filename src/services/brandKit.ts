@@ -111,6 +111,10 @@ export async function uploadThumbnail(
   return data.publicUrl
 }
 
+export async function deletePost(postId: string): Promise<void> {
+  await supabase.from('posts').delete().eq('id', postId)
+}
+
 export async function updatePostThumbnail(
   postId: string,
   thumbnailUrl: string
