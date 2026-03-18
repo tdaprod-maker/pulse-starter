@@ -196,6 +196,7 @@ export function AIPanel({ stageRef }: AIPanelProps) {
           })
 
           if (postId && stageRef?.current) {
+            await new Promise(resolve => setTimeout(resolve, 1500))
             const thumbDataUrl = stageRef.current.toDataURL({
               pixelRatio: 0.3,
               mimeType: 'image/jpeg',
