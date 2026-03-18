@@ -1,4 +1,4 @@
-const PEXELS_API_KEY = 'kqiTYhKPlcZ6NdAugwHpNEZ17YiqEMrSzCooKJX05Mh7mMpiUPLDxUlR'
+const PEXELS_API_KEY = process.env.PEXELS_API_KEY
 const TIMEOUT_MS = 60000
 
 async function fetchWithTimeout(url, options = {}) {
