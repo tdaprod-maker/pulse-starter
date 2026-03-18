@@ -10,7 +10,7 @@ export interface AIResponse {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const API_KEY = 'AIzaSyCxYbCdidDZ0y2Qg0lNntgvKzqhOO716Ww'
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
 const API_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`
 
