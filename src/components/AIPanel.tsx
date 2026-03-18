@@ -195,14 +195,29 @@ export function AIPanel({ stageRef }: AIPanelProps) {
             image_prompt: result.imagePrompt ?? '',
           })
 
-          if (postId && stageRef?.current) {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            const thumbDataUrl = stageRef.current.toDataURL({
-              pixelRatio: 0.3,
-              mimeType: 'image/jpeg',
-              quality: 0.7,
-            })
-            await uploadThumbnail(postId, email, thumbDataUrl)
+          if (postId) {
+            const activeId = useStore.getState().activeTemplateId
+            const activeTemplate = useStore.getState().templates.find(t => t.id === activeId)
+            const bgImage = activeTemplate?.backgroundImage
+
+            if (bgImage && stageRef?.current) {
+              // Aguarda o próximo frame para garantir renderização
+              await new Promise(resolve => requestAnimationFrame(resolve))
+              await new Promise(resolve => setTimeout(resolve, 500))
+
+              try {
+                const thumbDataUrl = stageRef.current.toDataURL({
+                  pixelRatio: 0.28,
+                  mimeType: 'image/jpeg',
+                  quality: 0.6,
+                })
+                if (thumbDataUrl && thumbDataUrl.length > 1000) {
+                  await uploadThumbnail(postId, email, thumbDataUrl)
+                }
+              } catch(e) {
+                console.error('Thumbnail error:', e)
+              }
+            }
           }
         }
       } catch (e) {
