@@ -6,17 +6,23 @@ import { EditorPage } from './pages/EditorPage'
 import { TemplatesPage } from './pages/TemplatesPage'
 import { LoginPage } from './pages/LoginPage'
 import { BrandPage } from './pages/BrandPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { supabase } from './lib/supabase'
 
 export default function App() {
   const [session, setSession] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setLoading(false)
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
+  if (loading) return null
   if (!session) return <LoginPage />
 
   return (
@@ -28,6 +34,7 @@ export default function App() {
             <Route path="/" element={<EditorPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/brand" element={<BrandPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Routes>
         </div>
       </BrowserRouter>
