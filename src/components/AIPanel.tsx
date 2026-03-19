@@ -84,7 +84,7 @@ export function AIPanel(_props: AIPanelProps) {
   const [saveWarning, setSaveWarning] = useState(false)
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
   const [isListening, setIsListening] = useState(false)
-  const recognitionRef = useRef<ReturnType<SpeechRecognitionCtor> | null>(null)
+  const recognitionRef = useRef<{ stop(): void } | null>(null)
 
   function toggleMic() {
     if (isListening) {
