@@ -189,6 +189,11 @@ As chaves de API estão em variáveis de ambiente — **não hardcoded no códig
 - [x] Biblioteca de fotos no Brand Kit — upload, preview em grade, remoção, limite 20 fotos
 - [x] Coluna photos (text[]) adicionada à tabela brand_config no Supabase
 - [x] Fotos da biblioteca disponíveis no ImagePanel com propagação para todos os formatos ao clicar
+- [x] Correção de CORS no carregamento de imagens externas (crossOrigin anonymous) — export com fotos do Brand Kit funcionando
+- [x] Toggle "Fundo" por elemento de texto — fundo preto semitransparente proporcional ao conteúdo, propagado entre os 4 formatos
+- [x] Painel direito alargado para 380px
+- [x] Canvas alinhado ao topo (flex-start) — visualização sem corte
+- [x] Mapa de componentes por funcionalidade adicionado ao CONTEXT.md (seção 14)
 
 ---
 
@@ -240,7 +245,7 @@ A busca tenta: (1) query completa do imagePrompt, (2) primeira palavra-chave rel
 - Token GitHub exposto em log do Claude Code em março 2026 — revogar e regenerar se ainda não feito
 - `replicate.ts` tem comentário de cache bust manual (`// cache bust Seg 9 Mar 2026...`) — indica workaround para problema de deploy da Vercel
 - `VITE_SERVER_URL` referenciado em commits antigos pode causar confusão (não está mais em uso)
-- Pexels não tem acervo de pratos brasileiros específicos (feijoada, parmegiana) — imagem do produto deve ser enviada pelo usuário para resultado profissional
+- Imagens do Pexels frequentemente irrelevantes para temas de atendimento, WhatsApp e produtos específicos (feijoada, parmegiana, etc.) — usuário deve usar Biblioteca de fotos ou upload manual para resultado profissional
 
 ---
 
