@@ -1,4 +1,4 @@
-import { forwardRef, useState, useLayoutEffect, useRef, useEffect } from 'react'
+import React, { forwardRef, useState, useLayoutEffect, useRef, useEffect } from 'react'
 import { Stage, Layer, Rect, Text, Image as KonvaImage } from 'react-konva'
 import type Konva from 'konva'
 import type { CanvasElement, Template } from '../state/useStore'
@@ -336,11 +336,24 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         : (el.props.fill as string) ?? '#000000'
 
     return (
-      <Text
-        key={el.id}
-        id={el.id}
-        x={el.x}
-        y={y}
+      <React.Fragment key={el.id}>
+        {el.props.textBackground && (
+          <Rect
+            x={el.x - 8}
+            y={y - 4}
+            width={el.width + 16}
+            height={el.height + 8}
+            fill="#000000"
+            opacity={0.55}
+            cornerRadius={4}
+            listening={false}
+          />
+        )}
+        <Text
+          key={el.id}
+          id={el.id}
+          x={el.x}
+          y={y}
         width={el.width || undefined}
         text={(el.props.text as string) ?? 'Texto'}
         fontSize={fontSize}
@@ -363,6 +376,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         stroke={selectionStroke}
         strokeWidth={isSelected && !isEditing ? 0.5 : 0}
       />
+      </React.Fragment>
     )
   }
 

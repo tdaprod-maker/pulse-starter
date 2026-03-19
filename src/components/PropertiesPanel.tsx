@@ -152,6 +152,23 @@ function TextField({ el, templateId }: TextFieldProps) {
         </div>
       </div>
 
+      {/* Toggle fundo escuro */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)', userSelect: 'none', flex: 1 }}>Fundo</span>
+        <button
+          onClick={() => syncElementStyle(templateId, el.id, { textBackground: !el.props.textBackground })}
+          style={{
+            fontSize: '11px', padding: '2px 10px', borderRadius: '5px', cursor: 'pointer',
+            fontFamily: 'inherit',
+            background: el.props.textBackground ? 'rgba(58,90,255,0.15)' : 'transparent',
+            border: `1px solid ${el.props.textBackground ? 'var(--color-primary)' : 'var(--border)'}`,
+            color: el.props.textBackground ? 'var(--color-primary)' : 'var(--text-muted)',
+          }}
+        >
+          {el.props.textBackground ? 'Ativo' : 'Inativo'}
+        </button>
+      </div>
+
       {/* Textarea */}
       <textarea
         ref={textRef}
