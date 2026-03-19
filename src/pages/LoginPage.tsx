@@ -41,7 +41,7 @@ export function LoginPage() {
         <img
           src="/logo-pulse.png"
           alt="Pulse"
-          style={{ height: '48px', display: 'block', margin: '0 auto 24px auto' }}
+          style={{ height: '48px', width: 'auto', maxWidth: '160px', display: 'block', margin: '0 auto 24px auto' }}
         />
 
         {/* Título */}
