@@ -159,11 +159,13 @@ export function LoginPage() {
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px', margin: '0 0 8px' }}>
           Desenvolvido por
         </p>
-        <img
-          src="/logo-agente17-crop.png"
-          alt="Agente 17"
-          style={{ height: 'auto', width: '160px', objectFit: 'contain', display: 'block', margin: '0 auto', marginLeft: '24px' }}
-        />
+        <a href="https://agente17.com.br" target="_blank" rel="noopener noreferrer">
+          <img
+            src="/logo-agente17-crop.png"
+            alt="Agente 17"
+            style={{ height: 'auto', width: '160px', objectFit: 'contain', display: 'block', margin: '0 auto', marginLeft: '32px' }}
+          />
+        </a>
       </div>
     </div>
   )
