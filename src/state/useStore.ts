@@ -119,19 +119,25 @@ export const useStore = create<PulseStore>()(
       const lastHyphen = templateId.lastIndexOf('-')
       const prefix = lastHyphen >= 0 ? templateId.substring(0, lastHyphen) : templateId
 
-      const activeEl = state.templates
-        .find((t) => t.id === templateId)
-        ?.elements.find((el) => el.id === elementId)
+      const activeTemplate = state.templates.find((t) => t.id === templateId)
+      const activeEl = activeTemplate?.elements.find((el) => el.id === elementId)
       const currentFontSize = (activeEl?.props.fontSize as number) ?? 1
+      const sourceTemplateWidth = activeTemplate?.width ?? 1
 
       return {
         templates: state.templates.map((t) => {
           if (t.id === templateId) {
+            const { width: newWidth, ...restProps } = props as Record<string, unknown>
             return {
               ...t,
-              elements: t.elements.map((el) =>
-                el.id !== elementId ? el : { ...el, props: { ...el.props, ...props } }
-              ),
+              elements: t.elements.map((el) => {
+                if (el.id !== elementId) return el
+                return {
+                  ...el,
+                  ...(newWidth !== undefined ? { width: newWidth as number } : {}),
+                  props: { ...el.props, ...restProps },
+                }
+              }),
             }
           }
 
@@ -142,14 +148,20 @@ export const useStore = create<PulseStore>()(
             elements: t.elements.map((el) => {
               if (el.id !== elementId) return el
               const updatedProps: Record<string, unknown> = {}
+              const topLevel: Partial<CanvasElement> = {}
               if (props.fontFamily !== undefined) updatedProps.fontFamily = props.fontFamily
               if (props.fill !== undefined) updatedProps.fill = props.fill
+              if (props.rotation !== undefined) updatedProps.rotation = props.rotation
               if (props.fontSize !== undefined) {
                 const ratio = (props.fontSize as number) / currentFontSize
                 const siblingFontSize = (el.props.fontSize as number) ?? currentFontSize
                 updatedProps.fontSize = Math.round(siblingFontSize * ratio)
               }
-              return { ...el, props: { ...el.props, ...updatedProps } }
+              if ((props as Record<string, unknown>).width !== undefined) {
+                const ratio = t.width / sourceTemplateWidth
+                topLevel.width = Math.round(((props as Record<string, unknown>).width as number) * ratio)
+              }
+              return { ...el, ...topLevel, props: { ...el.props, ...updatedProps } }
             }),
           }
         }),

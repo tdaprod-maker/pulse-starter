@@ -195,6 +195,52 @@ function AccentSection({ template }: { template: Template }) {
   )
 }
 
+// ─── Seção shape (brand-line) ─────────────────────────────────────────────────
+
+function ShapeSection({ template }: { template: Template }) {
+  const { syncElementStyle } = useStore()
+
+  const el = template.elements.find((e) => e.id === 'brand-line')
+  if (!el) return null
+
+  const width    = el.width
+  const rotation = (el.props.rotation as number) ?? 0
+
+  const sliderStyle: React.CSSProperties = {
+    width: '100%', accentColor: 'var(--color-primary)',
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', userSelect: 'none' }}>Largura</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
+        </div>
+        <input
+          type="range" min={40} max={300} step={10}
+          value={width}
+          onChange={(e) => syncElementStyle(template.id, 'brand-line', { width: Number(e.target.value) } as never)}
+          style={sliderStyle}
+        />
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', userSelect: 'none' }}>Rotação</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{rotation}°</span>
+        </div>
+        <input
+          type="range" min={-45} max={45} step={1}
+          value={rotation}
+          onChange={(e) => syncElementStyle(template.id, 'brand-line', { rotation: Number(e.target.value) })}
+          style={sliderStyle}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ─── Painel de propriedades ───────────────────────────────────────────────────
 
 export function PropertiesPanel({ template }: { template: Template }) {
@@ -212,6 +258,7 @@ export function PropertiesPanel({ template }: { template: Template }) {
       ))}
 
       <AccentSection template={template} />
+      <ShapeSection template={template} />
     </div>
   )
 }

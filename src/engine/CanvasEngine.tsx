@@ -370,13 +370,16 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
       <Rect
         key={el.id}
         id={el.id}
-        x={el.x}
-        y={y}
+        x={el.x + el.width / 2}
+        y={y + el.height / 2}
+        offsetX={el.width / 2}
+        offsetY={el.height / 2}
         width={el.width}
         height={el.height}
         fill={(el.props.fill as string) ?? '#e5e7eb'}
         cornerRadius={(el.props.cornerRadius as number) ?? 0}
         opacity={(el.props.opacity as number) ?? 1}
+        rotation={(el.props.rotation as number) ?? 0}
         draggable
         onClick={() => onSelect?.(el.id)}
         stroke={selectionStroke}
