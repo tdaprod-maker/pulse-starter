@@ -35,6 +35,27 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
+// ─── Web Speech API types ─────────────────────────────────────────────────────
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList
+}
+
+type SpeechRecognitionCtor = new () => {
+  lang: string
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((e: SpeechRecognitionEvent) => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+}
+
+type SpeechRecognitionWindow = {
+  SpeechRecognition?: SpeechRecognitionCtor
+  webkitSpeechRecognition?: SpeechRecognitionCtor
+}
+
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 interface AIPanelProps {
@@ -63,10 +84,7 @@ export function AIPanel(_props: AIPanelProps) {
   const [saveWarning, setSaveWarning] = useState(false)
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
   const [isListening, setIsListening] = useState(false)
-  const recognitionRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null)
-
-  const speechSupported = typeof window !== 'undefined' &&
-    !!(window.SpeechRecognition || (window as typeof window & { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition)
+  const recognitionRef = useRef<ReturnType<SpeechRecognitionCtor> | null>(null)
 
   function toggleMic() {
     if (isListening) {
@@ -74,8 +92,9 @@ export function AIPanel(_props: AIPanelProps) {
       setIsListening(false)
       return
     }
-    const SR = window.SpeechRecognition ||
-      (window as typeof window & { webkitSpeechRecognition: typeof window.SpeechRecognition }).webkitSpeechRecognition
+    const win = window as unknown as SpeechRecognitionWindow
+    const SR = win.SpeechRecognition || win.webkitSpeechRecognition
+    if (!SR) return
     const recognition = new SR()
     recognition.lang = 'pt-BR'
     recognition.interimResults = false
