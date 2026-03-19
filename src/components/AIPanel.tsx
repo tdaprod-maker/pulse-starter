@@ -323,8 +323,7 @@ export function AIPanel(_props: AIPanelProps) {
             outline: 'none', lineHeight: 1.5,
           }}
         />
-        {speechSupported && (
-          <button
+        <button
             onClick={toggleMic}
             disabled={loading}
             title={isListening ? 'Parar gravação' : 'Falar prompt'}
@@ -342,7 +341,6 @@ export function AIPanel(_props: AIPanelProps) {
               <line x1="8" y1="13.5" x2="8" y2="15.5" stroke={isListening ? 'var(--color-primary)' : 'var(--text-secondary)'} strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
-        )}
       </div>
 
       {isListening && (
