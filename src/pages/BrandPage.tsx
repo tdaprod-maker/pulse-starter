@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { loadBrandConfig, saveBrandConfig, uploadMedia, DEFAULT_BRAND } from '../services/brandKit'
+import { loadBrandConfig, saveBrandConfig, uploadMedia, uploadPhoto, DEFAULT_BRAND } from '../services/brandKit'
 import type { BrandConfig } from '../services/brandKit'
 export function BrandPage() {
   const navigate = useNavigate()
@@ -10,6 +10,8 @@ export function BrandPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -28,6 +30,25 @@ export function BrandPage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => navigate('/'), 1000)
+  }
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const current = config.photos ?? []
+    const slots = 20 - current.length
+    if (slots <= 0) return
+    setUploadingPhotos(true)
+    const toUpload = files.slice(0, slots)
+    const urls = await Promise.all(toUpload.map(f => uploadPhoto(f, userEmail)))
+    const valid = urls.filter((u): u is string => !!u)
+    setConfig(prev => ({ ...prev, photos: [...(prev.photos ?? []), ...valid] }))
+    setUploadingPhotos(false)
+    e.target.value = ''
+  }
+
+  function handleRemovePhoto(url: string) {
+    setConfig(prev => ({ ...prev, photos: (prev.photos ?? []).filter(u => u !== url) }))
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -89,6 +110,50 @@ export function BrandPage() {
                   onChange={handleLogoUpload} style={{ display: 'none' }} />
               </label>
             </div>
+          </Section>
+
+          {/* Biblioteca de Fotos */}
+          <Section title="Biblioteca de Fotos">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              style={{ display: 'none' }}
+            />
+            {(config.photos ?? []).length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                {(config.photos ?? []).map((url) => (
+                  <div key={url} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', width: '80px', height: '80px' }}>
+                    <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <button
+                      onClick={() => handleRemovePhoto(url)}
+                      style={{
+                        position: 'absolute', top: '3px', right: '3px',
+                        width: '18px', height: '18px', borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.7)', border: 'none',
+                        color: 'white', fontSize: '11px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        lineHeight: 1, padding: 0,
+                      }}
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => photoInputRef.current?.click()}
+              disabled={uploadingPhotos || (config.photos ?? []).length >= 20}
+              style={{
+                padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
+                background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit',
+                opacity: uploadingPhotos || (config.photos ?? []).length >= 20 ? 0.5 : 1,
+              }}
+            >
+              {uploadingPhotos ? 'Enviando...' : `Adicionar foto ${(config.photos ?? []).length}/20`}
+            </button>
           </Section>
 
           {/* Cores */}

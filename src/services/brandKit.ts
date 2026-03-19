@@ -8,6 +8,7 @@ export interface BrandConfig {
   color_accent: string
   font_title: string
   font_body: string
+  photos: string[]
 }
 
 export const DEFAULT_BRAND: BrandConfig = {
@@ -18,6 +19,12 @@ export const DEFAULT_BRAND: BrandConfig = {
   color_accent: '#FFCA1D',
   font_title: 'Bebas Neue',
   font_body: 'Inter',
+  photos: [],
+}
+
+export async function uploadPhoto(file: File, email: string): Promise<string | null> {
+  const path = `photos/${email}/${Date.now()}_${file.name}`
+  return uploadMedia(file, path)
 }
 
 export async function loadBrandConfig(userEmail: string): Promise<BrandConfig> {

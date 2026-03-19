@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
 import { generateImage } from '../services/replicate'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
 import { LogoSection } from './LogoSection'
+import { supabase } from '../lib/supabase'
+import { loadBrandConfig } from '../services/brandKit'
 
 interface ImagePanelProps {
   template: Template
@@ -21,6 +23,15 @@ export function ImagePanel({ template }: ImagePanelProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [regenerating, setRegenerating] = useState(false)
   const { theme } = useTheme()
+  const [brandPhotos, setBrandPhotos] = useState<string[]>([])
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? ''
+      if (!email) return
+      loadBrandConfig(email).then(c => setBrandPhotos(c.photos ?? []))
+    })
+  }, [])
 
   async function handleNewImage() {
     if (!template.imagePrompt || regenerating) return
@@ -68,6 +79,30 @@ export function ImagePanel({ template }: ImagePanelProps) {
       </h3>
 
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+
+      {/* Biblioteca de Fotos do Brand Kit */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase', userSelect: 'none' }}>
+          Biblioteca
+        </span>
+        {brandPhotos.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+            {brandPhotos.map((url) => (
+              <button
+                key={url}
+                onClick={() => setTemplateBackground(template.id, url)}
+                style={{ padding: 0, border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', background: 'none', aspectRatio: '1' }}
+              >
+                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+            Adicione fotos no Brand Kit
+          </p>
+        )}
+      </div>
 
       {template.backgroundImage ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
