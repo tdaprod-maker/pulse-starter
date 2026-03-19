@@ -7,7 +7,7 @@ const W_1080   = 1080 - M * 2   // 960px
 const BLUE     = '#5B8FD4'
 const BLACK    = '#0A0A0A'
 const WHITE    = '#FFFFFF'
-const BRAND_C  = 'rgba(255,255,255,0.6)'
+const ACCENT   = '#3A5AFF'
 
 // Proporções zona foto / zona texto
 // 1:1  → foto 60% = 648px  | texto 40% = 432px
@@ -73,16 +73,11 @@ export function makeTechNewsVariants(_theme: Theme): Template[] {
       },
       // Marca no rodapé
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 1020,
-        width: 1080, height: 40,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 18, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 500, y: 1057,
+        width: 80, height: 3,
+        props: { fill: ACCENT, cornerRadius: 0 },
       },
     ],
   }
@@ -138,16 +133,11 @@ export function makeTechNewsVariants(_theme: Theme): Template[] {
         },
       },
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 1296,
-        width: 1080, height: 40,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 18, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 500, y: 1327,
+        width: 80, height: 3,
+        props: { fill: ACCENT, cornerRadius: 0 },
       },
     ],
   }
@@ -203,16 +193,11 @@ export function makeTechNewsVariants(_theme: Theme): Template[] {
         },
       },
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 1860,
-        width: 1080, height: 40,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 20, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 500, y: 1897,
+        width: 80, height: 3,
+        props: { fill: ACCENT, cornerRadius: 0 },
       },
     ],
   }
@@ -270,16 +255,11 @@ export function makeTechNewsVariants(_theme: Theme): Template[] {
         },
       },
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 1032,
-        width: 1920, height: 36,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 18, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 920, y: 1057,
+        width: 80, height: 3,
+        props: { fill: ACCENT, cornerRadius: 0 },
       },
     ],
   }

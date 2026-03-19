@@ -16,8 +16,8 @@ import type Konva from 'konva'
 // minimal-type:   'phrase'       (text — muda cor da frase)
 // big-number:     'number'       (text — muda cor do número)
 // big-statement:  excluído — line2 usa amarelo do design system (#FFCA1D)
-// tech-news:      'category-line' (shape rect horizontal azul)
-// tech-statement: 'phrase'        (text — muda cor da frase)
+// tech-news:      'brand-line'    (shape rect decorativa no rodapé)
+// tech-statement: 'brand-line'    (shape rect decorativa no rodapé)
 // tech-product:   'accent-strip'  (shape faixa vertical esquerda)
 const ACCENT_ELEMENT: Record<string, string> = {
   'hero-title':     'accent-bar',
@@ -25,7 +25,8 @@ const ACCENT_ELEMENT: Record<string, string> = {
   'minimal-type':   'phrase',
   'big-number':     'number',
   'food-promo':     'bg-color',
-  'tech-news':      'category-line',
+  'tech-news':      'brand-line',
+  'tech-statement': 'brand-line',
   'tech-product':   'accent-strip',
 }
 

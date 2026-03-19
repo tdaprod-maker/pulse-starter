@@ -3,7 +3,7 @@ import type { Theme } from '../../themes'
 
 const BLACK   = '#000000'
 const WHITE   = '#FFFFFF'
-const BRAND_C = 'rgba(255,255,255,0.5)'
+const BLUE    = '#3A5AFF'
 const FONT    = 'Bebas Neue, cursive'
 
 // Centro óptico: sobe ~5% do centro geométrico
@@ -37,16 +37,11 @@ export function makeTechStatementVariants(_theme: Theme): Template[] {
         },
       },
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 980,
-        width: 1080, height: 40,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 20, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 500, y: 1057,
+        width: 80, height: 3,
+        props: { fill: BLUE, cornerRadius: 0 },
       },
     ],
   }
@@ -76,16 +71,11 @@ export function makeTechStatementVariants(_theme: Theme): Template[] {
         },
       },
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 1290,
-        width: 1080, height: 40,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 20, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 500, y: 1327,
+        width: 80, height: 3,
+        props: { fill: BLUE, cornerRadius: 0 },
       },
     ],
   }
@@ -115,16 +105,11 @@ export function makeTechStatementVariants(_theme: Theme): Template[] {
         },
       },
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 1860,
-        width: 1080, height: 40,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 22, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 500, y: 1897,
+        width: 80, height: 3,
+        props: { fill: BLUE, cornerRadius: 0 },
       },
     ],
   }
@@ -154,16 +139,11 @@ export function makeTechStatementVariants(_theme: Theme): Template[] {
         },
       },
       {
-        id: 'brand',
-        type: 'text',
-        x: 0, y: 1024,
-        width: 1920, height: 40,
-        props: {
-          text: 'AGENTE 17',
-          fontSize: 22, fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal', align: 'center',
-          fill: BRAND_C, wrap: 'none',
-        },
+        id: 'brand-line',
+        type: 'shape',
+        x: 920, y: 1057,
+        width: 80, height: 3,
+        props: { fill: BLUE, cornerRadius: 0 },
       },
     ],
   }

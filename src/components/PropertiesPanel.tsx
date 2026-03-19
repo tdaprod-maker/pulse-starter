@@ -35,6 +35,8 @@ function getAccentElementId(templateId: string): string | null {
   if (templateId.startsWith('minimal-type'))   return 'phrase'
   if (templateId.startsWith('big-number'))     return 'number'
   if (templateId.startsWith('big-statement'))  return 'line2'
+  if (templateId.startsWith('tech-news'))      return 'brand-line'
+  if (templateId.startsWith('tech-statement')) return 'brand-line'
   return null
 }
 
@@ -168,7 +170,7 @@ function TextField({ el, templateId }: TextFieldProps) {
 // ─── Seção destaque ───────────────────────────────────────────────────────────
 
 function AccentSection({ template }: { template: Template }) {
-  const { updateElement } = useStore()
+  const { syncElementStyle } = useStore()
 
   const accentId = getAccentElementId(template.id)
   if (!accentId) return null
@@ -179,7 +181,7 @@ function AccentSection({ template }: { template: Template }) {
   const fill = (accentEl.props.fill as string) ?? '#3A5AFF'
 
   function handleColor(hex: string) {
-    updateElement(template.id, accentId!, { props: { ...accentEl!.props, fill: hex } })
+    syncElementStyle(template.id, accentId!, { fill: hex })
   }
 
   return (
