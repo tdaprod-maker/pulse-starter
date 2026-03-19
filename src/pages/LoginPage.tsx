@@ -6,6 +6,16 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resetSent, setResetSent] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+
+  async function handleResetPassword() {
+    if (!email) { setError('Digite seu e-mail antes de solicitar a redefinição de senha'); return }
+    setResetLoading(true)
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+    setResetSent(true)
+    setResetLoading(false)
+  }
 
   async function handleLogin() {
     setLoading(true)
@@ -118,6 +128,30 @@ export function LoginPage() {
         >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
+
+        {/* Esqueci minha senha */}
+        {resetSent ? (
+          <p style={{ fontSize: '12px', color: '#22c55e', textAlign: 'center', margin: 0 }}>
+            E-mail de redefinição enviado. Verifique sua caixa de entrada.
+          </p>
+        ) : (
+          <button
+            onClick={handleResetPassword}
+            disabled={resetLoading}
+            style={{
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              fontFamily: 'inherit',
+              alignSelf: 'center',
+            }}
+          >
+            {resetLoading ? 'Enviando...' : 'Esqueci minha senha'}
+          </button>
+        )}
       </div>
 
       {/* Rodapé */}
