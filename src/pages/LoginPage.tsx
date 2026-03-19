@@ -17,13 +17,13 @@ export function LoginPage() {
 
   return (
     <div style={{
-      height: '100vh',
+      minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '32px',
       background: 'var(--bg-base)',
+      padding: '24px',
     }}>
       {/* Card */}
       <div style={{
@@ -38,13 +38,11 @@ export function LoginPage() {
         gap: '20px',
       }}>
         {/* Logo Pulse */}
-        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <img
-            src="/logo-pulse.png"
-            alt="Pulse"
-            style={{ height: '36px' }}
-          />
-        </div>
+        <img
+          src="/logo-pulse.png"
+          alt="Pulse"
+          style={{ height: '48px', display: 'block', margin: '0 auto 24px auto' }}
+        />
 
         {/* Título */}
         <div>
@@ -132,23 +130,9 @@ export function LoginPage() {
       </div>
 
       {/* Rodapé */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Desenvolvido por</span>
-        <img
-          src="/logo-agente17.png"
-          alt="Agente 17"
-          height={24}
-          onError={(e) => {
-            const img = e.currentTarget
-            img.style.display = 'none'
-            const span = document.createElement('span')
-            span.textContent = 'Agente 17'
-            span.style.fontSize = '12px'
-            span.style.color = 'var(--text-muted)'
-            img.parentNode?.appendChild(span)
-          }}
-        />
-      </div>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', margin: '24px 0 0' }}>
+        Desenvolvido por Agente 17
+      </p>
     </div>
   )
 }
