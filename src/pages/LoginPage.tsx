@@ -41,7 +41,7 @@ export function LoginPage() {
         <img
           src="/logo-pulse.png"
           alt="Pulse"
-          style={{ height: '48px', width: 'auto', maxWidth: '180px', display: 'block', margin: '0 auto 24px auto' }}
+          style={{ height: '40px', width: '160px', objectFit: 'contain', display: 'block', margin: '0 auto 24px auto' }}
         />
 
         {/* Título */}
@@ -134,7 +134,7 @@ export function LoginPage() {
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 8px' }}>
           Desenvolvido por
         </p>
-        <img src="/logo-agente17.png" alt="Agente 17" style={{ height: '28px', width: 'auto', display: 'block', margin: '0 auto' }} />
+        <img src="/logo-agente17.png" alt="Agente 17" style={{ height: '32px', width: '140px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
       </div>
     </div>
   )
