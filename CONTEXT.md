@@ -107,21 +107,24 @@ pulse/
 
 ### Google Gemini
 - **Arquivo:** `src/services/gemini.ts`
-- **Chave:** hardcoded na constante `API_KEY` (linha 13)
+- **Chave:** `import.meta.env.VITE_GEMINI_API_KEY` (variável de ambiente, não hardcoded)
 - **Modelo:** `gemini-2.5-flash` via `generateContent`
 - **Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=...`
 - **Config:** temperature 0.8, maxOutputTokens 500, thinkingBudget 0
 
 ### Pexels
 - **Arquivo:** `api/generate-image.js`
-- **Chave:** hardcoded na constante `PEXELS_API_KEY` (linha 1)
+- **Chave:** `process.env.PEXELS_API_KEY` (variável de ambiente, não hardcoded)
 - **Endpoint:** `https://api.pexels.com/v1/search` (GET)
 - **Parâmetros:** `query`, `per_page=15`, `orientation=square`
 - **Header:** `Authorization: PEXELS_API_KEY`
 
 ### Variáveis de Ambiente
-Atualmente **não há `.env`** no projeto — as chaves estão hardcoded no código.
-Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do proxy Express), mas não está mais em uso ativo.
+As chaves de API estão em variáveis de ambiente — **não hardcoded no código**.
+- Configuradas no **Vercel dashboard** (Environment Variables) para produção
+- Configuradas no arquivo **`.env`** local para desenvolvimento
+- `VITE_GEMINI_API_KEY` — lida pelo Vite no frontend via `import.meta.env`
+- `PEXELS_API_KEY` — lida pelo Node.js na API Route via `process.env`
 
 ---
 
@@ -162,18 +165,29 @@ Existe referência a `VITE_SERVER_URL` em commits antigos (usado na época do pr
 - [x] Multi-formato simultâneo: gerar uma vez popula todos os 4 formatos
 - [x] Visualização dos 4 formatos em grade com preview principal + miniaturas
 - [x] Imagem de fundo propagada para todos os formatos automaticamente
-
-### Em Progresso / Recente
-- Migração de Unsplash para Pexels com cascade fallback (3 níveis) — concluído no commit `deb8215`
+- [x] Chaves de API movidas para variáveis de ambiente (.env + Vercel)
+- [x] Botão "Exportar todos os formatos" (4 PNGs de uma vez)
+- [x] Sincronização de fonte, cor e tamanho entre os 4 formatos
+- [x] Botão "Nova imagem" no ImagePanel para rebuscar imagem no Pexels
+- [x] Geração automática de legenda para Instagram e LinkedIn com hashtags
+- [x] CaptionPanel abaixo dos mini previews
+- [x] Persistência do editor via localStorage (Zustand persist middleware)
+- [x] Tratamento de erros amigável no AIPanel
+- [x] Restauração de post do histórico ao clicar na Biblioteca de Posts
+- [x] Placeholder rotativo no campo de prompt do AIPanel
+- [x] Tela de login redesenhada com logo Pulse, logo Agente 17 e link "Esqueci minha senha"
+- [x] Fontes Public Sans e Poppins adicionadas (Google Fonts + Brand Kit + PropertiesPanel)
+- [x] Template padrão alterado para Tech Statement
+- [x] Aba "Templates" renomeada para "Biblioteca de Posts"
 
 ---
 
 ## 7. Próximos Passos Planejados
 
-- Mover chaves de API para variáveis de ambiente (`.env` / Vercel env vars)
-- Melhorar relevância das imagens do Pexels para prompts abstratos/filosóficos
-- Adicionar botão "Exportar todos os formatos" (baixa 4 PNGs de uma vez)
+- Corrigir redirecionamento do Supabase reset password (localhost → produção)
+- Centralização do logo Agente 17 na tela de login
 - Refinamento visual dos templates tech (espaçamento, hierarquia)
+- Versões personalizadas por cliente (modelo de negócio Agente 17)
 
 ---
 
