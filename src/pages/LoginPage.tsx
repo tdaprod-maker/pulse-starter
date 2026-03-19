@@ -128,7 +128,7 @@ export function LoginPage() {
         <img
           src="/logo-agente17-crop.png"
           alt="Agente 17"
-          style={{ height: 32, width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+          style={{ height: 'auto', width: '160px', objectFit: 'contain', display: 'block', margin: '0 auto' }}
         />
       </div>
     </div>
