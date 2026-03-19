@@ -90,7 +90,15 @@ export function ImagePanel({ template }: ImagePanelProps) {
             {brandPhotos.map((url) => (
               <button
                 key={url}
-                onClick={() => setTemplateBackground(template.id, url)}
+                onClick={() => {
+                  setTemplateBackground(template.id, url)
+                  const templateBase = templateRegistry.find(d => template.id.startsWith(d.id))
+                  if (templateBase) {
+                    templateBase.getVariants(theme).forEach(v => {
+                      if (v.id !== template.id) setTemplateBackground(v.id, url)
+                    })
+                  }
+                }}
                 style={{ padding: 0, border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', background: 'none', aspectRatio: '1' }}
               >
                 <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
