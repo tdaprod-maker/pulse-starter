@@ -126,7 +126,7 @@ export function LoginPage() {
           Desenvolvido por
         </p>
         <img
-          src="/logo-agente17.png"
+          src="/logo-agente17.svg"
           alt="Agente 17"
           style={{ height: 28, width: 180, objectFit: 'contain', display: 'block', margin: '0 auto' }}
         />
