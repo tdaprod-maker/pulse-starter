@@ -41,7 +41,7 @@ export function LoginPage() {
         <img
           src="/logo-pulse.png"
           alt="Pulse"
-          style={{ height: '48px', width: 'auto', maxWidth: '160px', display: 'block', margin: '0 auto 24px auto' }}
+          style={{ height: '48px', width: 'auto', maxWidth: '180px', display: 'block', margin: '0 auto 24px auto' }}
         />
 
         {/* Título */}
@@ -130,9 +130,12 @@ export function LoginPage() {
       </div>
 
       {/* Rodapé */}
-      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', margin: '24px 0 0' }}>
-        Desenvolvido por Agente 17
-      </p>
+      <div style={{ marginTop: '24px', textAlign: 'center' }}>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 8px' }}>
+          Desenvolvido por
+        </p>
+        <img src="/logo-agente17.png" alt="Agente 17" style={{ height: '28px', width: 'auto', display: 'block', margin: '0 auto' }} />
+      </div>
     </div>
   )
 }
