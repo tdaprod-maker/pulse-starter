@@ -336,8 +336,9 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         ? '#FFFFFF'
         : (el.props.fill as string) ?? '#000000'
 
+    const textContent = (el.props.text as string) ?? ''
     const measureNode = new KonvaLib.Text({
-      text: (el.props.text as string) ?? '',
+      text: textContent,
       fontSize,
       fontFamily: (el.props.fontFamily as string) ?? 'Inter',
       width: el.width,
@@ -345,6 +346,8 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
       wrap: 'word',
     })
     const bgHeight = measureNode.height() + 12
+    const hasWrap = textContent.includes('\n') || measureNode.height() > fontSize * 1.5
+    const bgWidth = hasWrap ? el.width + 16 : measureNode.getTextWidth() + 24
 
     return (
       <React.Fragment key={el.id}>
@@ -352,7 +355,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
           <Rect
             x={el.x - 8}
             y={y - 4}
-            width={el.width + 16}
+            width={bgWidth}
             height={bgHeight}
             fill="#000000"
             opacity={0.55}
