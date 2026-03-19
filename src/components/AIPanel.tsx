@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { generatePostContent } from '../services/gemini'
@@ -62,6 +62,33 @@ export function AIPanel(_props: AIPanelProps) {
   const [errorMsg, setErrorMsg]       = useState('')
   const [saveWarning, setSaveWarning] = useState(false)
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
+  const [isListening, setIsListening] = useState(false)
+  const recognitionRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null)
+
+  const speechSupported = typeof window !== 'undefined' &&
+    !!(window.SpeechRecognition || (window as typeof window & { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition)
+
+  function toggleMic() {
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+      return
+    }
+    const SR = window.SpeechRecognition ||
+      (window as typeof window & { webkitSpeechRecognition: typeof window.SpeechRecognition }).webkitSpeechRecognition
+    const recognition = new SR()
+    recognition.lang = 'pt-BR'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onresult = (e: SpeechRecognitionEvent) => {
+      const transcript = e.results[0][0].transcript
+      setPrompt((prev) => prev ? `${prev} ${transcript}` : transcript)
+    }
+    recognition.onend = () => setIsListening(false)
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsListening(true)
+  }
 
   useEffect(() => {
     if (prompt) return
@@ -278,23 +305,49 @@ export function AIPanel(_props: AIPanelProps) {
         Gerar com IA
       </h3>
 
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)' }}
-        onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)' }}
-        disabled={loading}
-        placeholder={PLACEHOLDERS[placeholderIdx]}
-        rows={3}
-        style={{
-          width: '100%', background: 'var(--bg-surface)',
-          border: '1px solid var(--border)', borderRadius: '8px',
-          padding: '10px 12px', color: 'var(--text-primary)',
-          fontSize: '13px', fontFamily: 'inherit', resize: 'none',
-          outline: 'none', lineHeight: 1.5,
-        }}
-      />
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)' }}
+          onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)' }}
+          disabled={loading}
+          placeholder={PLACEHOLDERS[placeholderIdx]}
+          rows={3}
+          style={{
+            flex: 1, background: 'var(--bg-surface)',
+            border: '1px solid var(--border)', borderRadius: '8px',
+            padding: '10px 12px', color: 'var(--text-primary)',
+            fontSize: '13px', fontFamily: 'inherit', resize: 'none',
+            outline: 'none', lineHeight: 1.5,
+          }}
+        />
+        {speechSupported && (
+          <button
+            onClick={toggleMic}
+            disabled={loading}
+            title={isListening ? 'Parar gravação' : 'Falar prompt'}
+            style={{
+              flexShrink: 0, background: isListening ? 'rgba(58,90,255,0.15)' : 'transparent',
+              border: `1px solid ${isListening ? 'var(--color-primary)' : 'var(--border)'}`,
+              borderRadius: '8px', padding: '8px', cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: loading ? 0.4 : 1,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="5" y="1" width="6" height="8" rx="3" fill={isListening ? 'var(--color-primary)' : 'var(--text-secondary)'} />
+              <path d="M2.5 8a5.5 5.5 0 0 0 11 0" stroke={isListening ? 'var(--color-primary)' : 'var(--text-secondary)'} strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="8" y1="13.5" x2="8" y2="15.5" stroke={isListening ? 'var(--color-primary)' : 'var(--text-secondary)'} strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {isListening && (
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Ouvindo...</p>
+      )}
 
       <button
         className="btn-gerar"
