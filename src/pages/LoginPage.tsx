@@ -17,18 +17,18 @@ export function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
+      minHeight: '100vh',
       background: 'var(--bg-base)',
       padding: '24px',
     }}>
       {/* Card */}
       <div style={{
         width: '100%',
-        maxWidth: '420px',
+        maxWidth: '480px',
         background: 'var(--bg-panel)',
         border: '1px solid var(--border)',
         borderRadius: '16px',
@@ -41,22 +41,17 @@ export function LoginPage() {
         <img
           src="/logo-pulse-cropped.png"
           alt="Pulse"
-          style={{ height: '48px', width: 'auto', maxWidth: '200px', objectFit: 'contain', display: 'block', margin: '0 auto 24px auto' }}
+          style={{ height: 48, width: 200, objectFit: 'contain', display: 'block', margin: '0 auto', marginBottom: 32 }}
         />
 
         {/* Título */}
-        <div>
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)',
-            textAlign: 'center', margin: 0, letterSpacing: '0.1em' }}>
-            ACESSE SUA CONTA
-          </p>
-        </div>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: 0, letterSpacing: '0.1em' }}>
+          ACESSE SUA CONTA
+        </p>
 
         {/* Email */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            Email
-          </label>
+          <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Email</label>
           <input
             type="email"
             value={email}
@@ -78,9 +73,7 @@ export function LoginPage() {
 
         {/* Senha */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            Senha
-          </label>
+          <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Senha</label>
           <input
             type="password"
             value={password}
@@ -102,9 +95,7 @@ export function LoginPage() {
 
         {/* Erro */}
         {error && (
-          <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>
-            {error}
-          </p>
+          <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>
         )}
 
         {/* Botão */}
@@ -130,11 +121,15 @@ export function LoginPage() {
       </div>
 
       {/* Rodapé */}
-      <div style={{ marginTop: '24px', textAlign: 'center' }}>
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 8px' }}>
+      <div style={{ marginTop: '32px', textAlign: 'center' }}>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px', margin: '0 0 8px' }}>
           Desenvolvido por
         </p>
-        <img src="/logo-agente17.png" alt="Agente 17" style={{ height: '32px', width: '140px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+        <img
+          src="/logo-agente17.png"
+          alt="Agente 17"
+          style={{ height: 28, width: 180, objectFit: 'contain', display: 'block', margin: '0 auto' }}
+        />
       </div>
     </div>
   )
