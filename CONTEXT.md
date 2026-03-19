@@ -326,3 +326,29 @@ AIPanel aplica resultado:
 | agent, agente, chatbot... | `technology digital interface` |
 
 Lógica em `lookupFallbackMap()` em `api/generate-image.js` — ativada no nível 3 da cascata.
+
+---
+
+## 14. Mapa de Componentes por Funcionalidade
+
+| Funcionalidade | Arquivos principais |
+|---|---|
+| Geração de conteúdo com IA | src/components/AIPanel.tsx, src/services/gemini.ts |
+| Busca de imagem de fundo | src/services/replicate.ts, api/generate-image.js |
+| Canvas e renderização | src/engine/CanvasEngine.tsx |
+| Estado global | src/state/useStore.ts |
+| Templates (estrutura e variantes) | src/templates/index.ts, src/templates/[nome]/variants.ts |
+| Edição de texto e cores por elemento | src/components/PropertiesPanel.tsx |
+| Upload e controle de imagem de fundo | src/components/ImagePanel.tsx |
+| Upload e posicionamento do logo | src/components/LogoSection.tsx |
+| Export PNG/JPEG | src/export/exportUtils.ts |
+| Autenticação e login | src/pages/LoginPage.tsx, src/lib/supabase.ts |
+| Redefinição de senha | src/pages/ResetPasswordPage.tsx |
+| Brand Kit (cores, fontes, logo, fotos) | src/pages/BrandPage.tsx, src/services/brandKit.ts |
+| Biblioteca de Posts (histórico) | src/components/AIPanel.tsx (savePost), src/services/brandKit.ts |
+| Seletor de templates | src/components/Sidebar.tsx |
+| Legenda Instagram/LinkedIn | src/components/AIPanel.tsx (CaptionPanel) |
+| Entrada por voz | src/components/AIPanel.tsx (toggleMic, Web Speech API) |
+| Tema e CSS variables | src/contexts/ThemeContext.tsx, src/themes/index.ts |
+| Roteamento | src/App.tsx |
+| Deploy e API Routes | vercel.json, api/generate-image.js |
