@@ -296,7 +296,7 @@ export function EditorPage() {
       )}
 
       <aside style={{
-        width: '360px',
+        width: '420px',
         background: 'var(--bg-panel)',
         borderLeft: '1px solid var(--border)',
         display: 'flex',
