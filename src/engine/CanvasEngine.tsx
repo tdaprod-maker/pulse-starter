@@ -335,9 +335,8 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         ? '#FFFFFF'
         : (el.props.fill as string) ?? '#000000'
 
-    const textLines = ((el.props.text as string) ?? '').split('\n').length
-    const lineH = fontSize * ((el.props.lineHeight as number) ?? 1.2)
-    const bgHeight = textLines * lineH + 12
+    const lines = ((el.props.text as string) ?? '').split('\n').length
+    const bgHeight = lines * fontSize * 1.4 + 12
 
     return (
       <React.Fragment key={el.id}>
