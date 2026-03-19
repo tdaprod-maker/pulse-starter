@@ -177,11 +177,12 @@ export function EditorPage() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         overflow: 'auto',
         position: 'relative',
         gap: '24px',
         padding: '24px',
+        paddingTop: '24px',
       }}>
         {activeTemplate ? (
           <>
