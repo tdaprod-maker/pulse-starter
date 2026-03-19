@@ -337,7 +337,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
 
     return (
       <React.Fragment key={el.id}>
-        {el.props.textBackground && (
+        {Boolean(el.props.textBackground) && (
           <Rect
             x={el.x - 8}
             y={y - 4}
