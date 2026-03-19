@@ -28,11 +28,11 @@ export function LoginPage() {
       {/* Card */}
       <div style={{
         width: '100%',
-        maxWidth: '480px',
+        maxWidth: '560px',
         background: 'var(--bg-panel)',
         border: '1px solid var(--border)',
         borderRadius: '16px',
-        padding: '48px',
+        padding: '56px 56px',
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
@@ -41,7 +41,7 @@ export function LoginPage() {
         <img
           src="/logo-pulse-cropped.png"
           alt="Pulse"
-          style={{ height: 48, width: 200, objectFit: 'contain', display: 'block', margin: '0 auto', marginBottom: 32 }}
+          style={{ height: 48, width: 220, objectFit: 'contain', display: 'block', margin: '0 auto', marginBottom: 32 }}
         />
 
         {/* Título */}
