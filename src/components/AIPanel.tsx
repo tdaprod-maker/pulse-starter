@@ -35,7 +35,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-// ─── Web Speech API types ─────────────────────────────────────────────────────
+// ─── Web Speech API types ──────────────────────────────────────────────────────
 
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList
