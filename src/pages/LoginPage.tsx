@@ -39,9 +39,9 @@ export function LoginPage() {
       }}>
         {/* Logo Pulse */}
         <img
-          src="/logo-pulse.svg"
+          src="/logo-pulse-cropped.png"
           alt="Pulse"
-          style={{ height: '40px', width: '160px', objectFit: 'contain', display: 'block', margin: '0 auto 24px auto' }}
+          style={{ height: '48px', width: 'auto', maxWidth: '200px', objectFit: 'contain', display: 'block', margin: '0 auto 24px auto' }}
         />
 
         {/* Título */}
