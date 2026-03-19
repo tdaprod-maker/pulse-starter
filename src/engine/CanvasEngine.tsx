@@ -335,6 +335,10 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         ? '#FFFFFF'
         : (el.props.fill as string) ?? '#000000'
 
+    const textLines = ((el.props.text as string) ?? '').split('\n').length
+    const lineH = fontSize * ((el.props.lineHeight as number) ?? 1.2)
+    const bgHeight = textLines * lineH + 12
+
     return (
       <React.Fragment key={el.id}>
         {Boolean(el.props.textBackground) && (
@@ -342,7 +346,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
             x={el.x - 8}
             y={y - 4}
             width={el.width + 16}
-            height={el.height + 8}
+            height={bgHeight}
             fill="#000000"
             opacity={0.55}
             cornerRadius={4}
