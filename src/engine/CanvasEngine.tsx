@@ -347,7 +347,11 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
     })
     const bgHeight = measureNode.height() + 12
     const hasWrap = textContent.includes('\n') || measureNode.height() > fontSize * 1.5
-    const bgWidth = hasWrap ? el.width + 16 : measureNode.getTextWidth() + 24
+    const letterSpacing = (el.props.letterSpacing as number) ?? 0
+    const textLength = textContent.replace('\n', '').length
+    const bgWidth = hasWrap
+      ? el.width + 16
+      : measureNode.getTextWidth() + (letterSpacing * textLength) + 24
 
     return (
       <React.Fragment key={el.id}>
