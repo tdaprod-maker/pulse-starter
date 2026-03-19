@@ -335,12 +335,8 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         ? '#FFFFFF'
         : (el.props.fill as string) ?? '#000000'
 
-    const text = (el.props.text as string) ?? ''
-    const lines = text.split('\n')
-    const longestLine = lines.reduce((a, b) => a.length > b.length ? a : b, '')
-    const approxCharWidth = fontSize * 0.55
-    const bgWidth = Math.min(longestLine.length * approxCharWidth + 24, el.width + 16)
-    const bgHeight = lines.length * fontSize * 1.35 + 12
+    const lines = ((el.props.text as string) ?? '').split('\n').length
+    const bgHeight = Math.max(lines * fontSize * 1.2 + 16, fontSize * 1.4)
 
     return (
       <React.Fragment key={el.id}>
@@ -348,7 +344,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
           <Rect
             x={el.x - 8}
             y={y - 4}
-            width={bgWidth}
+            width={el.width + 16}
             height={bgHeight}
             fill="#000000"
             opacity={0.55}
