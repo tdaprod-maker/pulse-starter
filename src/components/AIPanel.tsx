@@ -302,7 +302,7 @@ export function AIPanel(_props: AIPanelProps) {
         fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em',
         color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0,
       }}>
-        Gerar com IA
+        Gerar com IA •
       </h3>
 
       <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
