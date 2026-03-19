@@ -19,26 +19,30 @@ export function LoginPage() {
     <div style={{
       height: '100vh',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: '32px',
       background: 'var(--bg-base)',
     }}>
+      {/* Card */}
       <div style={{
-        width: '360px',
+        width: '100%',
+        maxWidth: '420px',
         background: 'var(--bg-panel)',
         border: '1px solid var(--border)',
         borderRadius: '16px',
-        padding: '40px',
+        padding: '48px',
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
       }}>
-        {/* Logo */}
+        {/* Logo Pulse */}
         <div style={{ textAlign: 'center', marginBottom: '8px' }}>
           <img
-            src="/logo-pulse.svg"
+            src="/logo-pulse.png"
             alt="Pulse"
-            style={{ height: '120px', marginLeft: '-20px', mixBlendMode: 'screen' }}
+            style={{ height: '36px' }}
           />
         </div>
 
@@ -125,26 +129,25 @@ export function LoginPage() {
         >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
-        <p style={{
-          fontSize: '10px',
-          color: 'var(--text-muted)',
-          textAlign: 'center',
-          margin: 0,
-        }}>
-          por{' '}
-          <a
-            href="https://agente17.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: 'var(--accent)',
-              textDecoration: 'none',
-              fontWeight: 600,
-            }}
-          >
-            Agente 17
-          </a>
-        </p>
+      </div>
+
+      {/* Rodapé */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Desenvolvido por</span>
+        <img
+          src="/logo-agente17.png"
+          alt="Agente 17"
+          height={24}
+          onError={(e) => {
+            const img = e.currentTarget
+            img.style.display = 'none'
+            const span = document.createElement('span')
+            span.textContent = 'Agente 17'
+            span.style.fontSize = '12px'
+            span.style.color = 'var(--text-muted)'
+            img.parentNode?.appendChild(span)
+          }}
+        />
       </div>
     </div>
   )
