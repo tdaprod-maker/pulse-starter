@@ -37,6 +37,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
       if (!template.backgroundImage) { setBgImg(null); return }
       console.log('[BG] loading image, length:', template.backgroundImage.length)
       const img = new window.Image()
+      img.crossOrigin = 'anonymous'
       img.onload = () => {
         console.log('[BG] image loaded:', img.naturalWidth, img.naturalHeight)
         setBgImg(img)
