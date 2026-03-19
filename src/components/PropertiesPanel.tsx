@@ -105,6 +105,7 @@ function TextField({ el, templateId }: TextFieldProps) {
     syncElementStyle(templateId, el.id, { fontSize: clamped })
   }
 
+  console.log('TextField render', el.id, el.props.textBackground)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       {/* Linha: rótulo + cor + fonte */}
