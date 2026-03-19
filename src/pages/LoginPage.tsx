@@ -12,7 +12,7 @@ export function LoginPage() {
   async function handleResetPassword() {
     if (!email) { setError('Digite seu e-mail antes de solicitar a redefinição de senha'); return }
     setResetLoading(true)
-    await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` })
     setResetSent(true)
     setResetLoading(false)
   }
