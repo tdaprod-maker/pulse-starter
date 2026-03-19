@@ -158,14 +158,14 @@ function TextField({ el, templateId }: TextFieldProps) {
         <button
           onClick={() => syncElementStyle(templateId, el.id, { textBackground: !el.props.textBackground })}
           style={{
-            fontSize: '11px', padding: '2px 10px', borderRadius: '5px', cursor: 'pointer',
+            fontSize: '10px', padding: '1px 8px', borderRadius: '5px', cursor: 'pointer',
             fontFamily: 'inherit',
             background: el.props.textBackground ? 'rgba(58,90,255,0.15)' : 'transparent',
             border: `1px solid ${el.props.textBackground ? 'var(--color-primary)' : 'var(--border)'}`,
             color: el.props.textBackground ? 'var(--color-primary)' : 'var(--text-muted)',
           }}
         >
-          {el.props.textBackground ? 'Ativo' : 'Inativo'}
+          {el.props.textBackground ? 'ON' : 'OFF'}
         </button>
       </div>
 
