@@ -39,7 +39,7 @@ export function LoginPage() {
       }}>
         {/* Logo Pulse */}
         <img
-          src="/logo-pulse.png"
+          src="/logo-pulse.svg"
           alt="Pulse"
           style={{ height: '40px', width: '160px', objectFit: 'contain', display: 'block', margin: '0 auto 24px auto' }}
         />
