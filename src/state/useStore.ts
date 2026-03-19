@@ -152,6 +152,7 @@ export const useStore = create<PulseStore>()(
               if (props.fontFamily !== undefined) updatedProps.fontFamily = props.fontFamily
               if (props.fill !== undefined) updatedProps.fill = props.fill
               if (props.rotation !== undefined) updatedProps.rotation = props.rotation
+              if (props.textBackground !== undefined) updatedProps.textBackground = props.textBackground
               if (props.fontSize !== undefined) {
                 const ratio = (props.fontSize as number) / currentFontSize
                 const siblingFontSize = (el.props.fontSize as number) ?? currentFontSize
