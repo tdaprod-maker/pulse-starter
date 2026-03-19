@@ -1,6 +1,7 @@
 import React, { forwardRef, useState, useLayoutEffect, useRef, useEffect } from 'react'
 import { Stage, Layer, Rect, Text, Image as KonvaImage } from 'react-konva'
 import type Konva from 'konva'
+import KonvaLib from 'konva'
 import type { CanvasElement, Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
 
@@ -335,8 +336,15 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         ? '#FFFFFF'
         : (el.props.fill as string) ?? '#000000'
 
-    const lines = ((el.props.text as string) ?? '').split('\n').length
-    const bgHeight = Math.max(lines * fontSize * 1.2 + 16, fontSize * 1.4)
+    const measureNode = new KonvaLib.Text({
+      text: (el.props.text as string) ?? '',
+      fontSize,
+      fontFamily: (el.props.fontFamily as string) ?? 'Inter',
+      width: el.width,
+      lineHeight: (el.props.lineHeight as number) ?? 1.2,
+      wrap: 'word',
+    })
+    const bgHeight = measureNode.height() + 12
 
     return (
       <React.Fragment key={el.id}>
