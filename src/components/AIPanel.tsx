@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { generatePostContent } from '../services/gemini'
@@ -47,11 +47,26 @@ function friendlyError(err: unknown): string {
   return 'Algo deu errado. Tente novamente em alguns instantes.'
 }
 
+const PLACEHOLDERS = [
+  'Ex: lançamento do meu novo agente de IA',
+  'Ex: dado surpreendente sobre automação em 2025',
+  'Ex: frase motivacional sobre foco e disciplina',
+  'Ex: novidade sobre inteligência artificial no Brasil',
+  'Ex: promoção do meu serviço de consultoria em IA',
+]
+
 export function AIPanel(_props: AIPanelProps) {
-  const [prompt, setPrompt]     = useState('')
-  const [status, setStatus]     = useState<'idle' | 'loading' | 'error'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
+  const [prompt, setPrompt]           = useState('')
+  const [status, setStatus]           = useState<'idle' | 'loading' | 'error'>('idle')
+  const [errorMsg, setErrorMsg]       = useState('')
   const [saveWarning, setSaveWarning] = useState(false)
+  const [placeholderIdx, setPlaceholderIdx] = useState(0)
+
+  useEffect(() => {
+    if (prompt) return
+    const id = setInterval(() => setPlaceholderIdx((i) => (i + 1) % PLACEHOLDERS.length), 3000)
+    return () => clearInterval(id)
+  }, [prompt])
 
   const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground, setTemplateImagePrompt, setCaption } = useStore()
   const { theme } = useTheme()
@@ -269,7 +284,7 @@ export function AIPanel(_props: AIPanelProps) {
         onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)' }}
         onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)' }}
         disabled={loading}
-        placeholder="Ex: lançamento de produto tech, tom sofisticado..."
+        placeholder={PLACEHOLDERS[placeholderIdx]}
         rows={3}
         style={{
           width: '100%', background: 'var(--bg-surface)',
