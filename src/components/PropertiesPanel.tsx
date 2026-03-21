@@ -221,6 +221,10 @@ function AccentSection({ template }: { template: Template }) {
   function handleColor(hex: string) {
     ensureSiblings(template.id)
     syncElementStyle(template.id, accentId!, { fill: hex })
+    if (template.id.startsWith('editorial-card')) {
+      syncElementStyle(template.id, 'title-vert-accent', { fill: hex })
+      syncElementStyle(template.id, 'title-rule', { fill: hex })
+    }
   }
 
   return (
