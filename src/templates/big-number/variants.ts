@@ -8,10 +8,10 @@ const opticalCenterY = (canvasH: number, blockH: number) =>
 
 // ─── Tipografia ────────────────────────────────────────────────────────────────
 const FS_NUM     = 480
-const FS_CAP     = 24
+const FS_CAP     = 36
 const FS_NUM_9x16 = 500
 const FS_NUM_169  = 520
-const FS_CAP_169  = 28
+const FS_CAP_169  = 40
 const LH_NUM     = 1.0
 const LH_CAP     = 1.4
 
@@ -43,9 +43,9 @@ const W_1920  = 1920 - LM_1920 * 2   // 1680px
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function makeBigNumberVariants(_theme: Theme): Template[] {
-  const BACKGROUND    = '#F0F4FF'
-  const NUMBER_COLOR  = '#1A2B6B'
-  const CAPTION_COLOR = 'rgba(26,43,107,0.7)'
+  const BACKGROUND    = '#0A0A0A'
+  const NUMBER_COLOR  = '#FFFFFF'
+  const CAPTION_COLOR = 'rgba(255,255,255,0.9)'
   const FONT          = 'Space Grotesk, sans-serif'
 
   // ── 1:1 ───────────────────────────────────────────────────────────────────
@@ -60,6 +60,7 @@ export function makeBigNumberVariants(_theme: Theme): Template[] {
     width: 1080,
     height: 1080,
     background: BACKGROUND,
+    backgroundOpacity: 0.5,
     elements: [
       {
         id: 'number',
@@ -123,6 +124,7 @@ export function makeBigNumberVariants(_theme: Theme): Template[] {
     width: 1080,
     height: 1350,
     background: BACKGROUND,
+    backgroundOpacity: 0.5,
     elements: [
       {
         id: 'number',
@@ -186,6 +188,7 @@ export function makeBigNumberVariants(_theme: Theme): Template[] {
     width: 1080,
     height: 1920,
     background: BACKGROUND,
+    backgroundOpacity: 0.5,
     elements: [
       {
         id: 'number',
@@ -249,6 +252,7 @@ export function makeBigNumberVariants(_theme: Theme): Template[] {
     width: 1920,
     height: 1080,
     background: BACKGROUND,
+    backgroundOpacity: 0.5,
     elements: [
       {
         id: 'number',
