@@ -8,6 +8,13 @@ import { loadBrandConfig } from '../services/brandKit'
 
 const SLIDE_COUNTS = [3, 4, 5]
 
+const CAROUSEL_TEMPLATES = [
+  { id: 'tech-statement', label: 'Tech Statement' },
+  { id: 'tech-product',   label: 'Tech Product'   },
+  { id: 'editorial-card', label: 'Editorial Card'  },
+  { id: 'tech-minimal',   label: 'Tech Minimal'    },
+]
+
 const TYPE_LABEL: Record<CarouselSlide['type'], string> = {
   cover:   'CAPA',
   content: 'CONTEÚDO',
@@ -108,6 +115,7 @@ async function drawSlide(
 
 export function CarouselPage() {
   const [slideCount, setSlideCount] = useState(4)
+  const [templateId, setTemplateId] = useState('tech-statement')
   const [prompt, setPrompt] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [slides, setSlides] = useState<CarouselSlide[]>([])
@@ -232,6 +240,38 @@ export function CarouselPage() {
 
         {/* Config + Prompt */}
         <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* Template do carrossel */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Template do carrossel
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {CAROUSEL_TEMPLATES.map(tpl => {
+                const active = tpl.id === templateId
+                return (
+                  <button
+                    key={tpl.id}
+                    onClick={() => setTemplateId(tpl.id)}
+                    style={{
+                      padding: '10px 14px', borderRadius: '8px', textAlign: 'left',
+                      fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s',
+                      background: active ? 'rgba(58,90,255,0.08)' : 'var(--bg-surface)',
+                      border: active ? '1px solid rgba(58,90,255,0.5)' : '1px solid var(--border)',
+                      boxShadow: active ? '0 0 0 1px rgba(58,90,255,0.2)' : 'none',
+                    }}
+                  >
+                    <span style={{
+                      display: 'block', fontSize: '13px', fontWeight: active ? 600 : 400,
+                      color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    }}>
+                      {tpl.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
           {/* Número de slides */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
