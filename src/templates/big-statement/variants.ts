@@ -9,8 +9,8 @@ const opticalCenterY = (canvasH: number, blockH: number) =>
 
 // ─── Constantes para 1080px de largura (1:1, 4:5, 9:16) ──────────────────────
 const M       = 60           // era 120 — margens apertadas, mais ousado
-const FS_1080 = 240
-const LH_1080 = lineH(FS_1080)       // 240px por linha
+const FS_1080 = 160
+const LH_1080 = 180                   // 160 * 1.1 arredondado
 const W_1080  = 1080 - M             // 1020px
 
 // Bloco = 2 linhas de texto + underline accent
