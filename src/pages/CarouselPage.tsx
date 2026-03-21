@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import JSZip from 'jszip'
 import { generateCarouselContent } from '../services/gemini'
 import type { CarouselSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
@@ -25,6 +26,7 @@ export function CarouselPage() {
   const [slideImages, setSlideImages] = useState<string[]>([])
   const [caption, setCaption] = useState('')
   const [copied, setCopied] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   async function handleGenerate() {
     if (!prompt.trim() || status === 'loading') return
@@ -50,6 +52,91 @@ export function CarouselPage() {
       setStatus('error')
     } finally {
       setStatus(s => s === 'loading' ? 'error' : s)
+    }
+  }
+
+  async function handleExport() {
+    if (!slides.length || exporting) return
+    setExporting(true)
+    try {
+      const zip = new JSZip()
+      for (let i = 0; i < slides.length; i++) {
+        const slide = slides[i]
+        const imgSrc = slideImages[i] ?? ''
+        const canvas = document.createElement('canvas')
+        canvas.width  = 1080
+        canvas.height = 1080
+        const ctx = canvas.getContext('2d')!
+
+        // fundo preto base
+        ctx.fillStyle = '#111111'
+        ctx.fillRect(0, 0, 1080, 1080)
+
+        // imagem de fundo com cover
+        if (imgSrc) {
+          await new Promise<void>(resolve => {
+            const img = new window.Image()
+            img.crossOrigin = 'anonymous'
+            img.onload = () => {
+              const scale = Math.max(1080 / img.naturalWidth, 1080 / img.naturalHeight)
+              const w = img.naturalWidth  * scale
+              const h = img.naturalHeight * scale
+              ctx.drawImage(img, (1080 - w) / 2, (1080 - h) / 2, w, h)
+              resolve()
+            }
+            img.onerror = () => resolve()
+            img.src = imgSrc
+          })
+        }
+
+        // overlay escuro
+        ctx.fillStyle = 'rgba(0,0,0,0.45)'
+        ctx.fillRect(0, 0, 1080, 1080)
+
+        // título
+        ctx.fillStyle = '#FFFFFF'
+        ctx.textAlign = 'center'
+        ctx.font = 'bold 64px Inter, sans-serif'
+        const titleLines = wrapText(ctx, slide.title, 900)
+        const lineH = 76
+        const totalTitleH = titleLines.length * lineH
+        const bodyLines = slide.body ? wrapText(ctx, slide.body, 900) : []
+        const totalBodyH = bodyLines.length * 40
+        const gap = slide.body ? 24 : 0
+        const blockH = totalTitleH + gap + totalBodyH
+        let cy = (1080 - blockH) / 2
+
+        for (const line of titleLines) {
+          ctx.fillText(line, 540, cy + 64)
+          cy += lineH
+        }
+
+        // body
+        if (bodyLines.length > 0) {
+          cy += gap
+          ctx.font = '28px Inter, sans-serif'
+          ctx.fillStyle = 'rgba(255,255,255,0.82)'
+          for (const line of bodyLines) {
+            ctx.fillText(line, 540, cy + 28)
+            cy += 40
+          }
+        }
+
+        const dataUrl = canvas.toDataURL('image/png')
+        const base64 = dataUrl.split(',')[1]
+        const num = String(i + 1).padStart(2, '0')
+        zip.file(`slide-${num}.png`, base64, { base64: true })
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = 'carrossel.zip'
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -157,9 +244,25 @@ export function CarouselPage() {
 
         {/* Área de slides */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Slides
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Slides
+            </span>
+            {slides.length > 0 && (
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                style={{
+                  fontSize: '12px', padding: '5px 14px', borderRadius: '7px', cursor: exporting ? 'default' : 'pointer',
+                  fontFamily: 'inherit', transition: 'all 0.15s', opacity: exporting ? 0.6 : 1,
+                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                {exporting ? 'Exportando...' : 'Exportar ZIP'}
+              </button>
+            )}
+          </div>
 
           {slides.length === 0 ? (
             <div style={{
@@ -288,6 +391,23 @@ function SlidesIcon() {
       <line x1="8" y1="20" x2="14" y2="20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   )
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word
+    if (ctx.measureText(test).width > maxWidth && current) {
+      lines.push(current)
+      current = word
+    } else {
+      current = test
+    }
+  }
+  if (current) lines.push(current)
+  return lines
 }
 
 function Spinner() {
