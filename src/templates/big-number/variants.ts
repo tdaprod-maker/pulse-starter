@@ -3,7 +3,7 @@ import type { Theme } from '../../themes'
 
 // ─── Tipografia ────────────────────────────────────────────────────────────────
 // Número vaza pelo topo — quase saindo do canvas
-const FS_NUM    = 720     // era 560 — muito mais dramático
+const FS_NUM    = 480
 const FS_CAP    = 24      // era 32 — legenda mais discreta e elegante
 const LH_NUM    = 1.0
 const LH_CAP    = 1.4
@@ -34,13 +34,13 @@ const LM_1920 = 120
 const W_1920  = 1920 - LM_1920 * 2   // 1680px
 
 // ─── 9:16 ─────────────────────────────────────────────────────────────────────
-const FS_NUM_9x16   = 740
+const FS_NUM_9x16   = 500
 const NUM_H_9x16    = textH(FS_NUM_9x16, LH_NUM, 1)   // 740px
 const NUM_Y_9x16    = -60
 const captionY_9x16 = NUM_Y_9x16 + NUM_H_9x16 + GAP1 + HAIRLINE_H + GAP2
 
 // ─── 16:9 ─────────────────────────────────────────────────────────────────────
-const FS_NUM_169  = 800
+const FS_NUM_169  = 520
 const FS_CAP_169  = 28
 const NUM_H_169   = textH(FS_NUM_169, LH_NUM, 1)   // 800px
 const NUM_Y_169   = -70
