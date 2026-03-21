@@ -1,16 +1,38 @@
-import { useRef } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import type { Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
+import { loadBrandConfig } from '../services/brandKit'
+import type { BrandLogo } from '../services/brandKit'
+import { supabase } from '../lib/supabase'
 
 interface LogoSectionProps {
   template: Template
 }
 
 export function LogoSection({ template }: LogoSectionProps) {
-  const { setTemplateLogo, setTemplateLogoStyle } = useStore()
+  const { setTemplateLogo, setTemplateLogoStyle, templates } = useStore()
   const inputRef = useRef<HTMLInputElement>(null)
+  const [brandLogos, setBrandLogos] = useState<BrandLogo[]>([])
 
   const logoSize = template.logoSize ?? 400
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? ''
+      if (!email) return
+      loadBrandConfig(email).then(config => {
+        setBrandLogos(config.logos ?? [])
+      })
+    })
+  }, [])
+
+  function handleSelectBrandLogo(url: string) {
+    const lastHyphen = template.id.lastIndexOf('-')
+    const prefix = lastHyphen >= 0 ? template.id.substring(0, lastHyphen) : template.id
+    templates.filter(t => t.id.startsWith(prefix)).forEach(t => {
+      setTemplateLogo(t.id, url)
+    })
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -37,6 +59,36 @@ export function LogoSection({ template }: LogoSectionProps) {
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {/* Brand Kit logos */}
+      {brandLogos.length > 0 ? (
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
+          {brandLogos.map((logo) => (
+            <button
+              key={logo.url}
+              onClick={() => handleSelectBrandLogo(logo.url)}
+              title={logo.label}
+              style={{
+                flexShrink: 0,
+                width: '52px', height: '52px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                background: 'repeating-conic-gradient(#374151 0% 25%, #1f2937 0% 50%) 0 0 / 10px 10px',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden',
+              }}
+            >
+              <img src={logo.url} alt={logo.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+          Adicione logotipos no Brand Kit
+        </p>
+      )}
 
       {template.logoImage ? (
         <div className="flex flex-col gap-3">

@@ -1,8 +1,11 @@
 import { supabase } from '../lib/supabase'
 
+export type BrandLogo = { url: string; label: string }
+
 export interface BrandConfig {
   brand_name: string
   logo_url: string | null
+  logos: BrandLogo[]
   color_primary: string
   color_secondary: string
   color_accent: string
@@ -14,6 +17,7 @@ export interface BrandConfig {
 export const DEFAULT_BRAND: BrandConfig = {
   brand_name: 'AGENTE 17',
   logo_url: null,
+  logos: [],
   color_primary: '#3A5AFF',
   color_secondary: '#5B8FD4',
   color_accent: '#FFCA1D',
@@ -25,6 +29,13 @@ export const DEFAULT_BRAND: BrandConfig = {
 export async function uploadPhoto(file: File, email: string): Promise<string | null> {
   const path = `photos/${email}/${Date.now()}_${file.name}`
   return uploadMedia(file, path)
+}
+
+export async function uploadLogo(file: File, email: string, label: string): Promise<BrandLogo | null> {
+  const path = `logos/${email}/${Date.now()}_${file.name}`
+  const url = await uploadMedia(file, path)
+  if (!url) return null
+  return { url, label }
 }
 
 export async function loadBrandConfig(userEmail: string): Promise<BrandConfig> {

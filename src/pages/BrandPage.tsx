@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { loadBrandConfig, saveBrandConfig, uploadMedia, uploadPhoto, DEFAULT_BRAND } from '../services/brandKit'
-import type { BrandConfig } from '../services/brandKit'
+import { loadBrandConfig, saveBrandConfig, uploadMedia, uploadPhoto, uploadLogo, DEFAULT_BRAND } from '../services/brandKit'
+import type { BrandConfig, BrandLogo } from '../services/brandKit'
 export function BrandPage() {
   const navigate = useNavigate()
   const [config, setConfig] = useState<BrandConfig>(DEFAULT_BRAND)
@@ -11,7 +11,9 @@ export function BrandPage() {
   const [saved, setSaved] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  const logoLibInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -56,6 +58,25 @@ export function BrandPage() {
     if (!file) return
     const url = await uploadMedia(file, `logos/${userEmail}/logo`)
     if (url) setConfig(prev => ({ ...prev, logo_url: url }))
+  }
+
+  async function handleAddLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const defaultLabel = file.name.replace(/\.[^.]+$/, '')
+    const label = window.prompt('Nome do logotipo (ex: Branco, Preto)', defaultLabel)
+    if (!label) { e.target.value = ''; return }
+    const current = config.logos ?? []
+    if (current.length >= 10) { e.target.value = ''; return }
+    setUploadingLogo(true)
+    const result = await uploadLogo(file, userEmail, label)
+    if (result) setConfig(prev => ({ ...prev, logos: [...(prev.logos ?? []), result] }))
+    setUploadingLogo(false)
+    e.target.value = ''
+  }
+
+  function handleRemoveLogo(logo: BrandLogo) {
+    setConfig(prev => ({ ...prev, logos: (prev.logos ?? []).filter(l => l.url !== logo.url) }))
   }
 
   if (loading) return (
@@ -110,6 +131,50 @@ export function BrandPage() {
                   onChange={handleLogoUpload} style={{ display: 'none' }} />
               </label>
             </div>
+          </Section>
+
+          {/* Logotipos */}
+          <Section title="Logotipos">
+            <input
+              ref={logoLibInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAddLogo}
+              style={{ display: 'none' }}
+            />
+            {(config.logos ?? []).length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                {(config.logos ?? []).map((logo) => (
+                  <div key={logo.url} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', width: '80px', height: '80px', background: 'repeating-conic-gradient(#374151 0% 25%, #1f2937 0% 50%) 0 0 / 12px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src={logo.url} alt={logo.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', padding: '6px' }} />
+                    <button
+                      onClick={() => handleRemoveLogo(logo)}
+                      title={logo.label}
+                      style={{
+                        position: 'absolute', top: '3px', right: '3px',
+                        width: '18px', height: '18px', borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.7)', border: 'none',
+                        color: 'white', fontSize: '11px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        lineHeight: 1, padding: 0,
+                      }}
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => logoLibInputRef.current?.click()}
+              disabled={uploadingLogo || (config.logos ?? []).length >= 10}
+              style={{
+                padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
+                background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit',
+                opacity: uploadingLogo || (config.logos ?? []).length >= 10 ? 0.5 : 1,
+              }}
+            >
+              {uploadingLogo ? 'Enviando...' : `Adicionar logotipo ${(config.logos ?? []).length}/10`}
+            </button>
           </Section>
 
           {/* Biblioteca de Fotos */}
