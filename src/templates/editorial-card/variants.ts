@@ -41,16 +41,11 @@ const BLOCK_H = BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3 + RULE_H + GAP4 +
 // = 8+40+31+60+144+24+2+28+96 = 433px
 
 // ─── 9:16 ─────────────────────────────────────────────────────────────────────
-const AY916       = 980
-const GAP1_916    = 24   // barra → label (mais compacto)
-const GAP2_916    = 40   // label → título (mais compacto)
-const LABEL_FS916 = 28
-const LABEL_H916  = textH(LABEL_FS916, LABEL_LH, 1)   // 40px
-const TITLE_FS916 = 96
-const TITLE_H916  = textH(TITLE_FS916, TITLE_LH, 2)   // 192px
-const BODY_FS916  = 36
-const BODY_H916   = textH(BODY_FS916, BODY_LH, 2)     // 123px
-const BODY_W916   = 900
+const TITLE_FS916 = 80
+const TITLE_H916  = textH(TITLE_FS916, TITLE_LH, 2)   // 160px
+const BODY_FS916  = 32
+const BODY_H916   = textH(BODY_FS916, BODY_LH, 2)     // 109px
+const BODY_W916   = 840
 
 // ─── 16:9 ─────────────────────────────────────────────────────────────────────
 const LM16       = 160
@@ -265,7 +260,8 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
     ],
   }
 
-  // 9:16 — overlay escuro + texto no terço inferior
+  // 9:16 — mesma estrutura do 1:1, canvas mais alto, fontes levemente maiores
+  const AY3 = TOP   // 80
   const editorialCard9x16: Template = {
     id: 'editorial-card-9x16',
     name: 'Editorial Card — 9:16',
@@ -275,19 +271,10 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
     background: BACKGROUND,
     elements: [
       {
-        id: 'bottom-overlay',
-        type: 'shape',
-        x: 0,
-        y: 820,
-        width: 1080,
-        height: 1100,
-        props: { fill: '#0A0A0A', opacity: 0.85, cornerRadius: 0 },
-      },
-      {
         id: 'accent-bar',
         type: 'shape',
         x: 0,
-        y: 880,
+        y: AY3,
         width: 1080,
         height: BAR_H,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
@@ -296,12 +283,12 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'label',
         type: 'text',
         x: LM,
-        y: AY916 + BAR_H + GAP1_916,
+        y: AY3 + BAR_H + GAP1,
         width: 1080 - LM * 2,
-        height: LABEL_H916,
+        height: LABEL_H,
         props: {
           text: 'CATEGORIA',
-          fontSize: LABEL_FS916,
+          fontSize: LABEL_FS,
           fontFamily: FONT,
           fontStyle: 'normal',
           lineHeight: LABEL_LH,
@@ -314,7 +301,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title-vert-accent',
         type: 'shape',
         x: LM - 16,
-        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916,
+        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2,
         width: VERT_ACCENT_W,
         height: TITLE_H916,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
@@ -323,7 +310,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title',
         type: 'text',
         x: LM,
-        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916,
+        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2,
         width: 1080 - LM * 2,
         height: TITLE_H916,
         props: {
@@ -342,7 +329,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title-rule',
         type: 'shape',
         x: LM,
-        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916 + TITLE_H916 + GAP3,
+        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H916 + GAP3,
         width: RULE_W,
         height: RULE_H,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
@@ -351,7 +338,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'body',
         type: 'text',
         x: LM,
-        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916 + TITLE_H916 + GAP3 + RULE_H + GAP4,
+        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H916 + GAP3 + RULE_H + GAP4,
         width: BODY_W916,
         height: BODY_H916,
         props: {
