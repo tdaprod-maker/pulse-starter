@@ -57,7 +57,7 @@ const BODY_W16   = 760
 
 export function makeEditorialCardVariants(theme: Theme): Template[] {
   const BACKGROUND   = theme.colors.secondary
-  const ACCENT_COLOR = theme.colors.coral
+  const ACCENT_COLOR = theme.colors.primary
   const TITLE_COLOR  = theme.colors.textOnLight
   const MUTED_COLOR  = theme.colors.textSecondary
   const FONT         = theme.fonts.heading
