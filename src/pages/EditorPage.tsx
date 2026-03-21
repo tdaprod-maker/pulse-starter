@@ -54,6 +54,17 @@ export function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Registra todas as variantes do template ativo no store ao trocar de template
+  useEffect(() => {
+    if (!activeTemplate) return
+    const def = templateRegistry.find((d) => activeTemplate.id.startsWith(d.id))
+    if (!def) return
+    def.getVariants(theme).forEach((v) => {
+      if (!templates.find((t) => t.id === v.id)) addTemplate(v)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTemplate?.id])
+
   // Restaura post do histórico quando pendingPost é definido
   const ACCENT_ELEMENT: Record<string, string> = {
     'hero-title':     'accent-bar',
