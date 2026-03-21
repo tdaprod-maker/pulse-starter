@@ -40,6 +40,16 @@ const RULE_H = 2
 const BLOCK_H = BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3 + RULE_H + GAP4 + BODY_H
 // = 8+40+31+60+144+24+2+28+96 = 433px
 
+// ─── 9:16 ─────────────────────────────────────────────────────────────────────
+const AY916       = 480
+const LABEL_FS916 = 28
+const LABEL_H916  = textH(LABEL_FS916, LABEL_LH, 1)   // 40px
+const TITLE_FS916 = 96
+const TITLE_H916  = textH(TITLE_FS916, TITLE_LH, 2)   // 192px
+const BODY_FS916  = 36
+const BODY_H916   = textH(BODY_FS916, BODY_LH, 2)     // 123px
+const BODY_W916   = 880
+
 // ─── 16:9 ─────────────────────────────────────────────────────────────────────
 const LM16       = 160
 const LABEL_FS16 = 28
@@ -253,8 +263,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
     ],
   }
 
-  // 9:16 — bloco centralizado verticalmente
-  const AY3 = opticalCenterY(1920, BLOCK_H)   // 728
+  // 9:16 — bloco no terço superior/médio
   const editorialCard9x16: Template = {
     id: 'editorial-card-9x16',
     name: 'Editorial Card — 9:16',
@@ -267,7 +276,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'accent-bar',
         type: 'shape',
         x: 0,
-        y: AY3,
+        y: AY916,
         width: 1080,
         height: BAR_H,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
@@ -276,12 +285,12 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'label',
         type: 'text',
         x: LM,
-        y: AY3 + BAR_H + GAP1,
+        y: AY916 + BAR_H + GAP1,
         width: 1080 - LM * 2,
-        height: LABEL_H,
+        height: LABEL_H916,
         props: {
           text: 'CATEGORIA',
-          fontSize: LABEL_FS,
+          fontSize: LABEL_FS916,
           fontFamily: FONT,
           fontStyle: 'normal',
           lineHeight: LABEL_LH,
@@ -294,21 +303,21 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title-vert-accent',
         type: 'shape',
         x: LM - 16,
-        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2,
+        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2,
         width: VERT_ACCENT_W,
-        height: TITLE_H,
+        height: TITLE_H916,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
       },
       {
         id: 'title',
         type: 'text',
         x: LM,
-        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2,
+        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2,
         width: 1080 - LM * 2,
-        height: TITLE_H,
+        height: TITLE_H916,
         props: {
           text: 'Título do\nSeu Post',
-          fontSize: TITLE_FS,
+          fontSize: TITLE_FS916,
           fontFamily: FONT,
           fontStyle: 'bold',
           lineHeight: TITLE_LH,
@@ -322,7 +331,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title-rule',
         type: 'shape',
         x: LM,
-        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3,
+        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2 + TITLE_H916 + GAP3,
         width: RULE_W,
         height: RULE_H,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
@@ -331,12 +340,12 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'body',
         type: 'text',
         x: LM,
-        y: AY3 + BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3 + RULE_H + GAP4,
-        width: BODY_W,
-        height: BODY_H,
+        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2 + TITLE_H916 + GAP3 + RULE_H + GAP4,
+        width: BODY_W916,
+        height: BODY_H916,
         props: {
           text: 'Texto descritivo que complementa e expande o título principal do seu post.',
-          fontSize: BODY_FS,
+          fontSize: BODY_FS916,
           fontFamily: FONT,
           fontStyle: 'normal',
           lineHeight: BODY_LH,
