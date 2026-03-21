@@ -287,7 +287,7 @@ function ShapeSection({ template }: { template: Template }) {
   )
 }
 
-// ─── Seção fundo sólido (tech-minimal) ───────────────────────────────────────
+// ─── Seção fundo sólido (tech-minimal e big-number) ──────────────────────────
 
 function hexLuminance(hex: string): number {
   const h = hex.replace('#', '')
@@ -302,7 +302,9 @@ function SolidBackgroundSection({ template }: { template: Template }) {
   const ensureSiblings = useEnsureSiblings()
   const { theme } = useTheme()
 
-  if (!template.id.startsWith('tech-minimal')) return null
+  const isTechMinimal = template.id.startsWith('tech-minimal')
+  const isBigNumber   = template.id.startsWith('big-number')
+  if (!isTechMinimal && !isBigNumber) return null
 
   const color = template.background ?? '#000000'
 
@@ -315,7 +317,12 @@ function SolidBackgroundSection({ template }: { template: Template }) {
       .forEach((t) => setTemplateSolidBackground(t.id, hex))
     const luminance = hexLuminance(hex)
     const textFill = luminance > 128 ? '#000000' : '#FFFFFF'
-    syncElementStyle(template.id, 'phrase', { fill: textFill })
+    if (isBigNumber) {
+      syncElementStyle(template.id, 'number', { fill: textFill })
+      syncElementStyle(template.id, 'caption', { fill: textFill })
+    } else {
+      syncElementStyle(template.id, 'phrase', { fill: textFill })
+    }
     const isLight = luminance > 128
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? ''
