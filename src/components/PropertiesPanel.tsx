@@ -285,6 +285,36 @@ function ShapeSection({ template }: { template: Template }) {
   )
 }
 
+// ─── Seção fundo sólido (tech-minimal) ───────────────────────────────────────
+
+function SolidBackgroundSection({ template }: { template: Template }) {
+  const { setTemplateSolidBackground, templates } = useStore()
+  const ensureSiblings = useEnsureSiblings()
+
+  if (!template.id.startsWith('tech-minimal')) return null
+
+  const color = template.background ?? '#000000'
+
+  function handleColor(hex: string) {
+    ensureSiblings(template.id)
+    const lastHyphen = template.id.lastIndexOf('-')
+    const prefix = lastHyphen >= 0 ? template.id.substring(0, lastHyphen) : template.id
+    templates
+      .filter((t) => t.id.startsWith(prefix))
+      .forEach((t) => setTemplateSolidBackground(t.id, hex))
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px' }}>
+      <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', flex: 1, userSelect: 'none' }}>
+        Cor de fundo
+      </span>
+      <ColorPicker color={color} onChange={handleColor} title="Cor de fundo" />
+      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace', textTransform: 'uppercase' }}>{color}</span>
+    </div>
+  )
+}
+
 // ─── Painel de propriedades ───────────────────────────────────────────────────
 
 export function PropertiesPanel({ template }: { template: Template }) {
@@ -303,6 +333,7 @@ export function PropertiesPanel({ template }: { template: Template }) {
 
       <AccentSection template={template} />
       <ShapeSection template={template} />
+      <SolidBackgroundSection template={template} />
     </div>
   )
 }

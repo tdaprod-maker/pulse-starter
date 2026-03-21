@@ -67,6 +67,7 @@ interface PulseStore {
   setTemplateLogoStyle: (templateId: string, size: number) => void
   setTemplateLogoPosition: (templateId: string, x: number, y: number) => void
   setTemplateImagePrompt: (templateId: string, prompt: string) => void
+  setTemplateSolidBackground: (templateId: string, color: string) => void
   setCaption: (caption: Caption | null) => void
   setPendingPost: (post: PostRecord | null) => void
 }
@@ -217,6 +218,12 @@ export const useStore = create<PulseStore>()(
     set((state) => ({
       templates: state.templates.map((t) =>
         t.id !== templateId ? t : { ...t, imagePrompt: prompt }
+      ),
+    })),
+  setTemplateSolidBackground: (templateId, color) =>
+    set((state) => ({
+      templates: state.templates.map((t) =>
+        t.id !== templateId ? t : { ...t, background: color }
       ),
     })),
   setCaption: (caption) => set({ caption }),
