@@ -41,7 +41,9 @@ const BLOCK_H = BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3 + RULE_H + GAP4 +
 // = 8+40+31+60+144+24+2+28+96 = 433px
 
 // ─── 9:16 ─────────────────────────────────────────────────────────────────────
-const AY916       = 900
+const AY916       = 980
+const GAP1_916    = 24   // barra → label (mais compacto)
+const GAP2_916    = 40   // label → título (mais compacto)
 const LABEL_FS916 = 28
 const LABEL_H916  = textH(LABEL_FS916, LABEL_LH, 1)   // 40px
 const TITLE_FS916 = 96
@@ -294,7 +296,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'label',
         type: 'text',
         x: LM,
-        y: AY916 + BAR_H + GAP1,
+        y: AY916 + BAR_H + GAP1_916,
         width: 1080 - LM * 2,
         height: LABEL_H916,
         props: {
@@ -312,7 +314,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title-vert-accent',
         type: 'shape',
         x: LM - 16,
-        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2,
+        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916,
         width: VERT_ACCENT_W,
         height: TITLE_H916,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
@@ -321,7 +323,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title',
         type: 'text',
         x: LM,
-        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2,
+        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916,
         width: 1080 - LM * 2,
         height: TITLE_H916,
         props: {
@@ -340,7 +342,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'title-rule',
         type: 'shape',
         x: LM,
-        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2 + TITLE_H916 + GAP3,
+        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916 + TITLE_H916 + GAP3,
         width: RULE_W,
         height: RULE_H,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
@@ -349,7 +351,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'body',
         type: 'text',
         x: LM,
-        y: AY916 + BAR_H + GAP1 + LABEL_H916 + GAP2 + TITLE_H916 + GAP3 + RULE_H + GAP4,
+        y: AY916 + BAR_H + GAP1_916 + LABEL_H916 + GAP2_916 + TITLE_H916 + GAP3 + RULE_H + GAP4,
         width: BODY_W916,
         height: BODY_H916,
         props: {
