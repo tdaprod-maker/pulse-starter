@@ -4,8 +4,6 @@ import type { Theme } from '../../themes'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const textH = (fs: number, lh: number, lines: number) => Math.ceil(fs * lh * lines)
 
-const opticalCenterY = (canvasH: number, blockH: number) =>
-  Math.round((canvasH - blockH) / 2) - 16
 
 // ─── Constantes para 1080px de largura (1:1, 4:5, 9:16) ──────────────────────
 const LM     = 120
@@ -36,9 +34,6 @@ const GAP4 = 28   // régua → corpo
 const RULE_W = 240
 const RULE_H = 2
 
-// BLOCK_H = barra + gap + label + gap + título + gap + régua + gap + corpo
-const BLOCK_H = BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3 + RULE_H + GAP4 + BODY_H
-// = 8+40+31+60+144+24+2+28+96 = 433px
 
 // ─── 9:16 ─────────────────────────────────────────────────────────────────────
 const TITLE_FS916 = 80
