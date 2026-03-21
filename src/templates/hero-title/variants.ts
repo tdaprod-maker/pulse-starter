@@ -27,7 +27,7 @@ const TITLE_Y    = 200
 
 const textH = (fs: number, lh: number, lines: number) => Math.ceil(fs * lh * lines)
 
-const TITLE_H_1080    = textH(TITLE_FS, TITLE_LH, 2)        // 212px
+const TITLE_H_1080    = textH(TITLE_FS, TITLE_LH, 3)        // 317px
 const SUBTITLE_H_1080 = textH(SUBTITLE_FS, SUBTITLE_LH, 1)  // 36px
 
 const SUBTITLE_X_1080 = TITLE_X
