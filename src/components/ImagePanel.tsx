@@ -19,7 +19,7 @@ const ALIGN_OPTIONS: { value: 'top' | 'center' | 'bottom'; label: string }[] = [
 ]
 
 export function ImagePanel({ template }: ImagePanelProps) {
-  const { setTemplateBackground, setTemplateImageStyle, setTemplateImageOffset } = useStore()
+  const { setTemplateBackground, setTemplateImageStyle, setTemplateImageOffset, setTemplateBackgroundOpacity } = useStore()
   const inputRef = useRef<HTMLInputElement>(null)
   const [regenerating, setRegenerating] = useState(false)
   const { theme } = useTheme()
@@ -51,6 +51,7 @@ export function ImagePanel({ template }: ImagePanelProps) {
   }
 
   const zoom    = template.backgroundZoom    ?? 100
+  const opacity = template.backgroundOpacity ?? 1
   const align   = template.backgroundAlign   ?? 'center'
   const offsetX = template.backgroundOffsetX ?? 0
   const offsetY = template.backgroundOffsetY ?? 0
@@ -147,6 +148,23 @@ export function ImagePanel({ template }: ImagePanelProps) {
               step={5}
               value={zoom}
               onChange={(e) => setTemplateImageStyle(template.id, Number(e.target.value), undefined)}
+              style={{ width: '100%', accentColor: 'var(--accent)' }}
+            />
+          </div>
+
+          {/* Opacidade */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', userSelect: 'none' }}>Opacidade</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{Math.round(opacity * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0.1}
+              max={1}
+              step={0.05}
+              value={opacity}
+              onChange={(e) => setTemplateBackgroundOpacity(template.id, Number(e.target.value))}
               style={{ width: '100%', accentColor: 'var(--accent)' }}
             />
           </div>

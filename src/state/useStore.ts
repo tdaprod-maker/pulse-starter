@@ -19,6 +19,8 @@ export interface Template {
   backgroundOffsetX?: number
   /** Offset vertical da imagem de fundo em px (canvas display). Default: 0. */
   backgroundOffsetY?: number
+  /** Opacidade da imagem de fundo (0.1–1). Default: 1. */
+  backgroundOpacity?: number
   /** Prompt usado para gerar a imagem de fundo via IA (para regeneração). */
   imagePrompt?: string
   /** Data URL do logotipo (PNG com transparência suportado). */
@@ -68,6 +70,7 @@ interface PulseStore {
   setTemplateLogoPosition: (templateId: string, x: number, y: number) => void
   setTemplateImagePrompt: (templateId: string, prompt: string) => void
   setTemplateSolidBackground: (templateId: string, color: string) => void
+  setTemplateBackgroundOpacity: (templateId: string, opacity: number) => void
   setCaption: (caption: Caption | null) => void
   setPendingPost: (post: PostRecord | null) => void
 }
@@ -226,6 +229,18 @@ export const useStore = create<PulseStore>()(
         t.id !== templateId ? t : { ...t, background: color }
       ),
     })),
+  setTemplateBackgroundOpacity: (templateId, opacity) =>
+    set((state) => {
+      const lastHyphen = templateId.lastIndexOf('-')
+      const prefix = lastHyphen >= 0 ? templateId.substring(0, lastHyphen) : templateId
+      return {
+        templates: state.templates.map((t) =>
+          t.id === templateId || t.id.startsWith(prefix)
+            ? { ...t, backgroundOpacity: opacity }
+            : t
+        ),
+      }
+    }),
   setCaption: (caption) => set({ caption }),
   setPendingPost: (post) => set({ pendingPost: post }),
     }),

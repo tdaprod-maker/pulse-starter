@@ -229,6 +229,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
                   y={bgImgY}
                   width={bgImgW}
                   height={bgImgH}
+                  opacity={template.backgroundOpacity ?? 1}
                   listening={false}
                 />
                 <Rect
