@@ -36,9 +36,6 @@ TEMPLATES DISPONÍVEIS:
 - "editorial-card" → layout editorial com rótulo, título e corpo
   Campos: label (1-2 palavras EM MAIÚSCULAS, ex: "DESIGN"), title (4-7 palavras), body (15-25 palavras)
 
-- "minimal-type"   → uma única frase contemplativa e minimalista
-  Campo: phrase (5-10 palavras; use \\n para quebrar em 2 linhas, ex: "Menos ruído,\\nmais essência.")
-
 - "big-number"     → número em destaque + legenda, ideal para estatísticas ou conquistas
   Campos: number (1 número ou símbolo, ex: "42", "3×", "98%"), caption (5-10 palavras)
 
@@ -62,7 +59,6 @@ TEMPLATES DISPONÍVEIS:
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
 REGRAS DE SELEÇÃO DE TEMPLATE:
-- "minimal-type"    → somente para frases curtas, pensamentos, citações ou conteúdo contemplativo
 - "hero-title"      → quando há um título principal acompanhado de explicação ou subtítulo descritivo
 - "big-statement"   → para declarações ousadas, lançamentos ou afirmações de impacto máximo
 - "editorial-card"  → para conteúdo informativo, artigos, dicas ou textos com contexto e corpo

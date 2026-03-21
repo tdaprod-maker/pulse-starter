@@ -72,7 +72,6 @@ export function EditorPage() {
   const ACCENT_ELEMENT: Record<string, string> = {
     'hero-title':     'accent-bar',
     'editorial-card': 'accent-bar',
-    'minimal-type':   'phrase',
     'big-number':     'number',
     'food-promo':     'bg-color',
     'tech-news':      'category-line',

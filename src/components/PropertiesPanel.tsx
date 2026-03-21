@@ -50,7 +50,6 @@ function useEnsureSiblings() {
 function getAccentElementId(templateId: string): string | null {
   if (templateId.startsWith('hero-title'))     return 'accent-bar'
   if (templateId.startsWith('editorial-card')) return 'accent-bar'
-  if (templateId.startsWith('minimal-type'))   return 'phrase'
   if (templateId.startsWith('big-number'))     return 'number'
   if (templateId.startsWith('big-statement'))  return 'line2'
   if (templateId.startsWith('tech-news'))      return 'brand-line'

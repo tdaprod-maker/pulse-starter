@@ -1,7 +1,6 @@
 import { makeHeroTitleVariants }      from './hero-title/variants'
 import { makeBigStatementVariants }   from './big-statement/variants'
 import { makeEditorialCardVariants }  from './editorial-card/variants'
-import { makeMinimalTypeVariants }    from './minimal-type/variants'
 import { makeBigNumberVariants }      from './big-number/variants'
 import { makeFoodPromoVariants }      from './food-promo/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
@@ -67,12 +66,6 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Editorial Card',
     category: 'instagram-post',
     getVariants: makeEditorialCardVariants,
-  },
-  {
-    id: 'minimal-type',
-    name: 'Minimal Type',
-    category: 'instagram-post',
-    getVariants: makeMinimalTypeVariants,
   },
   {
     id: 'big-number',
