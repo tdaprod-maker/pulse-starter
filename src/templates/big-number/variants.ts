@@ -50,10 +50,10 @@ const CAP_H_169   = textH(FS_CAP_169, LH_CAP, 1)  // 40px
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
 export function makeBigNumberVariants(theme: Theme): Template[] {
-  const BACKGROUND    = theme.colors.primary
-  const NUMBER_COLOR  = theme.colors.accent
-  const CAPTION_COLOR = theme.colors.text
-  const FONT          = theme.fonts.heading
+  const BACKGROUND    = '#0A0A0A'
+  const NUMBER_COLOR  = theme.colors.accent  // #3A5AFF
+  const CAPTION_COLOR = 'rgba(255,255,255,0.75)'
+  const FONT          = 'Space Grotesk, sans-serif'
 
   const bigNumber1x1: Template = {
     id: 'big-number-1x1',
