@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useLayoutEffect, useRef, useEffect } from 'react'
-import { Stage, Layer, Rect, Text, Image as KonvaImage } from 'react-konva'
+import { Stage, Layer, Rect, Text, Image as KonvaImage, Group } from 'react-konva'
 import type Konva from 'konva'
 import KonvaLib from 'konva'
 import type { CanvasElement, Template } from '../state/useStore'
@@ -353,25 +353,12 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
       ? el.width + 16
       : measureNode.getTextWidth() + (letterSpacing * textLength) + 24
 
-    return (
-      <React.Fragment key={el.id}>
-        {Boolean(el.props.textBackground) && (
-          <Rect
-            x={el.x - 8}
-            y={y - 4}
-            width={bgWidth}
-            height={bgHeight}
-            fill="#000000"
-            opacity={0.55}
-            cornerRadius={4}
-            listening={false}
-          />
-        )}
-        <Text
-          key={el.id}
-          id={el.id}
-          x={el.x}
-          y={y}
+    const textNode = (
+      <Text
+        key={el.id}
+        id={el.id}
+        x={0}
+        y={0}
         width={el.width || undefined}
         text={(el.props.text as string) ?? 'Texto'}
         fontSize={fontSize}
@@ -388,12 +375,72 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         shadowOffsetX={(el.props.shadowOffsetX as number) ?? undefined}
         shadowOffsetY={(el.props.shadowOffsetY as number) ?? undefined}
         opacity={isEditing ? 0 : 1}
-        draggable={!isEditing}
-        onClick={() => onSelect?.(el.id)}
         onDblClick={() => onEditStart?.(el)}
         stroke={selectionStroke}
         strokeWidth={isSelected && !isEditing ? 0.5 : 0}
       />
+    )
+
+    if (Boolean(el.props.textBackground)) {
+      return (
+        <Group
+          key={el.id}
+          x={el.x}
+          y={y}
+          draggable={!isEditing}
+          onClick={() => onSelect?.(el.id)}
+          onDragEnd={(e) => {
+            if (!templateId) return
+            useStore.getState().updateElement(templateId, el.id, {
+              x: Math.round(e.target.x()),
+              y: Math.round(e.target.y()),
+            })
+          }}
+        >
+          <Rect
+            x={-8}
+            y={-4}
+            width={bgWidth}
+            height={bgHeight}
+            fill="#000000"
+            opacity={0.55}
+            cornerRadius={4}
+            listening={false}
+          />
+          {textNode}
+        </Group>
+      )
+    }
+
+    return (
+      <React.Fragment key={el.id}>
+        <Text
+          key={el.id}
+          id={el.id}
+          x={el.x}
+          y={y}
+          width={el.width || undefined}
+          text={(el.props.text as string) ?? 'Texto'}
+          fontSize={fontSize}
+          fontFamily={(el.props.fontFamily as string) ?? 'Inter, sans-serif'}
+          fontStyle={(el.props.fontStyle as string) ?? 'normal'}
+          lineHeight={(el.props.lineHeight as number) ?? 1.2}
+          letterSpacing={(el.props.letterSpacing as number) ?? 0}
+          align={(el.props.align as 'left' | 'center' | 'right') ?? 'left'}
+          wrap={(el.props.wrap as 'word' | 'char' | 'none') ?? 'word'}
+          fill={fill}
+          shadowColor={(el.props.shadowColor as string) ?? undefined}
+          shadowBlur={(el.props.shadowBlur as number) ?? undefined}
+          shadowOpacity={(el.props.shadowOpacity as number) ?? undefined}
+          shadowOffsetX={(el.props.shadowOffsetX as number) ?? undefined}
+          shadowOffsetY={(el.props.shadowOffsetY as number) ?? undefined}
+          opacity={isEditing ? 0 : 1}
+          draggable={!isEditing}
+          onClick={() => onSelect?.(el.id)}
+          onDblClick={() => onEditStart?.(el)}
+          stroke={selectionStroke}
+          strokeWidth={isSelected && !isEditing ? 0.5 : 0}
+        />
       </React.Fragment>
     )
   }
