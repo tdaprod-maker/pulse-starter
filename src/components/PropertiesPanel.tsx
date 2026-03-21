@@ -3,6 +3,8 @@ import type { CanvasElement, Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
+import { loadBrandConfig } from '../services/brandKit'
+import { supabase } from '../lib/supabase'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -296,9 +298,9 @@ function hexLuminance(hex: string): number {
 }
 
 function SolidBackgroundSection({ template }: { template: Template }) {
-  const { setTemplateSolidBackground, templates } = useStore()
+  const { setTemplateSolidBackground, templates, syncElementStyle, setTemplateLogo } = useStore()
   const ensureSiblings = useEnsureSiblings()
-  const { syncElementStyle } = useStore()
+  const { theme } = useTheme()
 
   if (!template.id.startsWith('tech-minimal')) return null
 
@@ -311,8 +313,24 @@ function SolidBackgroundSection({ template }: { template: Template }) {
     templates
       .filter((t) => t.id.startsWith(prefix))
       .forEach((t) => setTemplateSolidBackground(t.id, hex))
-    const textFill = hexLuminance(hex) > 128 ? '#000000' : '#FFFFFF'
+    const luminance = hexLuminance(hex)
+    const textFill = luminance > 128 ? '#000000' : '#FFFFFF'
     syncElementStyle(template.id, 'phrase', { fill: textFill })
+    const isLight = luminance > 128
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? ''
+      if (!email) return
+      loadBrandConfig(email).then(config => {
+        const logos = config.logos ?? []
+        const targetLogo = isLight
+          ? logos.find(l => l.label.toLowerCase().includes('black') || l.label.toLowerCase().includes('preto') || l.label.toLowerCase().includes('escuro'))
+          : logos.find(l => !l.label.toLowerCase().includes('black') && !l.label.toLowerCase().includes('preto') && !l.label.toLowerCase().includes('escuro'))
+        if (targetLogo) {
+          const def = templateRegistry.find(d => template.id.startsWith(d.id))
+          def?.getVariants(theme).forEach(v => setTemplateLogo(v.id, targetLogo.url))
+        }
+      })
+    })
   }
 
   return (
