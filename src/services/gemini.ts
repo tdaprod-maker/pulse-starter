@@ -54,6 +54,10 @@ TEMPLATES DISPONÍVEIS:
 - "tech-product"    → apresentação de produto, serviço ou solução de IA
   Campos: tag (categoria em maiúsculas), title (nome do produto EM MAIÚSCULAS, 1-3 palavras), subtitle (descrição curta, 8-15 palavras), cta (chamada para ação curta, ex: "Conheça agora →")
 
+- "tech-minimal"    → frase única impactante, fundo sólido preto, sem imagem
+  Campo: phrase (frase curta e poderosa, máximo 8 palavras, pode ter quebra de linha \\n)
+  Exemplos: frases filosóficas sobre IA, provocações de negócio, statements minimalistas.
+
 REGRAS DE SELEÇÃO DE TEMPLATE:
 - "minimal-type"    → somente para frases curtas, pensamentos, citações ou conteúdo contemplativo
 - "hero-title"      → quando há um título principal acompanhado de explicação ou subtítulo descritivo
@@ -64,6 +68,7 @@ REGRAS DE SELEÇÃO DE TEMPLATE:
 - "tech-news"       → quando o prompt mencionar notícia, novidade, lançamento, evento, summit, atualização de tecnologia ou IA
 - "tech-statement"  → quando o prompt for uma frase, reflexão, provocação ou pensamento sobre negócios, IA ou automação
 - "tech-product"    → quando o prompt mencionar produto, serviço, agente, solução, ferramenta de IA ou automação
+- "tech-minimal"    → fundo sólido sem imagem, frase única e impactante de até 8 palavras. Use quando o usuário pedir algo minimalista, clean, fundo preto, ou quando a mensagem for uma frase curta e poderosa sem necessidade de imagem de fundo.
 
 REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 - #3A5AFF (azul)   → tech, negócios, profissional, inovação, produtividade
