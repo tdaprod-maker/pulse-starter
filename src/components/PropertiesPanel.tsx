@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import type { CanvasElement, Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
+import { templateRegistry } from '../templates/index'
+import { useTheme } from '../contexts/ThemeContext'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -28,6 +30,20 @@ const FONTS = [
   { value: 'Raleway, sans-serif',       label: 'Raleway'          },
   { value: 'Bebas Neue, cursive',       label: 'Bebas Neue'       },
 ]
+
+function useEnsureSiblings() {
+  const { addTemplate, templates } = useStore()
+  const { theme } = useTheme()
+  return function ensureSiblings(templateId: string) {
+    const lastHyphen = templateId.lastIndexOf('-')
+    const prefix = lastHyphen >= 0 ? templateId.substring(0, lastHyphen) : templateId
+    const def = templateRegistry.find((d) => d.id === prefix)
+    if (!def) return
+    def.getVariants(theme).forEach((v) => {
+      if (!templates.find((t) => t.id === v.id)) addTemplate(v)
+    })
+  }
+}
 
 function getAccentElementId(templateId: string): string | null {
   if (templateId.startsWith('hero-title'))     return 'accent-bar'
@@ -74,6 +90,7 @@ interface TextFieldProps {
 
 function TextField({ el, templateId }: TextFieldProps) {
   const { updateElement, syncElementStyle } = useStore()
+  const ensureSiblings = useEnsureSiblings()
   const textRef = useRef<HTMLTextAreaElement>(null)
 
   const text       = (el.props.text       as string) ?? ''
@@ -93,15 +110,18 @@ function TextField({ el, templateId }: TextFieldProps) {
   }
 
   function handleColor(hex: string) {
+    ensureSiblings(templateId)
     syncElementStyle(templateId, el.id, { fill: hex })
   }
 
   function handleFont(e: React.ChangeEvent<HTMLSelectElement>) {
+    ensureSiblings(templateId)
     syncElementStyle(templateId, el.id, { fontFamily: e.target.value })
   }
 
   function handleFontSize(value: number) {
     const clamped = Math.min(300, Math.max(8, value))
+    ensureSiblings(templateId)
     syncElementStyle(templateId, el.id, { fontSize: clamped })
   }
 
@@ -156,7 +176,7 @@ function TextField({ el, templateId }: TextFieldProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)', userSelect: 'none', flex: 1 }}>Fundo</span>
         <button
-          onClick={() => syncElementStyle(templateId, el.id, { textBackground: !el.props.textBackground })}
+          onClick={() => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { textBackground: !el.props.textBackground }) }}
           style={{
             fontSize: '10px', padding: '1px 8px', borderRadius: '5px', cursor: 'pointer',
             fontFamily: 'inherit',
@@ -188,6 +208,7 @@ function TextField({ el, templateId }: TextFieldProps) {
 
 function AccentSection({ template }: { template: Template }) {
   const { syncElementStyle } = useStore()
+  const ensureSiblings = useEnsureSiblings()
 
   const accentId = getAccentElementId(template.id)
   if (!accentId) return null
@@ -198,6 +219,7 @@ function AccentSection({ template }: { template: Template }) {
   const fill = (accentEl.props.fill as string) ?? '#3A5AFF'
 
   function handleColor(hex: string) {
+    ensureSiblings(template.id)
     syncElementStyle(template.id, accentId!, { fill: hex })
   }
 
@@ -216,6 +238,7 @@ function AccentSection({ template }: { template: Template }) {
 
 function ShapeSection({ template }: { template: Template }) {
   const { syncElementStyle } = useStore()
+  const ensureSiblings = useEnsureSiblings()
 
   const el = template.elements.find((e) => e.id === 'brand-line')
   if (!el) return null
@@ -237,7 +260,7 @@ function ShapeSection({ template }: { template: Template }) {
         <input
           type="range" min={40} max={300} step={10}
           value={width}
-          onChange={(e) => syncElementStyle(template.id, 'brand-line', { width: Number(e.target.value) } as never)}
+          onChange={(e) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { width: Number(e.target.value) } as never) }}
           style={sliderStyle}
         />
       </div>
@@ -250,7 +273,7 @@ function ShapeSection({ template }: { template: Template }) {
         <input
           type="range" min={-45} max={45} step={1}
           value={rotation}
-          onChange={(e) => syncElementStyle(template.id, 'brand-line', { rotation: Number(e.target.value) })}
+          onChange={(e) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { rotation: Number(e.target.value) }) }}
           style={sliderStyle}
         />
       </div>
