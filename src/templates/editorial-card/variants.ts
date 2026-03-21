@@ -285,7 +285,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'accent-bar',
         type: 'shape',
         x: 0,
-        y: AY916,
+        y: 1080,
         width: 1080,
         height: BAR_H,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
