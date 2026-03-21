@@ -41,14 +41,14 @@ const BLOCK_H = BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3 + RULE_H + GAP4 +
 // = 8+40+31+60+144+24+2+28+96 = 433px
 
 // ─── 9:16 ─────────────────────────────────────────────────────────────────────
-const AY916       = 480
+const AY916       = 1100
 const LABEL_FS916 = 28
 const LABEL_H916  = textH(LABEL_FS916, LABEL_LH, 1)   // 40px
 const TITLE_FS916 = 96
 const TITLE_H916  = textH(TITLE_FS916, TITLE_LH, 2)   // 192px
 const BODY_FS916  = 36
 const BODY_H916   = textH(BODY_FS916, BODY_LH, 2)     // 123px
-const BODY_W916   = 880
+const BODY_W916   = 900
 
 // ─── 16:9 ─────────────────────────────────────────────────────────────────────
 const LM16       = 160
@@ -263,7 +263,7 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
     ],
   }
 
-  // 9:16 — bloco no terço superior/médio
+  // 9:16 — overlay escuro + texto no terço inferior
   const editorialCard9x16: Template = {
     id: 'editorial-card-9x16',
     name: 'Editorial Card — 9:16',
@@ -272,6 +272,15 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
     height: 1920,
     background: BACKGROUND,
     elements: [
+      {
+        id: 'bottom-overlay',
+        type: 'shape',
+        x: 0,
+        y: 960,
+        width: 1080,
+        height: 960,
+        props: { fill: '#0A0A0A', opacity: 0.85, cornerRadius: 0 },
+      },
       {
         id: 'accent-bar',
         type: 'shape',
