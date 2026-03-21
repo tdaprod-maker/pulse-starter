@@ -4,7 +4,7 @@ import { useStore } from '../state/useStore'
 import { useTheme } from '../contexts/ThemeContext'
 import type { Template } from '../state/useStore'
 
-const OFFICIAL = ['tech-statement', 'tech-news', 'tech-product']
+const OFFICIAL = ['tech-statement', 'tech-news', 'tech-product', 'tech-minimal']
 const SAMPLES  = ['hero-title', 'big-statement', 'editorial-card', 'minimal-type', 'big-number', 'food-promo']
 
 const labelStyle: React.CSSProperties = {

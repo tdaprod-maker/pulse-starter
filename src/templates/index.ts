@@ -7,6 +7,7 @@ import { makeFoodPromoVariants }      from './food-promo/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
+import { makeTechMinimalVariants }    from './tech-minimal/variants'
 import type { Template } from '../state/useStore'
 import type { Theme } from '../themes'
 
@@ -36,6 +37,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Tech Product',
     category: 'instagram-post',
     getVariants: makeTechProductVariants,
+  },
+  {
+    id: 'tech-minimal',
+    name: 'Tech Minimal',
+    category: 'instagram-post',
+    getVariants: makeTechMinimalVariants,
   },
   {
     id: 'food-promo',
