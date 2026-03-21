@@ -40,7 +40,7 @@ export function makeTechMinimalVariants(_theme: Theme): Template[] {
         width: 1080 - MARGIN * 2,
         height: H,
         props: {
-          text: 'SUA FRASE\nAQUI',
+          text: 'Sua frase\naqui',
           fontSize: FS,
           fontFamily: FONT,
           fontStyle: 'bold',
@@ -70,7 +70,7 @@ export function makeTechMinimalVariants(_theme: Theme): Template[] {
         width: 1080 - MARGIN * 2,
         height: H,
         props: {
-          text: 'SUA FRASE\nAQUI',
+          text: 'Sua frase\naqui',
           fontSize: FS,
           fontFamily: FONT,
           fontStyle: 'bold',
@@ -100,7 +100,7 @@ export function makeTechMinimalVariants(_theme: Theme): Template[] {
         width: 1080 - MARGIN * 2,
         height: H,
         props: {
-          text: 'SUA FRASE\nAQUI',
+          text: 'Sua frase\naqui',
           fontSize: FS,
           fontFamily: FONT,
           fontStyle: 'bold',
@@ -130,7 +130,7 @@ export function makeTechMinimalVariants(_theme: Theme): Template[] {
         width: 1920 - MARGIN * 2,
         height: H_169,
         props: {
-          text: 'SUA FRASE\nAQUI',
+          text: 'Sua frase\naqui',
           fontSize: FS_169,
           fontFamily: FONT,
           fontStyle: 'bold',
