@@ -126,6 +126,84 @@ function extractJSON(raw: string): AIResponse {
   throw new Error('A IA retornou uma resposta que não pode ser interpretada')
 }
 
+// ─── Carrossel ────────────────────────────────────────────────────────────────
+
+export interface CarouselSlide {
+  title: string
+  body?: string
+  imagePrompt: string
+  type: 'cover' | 'content' | 'cta'
+}
+
+export interface CarouselResponse {
+  slides: CarouselSlide[]
+  caption: string
+}
+
+function buildCarouselPrompt(userInput: string, slideCount: number): string {
+  return `Você é um especialista em criação de carrosséis para Instagram.
+Crie um carrossel com exatamente ${slideCount} slides sobre o tema descrito.
+
+REGRAS OBRIGATÓRIAS:
+- Slide 1: type "cover" — título curto e impactante (máximo 5 palavras), SEM body
+- Slides 2 a ${slideCount - 1}: type "content" — título direto (máximo 6 palavras) + body explicativo (máximo 2 linhas, 20 palavras)
+- Slide ${slideCount}: type "cta" — título de call to action (ex: "Siga para mais conteúdo", "Salve este post"), body com instrução ou contato
+
+REGRAS DE imagePrompt:
+- Descreva em inglês (máximo 8 palavras) uma cena fotográfica real e relacionada ao slide
+- Cada slide deve ter uma cena visualmente diferente mas tematicamente coerente
+- Sem adjetivos de estilo, sem "cinematic", sem "dark"
+
+REGRAS DE TEXTO:
+- Escrever em português do Brasil
+- Tom direto, profissional e envolvente
+- Títulos sem ponto final
+
+caption: legenda completa para Instagram com tom humano, máximo 150 palavras, incluindo 5 hashtags relevantes no final.
+
+Tema: "${userInput}"
+
+Responda SOMENTE com JSON válido, sem markdown:
+{
+  "slides": [
+    { "title": "...", "imagePrompt": "...", "type": "cover" },
+    { "title": "...", "body": "...", "imagePrompt": "...", "type": "content" },
+    { "title": "...", "body": "...", "imagePrompt": "...", "type": "cta" }
+  ],
+  "caption": "..."
+}`
+}
+
+export async function generateCarouselContent(userInput: string, slideCount: number): Promise<CarouselResponse> {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: buildCarouselPrompt(userInput, slideCount) }] }],
+      generationConfig: {
+        response_mime_type: 'application/json',
+        temperature: 0.8,
+        maxOutputTokens: 1200,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: { message?: string } }
+    throw new Error(body?.error?.message ?? `Erro ${res.status} da API Gemini`)
+  }
+
+  const data = await res.json() as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+  }
+
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  if (!text) throw new Error('A API retornou uma resposta vazia')
+
+  return extractJSON(text) as CarouselResponse
+}
+
 // ─── Chamada principal ────────────────────────────────────────────────────────
 
 export async function generatePostContent(userInput: string): Promise<AIResponse> {
