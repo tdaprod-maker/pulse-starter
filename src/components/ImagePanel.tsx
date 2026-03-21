@@ -53,6 +53,16 @@ export function ImagePanel({ template }: ImagePanelProps) {
   const zoom    = template.backgroundZoom    ?? 100
   const opacity = template.backgroundOpacity ?? 1
   const align   = template.backgroundAlign   ?? 'center'
+  const imageVisible = opacity > 0
+  const defaultOpacity = template.id.startsWith('big-number') ? 0.5 : 1
+
+  function handleToggleImage() {
+    if (imageVisible) {
+      setTemplateBackgroundOpacity(template.id, 0)
+    } else {
+      setTemplateBackgroundOpacity(template.id, defaultOpacity)
+    }
+  }
   const offsetX = template.backgroundOffsetX ?? 0
   const offsetY = template.backgroundOffsetY ?? 0
   const hasOffset = offsetX !== 0 || offsetY !== 0
@@ -128,6 +138,23 @@ export function ImagePanel({ template }: ImagePanelProps) {
               alt="Imagem de fundo"
             />
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
+          </div>
+
+          {/* Toggle mostrar imagem */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', flex: 1, userSelect: 'none' }}>Mostrar imagem</span>
+            <button
+              onClick={handleToggleImage}
+              style={{
+                fontSize: '10px', padding: '1px 8px', borderRadius: '5px', cursor: 'pointer',
+                fontFamily: 'inherit',
+                background: imageVisible ? 'rgba(58,90,255,0.15)' : 'transparent',
+                border: `1px solid ${imageVisible ? 'var(--color-primary)' : 'var(--border)'}`,
+                color: imageVisible ? 'var(--color-primary)' : 'var(--text-muted)',
+              }}
+            >
+              {imageVisible ? 'ON' : 'OFF'}
+            </button>
           </div>
 
           {/* Hint interação direta */}
