@@ -36,8 +36,8 @@ const RULE_H = 2
 
 
 // ─── 9:16 ─────────────────────────────────────────────────────────────────────
-const TITLE_FS916 = 80
-const TITLE_H916  = textH(TITLE_FS916, TITLE_LH, 2)   // 160px
+const TITLE_FS916 = 64
+const TITLE_H916  = textH(TITLE_FS916, TITLE_LH, 3)   // 192px
 const BODY_FS916  = 32
 const BODY_H916   = textH(BODY_FS916, BODY_LH, 2)     // 109px
 const BODY_W916   = 840
