@@ -4,13 +4,16 @@ import { useStore } from '../state/useStore'
 import { loadBrandConfig } from '../services/brandKit'
 import type { BrandLogo } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
+import { templateRegistry } from '../templates/index'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface LogoSectionProps {
   template: Template
 }
 
 export function LogoSection({ template }: LogoSectionProps) {
-  const { setTemplateLogo, setTemplateLogoStyle, templates } = useStore()
+  const { setTemplateLogo, setTemplateLogoStyle, templates, addTemplate } = useStore()
+  const { theme } = useTheme()
   const inputRef = useRef<HTMLInputElement>(null)
   const [brandLogos, setBrandLogos] = useState<BrandLogo[]>([])
 
@@ -27,11 +30,12 @@ export function LogoSection({ template }: LogoSectionProps) {
   }, [])
 
   function handleSelectBrandLogo(url: string) {
-    const lastHyphen = template.id.lastIndexOf('-')
-    const prefix = lastHyphen >= 0 ? template.id.substring(0, lastHyphen) : template.id
-    templates.filter(t => t.id.startsWith(prefix)).forEach(t => {
-      setTemplateLogo(t.id, url)
+    const def = templateRegistry.find(d => template.id.startsWith(d.id))
+    const variants = def ? def.getVariants(theme) : []
+    variants.forEach(v => {
+      if (!templates.find(t => t.id === v.id)) addTemplate(v)
     })
+    variants.forEach(v => setTemplateLogo(v.id, url))
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
