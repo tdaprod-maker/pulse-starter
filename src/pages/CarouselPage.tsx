@@ -90,11 +90,12 @@ async function drawSlide(
       const logo = new window.Image()
       logo.crossOrigin = 'anonymous'
       logo.onload = () => {
-        const maxH = 80
+        const maxH = 120
         const scale = maxH / logo.naturalHeight
         const logoW = logo.naturalWidth * scale
-        const margin = 80
-        ctx.drawImage(logo, SIZE - margin - logoW, SIZE - margin - maxH, logoW, maxH)
+        const marginX = 80
+        const marginY = 60
+        ctx.drawImage(logo, SIZE - marginX - logoW, SIZE - marginY - maxH, logoW, maxH)
         resolve()
       }
       logo.onerror = () => resolve()
