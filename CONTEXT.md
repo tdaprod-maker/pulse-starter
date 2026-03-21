@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 19 março 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 21 março 2026.
 
 ---
 
@@ -67,9 +67,6 @@ pulse/
 │   │   ├── ImagePanel.tsx       # Upload/zoom/pan da imagem de fundo
 │   │   ├── LogoSection.tsx      # Upload e posicionamento do logo
 │   │   └── TextEditor.tsx       # Textarea overlay para edição inline no canvas
-│   ├── pages/
-│   │   ├── EditorPage.tsx       # Página principal (canvas + painéis)
-│   │   └── TemplatesPage.tsx    # Galeria de templates
 │   ├── engine/
 │   │   └── CanvasEngine.tsx     # Renderização Konva (Stage, Layer, elementos)
 │   ├── state/
@@ -85,12 +82,18 @@ pulse/
 │   │   ├── hero-title/variants.ts
 │   │   ├── big-statement/variants.ts
 │   │   ├── editorial-card/variants.ts
-│   │   ├── minimal-type/variants.ts
 │   │   ├── big-number/variants.ts
 │   │   ├── food-promo/variants.ts
 │   │   ├── tech-news/variants.ts
 │   │   ├── tech-statement/variants.ts
-│   │   └── tech-product/variants.ts
+│   │   ├── tech-product/variants.ts
+│   │   └── tech-minimal/variants.ts
+│   ├── pages/
+│   │   ├── EditorPage.tsx       # Página principal (canvas + painéis)
+│   │   ├── TemplatesPage.tsx    # Biblioteca de Posts (histórico)
+│   │   ├── CarouselPage.tsx     # Gerador de carrossel para Instagram
+│   │   ├── BrandPage.tsx        # Brand Kit (cores, fontes, logos, fotos)
+│   │   └── ResetPasswordPage.tsx
 │   ├── themes/
 │   │   └── index.ts             # Cores e fontes do design system
 │   └── export/
@@ -194,14 +197,28 @@ As chaves de API estão em variáveis de ambiente — **não hardcoded no códig
 - [x] Painel direito alargado para 380px
 - [x] Canvas alinhado ao topo (flex-start) — visualização sem corte
 - [x] Mapa de componentes por funcionalidade adicionado ao CONTEXT.md (seção 14)
+- [x] Snap to center com guias visuais vermelhas ao arrastar elementos no canvas
+- [x] Sidebar reorganizada em grupos TEMPLATES e SAMPLES
+- [x] Restauração de post rebusca imagem via image_prompt salvo na Biblioteca de Posts
+- [x] Seleção múltipla para deletar posts na Biblioteca de Posts
+- [x] Hero Title 9x16 com elementos próprios e fontes ajustadas
+- [x] Hero Title 1x1 e 4x5 reservando 3 linhas para o título
+- [x] Editorial Card 9x16 layout correto, cor de destaque seguindo Brand Kit
+- [x] Big Statement fontSize reduzido para 120px
+- [x] Big Number redesign dark premium — Space Grotesk, centralização óptica, cor branca, opacidade de imagem configurável, cor de fundo editável, logo e texto adaptativos por luminância
+- [x] Minimal Type removido (redundante com Tech Minimal)
+- [x] Tech Minimal criado — fundo sólido, Montserrat Bold, frase centralizada, troca automática de logo e cor de texto baseada na luminância da cor de fundo
+- [x] Múltiplos logotipos no Brand Kit com seleção direta no editor (LogoSection)
+- [x] Carrossel — página dedicada (/carousel) com: seletor de slides (3–5), seletor de template (4 opções), geração via Gemini, busca de imagens Pexels, preview em modal com canvas, export como ZIP, logo automático do Brand Kit no canto inferior direito
 
 ---
 
 ## 7. Próximos Passos Planejados
 
-- Carrossel para Instagram — N slides com narrativa conectada, export como ZIP
-- Refinamento visual dos templates tech (espaçamento, hierarquia, imagens mais relevantes)
+- Carrossel: integrar template selecionado na renderização dos slides (canvas + export)
+- Carrossel: permitir edição de cada slide abrindo no Editor principal
 - Melhorar fallback do Pexels para temas de IA e automação
+- Remover console.logs de debug do carrossel após testes
 - Versões personalizadas por cliente (modelo de negócio Agente 17)
 
 ---
