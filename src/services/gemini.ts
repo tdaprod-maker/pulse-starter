@@ -57,6 +57,7 @@ TEMPLATES DISPONÍVEIS:
 - "tech-minimal"    → frase única impactante, fundo sólido preto, sem imagem
   Campo: phrase (frase curta e poderosa, máximo 8 palavras, pode ter quebra de linha \\n)
   Exemplos: frases filosóficas sobre IA, provocações de negócio, statements minimalistas.
+  IMPORTANTE: para o tech-minimal, o texto do campo phrase NUNCA deve estar em caixa alta (caps lock). Use capitalização normal, apenas a primeira letra de cada frase em maiúscula.
 
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
