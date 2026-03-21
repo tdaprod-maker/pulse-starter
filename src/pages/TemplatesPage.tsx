@@ -11,6 +11,26 @@ export function TemplatesPage() {
   const [posts, setPosts] = useState<PostRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function deleteSelected() {
+    if (!confirm(`Deletar ${selected.size} post${selected.size !== 1 ? 's' : ''}?`)) return
+    for (const id of selected) {
+      await deletePost(id)
+    }
+    setPosts(prev => prev.filter(p => !selected.has(p.id!)))
+    setSelected(new Set())
+    setSelectMode(false)
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -42,17 +62,44 @@ export function TemplatesPage() {
               {posts.length} post{posts.length !== 1 ? 's' : ''} gerado{posts.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            style={{
-              padding: '8px 16px', borderRadius: '8px',
-              background: 'var(--accent)', border: 'none',
-              color: 'white', fontSize: '13px', fontWeight: 600,
-              fontFamily: 'inherit', cursor: 'pointer',
-            }}
-          >
-            + Novo Post
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {selected.size > 0 && (
+              <button
+                onClick={deleteSelected}
+                style={{
+                  padding: '8px 16px', borderRadius: '8px',
+                  background: 'rgba(239,68,68,0.9)', border: 'none',
+                  color: 'white', fontSize: '13px', fontWeight: 600,
+                  fontFamily: 'inherit', cursor: 'pointer',
+                }}
+              >
+                Deletar selecionados ({selected.size})
+              </button>
+            )}
+            <button
+              onClick={() => { setSelectMode(v => !v); setSelected(new Set()) }}
+              style={{
+                padding: '8px 16px', borderRadius: '8px',
+                background: selectMode ? 'var(--bg-surface)' : 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
+                fontFamily: 'inherit', cursor: 'pointer',
+              }}
+            >
+              {selectMode ? 'Cancelar' : 'Selecionar'}
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                padding: '8px 16px', borderRadius: '8px',
+                background: 'var(--accent)', border: 'none',
+                color: 'white', fontSize: '13px', fontWeight: 600,
+                fontFamily: 'inherit', cursor: 'pointer',
+              }}
+            >
+              + Novo Post
+            </button>
+          </div>
         </div>
 
         {/* Grid */}
@@ -76,33 +123,54 @@ export function TemplatesPage() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
             gap: '16px',
           }}>
-            {posts.map(post => (
+            {posts.map(post => {
+              const isSelected = selected.has(post.id!)
+              return (
               <div
                 key={post.id}
-                onClick={() => { setPendingPost(post); navigate('/') }}
+                onClick={() => {
+                  if (selectMode) { toggleSelect(post.id!); return }
+                  setPendingPost(post); navigate('/')
+                }}
                 style={{
                   position: 'relative',
                   background: 'var(--bg-panel)',
-                  border: '1px solid var(--border)',
+                  border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--border)'}`,
                   borderRadius: '12px',
                   overflow: 'hidden',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-active)'
+                  if (!isSelected) (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-active)'
                   ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'
-                  const btn = e.currentTarget.querySelector('button')
-                  if (btn) (btn as HTMLButtonElement).style.opacity = '1'
+                  const btn = e.currentTarget.querySelector<HTMLButtonElement>('.delete-btn')
+                  if (btn && !selectMode) btn.style.opacity = '1'
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'
+                  if (!isSelected) (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'
                   ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'
-                  const btn = e.currentTarget.querySelector('button')
-                  if (btn && deletingId !== post.id) (btn as HTMLButtonElement).style.opacity = '0'
+                  const btn = e.currentTarget.querySelector<HTMLButtonElement>('.delete-btn')
+                  if (btn && deletingId !== post.id) btn.style.opacity = '0'
                 }}
               >
+                {/* Checkbox (select mode) */}
+                <div style={{
+                  position: 'absolute', top: '8px', left: '8px', zIndex: 10,
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  border: `2px solid ${isSelected ? 'var(--color-primary)' : 'rgba(255,255,255,0.5)'}`,
+                  background: isSelected ? 'var(--color-primary)' : 'rgba(0,0,0,0.4)',
+                  display: selectMode ? 'flex' : 'none',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: '11px', color: 'white', fontWeight: 700,
+                  pointerEvents: 'none',
+                }}>
+                  {isSelected ? '✓' : ''}
+                </div>
+
+                {/* Botão deletar individual */}
                 <button
+                  className="delete-btn"
                   onClick={async (e) => {
                     e.stopPropagation()
                     if (!confirm('Deletar este post?')) return
@@ -112,26 +180,16 @@ export function TemplatesPage() {
                     setDeletingId(null)
                   }}
                   style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    zIndex: 10,
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    background: 'rgba(239,68,68,0.85)',
-                    border: 'none',
-                    color: 'white',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    position: 'absolute', top: '8px', right: '8px', zIndex: 10,
+                    width: '24px', height: '24px', borderRadius: '50%',
+                    background: 'rgba(239,68,68,0.85)', border: 'none',
+                    color: 'white', fontSize: '14px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     lineHeight: 1,
-                    opacity: deletingId === post.id ? 1 : 0,
+                    opacity: selectMode ? 0 : (deletingId === post.id ? 1 : 0),
                     transition: 'opacity 0.15s',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseEnter={e => { if (!selectMode) e.currentTarget.style.opacity = '1' }}
                   onMouseLeave={e => {
                     if (deletingId !== post.id) e.currentTarget.style.opacity = '0'
                   }}
@@ -180,7 +238,7 @@ export function TemplatesPage() {
                   </p>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>
