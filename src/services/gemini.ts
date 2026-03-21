@@ -201,7 +201,7 @@ export async function generateCarouselContent(userInput: string, slideCount: num
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
   if (!text) throw new Error('A API retornou uma resposta vazia')
 
-  return extractJSON(text) as CarouselResponse
+  return extractJSON(text) as unknown as CarouselResponse
 }
 
 // ─── Chamada principal ────────────────────────────────────────────────────────
