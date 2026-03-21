@@ -41,7 +41,8 @@ export function CarouselPage() {
       )
       setSlideImages(images)
       setStatus('idle')
-    } catch {
+    } catch (err) {
+      console.error('[CarouselPage] erro ao gerar:', err)
       setStatus('error')
     }
   }
