@@ -276,17 +276,10 @@ export function AIPanel(_props: AIPanelProps) {
             const activeTemplate = useStore.getState().templates.find(t => t.id === activeId)
             const bgImage = activeTemplate?.backgroundImage
 
-            console.log('[THUMB] postId:', postId)
-            console.log('[THUMB] bgImage exists:', !!bgImage)
-            console.log('[THUMB] bgImage starts with data:', bgImage?.startsWith('data:'))
-            console.log('[THUMB] bgImage length:', bgImage?.length)
-
             if (bgImage && bgImage.startsWith('data:')) {
               const thumbUrl = await uploadThumbnail(postId, email, bgImage)
-              console.log('[THUMB] upload result:', thumbUrl)
               if (thumbUrl) {
                 await updatePostThumbnail(postId, thumbUrl)
-                console.log('[THUMB] post updated with thumbnail')
               }
             }
           }
