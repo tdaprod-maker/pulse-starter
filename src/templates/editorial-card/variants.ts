@@ -41,7 +41,7 @@ const BLOCK_H = BAR_H + GAP1 + LABEL_H + GAP2 + TITLE_H + GAP3 + RULE_H + GAP4 +
 // = 8+40+31+60+144+24+2+28+96 = 433px
 
 // ─── 9:16 ─────────────────────────────────────────────────────────────────────
-const AY916       = 1100
+const AY916       = 900
 const LABEL_FS916 = 28
 const LABEL_H916  = textH(LABEL_FS916, LABEL_LH, 1)   // 40px
 const TITLE_FS916 = 96
@@ -276,16 +276,16 @@ export function makeEditorialCardVariants(theme: Theme): Template[] {
         id: 'bottom-overlay',
         type: 'shape',
         x: 0,
-        y: 960,
+        y: 820,
         width: 1080,
-        height: 960,
+        height: 1100,
         props: { fill: '#0A0A0A', opacity: 0.85, cornerRadius: 0 },
       },
       {
         id: 'accent-bar',
         type: 'shape',
         x: 0,
-        y: 1080,
+        y: 880,
         width: 1080,
         height: BAR_H,
         props: { fill: ACCENT_COLOR, cornerRadius: 0 },
