@@ -13,6 +13,7 @@ import { ImagePanel } from '../components/ImagePanel'
 import { AIPanel } from '../components/AIPanel'
 import { CaptionPanel } from '../components/CaptionPanel'
 import { TextEditor } from '../components/TextEditor'
+import { generateImage } from '../services/replicate'
 
 interface EditingState {
   el: CanvasElement
@@ -36,6 +37,8 @@ export function EditorPage() {
     updateElement,
     addTemplate,
     setActiveTemplate,
+    setTemplateBackground,
+    setTemplateImagePrompt,
     pendingPost,
     setPendingPost,
     setCaption,
@@ -114,6 +117,19 @@ export function EditorPage() {
     if (postWithCaption.caption) setCaption(postWithCaption.caption)
 
     setPendingPost(null)
+
+    // Rebusca imagem de fundo via image_prompt se disponível
+    const imagePrompt = (pendingPost as typeof pendingPost & { image_prompt?: string }).image_prompt
+    if (imagePrompt) {
+      generateImage(imagePrompt).then((url) => {
+        variants.forEach((v) => {
+          setTemplateBackground(v.id, url)
+          setTemplateImagePrompt(v.id, imagePrompt)
+        })
+      }).catch(() => {
+        // falha silenciosa — não interrompe a restauração
+      })
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingPost])
 
