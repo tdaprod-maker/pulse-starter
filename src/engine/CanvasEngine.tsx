@@ -263,10 +263,10 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
 
             {/* Guias de snap to center */}
             {guides.x !== undefined && (
-              <Line points={[guides.x, 0, guides.x, template.height]} stroke="#3A5AFF" strokeWidth={1} dash={[4, 4]} opacity={0.8} listening={false} />
+              <Line points={[guides.x, 0, guides.x, template.height]} stroke="#FF0000" strokeWidth={3} dash={[4, 4]} opacity={1} listening={false} />
             )}
             {guides.y !== undefined && (
-              <Line points={[0, guides.y, template.width, guides.y]} stroke="#3A5AFF" strokeWidth={1} dash={[4, 4]} opacity={0.8} listening={false} />
+              <Line points={[0, guides.y, template.width, guides.y]} stroke="#FF0000" strokeWidth={3} dash={[4, 4]} opacity={1} listening={false} />
             )}
 
             {/* Logotipo — renderizado no Konva para ser incluído no export */}
