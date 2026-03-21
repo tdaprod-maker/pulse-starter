@@ -49,6 +49,7 @@ export function Topbar() {
       }}>
         {[
           { label: 'Editor', to: '/' },
+          { label: 'Carrossel', to: '/carousel' },
           { label: 'Biblioteca de Posts', to: '/templates' },
         ].map(({ label, to }) => {
           const active = pathname === to || (to === '/' && pathname === '/editor')
