@@ -132,7 +132,59 @@ export function makeHeroTitleVariants(_theme: Theme): Template[] {
     elements: elements1080,
   }
 
-  // 9:16 — texto pesado no topo, vazio expressivo embaixo
+  // 9:16 — elementos próprios, fontes ajustadas para canvas alto
+  const TITLE_FS_916   = 80
+  const TITLE_H_916    = textH(TITLE_FS_916, TITLE_LH, 3)          // 264px
+  const SUBTITLE_FS_916 = 28
+  const SUBTITLE_H_916  = textH(SUBTITLE_FS_916, SUBTITLE_LH, 1)   // 42px
+  const SUBTITLE_Y_916  = TITLE_Y + TITLE_H_916 + 40               // 504px
+
+  const elements9x16 = [
+    {
+      id: 'accent-bar',
+      type: 'shape' as const,
+      x: BAR_X_1080,
+      y: BAR_Y_1080,
+      width: BAR_W,
+      height: TITLE_H_916,
+      props: { fill: BAR_COLOR, cornerRadius: 0 },
+    },
+    {
+      id: 'title',
+      type: 'text' as const,
+      x: TITLE_X,
+      y: TITLE_Y,
+      width: 920,
+      height: TITLE_H_916,
+      props: {
+        text: 'Seu Título\nImpactante',
+        fontSize: TITLE_FS_916,
+        fontFamily: TITLE_FONT,
+        fontStyle: 'bold',
+        lineHeight: TITLE_LH,
+        align: 'left',
+        fill: TITLE_COLOR,
+      },
+    },
+    {
+      id: 'subtitle',
+      type: 'text' as const,
+      x: SUBTITLE_X_1080,
+      y: SUBTITLE_Y_916,
+      width: 840,
+      height: SUBTITLE_H_916,
+      props: {
+        text: 'Uma descrição clara e objetiva do seu conteúdo',
+        fontSize: SUBTITLE_FS_916,
+        fontFamily: SUBTITLE_FONT,
+        fontStyle: 'normal',
+        lineHeight: SUBTITLE_LH,
+        align: 'left',
+        fill: SUBTITLE_COLOR,
+      },
+    },
+  ]
+
   const heroTitle9x16: Template = {
     id: 'hero-title-9x16',
     name: 'Hero Title — 9:16',
@@ -140,7 +192,7 @@ export function makeHeroTitleVariants(_theme: Theme): Template[] {
     width: 1080,
     height: 1920,
     background: BG_COLOR,
-    elements: elements1080,
+    elements: elements9x16,
   }
 
   // 16:9 — fontes e espaçamentos escalados para canvas mais largo
