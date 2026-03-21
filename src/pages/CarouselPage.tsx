@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import JSZip from 'jszip'
 import { generateCarouselContent } from '../services/gemini'
 import type { CarouselSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
+import { supabase } from '../lib/supabase'
+import { loadBrandConfig } from '../services/brandKit'
 
 const SLIDE_COUNTS = [3, 4, 5]
 
@@ -18,6 +20,91 @@ const TYPE_COLOR: Record<CarouselSlide['type'], string> = {
   cta:     'rgba(255,111,94,0.85)',
 }
 
+// ─── Shared draw function ──────────────────────────────────────────────────────
+
+async function drawSlide(
+  ctx: CanvasRenderingContext2D,
+  slide: CarouselSlide,
+  imgSrc: string,
+  logoUrl: string,
+) {
+  const SIZE = 1080
+  ctx.clearRect(0, 0, SIZE, SIZE)
+
+  // fundo preto base
+  ctx.fillStyle = '#111111'
+  ctx.fillRect(0, 0, SIZE, SIZE)
+
+  // imagem de fundo com cover
+  if (imgSrc) {
+    await new Promise<void>(resolve => {
+      const img = new window.Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
+        const w = img.naturalWidth  * scale
+        const h = img.naturalHeight * scale
+        ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+        resolve()
+      }
+      img.onerror = () => resolve()
+      img.src = imgSrc
+    })
+  }
+
+  // overlay escuro
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'
+  ctx.fillRect(0, 0, SIZE, SIZE)
+
+  // título
+  ctx.fillStyle = '#FFFFFF'
+  ctx.textAlign = 'center'
+  ctx.font = 'bold 64px Inter, sans-serif'
+  const titleLines = wrapText(ctx, slide.title, 900)
+  const lineH = 76
+  const totalTitleH = titleLines.length * lineH
+  const bodyLines = slide.body ? wrapText(ctx, slide.body, 900) : []
+  const totalBodyH = bodyLines.length * 40
+  const gap = slide.body ? 24 : 0
+  const blockH = totalTitleH + gap + totalBodyH
+  let cy = (SIZE - blockH) / 2
+
+  for (const line of titleLines) {
+    ctx.fillText(line, 540, cy + 64)
+    cy += lineH
+  }
+
+  if (bodyLines.length > 0) {
+    cy += gap
+    ctx.font = '28px Inter, sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.82)'
+    for (const line of bodyLines) {
+      ctx.fillText(line, 540, cy + 28)
+      cy += 40
+    }
+  }
+
+  // logo brand kit — canto inferior direito
+  if (logoUrl) {
+    await new Promise<void>(resolve => {
+      const logo = new window.Image()
+      logo.crossOrigin = 'anonymous'
+      logo.onload = () => {
+        const maxH = 80
+        const scale = maxH / logo.naturalHeight
+        const logoW = logo.naturalWidth * scale
+        const margin = 80
+        ctx.drawImage(logo, SIZE - margin - logoW, SIZE - margin - maxH, logoW, maxH)
+        resolve()
+      }
+      logo.onerror = () => resolve()
+      logo.src = logoUrl
+    })
+  }
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export function CarouselPage() {
   const [slideCount, setSlideCount] = useState(4)
   const [prompt, setPrompt] = useState('')
@@ -27,6 +114,48 @@ export function CarouselPage() {
   const [caption, setCaption] = useState('')
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const [brandLogoUrl, setBrandLogoUrl] = useState('')
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Carrega logo do Brand Kit
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email
+      if (!email) return
+      loadBrandConfig(email).then(cfg => {
+        const first = cfg.logos?.[0]?.url
+        if (first) setBrandLogoUrl(first)
+      })
+    })
+  }, [])
+
+  // Renderiza canvas do modal sempre que o slide em preview muda
+  const renderPreviewCanvas = useCallback(async (index: number) => {
+    const canvas = previewCanvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const slide = slides[index]
+    const imgSrc = slideImages[index] ?? ''
+    await drawSlide(ctx, slide, imgSrc, brandLogoUrl)
+  }, [slides, slideImages, brandLogoUrl])
+
+  useEffect(() => {
+    if (previewIndex === null) return
+    // aguarda o canvas ser inserido no DOM antes de renderizar
+    const id = setTimeout(() => renderPreviewCanvas(previewIndex), 0)
+    return () => clearTimeout(id)
+  }, [previewIndex, renderPreviewCanvas])
+
+  // Fecha modal com Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPreviewIndex(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   async function handleGenerate() {
     if (!prompt.trim() || status === 'loading') return
@@ -35,16 +164,12 @@ export function CarouselPage() {
     setSlideImages([])
     setCaption('')
     try {
-      console.log('[Carousel] chamando Gemini...')
       const result = await generateCarouselContent(prompt, slideCount)
-      console.log('[Carousel] Gemini retornou:', result)
       setSlides(result.slides)
       setCaption(result.caption)
-      console.log('[Carousel] buscando imagens...')
       const images = await Promise.all(
         result.slides.map(s => generateImage(s.imagePrompt).catch(() => ''))
       )
-      console.log('[Carousel] imagens recebidas:', images.length)
       setSlideImages(images)
       setStatus('idle')
     } catch (err) {
@@ -61,73 +186,14 @@ export function CarouselPage() {
     try {
       const zip = new JSZip()
       for (let i = 0; i < slides.length; i++) {
-        const slide = slides[i]
-        const imgSrc = slideImages[i] ?? ''
         const canvas = document.createElement('canvas')
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-
-        // fundo preto base
-        ctx.fillStyle = '#111111'
-        ctx.fillRect(0, 0, 1080, 1080)
-
-        // imagem de fundo com cover
-        if (imgSrc) {
-          await new Promise<void>(resolve => {
-            const img = new window.Image()
-            img.crossOrigin = 'anonymous'
-            img.onload = () => {
-              const scale = Math.max(1080 / img.naturalWidth, 1080 / img.naturalHeight)
-              const w = img.naturalWidth  * scale
-              const h = img.naturalHeight * scale
-              ctx.drawImage(img, (1080 - w) / 2, (1080 - h) / 2, w, h)
-              resolve()
-            }
-            img.onerror = () => resolve()
-            img.src = imgSrc
-          })
-        }
-
-        // overlay escuro
-        ctx.fillStyle = 'rgba(0,0,0,0.45)'
-        ctx.fillRect(0, 0, 1080, 1080)
-
-        // título
-        ctx.fillStyle = '#FFFFFF'
-        ctx.textAlign = 'center'
-        ctx.font = 'bold 64px Inter, sans-serif'
-        const titleLines = wrapText(ctx, slide.title, 900)
-        const lineH = 76
-        const totalTitleH = titleLines.length * lineH
-        const bodyLines = slide.body ? wrapText(ctx, slide.body, 900) : []
-        const totalBodyH = bodyLines.length * 40
-        const gap = slide.body ? 24 : 0
-        const blockH = totalTitleH + gap + totalBodyH
-        let cy = (1080 - blockH) / 2
-
-        for (const line of titleLines) {
-          ctx.fillText(line, 540, cy + 64)
-          cy += lineH
-        }
-
-        // body
-        if (bodyLines.length > 0) {
-          cy += gap
-          ctx.font = '28px Inter, sans-serif'
-          ctx.fillStyle = 'rgba(255,255,255,0.82)'
-          for (const line of bodyLines) {
-            ctx.fillText(line, 540, cy + 28)
-            cy += 40
-          }
-        }
-
-        const dataUrl = canvas.toDataURL('image/png')
-        const base64 = dataUrl.split(',')[1]
-        const num = String(i + 1).padStart(2, '0')
-        zip.file(`slide-${num}.png`, base64, { base64: true })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', brandLogoUrl)
+        const base64 = canvas.toDataURL('image/png').split(',')[1]
+        zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
-
       const blob = await zip.generateAsync({ type: 'blob' })
       const url  = URL.createObjectURL(blob)
       const a    = document.createElement('a')
@@ -285,12 +351,12 @@ export function CarouselPage() {
               {slides.map((slide, i) => (
                 <div
                   key={i}
+                  onClick={() => setPreviewIndex(i)}
                   style={{
                     position: 'relative', aspectRatio: '1', borderRadius: '10px',
-                    overflow: 'hidden', background: '#111',
+                    overflow: 'hidden', background: '#111', cursor: 'pointer',
                   }}
                 >
-                  {/* Imagem de fundo */}
                   {slideImages[i] && (
                     <img
                       src={slideImages[i]}
@@ -298,10 +364,8 @@ export function CarouselPage() {
                       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   )}
-                  {/* Overlay escuro */}
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.1) 100%)' }} />
 
-                  {/* Badge tipo */}
                   <div style={{
                     position: 'absolute', top: '10px', left: '10px',
                     background: TYPE_COLOR[slide.type],
@@ -312,7 +376,6 @@ export function CarouselPage() {
                     {TYPE_LABEL[slide.type]}
                   </div>
 
-                  {/* Número do slide */}
                   <div style={{
                     position: 'absolute', top: '10px', right: '10px',
                     color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontWeight: 600,
@@ -320,11 +383,7 @@ export function CarouselPage() {
                     {i + 1}/{slides.length}
                   </div>
 
-                  {/* Texto */}
-                  <div style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    padding: '12px',
-                  }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px' }}>
                     <p style={{
                       margin: 0, color: '#fff', fontSize: '13px', fontWeight: 700,
                       lineHeight: 1.3, textShadow: '0 1px 3px rgba(0,0,0,0.6)',
@@ -378,9 +437,96 @@ export function CarouselPage() {
         )}
 
       </main>
+
+      {/* Modal de preview */}
+      {previewIndex !== null && slides[previewIndex] && (
+        <div
+          onClick={() => setPreviewIndex(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.88)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          {/* Botão anterior */}
+          <button
+            onClick={e => { e.stopPropagation(); setPreviewIndex(i => i !== null ? Math.max(0, i - 1) : null) }}
+            disabled={previewIndex === 0}
+            style={{
+              position: 'absolute', left: '24px',
+              width: '44px', height: '44px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+              color: previewIndex === 0 ? 'rgba(255,255,255,0.2)' : '#fff',
+              fontSize: '20px', cursor: previewIndex === 0 ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'inherit',
+            }}
+          >
+            ‹
+          </button>
+
+          {/* Canvas */}
+          <div onClick={e => e.stopPropagation()}>
+            <canvas
+              ref={previewCanvasRef}
+              width={1080}
+              height={1080}
+              style={{
+                display: 'block',
+                maxWidth: 'min(80vh, calc(100vw - 160px))',
+                maxHeight: '80vh',
+                borderRadius: '12px',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+              }}
+            />
+            {/* Contador */}
+            <p style={{
+              textAlign: 'center', color: 'rgba(255,255,255,0.5)',
+              fontSize: '12px', marginTop: '12px',
+            }}>
+              {previewIndex + 1} / {slides.length}
+            </p>
+          </div>
+
+          {/* Botão próximo */}
+          <button
+            onClick={e => { e.stopPropagation(); setPreviewIndex(i => i !== null ? Math.min(slides.length - 1, i + 1) : null) }}
+            disabled={previewIndex === slides.length - 1}
+            style={{
+              position: 'absolute', right: '24px',
+              width: '44px', height: '44px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+              color: previewIndex === slides.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff',
+              fontSize: '20px', cursor: previewIndex === slides.length - 1 ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'inherit',
+            }}
+          >
+            ›
+          </button>
+
+          {/* Botão fechar */}
+          <button
+            onClick={() => setPreviewIndex(null)}
+            style={{
+              position: 'absolute', top: '20px', right: '20px',
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+              color: 'rgba(255,255,255,0.7)', fontSize: '18px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'inherit',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   )
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function SlidesIcon() {
   return (
