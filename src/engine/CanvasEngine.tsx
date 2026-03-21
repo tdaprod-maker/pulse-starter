@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useLayoutEffect, useRef, useEffect } from 'react'
-import { Stage, Layer, Rect, Text, Image as KonvaImage, Group } from 'react-konva'
+import { Stage, Layer, Rect, Text, Image as KonvaImage, Group, Line } from 'react-konva'
 import type Konva from 'konva'
 import KonvaLib from 'konva'
 import type { CanvasElement, Template } from '../state/useStore'
@@ -18,6 +18,31 @@ interface CanvasEngineProps {
 
 export const PREVIEW_MAX = 600
 
+// ─── Snap to center ────────────────────────────────────────────────────────────
+
+function getSnapPosition(
+  pos: { x: number; y: number },
+  elemW: number,
+  elemH: number,
+  canvasW: number,
+  canvasH: number,
+  threshold = 10,
+): { x: number; y: number; guides: { x?: number; y?: number } } {
+  let { x, y } = pos
+  const guides: { x?: number; y?: number } = {}
+  const cx = x + elemW / 2
+  const cy = y + elemH / 2
+  if (Math.abs(cx - canvasW / 2) < threshold) {
+    x = canvasW / 2 - elemW / 2
+    guides.x = canvasW / 2
+  }
+  if (Math.abs(cy - canvasH / 2) < threshold) {
+    y = canvasH / 2 - elemH / 2
+    guides.y = canvasH / 2
+  }
+  return { x, y, guides }
+}
+
 /** Calcula o fator de escala para caber no preview sem distorcer. */
 export function calcAutoScale(template: Template): number {
   return Math.min(PREVIEW_MAX / template.width, PREVIEW_MAX / template.height)
@@ -31,6 +56,8 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     const autoScale = scale ?? calcAutoScale(template)
 
     const { setTemplateImageStyle, setTemplateImageOffset, setTemplateLogoPosition } = useStore()
+
+    const [guides, setGuides] = useState<{ x?: number; y?: number }>({})
 
     // ── Background image preload ───────────────────────────────────────────────
     const [bgImg, setBgImg] = useState<HTMLImageElement | null>(null)
@@ -228,8 +255,19 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
                 overrideY,
                 templateId:      template.id,
                 backgroundImage: template.backgroundImage,
+                canvasW:         template.width,
+                canvasH:         template.height,
+                onGuideChange:   setGuides,
               })
             })}
+
+            {/* Guias de snap to center */}
+            {guides.x !== undefined && (
+              <Line points={[guides.x, 0, guides.x, template.height]} stroke="#3A5AFF" strokeWidth={1} dash={[4, 4]} opacity={0.8} listening={false} />
+            )}
+            {guides.y !== undefined && (
+              <Line points={[0, guides.y, template.width, guides.y]} stroke="#3A5AFF" strokeWidth={1} dash={[4, 4]} opacity={0.8} listening={false} />
+            )}
 
             {/* Logotipo — renderizado no Konva para ser incluído no export */}
             {logoImg && (
@@ -241,7 +279,18 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
                 width={logoSize}
                 height={logoH}
                 draggable
+                onDragMove={(e) => {
+                  const snap = getSnapPosition(
+                    { x: e.target.x(), y: e.target.y() },
+                    logoSize, logoH,
+                    template.width, template.height,
+                  )
+                  e.target.x(snap.x)
+                  e.target.y(snap.y)
+                  setGuides(snap.guides)
+                }}
                 onDragEnd={(e) => {
+                  setGuides({})
                   setTemplateLogoPosition(template.id, e.target.x(), e.target.y())
                 }}
               />
@@ -298,10 +347,13 @@ interface RenderOptions {
   overrideY?:      Record<string, number>
   templateId?:     string
   backgroundImage?: string
+  canvasW?:        number
+  canvasH?:        number
+  onGuideChange?:  (g: { x?: number; y?: number }) => void
 }
 
 function renderElement(el: CanvasElement, opts: RenderOptions) {
-  const { selectedId, editingId, onSelect, onEditStart, overrideY, templateId, backgroundImage } = opts
+  const { selectedId, editingId, onSelect, onEditStart, overrideY, templateId, backgroundImage, canvasW, canvasH, onGuideChange } = opts
   const isSelected = el.id === selectedId
   const isEditing  = el.id === editingId
   const selectionStroke = isSelected && !isEditing ? '#3A5AFF' : undefined
@@ -389,7 +441,19 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
           y={y}
           draggable={!isEditing}
           onClick={() => onSelect?.(el.id)}
+          onDragMove={(e) => {
+            if (!canvasW || !canvasH) return
+            const snap = getSnapPosition(
+              { x: e.target.x(), y: e.target.y() },
+              bgWidth, bgHeight,
+              canvasW, canvasH,
+            )
+            e.target.x(snap.x)
+            e.target.y(snap.y)
+            onGuideChange?.(snap.guides)
+          }}
           onDragEnd={(e) => {
+            onGuideChange?.({})
             if (!templateId) return
             useStore.getState().updateElement(templateId, el.id, {
               x: Math.round(e.target.x()),
@@ -438,6 +502,25 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
           draggable={!isEditing}
           onClick={() => onSelect?.(el.id)}
           onDblClick={() => onEditStart?.(el)}
+          onDragMove={(e) => {
+            if (!canvasW || !canvasH) return
+            const snap = getSnapPosition(
+              { x: e.target.x(), y: e.target.y() },
+              e.target.width(), e.target.height(),
+              canvasW, canvasH,
+            )
+            e.target.x(snap.x)
+            e.target.y(snap.y)
+            onGuideChange?.(snap.guides)
+          }}
+          onDragEnd={(e) => {
+            onGuideChange?.({})
+            if (!templateId) return
+            useStore.getState().updateElement(templateId, el.id, {
+              x: Math.round(e.target.x()),
+              y: Math.round(e.target.y()),
+            })
+          }}
           stroke={selectionStroke}
           strokeWidth={isSelected && !isEditing ? 0.5 : 0}
         />
