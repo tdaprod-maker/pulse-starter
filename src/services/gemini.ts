@@ -58,6 +58,8 @@ TEMPLATES DISPONÍVEIS:
   Campo: phrase (frase curta e poderosa, máximo 8 palavras, pode ter quebra de linha \\n)
   Exemplos: frases filosóficas sobre IA, provocações de negócio, statements minimalistas.
 
+IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
+
 REGRAS DE SELEÇÃO DE TEMPLATE:
 - "minimal-type"    → somente para frases curtas, pensamentos, citações ou conteúdo contemplativo
 - "hero-title"      → quando há um título principal acompanhado de explicação ou subtítulo descritivo
