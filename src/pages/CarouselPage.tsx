@@ -33,17 +33,23 @@ export function CarouselPage() {
     setSlideImages([])
     setCaption('')
     try {
+      console.log('[Carousel] chamando Gemini...')
       const result = await generateCarouselContent(prompt, slideCount)
+      console.log('[Carousel] Gemini retornou:', result)
       setSlides(result.slides)
       setCaption(result.caption)
+      console.log('[Carousel] buscando imagens...')
       const images = await Promise.all(
         result.slides.map(s => generateImage(s.imagePrompt).catch(() => ''))
       )
+      console.log('[Carousel] imagens recebidas:', images.length)
       setSlideImages(images)
       setStatus('idle')
     } catch (err) {
       console.error('[CarouselPage] erro ao gerar:', err)
       setStatus('error')
+    } finally {
+      setStatus(s => s === 'loading' ? 'error' : s)
     }
   }
 
