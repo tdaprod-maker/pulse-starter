@@ -229,7 +229,7 @@ export function AIPanel(_props: AIPanelProps) {
       }
 
       // 2. Gera imagem de fundo — falha silenciosa, não interrompe o fluxo
-      if (result.imagePrompt) {
+      if (result.imagePrompt && result.template !== 'tech-minimal') {
         try {
           const url      = await generateImage(result.imagePrompt)
           const activeId = useStore.getState().activeTemplateId
