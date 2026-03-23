@@ -92,6 +92,26 @@ async function drawSlide(
   } else if (templateId === 'tech-product') {
     ctx.fillStyle = '#0D0D0D'
     ctx.fillRect(0, 0, SIZE, SIZE)
+    if (imgSrc) {
+      await new Promise<void>(resolve => {
+        const img = new window.Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
+          const w = img.naturalWidth * scale
+          const h = img.naturalHeight * scale
+          ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+          resolve()
+        }
+        img.onerror = () => resolve()
+        img.src = imgSrc
+      })
+    }
+    const tpGrad = ctx.createLinearGradient(0, 0, 0, SIZE)
+    tpGrad.addColorStop(0, 'rgba(0,0,0,0.3)')
+    tpGrad.addColorStop(1, 'rgba(0,0,0,0.75)')
+    ctx.fillStyle = tpGrad
+    ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = '#3A5AFF'
     ctx.fillRect(0, 0, 1080, 8)
     const typeText = slide.type.toUpperCase()
