@@ -36,7 +36,7 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean },
+  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white' },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
@@ -272,6 +272,12 @@ async function drawSlide(
         const scale = logoMaxH / logo.naturalHeight
         const logoW = logo.naturalWidth * scale
         ctx.drawImage(logo, SIZE - logoMargin - logoW, SIZE - logoMargin - logoMaxH, logoW, logoMaxH)
+        if (options.logoTint === 'white') {
+          ctx.globalCompositeOperation = 'source-atop'
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(SIZE - logoMargin - logoW, SIZE - logoMargin - options.logoSize, logoW, options.logoSize)
+          ctx.globalCompositeOperation = 'source-over'
+        }
         resolve()
       }
       logo.onerror = () => resolve()
@@ -298,6 +304,7 @@ export function CarouselPage() {
   const [accentColor, setAccentColor] = useState('#3A5AFF')
   const [logoSize, setLogoSize] = useState(180)
   const [textShadow, setTextShadow] = useState(false)
+  const [logoTint, setLogoTint] = useState<'original' | 'white'>('original')
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
   // Carrega logo do Brand Kit
@@ -320,8 +327,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow })
-  }, [slides, slideImages, templateId, brandLogoUrl, fontScale, accentColor, logoSize, textShadow])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint })
+  }, [slides, slideImages, templateId, brandLogoUrl, fontScale, accentColor, logoSize, textShadow, logoTint])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -372,7 +379,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -471,103 +478,6 @@ export function CarouselPage() {
                     }}
                   >
                     {n}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Cor de destaque */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Cor de destaque
-            </span>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {['#3A5AFF', '#FFCA1D', '#FF6F5E'].map(color => {
-                const active = accentColor === color
-                return (
-                  <button
-                    key={color}
-                    onClick={() => setAccentColor(color)}
-                    style={{
-                      width: '32px', height: '32px', borderRadius: '50%',
-                      background: color, border: active ? `2px solid #ffffff` : '2px solid transparent',
-                      boxShadow: active ? `0 0 0 2px ${color}` : 'none',
-                      cursor: 'pointer', padding: 0, transition: 'all 0.15s',
-                    }}
-                  />
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Tamanho da fonte */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Tamanho da fonte
-              </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {Math.round(fontScale * 100)}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min={0.7}
-              max={1.5}
-              step={0.05}
-              value={fontScale}
-              onChange={e => setFontScale(Number(e.target.value))}
-              style={{ width: '100%', accentColor: 'var(--accent)' }}
-            />
-          </div>
-
-          {/* Tamanho do logo */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Tamanho do logo
-              </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {logoSize}px
-              </span>
-            </div>
-            <input
-              type="range"
-              min={100}
-              max={300}
-              step={10}
-              value={logoSize}
-              onChange={e => setLogoSize(Number(e.target.value))}
-              style={{ width: '100%', accentColor: 'var(--accent)' }}
-            />
-          </div>
-
-          {/* Sombra nos textos */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Sombra nos textos
-            </span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[{ label: 'Ativa', value: true }, { label: 'Desativa', value: false }].map(opt => {
-                const active = textShadow === opt.value
-                return (
-                  <button
-                    key={String(opt.value)}
-                    onClick={() => setTextShadow(opt.value)}
-                    style={{
-                      padding: '0 20px', height: '40px', borderRadius: '8px',
-                      fontSize: '13px', fontWeight: active ? 700 : 400,
-                      fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s',
-                      background: active
-                        ? 'linear-gradient(135deg, rgba(58,90,255,0.9), rgba(91,143,212,0.8))'
-                        : 'var(--bg-surface)',
-                      border: active ? '1px solid rgba(58,90,255,0.5)' : '1px solid var(--border)',
-                      color: active ? '#ffffff' : 'var(--text-secondary)',
-                      boxShadow: active ? '0 2px 8px rgba(58,90,255,0.3)' : 'none',
-                    }}
-                  >
-                    {opt.label}
                   </button>
                 )
               })}
@@ -798,6 +708,129 @@ export function CarouselPage() {
             }}>
               {previewIndex + 1} / {slides.length}
             </p>
+
+            {/* Controles em tempo real */}
+            <div style={{
+              background: 'rgba(0,0,0,0.6)', padding: '16px', marginTop: '12px',
+              borderRadius: '10px', display: 'flex', gap: '20px', flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}>
+
+              {/* Cor de destaque */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Cor de destaque
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {['#3A5AFF', '#FFCA1D', '#FF6F5E'].map(color => {
+                    const active = accentColor === color
+                    return (
+                      <button
+                        key={color}
+                        onClick={() => setAccentColor(color)}
+                        style={{
+                          width: '28px', height: '28px', borderRadius: '50%',
+                          background: color, border: active ? '2px solid #ffffff' : '2px solid transparent',
+                          boxShadow: active ? `0 0 0 2px ${color}` : 'none',
+                          cursor: 'pointer', padding: 0, transition: 'all 0.15s',
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Fonte */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Fonte
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="range" min={0.7} max={1.5} step={0.05} value={fontScale}
+                    onChange={e => setFontScale(Number(e.target.value))}
+                    style={{ width: '100px', accentColor: '#3A5AFF' }}
+                  />
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '34px' }}>
+                    {Math.round(fontScale * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Logo tamanho */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Logo tamanho
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="range" min={100} max={300} step={10} value={logoSize}
+                    onChange={e => setLogoSize(Number(e.target.value))}
+                    style={{ width: '100px', accentColor: '#3A5AFF' }}
+                  />
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '36px' }}>
+                    {logoSize}px
+                  </span>
+                </div>
+              </div>
+
+              {/* Logo cor */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Logo cor
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {([{ label: 'Original', value: 'original' }, { label: 'Branco', value: 'white' }] as const).map(opt => {
+                    const active = logoTint === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setLogoTint(opt.value)}
+                        style={{
+                          padding: '4px 10px', borderRadius: '6px', fontSize: '11px',
+                          fontWeight: active ? 700 : 400, fontFamily: 'inherit',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                          background: active ? 'rgba(58,90,255,0.8)' : 'rgba(255,255,255,0.1)',
+                          border: active ? '1px solid rgba(58,90,255,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                          color: '#ffffff',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Sombra */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Sombra
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {([{ label: 'On', value: true }, { label: 'Off', value: false }] as const).map(opt => {
+                    const active = textShadow === opt.value
+                    return (
+                      <button
+                        key={String(opt.value)}
+                        onClick={() => setTextShadow(opt.value)}
+                        style={{
+                          padding: '4px 10px', borderRadius: '6px', fontSize: '11px',
+                          fontWeight: active ? 700 : 400, fontFamily: 'inherit',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                          background: active ? 'rgba(58,90,255,0.8)' : 'rgba(255,255,255,0.1)',
+                          border: active ? '1px solid rgba(58,90,255,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                          color: '#ffffff',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+            </div>
           </div>
 
           {/* Botão próximo */}
