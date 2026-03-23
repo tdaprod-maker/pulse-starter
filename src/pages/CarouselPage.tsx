@@ -36,15 +36,16 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
+  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
 
-  let logoMaxH = 180
+  let logoMaxH = options.logoSize
   const logoMargin = 60
 
   if (templateId === 'tech-statement') {
-    logoMaxH = 200
+    logoMaxH = options.logoSize
     ctx.fillStyle = '#111111'
     ctx.fillRect(0, 0, SIZE, SIZE)
     if (imgSrc) {
@@ -67,12 +68,16 @@ async function drawSlide(
     grad.addColorStop(1, 'rgba(0,0,0,0.82)')
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, SIZE, SIZE)
-    ctx.fillStyle = '#3A5AFF'
+    ctx.fillStyle = options.accentColor
     ctx.fillRect(80, 180, 6, 320)
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     ctx.fillStyle = '#FFFFFF'
-    ctx.font = 'bold 68px Inter, sans-serif'
+    ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
+    ctx.shadowBlur = options.textShadow ? 12 : 0
+    ctx.shadowOffsetX = options.textShadow ? 2 : 0
+    ctx.shadowOffsetY = options.textShadow ? 2 : 0
+    ctx.font = `bold ${Math.round(68 * options.fontScale)}px Inter, sans-serif`
     const tsTitle = wrapText(ctx, slide.title, 860)
     let cy = 220
     for (const line of tsTitle) {
@@ -81,13 +86,17 @@ async function drawSlide(
     }
     if (slide.body) {
       cy += 24
-      ctx.font = '28px Inter, sans-serif'
+      ctx.font = `${Math.round(28 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.78)'
       for (const line of wrapText(ctx, slide.body, 860)) {
         ctx.fillText(line, 110, cy)
         cy += 40
       }
     }
+    ctx.shadowColor = 'transparent'
+    ctx.shadowBlur = 0
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
 
   } else if (templateId === 'tech-product') {
     ctx.fillStyle = '#0D0D0D'
@@ -112,10 +121,14 @@ async function drawSlide(
     tpGrad.addColorStop(1, 'rgba(0,0,0,0.75)')
     ctx.fillStyle = tpGrad
     ctx.fillRect(0, 0, SIZE, SIZE)
-    ctx.fillStyle = '#3A5AFF'
+    ctx.fillStyle = options.accentColor
     ctx.fillRect(0, 0, 1080, 8)
-    ctx.font = 'bold 72px Inter, sans-serif'
+    ctx.font = `bold ${Math.round(72 * options.fontScale)}px Inter, sans-serif`
     ctx.fillStyle = '#FFFFFF'
+    ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
+    ctx.shadowBlur = options.textShadow ? 12 : 0
+    ctx.shadowOffsetX = options.textShadow ? 2 : 0
+    ctx.shadowOffsetY = options.textShadow ? 2 : 0
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     const tpTitle = wrapText(ctx, slide.title, 900)
@@ -125,12 +138,12 @@ async function drawSlide(
       cy += 86
     }
     cy += 32
-    ctx.fillStyle = '#3A5AFF'
+    ctx.fillStyle = options.accentColor
     ctx.fillRect(80, cy, 120, 3)
     cy += 3
     if (slide.body) {
       cy += 32
-      ctx.font = '30px Inter, sans-serif'
+      ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.72)'
       ctx.textBaseline = 'top'
       for (const line of wrapText(ctx, slide.body, 900)) {
@@ -138,6 +151,10 @@ async function drawSlide(
         cy += 44
       }
     }
+    ctx.shadowColor = 'transparent'
+    ctx.shadowBlur = 0
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
 
   } else if (templateId === 'editorial-card') {
     ctx.fillStyle = '#111111'
@@ -164,9 +181,9 @@ async function drawSlide(
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = '#FFCA1D'
     ctx.fillRect(0, 0, 1080, 6)
-    ctx.font = 'bold 60px Inter, sans-serif'
+    ctx.font = `bold ${Math.round(60 * options.fontScale)}px Inter, sans-serif`
     const ecTitle = wrapText(ctx, slide.title, 700)
-    ctx.font = '26px Inter, sans-serif'
+    ctx.font = `${Math.round(26 * options.fontScale)}px Inter, sans-serif`
     const ecBody = slide.body ? wrapText(ctx, slide.body, 700) : []
     const titleLineH = 72
     const bodyLineH = 36
@@ -176,28 +193,36 @@ async function drawSlide(
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     ctx.fillStyle = '#FFFFFF'
-    ctx.font = 'bold 60px Inter, sans-serif'
+    ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
+    ctx.shadowBlur = options.textShadow ? 12 : 0
+    ctx.shadowOffsetX = options.textShadow ? 2 : 0
+    ctx.shadowOffsetY = options.textShadow ? 2 : 0
+    ctx.font = `bold ${Math.round(60 * options.fontScale)}px Inter, sans-serif`
     for (const line of ecTitle) {
       ctx.fillText(line, 72, cy)
       cy += titleLineH
     }
     if (ecBody.length > 0) {
       cy += ecGap
-      ctx.font = '26px Inter, sans-serif'
+      ctx.font = `${Math.round(26 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.80)'
       for (const line of ecBody) {
         ctx.fillText(line, 72, cy)
         cy += bodyLineH
       }
     }
+    ctx.shadowColor = 'transparent'
+    ctx.shadowBlur = 0
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
 
   } else {
     // tech-minimal
     ctx.fillStyle = '#111111'
     ctx.fillRect(0, 0, SIZE, SIZE)
-    ctx.font = 'bold 88px Montserrat, Inter, sans-serif'
+    ctx.font = `bold ${Math.round(88 * options.fontScale)}px Montserrat, Inter, sans-serif`
     const tmTitle = wrapText(ctx, slide.title, 900)
-    ctx.font = '30px Inter, sans-serif'
+    ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
     const tmBody = slide.body ? wrapText(ctx, slide.body, 900) : []
     const titleLineH = 100
     const bodyLineH = 44
@@ -210,17 +235,21 @@ async function drawSlide(
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillStyle = '#FFFFFF'
-    ctx.font = 'bold 88px Montserrat, Inter, sans-serif'
+    ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
+    ctx.shadowBlur = options.textShadow ? 12 : 0
+    ctx.shadowOffsetX = options.textShadow ? 2 : 0
+    ctx.shadowOffsetY = options.textShadow ? 2 : 0
+    ctx.font = `bold ${Math.round(88 * options.fontScale)}px Montserrat, Inter, sans-serif`
     for (const line of tmTitle) {
       ctx.fillText(line, 540, cy)
       cy += titleLineH
     }
-    ctx.fillStyle = '#3A5AFF'
+    ctx.fillStyle = options.accentColor
     ctx.fillRect(540 - 60, cy + lineGap, 120, lineThick)
     cy += lineGap + lineThick
     if (tmBody.length > 0) {
       cy += bodyGap
-      ctx.font = '30px Inter, sans-serif'
+      ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.65)'
       ctx.textBaseline = 'top'
       for (const line of tmBody) {
@@ -228,6 +257,10 @@ async function drawSlide(
         cy += bodyLineH
       }
     }
+    ctx.shadowColor = 'transparent'
+    ctx.shadowBlur = 0
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
   }
 
   // logo brand kit — canto inferior direito (compartilhado)
@@ -261,6 +294,10 @@ export function CarouselPage() {
   const [exporting, setExporting] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
+  const [fontScale, setFontScale] = useState(1)
+  const [accentColor, setAccentColor] = useState('#3A5AFF')
+  const [logoSize, setLogoSize] = useState(180)
+  const [textShadow, setTextShadow] = useState(false)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
   // Carrega logo do Brand Kit
@@ -283,8 +320,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl)
-  }, [slides, slideImages, templateId, brandLogoUrl])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow })
+  }, [slides, slideImages, templateId, brandLogoUrl, fontScale, accentColor, logoSize, textShadow])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -335,7 +372,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl)
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -434,6 +471,103 @@ export function CarouselPage() {
                     }}
                   >
                     {n}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Cor de destaque */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Cor de destaque
+            </span>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {['#3A5AFF', '#FFCA1D', '#FF6F5E'].map(color => {
+                const active = accentColor === color
+                return (
+                  <button
+                    key={color}
+                    onClick={() => setAccentColor(color)}
+                    style={{
+                      width: '32px', height: '32px', borderRadius: '50%',
+                      background: color, border: active ? `2px solid #ffffff` : '2px solid transparent',
+                      boxShadow: active ? `0 0 0 2px ${color}` : 'none',
+                      cursor: 'pointer', padding: 0, transition: 'all 0.15s',
+                    }}
+                  />
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Tamanho da fonte */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Tamanho da fonte
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {Math.round(fontScale * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0.7}
+              max={1.5}
+              step={0.05}
+              value={fontScale}
+              onChange={e => setFontScale(Number(e.target.value))}
+              style={{ width: '100%', accentColor: 'var(--accent)' }}
+            />
+          </div>
+
+          {/* Tamanho do logo */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Tamanho do logo
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {logoSize}px
+              </span>
+            </div>
+            <input
+              type="range"
+              min={100}
+              max={300}
+              step={10}
+              value={logoSize}
+              onChange={e => setLogoSize(Number(e.target.value))}
+              style={{ width: '100%', accentColor: 'var(--accent)' }}
+            />
+          </div>
+
+          {/* Sombra nos textos */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Sombra nos textos
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[{ label: 'Ativa', value: true }, { label: 'Desativa', value: false }].map(opt => {
+                const active = textShadow === opt.value
+                return (
+                  <button
+                    key={String(opt.value)}
+                    onClick={() => setTextShadow(opt.value)}
+                    style={{
+                      padding: '0 20px', height: '40px', borderRadius: '8px',
+                      fontSize: '13px', fontWeight: active ? 700 : 400,
+                      fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s',
+                      background: active
+                        ? 'linear-gradient(135deg, rgba(58,90,255,0.9), rgba(91,143,212,0.8))'
+                        : 'var(--bg-surface)',
+                      border: active ? '1px solid rgba(58,90,255,0.5)' : '1px solid var(--border)',
+                      color: active ? '#ffffff' : 'var(--text-secondary)',
+                      boxShadow: active ? '0 2px 8px rgba(58,90,255,0.3)' : 'none',
+                    }}
+                  >
+                    {opt.label}
                   </button>
                 )
               })}
