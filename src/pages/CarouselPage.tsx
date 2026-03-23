@@ -40,11 +40,11 @@ async function drawSlide(
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
 
-  let logoMaxH = 90
+  let logoMaxH = 180
   const logoMargin = 60
 
   if (templateId === 'tech-statement') {
-    logoMaxH = 100
+    logoMaxH = 200
     ctx.fillStyle = '#111111'
     ctx.fillRect(0, 0, SIZE, SIZE)
     if (imgSrc) {
