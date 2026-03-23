@@ -114,21 +114,6 @@ async function drawSlide(
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = '#3A5AFF'
     ctx.fillRect(0, 0, 1080, 8)
-    const typeText = slide.type.toUpperCase()
-    ctx.font = '600 11px Inter, sans-serif'
-    ctx.textBaseline = 'middle'
-    ctx.textAlign = 'left'
-    const tagPadX = 16
-    const tagPadY = 8
-    const tagW = ctx.measureText(typeText).width + tagPadX * 2
-    const tagH = 11 + tagPadY * 2
-    ctx.fillStyle = 'rgba(58,90,255,0.15)'
-    ctx.fillRect(80, 60, tagW, tagH)
-    ctx.strokeStyle = '#3A5AFF'
-    ctx.lineWidth = 1
-    ctx.strokeRect(80, 60, tagW, tagH)
-    ctx.fillStyle = '#3A5AFF'
-    ctx.fillText(typeText, 80 + tagPadX, 60 + tagH / 2)
     ctx.font = 'bold 72px Inter, sans-serif'
     ctx.fillStyle = '#FFFFFF'
     ctx.textAlign = 'left'
