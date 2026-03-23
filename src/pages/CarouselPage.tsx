@@ -269,14 +269,24 @@ async function drawSlide(
       const logo = new window.Image()
       logo.crossOrigin = 'anonymous'
       logo.onload = () => {
-        const scale = logoMaxH / logo.naturalHeight
+        const scale = options.logoSize / logo.naturalHeight
         const logoW = logo.naturalWidth * scale
-        ctx.drawImage(logo, SIZE - logoMargin - logoW, SIZE - logoMargin - logoMaxH, logoW, logoMaxH)
+        const logoX = SIZE - logoMargin - logoW
+        const logoY = SIZE - logoMargin - options.logoSize
+
         if (options.logoTint === 'white') {
-          ctx.globalCompositeOperation = 'source-atop'
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(SIZE - logoMargin - logoW, SIZE - logoMargin - options.logoSize, logoW, options.logoSize)
-          ctx.globalCompositeOperation = 'source-over'
+          // desenha em canvas auxiliar e aplica tint branco preservando alpha
+          const offscreen = document.createElement('canvas')
+          offscreen.width = Math.ceil(logoW)
+          offscreen.height = options.logoSize
+          const offCtx = offscreen.getContext('2d')!
+          offCtx.drawImage(logo, 0, 0, logoW, options.logoSize)
+          offCtx.globalCompositeOperation = 'source-in'
+          offCtx.fillStyle = '#ffffff'
+          offCtx.fillRect(0, 0, logoW, options.logoSize)
+          ctx.drawImage(offscreen, logoX, logoY, logoW, options.logoSize)
+        } else {
+          ctx.drawImage(logo, logoX, logoY, logoW, options.logoSize)
         }
         resolve()
       }
