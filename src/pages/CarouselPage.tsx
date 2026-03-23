@@ -534,7 +534,7 @@ export function CarouselPage() {
                     overflow: 'hidden', background: '#111', cursor: 'pointer',
                   }}
                 >
-                  {slideImages[i] && (
+                  {slideImages[i] && templateId !== 'tech-minimal' && (
                     <img
                       src={slideImages[i]}
                       alt=""
