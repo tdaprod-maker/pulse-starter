@@ -36,7 +36,7 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white' },
+  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
@@ -274,24 +274,11 @@ async function drawSlide(
         const logoX = SIZE - logoMargin - logoW
         const logoY = SIZE - logoMargin - options.logoSize
 
-        if (options.logoTint === 'white') {
-          // desenha em canvas auxiliar e aplica tint branco preservando alpha
-          const offscreen = document.createElement('canvas')
-          offscreen.width = Math.ceil(logoW)
-          offscreen.height = options.logoSize
-          const offCtx = offscreen.getContext('2d')!
-          offCtx.drawImage(logo, 0, 0, logoW, options.logoSize)
-          offCtx.globalCompositeOperation = 'source-in'
-          offCtx.fillStyle = '#ffffff'
-          offCtx.fillRect(0, 0, logoW, options.logoSize)
-          ctx.drawImage(offscreen, logoX, logoY, logoW, options.logoSize)
-        } else {
-          ctx.drawImage(logo, logoX, logoY, logoW, options.logoSize)
-        }
+        ctx.drawImage(logo, logoX, logoY, logoW, options.logoSize)
         resolve()
       }
       logo.onerror = () => resolve()
-      logo.src = logoUrl
+      logo.src = options.logoTint === 'white' ? options.logoWhiteUrl : logoUrl
     })
   }
 }
@@ -310,6 +297,7 @@ export function CarouselPage() {
   const [exporting, setExporting] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
+  const [brandLogoWhiteUrl, setBrandLogoWhiteUrl] = useState('/logo-agente17-white.png')
   const [fontScale, setFontScale] = useState(1)
   const [accentColor, setAccentColor] = useState('#3A5AFF')
   const [logoSize, setLogoSize] = useState(180)
@@ -337,8 +325,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint })
-  }, [slides, slideImages, templateId, brandLogoUrl, fontScale, accentColor, logoSize, textShadow, logoTint])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl })
+  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -389,7 +377,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
