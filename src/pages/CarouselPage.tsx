@@ -41,11 +41,9 @@ async function drawSlide(
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
 
-  let logoMaxH = options.logoSize
   const logoMargin = 60
 
   if (templateId === 'tech-statement') {
-    logoMaxH = options.logoSize
     ctx.fillStyle = '#111111'
     ctx.fillRect(0, 0, SIZE, SIZE)
     if (imgSrc) {
@@ -297,7 +295,7 @@ export function CarouselPage() {
   const [exporting, setExporting] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
-  const [brandLogoWhiteUrl, setBrandLogoWhiteUrl] = useState('/logo-agente17-white.png')
+  const brandLogoWhiteUrl = '/logo-agente17-white.png'
   const [fontScale, setFontScale] = useState(1)
   const [accentColor, setAccentColor] = useState('#3A5AFF')
   const [logoSize, setLogoSize] = useState(180)
