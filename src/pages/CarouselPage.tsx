@@ -272,7 +272,14 @@ async function drawSlide(
         const logoX = SIZE - logoMargin - logoW
         const logoY = SIZE - logoMargin - options.logoSize
 
-        ctx.drawImage(logo, logoX, logoY, logoW, options.logoSize)
+        if (options.logoTint === 'white') {
+          ctx.save()
+          ctx.globalCompositeOperation = 'screen'
+          ctx.drawImage(logo, logoX, logoY, logoW, options.logoSize)
+          ctx.restore()
+        } else {
+          ctx.drawImage(logo, logoX, logoY, logoW, options.logoSize)
+        }
         resolve()
       }
       logo.onerror = () => resolve()
