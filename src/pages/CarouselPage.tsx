@@ -1,3 +1,4 @@
+// updated 23 mar 2026
 import { useState, useEffect, useRef, useCallback } from 'react'
 import JSZip from 'jszip'
 import { generateCarouselContent } from '../services/gemini'
@@ -33,76 +34,206 @@ async function drawSlide(
   ctx: CanvasRenderingContext2D,
   slide: CarouselSlide,
   imgSrc: string,
+  templateId: string,
   logoUrl: string,
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
 
-  // fundo preto base
-  ctx.fillStyle = '#111111'
-  ctx.fillRect(0, 0, SIZE, SIZE)
+  let logoMaxH = 90
+  const logoMargin = 60
 
-  // imagem de fundo com cover
-  if (imgSrc) {
-    await new Promise<void>(resolve => {
-      const img = new window.Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
-        const w = img.naturalWidth  * scale
-        const h = img.naturalHeight * scale
-        ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
-        resolve()
+  if (templateId === 'tech-statement') {
+    logoMaxH = 100
+    ctx.fillStyle = '#111111'
+    ctx.fillRect(0, 0, SIZE, SIZE)
+    if (imgSrc) {
+      await new Promise<void>(resolve => {
+        const img = new window.Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
+          const w = img.naturalWidth * scale
+          const h = img.naturalHeight * scale
+          ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+          resolve()
+        }
+        img.onerror = () => resolve()
+        img.src = imgSrc
+      })
+    }
+    const grad = ctx.createLinearGradient(0, 0, 0, SIZE)
+    grad.addColorStop(0, 'rgba(0,0,0,0)')
+    grad.addColorStop(1, 'rgba(0,0,0,0.82)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillStyle = '#3A5AFF'
+    ctx.fillRect(80, 180, 6, 320)
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillStyle = '#FFFFFF'
+    ctx.font = 'bold 68px Inter, sans-serif'
+    const tsTitle = wrapText(ctx, slide.title, 860)
+    let cy = 220
+    for (const line of tsTitle) {
+      ctx.fillText(line, 110, cy)
+      cy += 80
+    }
+    if (slide.body) {
+      cy += 24
+      ctx.font = '28px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(255,255,255,0.78)'
+      for (const line of wrapText(ctx, slide.body, 860)) {
+        ctx.fillText(line, 110, cy)
+        cy += 40
       }
-      img.onerror = () => resolve()
-      img.src = imgSrc
-    })
-  }
+    }
 
-  // overlay escuro
-  ctx.fillStyle = 'rgba(0,0,0,0.45)'
-  ctx.fillRect(0, 0, SIZE, SIZE)
+  } else if (templateId === 'tech-product') {
+    ctx.fillStyle = '#0D0D0D'
+    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillStyle = '#3A5AFF'
+    ctx.fillRect(0, 0, 1080, 8)
+    const typeText = slide.type.toUpperCase()
+    ctx.font = '600 11px Inter, sans-serif'
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'left'
+    const tagPadX = 16
+    const tagPadY = 8
+    const tagW = ctx.measureText(typeText).width + tagPadX * 2
+    const tagH = 11 + tagPadY * 2
+    ctx.fillStyle = 'rgba(58,90,255,0.15)'
+    ctx.fillRect(80, 60, tagW, tagH)
+    ctx.strokeStyle = '#3A5AFF'
+    ctx.lineWidth = 1
+    ctx.strokeRect(80, 60, tagW, tagH)
+    ctx.fillStyle = '#3A5AFF'
+    ctx.fillText(typeText, 80 + tagPadX, 60 + tagH / 2)
+    ctx.font = 'bold 72px Inter, sans-serif'
+    ctx.fillStyle = '#FFFFFF'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    const tpTitle = wrapText(ctx, slide.title, 900)
+    let cy = 200
+    for (const line of tpTitle) {
+      ctx.fillText(line, 80, cy)
+      cy += 86
+    }
+    cy += 32
+    ctx.fillStyle = '#3A5AFF'
+    ctx.fillRect(80, cy, 120, 3)
+    cy += 3
+    if (slide.body) {
+      cy += 32
+      ctx.font = '30px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(255,255,255,0.72)'
+      ctx.textBaseline = 'top'
+      for (const line of wrapText(ctx, slide.body, 900)) {
+        ctx.fillText(line, 80, cy)
+        cy += 44
+      }
+    }
 
-  // título
-  ctx.fillStyle = '#FFFFFF'
-  ctx.textAlign = 'center'
-  ctx.font = 'bold 64px Inter, sans-serif'
-  const titleLines = wrapText(ctx, slide.title, 900)
-  const lineH = 76
-  const totalTitleH = titleLines.length * lineH
-  const bodyLines = slide.body ? wrapText(ctx, slide.body, 900) : []
-  const totalBodyH = bodyLines.length * 40
-  const gap = slide.body ? 24 : 0
-  const blockH = totalTitleH + gap + totalBodyH
-  let cy = (SIZE - blockH) / 2
+  } else if (templateId === 'editorial-card') {
+    ctx.fillStyle = '#111111'
+    ctx.fillRect(0, 0, SIZE, SIZE)
+    if (imgSrc) {
+      await new Promise<void>(resolve => {
+        const img = new window.Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
+          const w = img.naturalWidth * scale
+          const h = img.naturalHeight * scale
+          ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+          resolve()
+        }
+        img.onerror = () => resolve()
+        img.src = imgSrc
+      })
+    }
+    const grad = ctx.createLinearGradient(0, 0, 600, 0)
+    grad.addColorStop(0, 'rgba(0,0,0,0.88)')
+    grad.addColorStop(1, 'rgba(0,0,0,0.1)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillStyle = '#FFCA1D'
+    ctx.fillRect(0, 0, 1080, 6)
+    ctx.font = 'bold 60px Inter, sans-serif'
+    const ecTitle = wrapText(ctx, slide.title, 700)
+    ctx.font = '26px Inter, sans-serif'
+    const ecBody = slide.body ? wrapText(ctx, slide.body, 700) : []
+    const titleLineH = 72
+    const bodyLineH = 36
+    const ecGap = 16
+    const blockH = ecTitle.length * titleLineH + (ecBody.length > 0 ? ecGap + ecBody.length * bodyLineH : 0)
+    let cy = 840 - blockH
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillStyle = '#FFFFFF'
+    ctx.font = 'bold 60px Inter, sans-serif'
+    for (const line of ecTitle) {
+      ctx.fillText(line, 72, cy)
+      cy += titleLineH
+    }
+    if (ecBody.length > 0) {
+      cy += ecGap
+      ctx.font = '26px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(255,255,255,0.80)'
+      for (const line of ecBody) {
+        ctx.fillText(line, 72, cy)
+        cy += bodyLineH
+      }
+    }
 
-  for (const line of titleLines) {
-    ctx.fillText(line, 540, cy + 64)
-    cy += lineH
-  }
-
-  if (bodyLines.length > 0) {
-    cy += gap
-    ctx.font = '28px Inter, sans-serif'
-    ctx.fillStyle = 'rgba(255,255,255,0.82)'
-    for (const line of bodyLines) {
-      ctx.fillText(line, 540, cy + 28)
-      cy += 40
+  } else {
+    // tech-minimal
+    ctx.fillStyle = '#111111'
+    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.font = 'bold 88px Montserrat, Inter, sans-serif'
+    const tmTitle = wrapText(ctx, slide.title, 900)
+    ctx.font = '30px Inter, sans-serif'
+    const tmBody = slide.body ? wrapText(ctx, slide.body, 900) : []
+    const titleLineH = 100
+    const bodyLineH = 44
+    const lineGap = 20
+    const lineThick = 2
+    const bodyGap = 40
+    const totalTitleH = tmTitle.length * titleLineH
+    const totalBodyH = tmBody.length > 0 ? lineGap + lineThick + bodyGap + tmBody.length * bodyLineH : 0
+    let cy = (SIZE - totalTitleH - totalBodyH) / 2
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillStyle = '#FFFFFF'
+    ctx.font = 'bold 88px Montserrat, Inter, sans-serif'
+    for (const line of tmTitle) {
+      ctx.fillText(line, 540, cy)
+      cy += titleLineH
+    }
+    ctx.fillStyle = '#3A5AFF'
+    ctx.fillRect(540 - 60, cy + lineGap, 120, lineThick)
+    cy += lineGap + lineThick
+    if (tmBody.length > 0) {
+      cy += bodyGap
+      ctx.font = '30px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(255,255,255,0.65)'
+      ctx.textBaseline = 'top'
+      for (const line of tmBody) {
+        ctx.fillText(line, 540, cy)
+        cy += bodyLineH
+      }
     }
   }
 
-  // logo brand kit — canto inferior direito
+  // logo brand kit — canto inferior direito (compartilhado)
   if (logoUrl) {
     await new Promise<void>(resolve => {
       const logo = new window.Image()
       logo.crossOrigin = 'anonymous'
       logo.onload = () => {
-        const maxH = 120
-        const scale = maxH / logo.naturalHeight
+        const scale = logoMaxH / logo.naturalHeight
         const logoW = logo.naturalWidth * scale
-        const marginX = 80
-        const marginY = 60
-        ctx.drawImage(logo, SIZE - marginX - logoW, SIZE - marginY - maxH, logoW, maxH)
+        ctx.drawImage(logo, SIZE - logoMargin - logoW, SIZE - logoMargin - logoMaxH, logoW, logoMaxH)
         resolve()
       }
       logo.onerror = () => resolve()
@@ -147,8 +278,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, brandLogoUrl)
-  }, [slides, slideImages, brandLogoUrl])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl)
+  }, [slides, slideImages, templateId, brandLogoUrl])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -199,7 +330,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', brandLogoUrl)
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl)
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
