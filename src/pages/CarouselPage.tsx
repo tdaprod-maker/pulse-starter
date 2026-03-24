@@ -36,7 +36,7 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number}; guideLines: boolean },
+  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
@@ -280,23 +280,6 @@ async function drawSlide(
     })
   }
 
-  if (options.guideLines) {
-    ctx.save()
-    ctx.strokeStyle = 'rgba(255,0,0,0.7)'
-    ctx.lineWidth = 2
-    ctx.setLineDash([8, 8])
-    // guia horizontal central
-    ctx.beginPath()
-    ctx.moveTo(0, SIZE / 2)
-    ctx.lineTo(SIZE, SIZE / 2)
-    ctx.stroke()
-    // guia vertical central
-    ctx.beginPath()
-    ctx.moveTo(SIZE / 2, 0)
-    ctx.lineTo(SIZE / 2, SIZE)
-    ctx.stroke()
-    ctx.restore()
-  }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -322,7 +305,6 @@ export function CarouselPage() {
   const [bgVariant, setBgVariant] = useState<'dark' | 'white'>('dark')
   const [slidePositions, setSlidePositions] = useState<Record<number, { titlePos: {x:number,y:number}, bodyPos: {x:number,y:number}, logoPos: {x:number,y:number} }>>({})
   const [dragging, setDragging] = useState<'title' | 'body' | 'logo' | null>(null)
-  const [showGuides, setShowGuides] = useState(false)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const currentPositions = slidePositions[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }
@@ -374,8 +356,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos, guideLines: showGuides })
-  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos, showGuides])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
+  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -445,7 +427,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos, guideLines: showGuides })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -754,7 +736,7 @@ export function CarouselPage() {
           </button>
 
           {/* Canvas */}
-          <div onClick={e => e.stopPropagation()}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'inline-block' }}>
             <canvas
               ref={previewCanvasRef}
               width={1080}
@@ -796,6 +778,25 @@ export function CarouselPage() {
                 cursor: dragging ? 'grabbing' : 'grab',
               }}
             />
+            {/* SVG overlay: réguas permanentes */}
+            <svg
+              viewBox="0 0 1080 1080"
+              style={{
+                position: 'absolute', top: 0, left: 0,
+                width: '100%', height: '100%',
+                pointerEvents: 'none', borderRadius: '12px',
+              }}
+            >
+              {/* Cruz central */}
+              <line x1="540" y1="0" x2="540" y2="1080" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
+              <line x1="0" y1="540" x2="1080" y2="540" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
+              {/* Terços verticais */}
+              <line x1="360" y1="0" x2="360" y2="1080" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              <line x1="720" y1="0" x2="720" y2="1080" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              {/* Terços horizontais */}
+              <line x1="0" y1="360" x2="1080" y2="360" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              <line x1="0" y1="720" x2="1080" y2="720" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+            </svg>
             {/* Contador */}
             <p style={{
               textAlign: 'center', color: 'rgba(255,255,255,0.5)',
@@ -957,32 +958,6 @@ export function CarouselPage() {
                 </div>
               </div>
 
-              {/* Posição */}
-              <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
-
-                {/* Guias */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Guias</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {([{ label: 'On', value: true }, { label: 'Off', value: false }] as const).map(opt => {
-                      const active = showGuides === opt.value
-                      return (
-                        <button key={String(opt.value)} onClick={() => setShowGuides(opt.value)}
-                          style={{
-                            padding: '4px 10px', borderRadius: '6px', fontSize: '11px',
-                            fontWeight: active ? 700 : 400, fontFamily: 'inherit',
-                            cursor: 'pointer', transition: 'all 0.15s',
-                            background: active ? 'rgba(58,90,255,0.8)' : 'rgba(255,255,255,0.1)',
-                            border: active ? '1px solid rgba(58,90,255,0.6)' : '1px solid rgba(255,255,255,0.15)',
-                            color: '#ffffff',
-                          }}
-                        >{opt.label}</button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-              </div>
 
             </div>
           </div>
