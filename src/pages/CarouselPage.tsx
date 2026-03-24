@@ -186,7 +186,6 @@ async function drawSlide(
     const titleLineH = 72
     const bodyLineH = 36
     const ecGap = 16
-    const blockH = ecTitle.length * titleLineH + (ecBody.length > 0 ? ecGap + ecBody.length * bodyLineH : 0)
     let cy = Math.round(options.titleY * (SIZE - 200))
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
