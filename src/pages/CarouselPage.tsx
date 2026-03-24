@@ -385,7 +385,13 @@ export function CarouselPage() {
   }, [previewIndex, renderPreviewCanvas])
 
   useEffect(() => {
-    setLogoTint(templateId === 'tech-minimal' ? 'white' : 'original')
+    if (templateId === 'tech-minimal') {
+      setLogoTint('white')
+      setLogoSize(120)
+    } else {
+      setLogoTint('original')
+      setLogoSize(201)
+    }
   }, [templateId])
 
   useEffect(() => {
