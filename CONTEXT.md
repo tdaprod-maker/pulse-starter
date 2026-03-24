@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 21 março 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 23 março 2026.
 
 ---
 
@@ -210,16 +210,27 @@ As chaves de API estão em variáveis de ambiente — **não hardcoded no códig
 - [x] Tech Minimal criado — fundo sólido, Montserrat Bold, frase centralizada, troca automática de logo e cor de texto baseada na luminância da cor de fundo
 - [x] Múltiplos logotipos no Brand Kit com seleção direta no editor (LogoSection)
 - [x] Carrossel — página dedicada (/carousel) com: seletor de slides (3–5), seletor de template (4 opções), geração via Gemini, busca de imagens Pexels, preview em modal com canvas, export como ZIP, logo automático do Brand Kit no canto inferior direito
+- [x] drawSlide do carrossel refatorado com 4 layouts visuais distintos por templateId (tech-statement: gradiente + linha azul lateral; tech-product: fundo sólido + tag de tipo + linha separadora; editorial-card: gradiente lateral + faixa amarela no topo; tech-minimal: fundo sólido + título centralizado Montserrat)
+- [x] templateId passado corretamente para drawSlide e para handleExport
+- [x] Carrossel — 4 templates com layouts visuais distintos funcionando (tech-statement, tech-product, editorial-card, tech-minimal)
+- [x] Carrossel — painel de controles em tempo real no modal: cor de destaque (5 opções: azul, amarelo, coral, branco, preto), tamanho e cor do logo (original/branco), sombra nos textos, fundo (escuro/branco no Tech Minimal)
+- [x] Carrossel — logo branco com fundo transparente real (logo-agente17-white.png gerado via remoção de fundo)
+- [x] Carrossel — logo branco como padrão no Tech Minimal, logo original (210px) como padrão nos demais
+- [x] Carrossel — Tech Minimal com opção de fundo branco e inversão automática de texto e logo para preto
+- [x] Carrossel — drag and drop de elementos (título, body, logo) diretamente no canvas do modal
+- [x] Carrossel — posições persistem por slide ao navegar entre slides
+- [x] Carrossel — posição e tamanho do logo propagam automaticamente para todos os slides
+- [x] Carrossel — réguas SVG de alinhamento (centro + terços) sobrepostas ao canvas, não aparecem no export
 
 ---
 
 ## 7. Próximos Passos Planejados
 
-- Carrossel: integrar template selecionado na renderização dos slides (canvas + export)
-- Carrossel: permitir edição de cada slide abrindo no Editor principal
-- Melhorar fallback do Pexels para temas de IA e automação
-- Remover console.logs de debug do carrossel após testes
-- Versões personalizadas por cliente (modelo de negócio Agente 17)
+1. Carrossel — corrigir hit test do título para permitir arrastar a frase principal
+2. Carrossel — permitir edição de cada slide abrindo no Editor principal
+3. Pexels fallback — melhorar relevância para temas de IA e automação
+4. Remover console.logs de debug do carrossel após testes
+5. Versões personalizadas por cliente (modelo de negócio Agente 17)
 
 ---
 
