@@ -306,6 +306,8 @@ export function CarouselPage() {
   const [slidePositions, setSlidePositions] = useState<Record<number, { titlePos: {x:number,y:number}, bodyPos: {x:number,y:number}, logoPos: {x:number,y:number} }>>({})
   const [dragging, setDragging] = useState<'title' | 'body' | 'logo' | null>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
+  const [canvasRect, setCanvasRect] = useState<{width: number, height: number} | null>(null)
 
   const currentPositions = slidePositions[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }
   const titlePos = currentPositions.titlePos
@@ -384,6 +386,17 @@ export function CarouselPage() {
     setSlidePositions({})
     setDragging(null)
   }, [templateId, slides])
+
+  useEffect(() => {
+    if (previewIndex === null) return
+    const id = setTimeout(() => {
+      const canvas = previewCanvasRef.current
+      if (!canvas) return
+      const rect = canvas.getBoundingClientRect()
+      setCanvasRect({ width: rect.width, height: rect.height })
+    }, 50)
+    return () => clearTimeout(id)
+  }, [previewIndex])
 
   // Fecha modal com Escape
   useEffect(() => {
@@ -736,7 +749,7 @@ export function CarouselPage() {
           </button>
 
           {/* Canvas */}
-          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'inline-block' }}>
+          <div ref={canvasContainerRef} onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'inline-block' }}>
             <canvas
               ref={previewCanvasRef}
               width={1080}
@@ -781,20 +794,23 @@ export function CarouselPage() {
             {/* SVG overlay: réguas permanentes */}
             <svg
               style={{
-                position: 'absolute', top: 0, left: 0,
-                width: '100%', height: '100%',
-                pointerEvents: 'none', borderRadius: '12px',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: canvasRect ? `${canvasRect.width}px` : '100%',
+                height: canvasRect ? `${canvasRect.height}px` : '100%',
+                pointerEvents: 'none',
+                borderRadius: '12px',
               }}
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
             >
-              {/* Cruz central */}
-              <line x1="50%" y1="0" x2="50%" y2="100%" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
-              <line x1="0" y1="50%" x2="100%" y2="50%" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
-              {/* Terços verticais */}
-              <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
-              <line x1="66.66%" y1="0" x2="66.66%" y2="100%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
-              {/* Terços horizontais */}
-              <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
-              <line x1="0" y1="66.66%" x2="100%" y2="66.66%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,0,0,0.6)" strokeWidth="0.3" strokeDasharray="2,1.5" />
+              <line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,0,0,0.6)" strokeWidth="0.3" strokeDasharray="2,1.5" />
+              <line x1="0" y1="33.33" x2="100" y2="33.33" stroke="rgba(255,0,0,0.3)" strokeWidth="0.2" strokeDasharray="1.5,2" />
+              <line x1="0" y1="66.66" x2="100" y2="66.66" stroke="rgba(255,0,0,0.3)" strokeWidth="0.2" strokeDasharray="1.5,2" />
+              <line x1="33.33" y1="0" x2="33.33" y2="100" stroke="rgba(255,0,0,0.3)" strokeWidth="0.2" strokeDasharray="1.5,2" />
+              <line x1="66.66" y1="0" x2="66.66" y2="100" stroke="rgba(255,0,0,0.3)" strokeWidth="0.2" strokeDasharray="1.5,2" />
             </svg>
             {/* Contador */}
             <p style={{
