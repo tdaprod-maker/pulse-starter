@@ -734,15 +734,16 @@ export function CarouselPage() {
                   Cor de destaque
                 </span>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  {['#3A5AFF', '#FFCA1D', '#FF6F5E'].map(color => {
+                  {['#3A5AFF', '#FFCA1D', '#FF6F5E', '#FFFFFF', '#000000'].map(color => {
                     const active = accentColor === color
+                    const activeBorder = color === '#FFFFFF' ? '#3A5AFF' : '#FFFFFF'
                     return (
                       <button
                         key={color}
                         onClick={() => setAccentColor(color)}
                         style={{
                           width: '28px', height: '28px', borderRadius: '50%',
-                          background: color, border: active ? '2px solid #ffffff' : '2px solid transparent',
+                          background: color, border: active ? `2px solid ${activeBorder}` : '2px solid transparent',
                           boxShadow: active ? `0 0 0 2px ${color}` : 'none',
                           cursor: 'pointer', padding: 0, transition: 'all 0.15s',
                         }}
