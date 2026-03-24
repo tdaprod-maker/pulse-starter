@@ -226,7 +226,6 @@ async function drawSlide(
     const bodyLineH = Math.round(44 * options.fontScale)
     const lineGap = 20
     const lineThick = 2
-    const bodyGap = 40
     let cy = options.titlePos.y
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
