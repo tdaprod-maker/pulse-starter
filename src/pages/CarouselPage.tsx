@@ -36,7 +36,7 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string },
+  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white' },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
@@ -216,27 +216,27 @@ async function drawSlide(
 
   } else {
     // tech-minimal
-    ctx.fillStyle = '#111111'
+    const tmBg = options.bgVariant === 'white' ? '#ffffff' : '#111111'
+    const tmText = options.bgVariant === 'white' ? '#000000' : '#ffffff'
+    const tmBody = options.bgVariant === 'white' ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.65)'
+
+    ctx.fillStyle = tmBg
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.font = `bold ${Math.round(88 * options.fontScale)}px Montserrat, Inter, sans-serif`
     const tmTitle = wrapText(ctx, slide.title, 900)
     ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
-    const tmBody = slide.body ? wrapText(ctx, slide.body, 900) : []
-    const titleLineH = 100
-    const bodyLineH = 44
+    const tmBodyLines = slide.body ? wrapText(ctx, slide.body, 900) : []
+    const titleLineH = Math.round(100 * options.fontScale)
+    const bodyLineH = Math.round(44 * options.fontScale)
     const lineGap = 20
     const lineThick = 2
     const bodyGap = 40
     const totalTitleH = tmTitle.length * titleLineH
-    const totalBodyH = tmBody.length > 0 ? lineGap + lineThick + bodyGap + tmBody.length * bodyLineH : 0
+    const totalBodyH = tmBodyLines.length > 0 ? lineGap + lineThick + bodyGap + tmBodyLines.length * bodyLineH : 0
     let cy = (SIZE - totalTitleH - totalBodyH) / 2
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
-    ctx.fillStyle = '#FFFFFF'
-    ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
-    ctx.shadowBlur = options.textShadow ? 12 : 0
-    ctx.shadowOffsetX = options.textShadow ? 2 : 0
-    ctx.shadowOffsetY = options.textShadow ? 2 : 0
+    ctx.fillStyle = tmText
     ctx.font = `bold ${Math.round(88 * options.fontScale)}px Montserrat, Inter, sans-serif`
     for (const line of tmTitle) {
       ctx.fillText(line, 540, cy)
@@ -245,12 +245,12 @@ async function drawSlide(
     ctx.fillStyle = options.accentColor
     ctx.fillRect(540 - 60, cy + lineGap, 120, lineThick)
     cy += lineGap + lineThick
-    if (tmBody.length > 0) {
+    if (tmBodyLines.length > 0) {
       cy += bodyGap
       ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
-      ctx.fillStyle = 'rgba(255,255,255,0.65)'
+      ctx.fillStyle = tmBody
       ctx.textBaseline = 'top'
-      for (const line of tmBody) {
+      for (const line of tmBodyLines) {
         ctx.fillText(line, 540, cy)
         cy += bodyLineH
       }
@@ -283,7 +283,7 @@ async function drawSlide(
         resolve()
       }
       logo.onerror = () => resolve()
-      logo.src = options.logoTint === 'white' ? options.logoWhiteUrl : logoUrl
+      logo.src = (options.logoTint === 'white' && options.bgVariant !== 'white') ? options.logoWhiteUrl : logoUrl
     })
   }
 }
@@ -308,6 +308,7 @@ export function CarouselPage() {
   const [logoSize, setLogoSize] = useState(180)
   const [textShadow, setTextShadow] = useState(false)
   const [logoTint, setLogoTint] = useState<'original' | 'white'>(templateId === 'tech-minimal' ? 'white' : 'original')
+  const [bgVariant, setBgVariant] = useState<'dark' | 'white'>('dark')
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
   // Carrega logo do Brand Kit
@@ -330,8 +331,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl })
-  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant })
+  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint, bgVariant])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -342,6 +343,10 @@ export function CarouselPage() {
 
   useEffect(() => {
     setLogoTint(templateId === 'tech-minimal' ? 'white' : 'original')
+  }, [templateId])
+
+  useEffect(() => {
+    setBgVariant('dark')
   }, [templateId])
 
   // Fecha modal com Escape
@@ -386,7 +391,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -808,6 +813,34 @@ export function CarouselPage() {
                   })}
                 </div>
               </div>
+
+              {/* Fundo (apenas tech-minimal) */}
+              {templateId === 'tech-minimal' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Fundo</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {[{ label: 'Escuro', value: 'dark' }, { label: 'Branco', value: 'white' }].map(opt => {
+                      const active = bgVariant === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => { setBgVariant(opt.value as 'dark' | 'white'); setLogoTint(opt.value === 'white' ? 'original' : 'white') }}
+                          style={{
+                            padding: '0 14px', height: '36px', borderRadius: '8px',
+                            fontSize: '12px', fontWeight: active ? 700 : 400,
+                            fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s',
+                            background: active ? 'linear-gradient(135deg, rgba(58,90,255,0.9), rgba(91,143,212,0.8))' : 'rgba(255,255,255,0.08)',
+                            border: active ? '1px solid rgba(58,90,255,0.5)' : '1px solid rgba(255,255,255,0.15)',
+                            color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Sombra */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
