@@ -390,7 +390,7 @@ export function CarouselPage() {
       setLogoSize(120)
     } else {
       setLogoTint('original')
-      setLogoSize(201)
+      setLogoSize(210)
     }
   }, [templateId])
 
@@ -884,7 +884,7 @@ export function CarouselPage() {
                     return (
                       <button
                         key={opt.value}
-                        onClick={() => setLogoTint(opt.value)}
+                        onClick={() => { setLogoTint(opt.value); setLogoSize(opt.value === 'original' ? 210 : 120) }}
                         style={{
                           padding: '4px 10px', borderRadius: '6px', fontSize: '11px',
                           fontWeight: active ? 700 : 400, fontFamily: 'inherit',
