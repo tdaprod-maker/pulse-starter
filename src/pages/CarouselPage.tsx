@@ -737,13 +737,16 @@ export function CarouselPage() {
                   {['#3A5AFF', '#FFCA1D', '#FF6F5E', '#FFFFFF', '#000000'].map(color => {
                     const active = accentColor === color
                     const activeBorder = color === '#FFFFFF' ? '#3A5AFF' : '#FFFFFF'
+                    const border = color === '#000000'
+                      ? (active ? '2px solid #FFFFFF' : '1px solid rgba(255,255,255,0.4)')
+                      : (active ? `2px solid ${activeBorder}` : '2px solid transparent')
                     return (
                       <button
                         key={color}
                         onClick={() => setAccentColor(color)}
                         style={{
                           width: '28px', height: '28px', borderRadius: '50%',
-                          background: color, border: active ? `2px solid ${activeBorder}` : '2px solid transparent',
+                          background: color, border,
                           boxShadow: active ? `0 0 0 2px ${color}` : 'none',
                           cursor: 'pointer', padding: 0, transition: 'all 0.15s',
                         }}
