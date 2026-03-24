@@ -780,7 +780,6 @@ export function CarouselPage() {
             />
             {/* SVG overlay: réguas permanentes */}
             <svg
-              viewBox="0 0 1080 1080"
               style={{
                 position: 'absolute', top: 0, left: 0,
                 width: '100%', height: '100%',
@@ -788,14 +787,14 @@ export function CarouselPage() {
               }}
             >
               {/* Cruz central */}
-              <line x1="540" y1="0" x2="540" y2="1080" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
-              <line x1="0" y1="540" x2="1080" y2="540" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
+              <line x1="50%" y1="0" x2="50%" y2="100%" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
+              <line x1="0" y1="50%" x2="100%" y2="50%" stroke="rgba(255,0,0,0.6)" strokeWidth="1.5" strokeDasharray="10 10" />
               {/* Terços verticais */}
-              <line x1="360" y1="0" x2="360" y2="1080" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
-              <line x1="720" y1="0" x2="720" y2="1080" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              <line x1="66.66%" y1="0" x2="66.66%" y2="100%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
               {/* Terços horizontais */}
-              <line x1="0" y1="360" x2="1080" y2="360" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
-              <line x1="0" y1="720" x2="1080" y2="720" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
+              <line x1="0" y1="66.66%" x2="100%" y2="66.66%" stroke="rgba(255,0,0,0.3)" strokeWidth="1" strokeDasharray="6 8" />
             </svg>
             {/* Contador */}
             <p style={{
