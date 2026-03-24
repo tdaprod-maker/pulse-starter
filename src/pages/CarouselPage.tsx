@@ -307,7 +307,7 @@ export function CarouselPage() {
   const [accentColor, setAccentColor] = useState('#3A5AFF')
   const [logoSize, setLogoSize] = useState(180)
   const [textShadow, setTextShadow] = useState(false)
-  const [logoTint, setLogoTint] = useState<'original' | 'white'>('original')
+  const [logoTint, setLogoTint] = useState<'original' | 'white'>(templateId === 'tech-minimal' ? 'white' : 'original')
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
   // Carrega logo do Brand Kit
@@ -339,6 +339,10 @@ export function CarouselPage() {
     const id = setTimeout(() => renderPreviewCanvas(previewIndex), 0)
     return () => clearTimeout(id)
   }, [previewIndex, renderPreviewCanvas])
+
+  useEffect(() => {
+    setLogoTint(templateId === 'tech-minimal' ? 'white' : 'original')
+  }, [templateId])
 
   // Fecha modal com Escape
   useEffect(() => {
