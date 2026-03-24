@@ -320,12 +320,25 @@ export function CarouselPage() {
   const [textShadow, setTextShadow] = useState(false)
   const [logoTint, setLogoTint] = useState<'original' | 'white'>(templateId === 'tech-minimal' ? 'white' : 'original')
   const [bgVariant, setBgVariant] = useState<'dark' | 'white'>('dark')
-  const [titlePos, setTitlePos] = useState({ x: 540, y: 400 })
-  const [bodyPos, setBodyPos] = useState({ x: 540, y: 600 })
-  const [logoPos, setLogoPos] = useState({ x: 960, y: 960 })
+  const [slidePositions, setSlidePositions] = useState<Record<number, { titlePos: {x:number,y:number}, bodyPos: {x:number,y:number}, logoPos: {x:number,y:number} }>>({})
   const [dragging, setDragging] = useState<'title' | 'body' | 'logo' | null>(null)
   const [showGuides, setShowGuides] = useState(false)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
+
+  const currentPositions = slidePositions[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }
+  const titlePos = currentPositions.titlePos
+  const bodyPos = currentPositions.bodyPos
+  const logoPos = currentPositions.logoPos
+
+  const updatePosition = (key: 'titlePos' | 'bodyPos' | 'logoPos', value: {x:number,y:number}) => {
+    setSlidePositions(prev => ({
+      ...prev,
+      [previewIndex ?? 0]: {
+        ...(prev[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }),
+        [key]: value,
+      }
+    }))
+  }
 
   // Carrega logo do Brand Kit
   useEffect(() => {
@@ -366,11 +379,9 @@ export function CarouselPage() {
   }, [templateId])
 
   useEffect(() => {
-    setTitlePos({ x: 540, y: 400 })
-    setBodyPos({ x: 540, y: 600 })
-    setLogoPos({ x: 960, y: 960 })
+    setSlidePositions({})
     setDragging(null)
-  }, [previewIndex, templateId])
+  }, [templateId, slides])
 
   // Fecha modal com Escape
   useEffect(() => {
@@ -750,9 +761,9 @@ export function CarouselPage() {
                 const scaleY = 1080 / rect.height
                 const mx = Math.round((e.clientX - rect.left) * scaleX)
                 const my = Math.round((e.clientY - rect.top) * scaleY)
-                if (dragging === 'title') setTitlePos({ x: mx, y: my })
-                else if (dragging === 'body') setBodyPos({ x: mx, y: my })
-                else if (dragging === 'logo') setLogoPos({ x: mx, y: my })
+                if (dragging === 'title') updatePosition('titlePos', { x: mx, y: my })
+                else if (dragging === 'body') updatePosition('bodyPos', { x: mx, y: my })
+                else if (dragging === 'logo') updatePosition('logoPos', { x: mx, y: my })
               }}
               onMouseUp={() => setDragging(null)}
               onMouseLeave={() => setDragging(null)}
