@@ -331,13 +331,27 @@ export function CarouselPage() {
   const logoPos = currentPositions.logoPos
 
   const updatePosition = (key: 'titlePos' | 'bodyPos' | 'logoPos', value: {x:number,y:number}) => {
-    setSlidePositions(prev => ({
-      ...prev,
-      [previewIndex ?? 0]: {
-        ...(prev[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }),
-        [key]: value,
-      }
-    }))
+    if (key === 'logoPos') {
+      // propaga para todos os slides
+      setSlidePositions(prev => {
+        const updated: typeof prev = {}
+        for (let i = 0; i < slides.length; i++) {
+          updated[i] = {
+            ...(prev[i] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }),
+            logoPos: value,
+          }
+        }
+        return updated
+      })
+    } else {
+      setSlidePositions(prev => ({
+        ...prev,
+        [previewIndex ?? 0]: {
+          ...(prev[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }),
+          [key]: value,
+        }
+      }))
+    }
   }
 
   // Carrega logo do Brand Kit
