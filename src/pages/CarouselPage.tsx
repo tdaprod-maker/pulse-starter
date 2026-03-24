@@ -41,8 +41,6 @@ async function drawSlide(
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
 
-  const logoMargin = 60
-
   if (templateId === 'tech-statement') {
     ctx.fillStyle = '#111111'
     ctx.fillRect(0, 0, SIZE, SIZE)
@@ -185,7 +183,6 @@ async function drawSlide(
     const ecBody = slide.body ? wrapText(ctx, slide.body, 700) : []
     const titleLineH = 72
     const bodyLineH = 36
-    const ecGap = 16
     let cy = options.titlePos.y
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
@@ -230,8 +227,6 @@ async function drawSlide(
     const lineGap = 20
     const lineThick = 2
     const bodyGap = 40
-    const totalTitleH = tmTitle.length * titleLineH
-    const totalBodyH = tmBodyLines.length > 0 ? lineGap + lineThick + bodyGap + tmBodyLines.length * bodyLineH : 0
     let cy = options.titlePos.y
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
