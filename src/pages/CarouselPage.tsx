@@ -36,7 +36,7 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white' },
+  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titleY: number; bodyOffsetY: number; logoX: number; guideLines: boolean },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
@@ -77,13 +77,13 @@ async function drawSlide(
     ctx.shadowOffsetY = options.textShadow ? 2 : 0
     ctx.font = `bold ${Math.round(68 * options.fontScale)}px Inter, sans-serif`
     const tsTitle = wrapText(ctx, slide.title, 860)
-    let cy = 220
+    let cy = Math.round(options.titleY * (SIZE - 200))
     for (const line of tsTitle) {
       ctx.fillText(line, 110, cy)
       cy += 80
     }
     if (slide.body) {
-      cy += 24
+      cy += 24 + options.bodyOffsetY
       ctx.font = `${Math.round(28 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.78)'
       for (const line of wrapText(ctx, slide.body, 860)) {
@@ -130,7 +130,7 @@ async function drawSlide(
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     const tpTitle = wrapText(ctx, slide.title, 900)
-    let cy = 200
+    let cy = Math.round(options.titleY * (SIZE - 200))
     for (const line of tpTitle) {
       ctx.fillText(line, 80, cy)
       cy += 86
@@ -140,7 +140,7 @@ async function drawSlide(
     ctx.fillRect(80, cy, 120, 3)
     cy += 3
     if (slide.body) {
-      cy += 32
+      cy += 32 + options.bodyOffsetY
       ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.72)'
       ctx.textBaseline = 'top'
@@ -187,7 +187,7 @@ async function drawSlide(
     const bodyLineH = 36
     const ecGap = 16
     const blockH = ecTitle.length * titleLineH + (ecBody.length > 0 ? ecGap + ecBody.length * bodyLineH : 0)
-    let cy = 840 - blockH
+    let cy = Math.round(options.titleY * (SIZE - 200))
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     ctx.fillStyle = '#FFFFFF'
@@ -201,7 +201,7 @@ async function drawSlide(
       cy += titleLineH
     }
     if (ecBody.length > 0) {
-      cy += ecGap
+      cy += ecGap + options.bodyOffsetY
       ctx.font = `${Math.round(26 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.80)'
       for (const line of ecBody) {
@@ -234,6 +234,7 @@ async function drawSlide(
     const totalTitleH = tmTitle.length * titleLineH
     const totalBodyH = tmBodyLines.length > 0 ? lineGap + lineThick + bodyGap + tmBodyLines.length * bodyLineH : 0
     let cy = (SIZE - totalTitleH - totalBodyH) / 2
+    cy += Math.round((options.titleY - 0.5) * 300)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillStyle = tmText
@@ -246,7 +247,7 @@ async function drawSlide(
     ctx.fillRect(540 - 60, cy + lineGap, 120, lineThick)
     cy += lineGap + lineThick
     if (tmBodyLines.length > 0) {
-      cy += bodyGap
+      cy += bodyGap + options.bodyOffsetY
       ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
       ctx.fillStyle = tmBody
       ctx.textBaseline = 'top'
@@ -269,7 +270,8 @@ async function drawSlide(
       logo.onload = () => {
         const scale = options.logoSize / logo.naturalHeight
         const logoW = logo.naturalWidth * scale
-        const logoX = SIZE - logoMargin - logoW
+        const rawLogoX = Math.round(options.logoX * SIZE - logoW / 2)
+        const logoX = Math.min(Math.max(rawLogoX, logoMargin), SIZE - logoMargin - logoW)
         const logoY = SIZE - logoMargin - options.logoSize
 
         if (options.logoTint === 'white') {
@@ -285,6 +287,24 @@ async function drawSlide(
       logo.onerror = () => resolve()
       logo.src = (options.logoTint === 'white' && options.bgVariant !== 'white') ? options.logoWhiteUrl : logoUrl
     })
+  }
+
+  if (options.guideLines) {
+    ctx.save()
+    ctx.strokeStyle = 'rgba(255,0,0,0.7)'
+    ctx.lineWidth = 2
+    ctx.setLineDash([8, 8])
+    // guia horizontal central
+    ctx.beginPath()
+    ctx.moveTo(0, SIZE / 2)
+    ctx.lineTo(SIZE, SIZE / 2)
+    ctx.stroke()
+    // guia vertical central
+    ctx.beginPath()
+    ctx.moveTo(SIZE / 2, 0)
+    ctx.lineTo(SIZE / 2, SIZE)
+    ctx.stroke()
+    ctx.restore()
   }
 }
 
@@ -309,6 +329,10 @@ export function CarouselPage() {
   const [textShadow, setTextShadow] = useState(false)
   const [logoTint, setLogoTint] = useState<'original' | 'white'>(templateId === 'tech-minimal' ? 'white' : 'original')
   const [bgVariant, setBgVariant] = useState<'dark' | 'white'>('dark')
+  const [titleY, setTitleY] = useState(0.5)
+  const [bodyOffsetY, setBodyOffsetY] = useState(0)
+  const [logoX, setLogoX] = useState(0.92)
+  const [showGuides, setShowGuides] = useState(false)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
   // Carrega logo do Brand Kit
@@ -331,8 +355,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant })
-  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint, bgVariant])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titleY, bodyOffsetY, logoX, guideLines: showGuides })
+  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint, bgVariant, titleY, bodyOffsetY, logoX, showGuides])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -348,6 +372,12 @@ export function CarouselPage() {
   useEffect(() => {
     setBgVariant('dark')
   }, [templateId])
+
+  useEffect(() => {
+    setTitleY(0.5)
+    setBodyOffsetY(0)
+    setLogoX(0.92)
+  }, [templateId, previewIndex])
 
   // Fecha modal com Escape
   useEffect(() => {
@@ -391,7 +421,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titleY, bodyOffsetY, logoX, guideLines: showGuides })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -872,6 +902,66 @@ export function CarouselPage() {
                     )
                   })}
                 </div>
+              </div>
+
+              {/* Posição */}
+              <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+
+                {/* Título Y */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Título Y</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input type="range" min={0} max={1} step={0.01} value={titleY}
+                      onChange={e => setTitleY(Number(e.target.value))}
+                      style={{ width: '100px', accentColor: '#3A5AFF' }} />
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '34px' }}>{Math.round(titleY * 100)}%</span>
+                  </div>
+                </div>
+
+                {/* Body Offset */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Body Offset</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input type="range" min={-200} max={200} step={5} value={bodyOffsetY}
+                      onChange={e => setBodyOffsetY(Number(e.target.value))}
+                      style={{ width: '100px', accentColor: '#3A5AFF' }} />
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '36px' }}>{bodyOffsetY}px</span>
+                  </div>
+                </div>
+
+                {/* Logo X */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Logo X</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input type="range" min={0} max={1} step={0.01} value={logoX}
+                      onChange={e => setLogoX(Number(e.target.value))}
+                      style={{ width: '100px', accentColor: '#3A5AFF' }} />
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '34px' }}>{Math.round(logoX * 100)}%</span>
+                  </div>
+                </div>
+
+                {/* Guias */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Guias</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {([{ label: 'On', value: true }, { label: 'Off', value: false }] as const).map(opt => {
+                      const active = showGuides === opt.value
+                      return (
+                        <button key={String(opt.value)} onClick={() => setShowGuides(opt.value)}
+                          style={{
+                            padding: '4px 10px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: active ? 700 : 400, fontFamily: 'inherit',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                            background: active ? 'rgba(58,90,255,0.8)' : 'rgba(255,255,255,0.1)',
+                            border: active ? '1px solid rgba(58,90,255,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                            color: '#ffffff',
+                          }}
+                        >{opt.label}</button>
+                      )
+                    })}
+                  </div>
+                </div>
+
               </div>
 
             </div>
