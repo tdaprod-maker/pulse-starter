@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://fal.run/fal-ai/flux-pro/v1/fill', {
+    const response = await fetch('https://fal.run/fal-ai/flux-kontext/dev', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         image_url: imageBase64,
         prompt: prompt,
         num_inference_steps: 28,
-        guidance_scale: 60,
+        guidance_scale: 3.5,
         output_format: 'jpeg',
       }),
     })
