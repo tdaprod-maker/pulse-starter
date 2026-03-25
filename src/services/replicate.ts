@@ -1,5 +1,5 @@
 export async function generateImage(imagePrompt: string): Promise<string> {
-  const res = await fetch('/api/generate-image', {
+  const res = await fetch('/api/generate-image-ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt: imagePrompt }),
