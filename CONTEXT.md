@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 24 março 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 25 março 2026.
 
 ---
 
@@ -43,7 +43,8 @@ O resultado é exportável como PNG ou JPEG em 2× resolução, pronto para publ
 | Serviço | Uso |
 |---|---|
 | Google Gemini 2.5-Flash | Geração de conteúdo (textos, template, cor, prompt de imagem) |
-| Pexels API | Busca e download de imagem de fundo (temporário — será substituído) |
+| Pexels API | Backup — ainda presente no código mas não utilizado |
+| FAL.ai (FLUX Schnell) | Geração de imagens com IA — US$ 0,003/imagem |
 
 ---
 
@@ -122,6 +123,13 @@ pulse/
 - **Parâmetros:** `query`, `per_page=15`, `orientation=square`
 - **Header:** `Authorization: PEXELS_API_KEY`
 
+### FAL.ai
+- **Arquivo:** `api/generate-image-ai.js`
+- **Chave:** `process.env.FAL_API_KEY`
+- **Endpoint:** `https://fal.run/fal-ai/flux/schnell`
+- **Modelo:** FLUX Schnell — US$ 0,003/imagem
+- **Parâmetros:** image_size: square_hd, num_inference_steps: 4
+
 ### Variáveis de Ambiente
 - `VITE_GEMINI_API_KEY` — Vite frontend
 - `PEXELS_API_KEY` — Node.js API Route
@@ -191,10 +199,7 @@ pulse/
 ## 7. Próximos Passos — Roadmap
 
 ### Curto prazo (próxima sessão)
-1. Substituir Pexels por FAL.ai + FLUX Schnell para geração de imagens com IA
-   - Custo: US$ 0,003/imagem (~R$ 0,017) via FAL.ai
-   - Geração sob demanda (botão explícito, não automático)
-   - Chave FAL.ai nas variáveis de ambiente
+1. - [x] Substituir Pexels por FAL.ai + FLUX Schnell — concluído em 25/03/2026
 2. Carrossel — permitir edição de cada slide abrindo no Editor principal
 
 ### Médio prazo (antes da primeira venda para cliente)
