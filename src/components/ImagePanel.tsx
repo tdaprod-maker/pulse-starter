@@ -22,6 +22,9 @@ export function ImagePanel({ template }: ImagePanelProps) {
   const { setTemplateBackground, setTemplateImageStyle, setTemplateImageOffset, setTemplateBackgroundOpacity } = useStore()
   const inputRef = useRef<HTMLInputElement>(null)
   const [regenerating, setRegenerating] = useState(false)
+  const [editPrompt, setEditPrompt] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [editError, setEditError] = useState('')
   const { theme } = useTheme()
   const [brandPhotos, setBrandPhotos] = useState<string[]>([])
 
@@ -47,6 +50,38 @@ export function ImagePanel({ template }: ImagePanelProps) {
       }
     } finally {
       setRegenerating(false)
+    }
+  }
+
+  async function handleEditImage() {
+    if (!editPrompt.trim() || editing || !template.backgroundImage) return
+    setEditing(true)
+    setEditError('')
+    try {
+      const res = await fetch('/api/edit-image-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: template.backgroundImage,
+          prompt: editPrompt,
+        }),
+      })
+      if (!res.ok) throw new Error(`Erro: ${res.status}`)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setTemplateBackground(template.id, data.image)
+      const templateBase = templateRegistry.find(d => template.id.startsWith(d.id))
+      if (templateBase) {
+        templateBase.getVariants(theme).forEach(v => {
+          if (v.id !== template.id) setTemplateBackground(v.id, data.image)
+        })
+      }
+      setEditPrompt('')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao editar imagem'
+      setEditError(msg)
+    } finally {
+      setEditing(false)
     }
   }
 
@@ -235,6 +270,45 @@ export function ImagePanel({ template }: ImagePanelProps) {
               {regenerating ? 'Buscando...' : 'Nova imagem'}
             </button>
           )}
+
+          {/* Editar com IA */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Editar com IA
+            </span>
+            <textarea
+              value={editPrompt}
+              onChange={e => { setEditPrompt(e.target.value); setEditError('') }}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleEditImage() }}
+              placeholder="Ex: coloque essa pessoa na praia, remova o fundo, deixe mais escuro..."
+              rows={3}
+              spellCheck={false}
+              style={{
+                width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                borderRadius: '8px', color: 'var(--text-primary)', fontSize: '12px',
+                padding: '8px 10px', fontFamily: 'inherit', resize: 'none', outline: 'none',
+                lineHeight: 1.5, boxSizing: 'border-box', transition: 'border-color 0.15s',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--border-active)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+            />
+            {editError && (
+              <p style={{ fontSize: '11px', color: 'rgb(239,68,68)', margin: 0 }}>{editError}</p>
+            )}
+            <button
+              onClick={handleEditImage}
+              disabled={!editPrompt.trim() || editing}
+              style={{
+                width: '100%', fontSize: '12px', padding: '7px 10px', borderRadius: '6px',
+                cursor: !editPrompt.trim() || editing ? 'default' : 'pointer',
+                background: 'linear-gradient(135deg, rgba(58,90,255,0.9), rgba(91,143,212,0.8))',
+                border: 'none', color: 'white', fontFamily: 'inherit',
+                opacity: !editPrompt.trim() || editing ? 0.5 : 1, transition: 'opacity 0.2s',
+              }}
+            >
+              {editing ? 'Editando...' : 'Aplicar'}
+            </button>
+          </div>
 
           {/* Ações */}
           <div style={{ display: 'flex', gap: '8px' }}>
