@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 26 março 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 26 março 2026 (sessão 2).
 
 ---
 
@@ -197,6 +197,11 @@ pulse/
 - [x] imagePrompt do Gemini melhorado para até 20 palavras com detalhes fotográficos
 - [x] Edição de imagem com IA no ImagePanel — usuário descreve em texto o que quer mudar (FLUX Kontext)
 - [x] Export sem bordas azuis de seleção — stroke removido temporariamente antes do toDataURL
+- [x] Sistema de tokens implementado — tabela user_tokens no Supabase, débito a cada geração, saldo visível no AIPanel
+- [x] Edição de imagem com IA no ImagePanel via FLUX Kontext (FAL.ai)
+- [x] Export sem bordas azuis de seleção
+- [x] imagePrompt do Gemini melhorado para prompts mais descritivos (até 20 palavras)
+- [x] Integração LinkedIn iniciada — app criado, OAuth configurado, API Routes criadas, botão no CaptionPanel
 
 ---
 
@@ -205,22 +210,18 @@ pulse/
 ### Curto prazo (próxima sessão)
 1. - [x] Substituir Pexels por FAL.ai + FLUX Schnell — concluído em 25/03/2026
 2. - [x] Edição de imagem com IA no ImagePanel (FLUX Kontext) — concluído em 26/03/2026
-3. Carrossel — permitir edição de cada slide abrindo no Editor principal
+3. - [x] Sistema de tokens implementado — concluído em 26/03/2026
+4. - [x] Integração LinkedIn iniciada (OAuth + API Routes + botão) — concluído em 26/03/2026
+5. Finalizar integração LinkedIn — testar login, autorização e publicação de post com imagem
+6. Sistema de tokens — adicionar débito também no carrossel
 
 ### Médio prazo (antes da primeira venda para cliente)
-4. Sistema de tokens por usuário (necessário antes da primeira venda)
-   - Campo `tokens_remaining` no Supabase
-   - Débito de 1 token por geração (imagem, post, carrossel)
-   - Tela de saldo visível
-   - Bloqueio quando tokens zerados
-   - Integração com pagamento (Stripe ou Hotmart)
-4. Publicação direta no LinkedIn via API
-5. Upload de foto do cliente com melhoria via IA (Clipdrop ou Replicate)
+7. Publicação no Instagram
+8. Upload de foto do cliente com melhoria via IA (Clipdrop ou Replicate)
 
 ### Longo prazo
-6. Publicação direta no Instagram (exige aprovação Meta)
-7. Geração de vídeo curto para Reels (Runway ML, Kling ou Pika — US$ 0,50–2,00/vídeo)
-8. Isolamento por cliente (deploy separado na Vercel por cliente)
+9. Geração de vídeo para Reels (Runway ML, Kling ou Pika — US$ 0,50–2,00/vídeo)
+10. Isolamento por cliente (deploy separado na Vercel por cliente)
 
 ---
 
