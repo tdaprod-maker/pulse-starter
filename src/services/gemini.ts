@@ -77,12 +77,10 @@ REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 OUTRAS REGRAS:
 - Escreva em português do Brasil com tom adequado ao contexto descrito
 - Para big-statement: as duas linhas devem ter peso visual equilibrado
-- imagePrompt: descreva em inglês (max 8 palavras) o tema principal do post como uma cena fotográfica real e reconhecível.
-  Foque no objeto ou contexto central — sem adjetivos de estilo, sem "cinematic", sem "dark".
-  Ex: para comida → "italian chicken parmesan dish close up"
-      para esporte → "soccer ball on grass field"
-      para negócios → "business people networking handshake office"
-      para motivação → "person running at sunrise mountain trail"
+- imagePrompt: descreva em inglês (max 20 palavras) o tema principal do post como uma cena fotográfica detalhada e realista. Inclua estilo fotográfico, iluminação e detalhes visuais relevantes.
+  Ex: para comida → "traditional brazilian feijoada black bean stew with rice and orange slices, top view, professional food photography, warm lighting"
+  Ex: para IA/tech → "futuristic robot hand touching digital interface, dark background, blue neon lighting, cinematic"
+  Ex: para negócios → "confident business professional in modern office, natural light, shallow depth of field"
 
 LEGENDA (campo "caption"):
 Gere legendas para redes sociais com base no conteúdo do post.
