@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 25 março 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 26 março 2026.
 
 ---
 
@@ -193,6 +193,10 @@ pulse/
 - [x] Carrossel — posições persistem por slide ao navegar entre slides
 - [x] Carrossel — posição e tamanho do logo propagam automaticamente para todos os slides
 - [x] Carrossel — réguas SVG de alinhamento (centro + terços) sobre o canvas, não aparecem no export
+- [x] FAL.ai FLUX Schnell integrado em todo o app substituindo Pexels — US$ 0,003/imagem
+- [x] imagePrompt do Gemini melhorado para até 20 palavras com detalhes fotográficos
+- [x] Edição de imagem com IA no ImagePanel — usuário descreve em texto o que quer mudar (FLUX Kontext)
+- [x] Export sem bordas azuis de seleção — stroke removido temporariamente antes do toDataURL
 
 ---
 
@@ -200,10 +204,11 @@ pulse/
 
 ### Curto prazo (próxima sessão)
 1. - [x] Substituir Pexels por FAL.ai + FLUX Schnell — concluído em 25/03/2026
-2. Carrossel — permitir edição de cada slide abrindo no Editor principal
+2. - [x] Edição de imagem com IA no ImagePanel (FLUX Kontext) — concluído em 26/03/2026
+3. Carrossel — permitir edição de cada slide abrindo no Editor principal
 
 ### Médio prazo (antes da primeira venda para cliente)
-3. Sistema de tokens por usuário
+4. Sistema de tokens por usuário (necessário antes da primeira venda)
    - Campo `tokens_remaining` no Supabase
    - Débito de 1 token por geração (imagem, post, carrossel)
    - Tela de saldo visível
