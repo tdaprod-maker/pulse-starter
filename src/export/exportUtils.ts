@@ -51,6 +51,17 @@ export function exportToPng(
   stage.batchDraw()
 
   setTimeout(() => {
+    // Esconde stroke de seleção temporariamente
+    const selectedNodes: any[] = []
+    stage.find('Text, Rect, Image').forEach((node: any) => {
+      if (node.stroke() === '#3A5AFF' && node.strokeWidth() > 0) {
+        selectedNodes.push({ node, stroke: node.stroke(), strokeWidth: node.strokeWidth() })
+        node.stroke('')
+        node.strokeWidth(0)
+      }
+    })
+    stage.batchDraw()
+
     if (transparent) {
       const layer = stage.getLayers()[0]
       const nodes = ['bg-rect', 'bg-image', 'bg-overlay']
@@ -60,11 +71,21 @@ export function exportToPng(
       nodes.forEach((n) => n.visible(false))
       stage.batchDraw()
       const dataURL = stage.toDataURL({ pixelRatio })
-      download(dataURL, fileName)
+      selectedNodes.forEach(({ node, stroke, strokeWidth }) => {
+        node.stroke(stroke)
+        node.strokeWidth(strokeWidth)
+      })
       nodes.forEach((n, i) => n.visible(wasVisible[i]))
       stage.batchDraw()
+      download(dataURL, fileName)
     } else {
-      download(stage.toDataURL({ pixelRatio }), fileName)
+      const dataURL = stage.toDataURL({ pixelRatio })
+      selectedNodes.forEach(({ node, stroke, strokeWidth }) => {
+        node.stroke(stroke)
+        node.strokeWidth(strokeWidth)
+      })
+      stage.batchDraw()
+      download(dataURL, fileName)
     }
   }, 100)
 }
@@ -91,7 +112,22 @@ export function exportToJpeg(
   stage.batchDraw()
 
   setTimeout(() => {
+    // Esconde stroke de seleção temporariamente
+    const selectedNodes: any[] = []
+    stage.find('Text, Rect, Image').forEach((node: any) => {
+      if (node.stroke() === '#3A5AFF' && node.strokeWidth() > 0) {
+        selectedNodes.push({ node, stroke: node.stroke(), strokeWidth: node.strokeWidth() })
+        node.stroke('')
+        node.strokeWidth(0)
+      }
+    })
+    stage.batchDraw()
     const dataURL = (stage as any).toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality })
+    selectedNodes.forEach(({ node, stroke, strokeWidth }) => {
+      node.stroke(stroke)
+      node.strokeWidth(strokeWidth)
+    })
+    stage.batchDraw()
     download(dataURL, fileName)
   }, 100)
 }
