@@ -7,6 +7,7 @@ import { generateImage } from '../services/replicate'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
+import { debitToken } from '../services/tokens'
 import type Konva from 'konva'
 
 // ─── Qual elemento de cada template recebe a accentColor ─────────────────────
@@ -82,6 +83,8 @@ export function AIPanel(_props: AIPanelProps) {
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<{ stop(): void } | null>(null)
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null)
+  const [userEmail, setUserEmail] = useState<string>('')
 
   function toggleMic() {
     if (isListening) {
@@ -111,6 +114,17 @@ export function AIPanel(_props: AIPanelProps) {
     const id = setInterval(() => setPlaceholderIdx((i) => (i + 1) % PLACEHOLDERS.length), 3000)
     return () => clearInterval(id)
   }, [prompt])
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? ''
+      if (!email) return
+      setUserEmail(email)
+      import('../services/tokens').then(({ getTokenBalance }) => {
+        getTokenBalance(email).then(setTokenBalance)
+      })
+    })
+  }, [])
 
   const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground, setTemplateImagePrompt, setCaption } = useStore()
   const { theme } = useTheme()
@@ -227,6 +241,16 @@ export function AIPanel(_props: AIPanelProps) {
 
       // 2. Gera imagem de fundo — falha silenciosa, não interrompe o fluxo
       if (result.imagePrompt && result.template !== 'tech-minimal') {
+        // Debita 1 token antes de gerar imagem
+        if (userEmail) {
+          const { success, remaining } = await debitToken(userEmail)
+          setTokenBalance(remaining)
+          if (!success) {
+            setErrorMsg('Você não tem tokens suficientes. Contate o administrador.')
+            setStatus('error')
+            return
+          }
+        }
         try {
           const url      = await generateImage(result.imagePrompt)
           const activeId = useStore.getState().activeTemplateId
@@ -354,6 +378,15 @@ export function AIPanel(_props: AIPanelProps) {
 
       {isListening && (
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Ouvindo...</p>
+      )}
+
+      {tokenBalance !== null && (
+        <div style={{
+          fontSize: '11px', color: tokenBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-muted)',
+          textAlign: 'right', marginBottom: '4px'
+        }}>
+          {tokenBalance} tokens restantes
+        </div>
       )}
 
       <button
