@@ -46,32 +46,27 @@ export function exportToPng(
 ): void {
   const { pixelRatio = 2, transparent = false } = options
 
-  if (transparent) {
-    // Oculta todos os nós de fundo (rect sólido, imagem e overlay) pelo name
-    const layer = stage.getLayers()[0]
-    const nodes = ['bg-rect', 'bg-image', 'bg-overlay']
-      .map((n) => layer?.findOne<Konva.Node>(`.${n}`))
-      .filter((n): n is Konva.Node => n != null)
-    const wasVisible = nodes.map((n) => n.isVisible())
+  // Deseleciona transformer antes de exportar
+  stage.find('Transformer').forEach((tr: any) => tr.nodes([]))
+  stage.batchDraw()
 
-    nodes.forEach((n) => n.visible(false))
-    // Deseleciona todos os elementos antes de exportar
-    stage.find('Transformer').forEach((tr: any) => tr.nodes([]))
-    stage.find('.selected').forEach((node: any) => node.draggable(false))
-    stage.batchDraw()
-
-    const dataURL = stage.toDataURL({ pixelRatio })
-    download(dataURL, fileName)
-
-    nodes.forEach((n, i) => n.visible(wasVisible[i]))
-    stage.batchDraw()
-  } else {
-    // Deseleciona todos os elementos antes de exportar
-    stage.find('Transformer').forEach((tr: any) => tr.nodes([]))
-    stage.find('.selected').forEach((node: any) => node.draggable(false))
-    stage.batchDraw()
-    download(stage.toDataURL({ pixelRatio }), fileName)
-  }
+  setTimeout(() => {
+    if (transparent) {
+      const layer = stage.getLayers()[0]
+      const nodes = ['bg-rect', 'bg-image', 'bg-overlay']
+        .map((n) => layer?.findOne<Konva.Node>(`.${n}`))
+        .filter((n): n is Konva.Node => n != null)
+      const wasVisible = nodes.map((n) => n.isVisible())
+      nodes.forEach((n) => n.visible(false))
+      stage.batchDraw()
+      const dataURL = stage.toDataURL({ pixelRatio })
+      download(dataURL, fileName)
+      nodes.forEach((n, i) => n.visible(wasVisible[i]))
+      stage.batchDraw()
+    } else {
+      download(stage.toDataURL({ pixelRatio }), fileName)
+    }
+  }, 100)
 }
 
 /**
@@ -90,11 +85,13 @@ export function exportToJpeg(
   options: Pick<ExportOptions, 'pixelRatio' | 'quality'> = {}
 ): void {
   const { pixelRatio = 2, quality = 0.92 } = options
-  // Deseleciona todos os elementos antes de exportar
+
+  // Deseleciona transformer antes de exportar
   stage.find('Transformer').forEach((tr: any) => tr.nodes([]))
-  stage.find('.selected').forEach((node: any) => node.draggable(false))
   stage.batchDraw()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dataURL = (stage as any).toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality })
-  download(dataURL, fileName)
+
+  setTimeout(() => {
+    const dataURL = (stage as any).toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality })
+    download(dataURL, fileName)
+  }, 100)
 }
