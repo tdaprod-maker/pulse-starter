@@ -382,10 +382,17 @@ export function AIPanel(_props: AIPanelProps) {
 
       {tokenBalance !== null && (
         <div style={{
-          fontSize: '11px', color: tokenBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-muted)',
-          textAlign: 'right', marginBottom: '4px'
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: tokenBalance < 10 ? 'rgba(239,68,68,0.1)' : 'rgba(58,90,255,0.08)',
+          border: `1px solid ${tokenBalance < 10 ? 'rgba(239,68,68,0.4)' : 'rgba(58,90,255,0.25)'}`,
+          borderRadius: '8px', padding: '8px 12px', marginBottom: '4px',
         }}>
-          {tokenBalance} tokens restantes
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Tokens
+          </span>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: tokenBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-primary)' }}>
+            {tokenBalance} restantes
+          </span>
         </div>
       )}
 
