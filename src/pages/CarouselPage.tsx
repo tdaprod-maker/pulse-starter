@@ -178,8 +178,8 @@ async function drawSlide(
     grad.addColorStop(1, 'rgba(0,0,0,0.1)')
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, SIZE, SIZE)
-    ctx.fillStyle = '#FFCA1D'
-    ctx.fillRect(0, options.accentPos.y, 1080, 6)
+    ctx.fillStyle = options.accentColor
+    ctx.fillRect(options.accentPos.x, options.accentPos.y, 1080, 6)
     ctx.font = `bold ${Math.round(60 * options.titleFontScale)}px Inter, sans-serif`
     const ecTitle = wrapText(ctx, slide.title, 700)
     ctx.font = `${Math.round(26 * options.bodyFontScale)}px Inter, sans-serif`
@@ -395,7 +395,7 @@ export function CarouselPage() {
 
   useEffect(() => {
     setSlidePositions({})
-    setAccentPos(templateId === 'tech-product' ? { x: 80, y: 400 } : { x: 80, y: 180 })
+    setAccentPos(templateId === 'tech-product' ? { x: 80, y: 400 } : templateId === 'editorial-card' ? { x: 0, y: 0 } : { x: 80, y: 180 })
     setDragging(null)
   }, [templateId, slides])
 
@@ -822,7 +822,7 @@ export function CarouselPage() {
                   : templateId === 'tech-minimal'
                   ? Math.abs(mx - accentPos.x) < 80 && Math.abs(my - accentPos.y) < 20
                   : templateId === 'editorial-card'
-                  ? my < 40
+                  ? Math.abs(my - accentPos.y) < 40
                   : Math.abs(mx - accentPos.x) < 80 && Math.abs(my - accentPos.y) < 20
 
                 if (accentHit) setDragging('accent')
