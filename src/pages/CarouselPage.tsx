@@ -484,6 +484,10 @@ export function CarouselPage() {
     })
   }
 
+  function updateSlide(index: number, field: 'title' | 'body', value: string) {
+    setSlides(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
+  }
+
   const isLoading = status === 'loading'
 
   return (
@@ -782,6 +786,7 @@ export function CarouselPage() {
             ‹
           </button>
 
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', maxHeight: '90vh' }}>
           {/* Canvas */}
           <div ref={canvasContainerRef} onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'inline-block' }}>
             <canvas
@@ -1009,6 +1014,81 @@ export function CarouselPage() {
 
 
             </div>
+          </div>
+
+          {/* Painel de edição de texto */}
+          <div style={{
+            width: '260px', background: 'rgba(20,20,20,0.95)', borderRadius: '12px',
+            border: '1px solid rgba(255,255,255,0.1)', padding: '16px',
+            display: 'flex', flexDirection: 'column', gap: '14px',
+            overflowY: 'auto', maxHeight: '90vh',
+          }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
+              Slide {(previewIndex ?? 0) + 1} de {slides.length}
+            </span>
+
+            {/* Título */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Título</span>
+              <textarea
+                value={slides[previewIndex ?? 0]?.title ?? ''}
+                onChange={e => updateSlide(previewIndex ?? 0, 'title', e.target.value)}
+                rows={3}
+                style={{
+                  width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '8px', color: '#fff', fontSize: '12px', padding: '8px 10px',
+                  fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5,
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = 'rgba(58,90,255,0.6)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
+              />
+            </div>
+
+            {/* Body */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Texto</span>
+              <textarea
+                value={slides[previewIndex ?? 0]?.body ?? ''}
+                onChange={e => updateSlide(previewIndex ?? 0, 'body', e.target.value)}
+                rows={4}
+                style={{
+                  width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '8px', color: '#fff', fontSize: '12px', padding: '8px 10px',
+                  fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5,
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = 'rgba(58,90,255,0.6)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
+              />
+            </div>
+
+            {/* Navegação entre slides */}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                onClick={() => setPreviewIndex(i => i !== null ? Math.max(0, i - 1) : null)}
+                disabled={previewIndex === 0}
+                style={{
+                  flex: 1, padding: '7px', borderRadius: '7px', cursor: previewIndex === 0 ? 'default' : 'pointer',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                  color: previewIndex === 0 ? 'rgba(255,255,255,0.2)' : '#fff', fontFamily: 'inherit', fontSize: '13px',
+                }}
+              >
+                ‹ Anterior
+              </button>
+              <button
+                onClick={() => setPreviewIndex(i => i !== null ? Math.min(slides.length - 1, i + 1) : null)}
+                disabled={previewIndex === slides.length - 1}
+                style={{
+                  flex: 1, padding: '7px', borderRadius: '7px', cursor: previewIndex === slides.length - 1 ? 'default' : 'pointer',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                  color: previewIndex === slides.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff', fontFamily: 'inherit', fontSize: '13px',
+                }}
+              >
+                Próximo ›
+              </button>
+            </div>
+          </div>
           </div>
 
           {/* Botão próximo */}
