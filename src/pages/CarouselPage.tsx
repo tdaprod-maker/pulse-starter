@@ -812,11 +812,25 @@ export function CarouselPage() {
                 const scaleY = 1080 / rect.height
                 const mx = (e.clientX - rect.left) * scaleX
                 const my = (e.clientY - rect.top) * scaleY
-                const HIT = 80
-                if (Math.abs(mx - titlePos.x) < 300 && Math.abs(my - titlePos.y) < HIT) setDragging('title')
-                else if (Math.abs(mx - bodyPos.x) < 300 && Math.abs(my - bodyPos.y) < HIT) setDragging('body')
-                else if (Math.abs(mx - logoPos.x) < 150 && Math.abs(my - logoPos.y) < 150) setDragging('logo')
-                else if (Math.abs(mx - accentPos.x) < 100 && Math.abs(my - accentPos.y) < 100) setDragging('accent')
+                const LOGO_HIT = logoSize * 0.8
+                const TITLE_HIT_W = 400
+                const TITLE_HIT_H = Math.round(88 * titleFontScale) * 4 + 80
+                const BODY_HIT_W = 400
+                const BODY_HIT_H = Math.round(30 * bodyFontScale) * 5 + 60
+
+                // Accent tem prioridade — área menor e mais específica
+                const accentHit = templateId === 'tech-statement'
+                  ? Math.abs(mx - accentPos.x) < 40 && Math.abs(my - (accentPos.y + 160)) < 180
+                  : templateId === 'tech-minimal'
+                  ? Math.abs(mx - accentPos.x) < 80 && Math.abs(my - accentPos.y) < 20
+                  : templateId === 'editorial-card'
+                  ? my < 40
+                  : Math.abs(mx - accentPos.x) < 80 && Math.abs(my - accentPos.y) < 20
+
+                if (accentHit) setDragging('accent')
+                else if (Math.abs(mx - logoPos.x) < LOGO_HIT && Math.abs(my - logoPos.y) < LOGO_HIT) setDragging('logo')
+                else if (Math.abs(mx - titlePos.x) < TITLE_HIT_W && my > titlePos.y - 60 && my < titlePos.y + TITLE_HIT_H) setDragging('title')
+                else if (Math.abs(mx - bodyPos.x) < BODY_HIT_W && my > bodyPos.y - 40 && my < bodyPos.y + BODY_HIT_H) setDragging('body')
               }}
               onMouseMove={e => {
                 if (!dragging) return
