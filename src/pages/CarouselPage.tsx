@@ -37,7 +37,7 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { fontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
+  options: { titleFontScale: number; bodyFontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
@@ -74,7 +74,7 @@ async function drawSlide(
     ctx.shadowBlur = options.textShadow ? 12 : 0
     ctx.shadowOffsetX = options.textShadow ? 2 : 0
     ctx.shadowOffsetY = options.textShadow ? 2 : 0
-    ctx.font = `bold ${Math.round(68 * options.fontScale)}px Inter, sans-serif`
+    ctx.font = `bold ${Math.round(68 * options.titleFontScale)}px Inter, sans-serif`
     const tsTitle = wrapText(ctx, slide.title, 860)
     let cy = options.titlePos.y
     for (const line of tsTitle) {
@@ -83,7 +83,7 @@ async function drawSlide(
     }
     if (slide.body) {
       let bcy = options.bodyPos.y
-      ctx.font = `${Math.round(28 * options.fontScale)}px Inter, sans-serif`
+      ctx.font = `${Math.round(28 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.78)'
       for (const line of wrapText(ctx, slide.body, 860)) {
         ctx.fillText(line, options.bodyPos.x, bcy)
@@ -120,7 +120,7 @@ async function drawSlide(
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = options.accentColor
     ctx.fillRect(0, 0, 1080, 8)
-    ctx.font = `bold ${Math.round(72 * options.fontScale)}px Inter, sans-serif`
+    ctx.font = `bold ${Math.round(72 * options.titleFontScale)}px Inter, sans-serif`
     ctx.fillStyle = '#FFFFFF'
     ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
     ctx.shadowBlur = options.textShadow ? 12 : 0
@@ -140,7 +140,7 @@ async function drawSlide(
     cy += 3
     if (slide.body) {
       let bcy = options.bodyPos.y
-      ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
+      ctx.font = `${Math.round(30 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.72)'
       ctx.textBaseline = 'top'
       for (const line of wrapText(ctx, slide.body, 900)) {
@@ -178,9 +178,9 @@ async function drawSlide(
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = '#FFCA1D'
     ctx.fillRect(0, 0, 1080, 6)
-    ctx.font = `bold ${Math.round(60 * options.fontScale)}px Inter, sans-serif`
+    ctx.font = `bold ${Math.round(60 * options.titleFontScale)}px Inter, sans-serif`
     const ecTitle = wrapText(ctx, slide.title, 700)
-    ctx.font = `${Math.round(26 * options.fontScale)}px Inter, sans-serif`
+    ctx.font = `${Math.round(26 * options.bodyFontScale)}px Inter, sans-serif`
     const ecBody = slide.body ? wrapText(ctx, slide.body, 700) : []
     const titleLineH = 72
     const bodyLineH = 36
@@ -192,14 +192,14 @@ async function drawSlide(
     ctx.shadowBlur = options.textShadow ? 12 : 0
     ctx.shadowOffsetX = options.textShadow ? 2 : 0
     ctx.shadowOffsetY = options.textShadow ? 2 : 0
-    ctx.font = `bold ${Math.round(60 * options.fontScale)}px Inter, sans-serif`
+    ctx.font = `bold ${Math.round(60 * options.titleFontScale)}px Inter, sans-serif`
     for (const line of ecTitle) {
       ctx.fillText(line, options.titlePos.x, cy)
       cy += titleLineH
     }
     if (ecBody.length > 0) {
       let bcy = options.bodyPos.y
-      ctx.font = `${Math.round(26 * options.fontScale)}px Inter, sans-serif`
+      ctx.font = `${Math.round(26 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.80)'
       for (const line of ecBody) {
         ctx.fillText(line, options.bodyPos.x, bcy)
@@ -219,19 +219,19 @@ async function drawSlide(
 
     ctx.fillStyle = tmBg
     ctx.fillRect(0, 0, SIZE, SIZE)
-    ctx.font = `bold ${Math.round(88 * options.fontScale)}px Montserrat, Inter, sans-serif`
+    ctx.font = `bold ${Math.round(88 * options.titleFontScale)}px Montserrat, Inter, sans-serif`
     const tmTitle = wrapText(ctx, slide.title, 900)
-    ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
+    ctx.font = `${Math.round(30 * options.bodyFontScale)}px Inter, sans-serif`
     const tmBodyLines = slide.body ? wrapText(ctx, slide.body, 900) : []
-    const titleLineH = Math.round(100 * options.fontScale)
-    const bodyLineH = Math.round(44 * options.fontScale)
+    const titleLineH = Math.round(100 * options.titleFontScale)
+    const bodyLineH = Math.round(44 * options.bodyFontScale)
     const lineGap = 20
     const lineThick = 2
     let cy = options.titlePos.y
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillStyle = tmText
-    ctx.font = `bold ${Math.round(88 * options.fontScale)}px Montserrat, Inter, sans-serif`
+    ctx.font = `bold ${Math.round(88 * options.titleFontScale)}px Montserrat, Inter, sans-serif`
     for (const line of tmTitle) {
       ctx.fillText(line, options.titlePos.x, cy)
       cy += titleLineH
@@ -241,7 +241,7 @@ async function drawSlide(
     cy += lineGap + lineThick
     if (tmBodyLines.length > 0) {
       let bcy = options.bodyPos.y
-      ctx.font = `${Math.round(30 * options.fontScale)}px Inter, sans-serif`
+      ctx.font = `${Math.round(30 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = tmBody
       ctx.textBaseline = 'top'
       for (const line of tmBodyLines) {
@@ -298,7 +298,8 @@ export function CarouselPage() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
   const brandLogoWhiteUrl = '/logo-agente17-white.png'
-  const [fontScale, setFontScale] = useState(1)
+  const [titleFontScale, setTitleFontScale] = useState(1)
+  const [bodyFontScale, setBodyFontScale] = useState(1)
   const [accentColor, setAccentColor] = useState('#3A5AFF')
   const [logoSize, setLogoSize] = useState(180)
   const [textShadow, setTextShadow] = useState(false)
@@ -361,8 +362,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
-  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, fontScale, accentColor, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { titleFontScale, bodyFontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
+  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, titleFontScale, bodyFontScale, accentColor, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -461,7 +462,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { fontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { titleFontScale, bodyFontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -894,19 +895,36 @@ export function CarouselPage() {
                 </div>
               </div>
 
-              {/* Fonte */}
+              {/* Fonte Título */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
-                  Fonte
+                  Título
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input
-                    type="range" min={0.7} max={1.5} step={0.05} value={fontScale}
-                    onChange={e => setFontScale(Number(e.target.value))}
+                    type="range" min={0.5} max={2} step={0.05} value={titleFontScale}
+                    onChange={e => setTitleFontScale(Number(e.target.value))}
                     style={{ width: '100px', accentColor: '#3A5AFF' }}
                   />
                   <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '34px' }}>
-                    {Math.round(fontScale * 100)}%
+                    {Math.round(titleFontScale * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Fonte Texto */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Texto
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="range" min={0.5} max={2} step={0.05} value={bodyFontScale}
+                    onChange={e => setBodyFontScale(Number(e.target.value))}
+                    style={{ width: '100px', accentColor: '#3A5AFF' }}
+                  />
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '34px' }}>
+                    {Math.round(bodyFontScale * 100)}%
                   </span>
                 </div>
               </div>
