@@ -86,9 +86,12 @@ export default async function handler(req, res) {
       body: JSON.stringify(postBody),
     })
 
+    const postText = await postRes.text()
+    console.log('[linkedin-post] status:', postRes.status)
+    console.log('[linkedin-post] response:', postText)
+
     if (!postRes.ok) {
-      const err = await postRes.text()
-      return res.status(500).json({ error: `LinkedIn API error: ${err}` })
+      return res.status(500).json({ error: `LinkedIn API error: ${postText}` })
     }
 
     return res.status(200).json({ success: true })
