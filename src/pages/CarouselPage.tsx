@@ -779,8 +779,13 @@ export function CarouselPage() {
             backdropFilter: 'blur(6px)',
           }}
         >
-          {/* Canvas */}
-          <div ref={canvasContainerRef} onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'inline-block' }}>
+          {/* Container principal centralizado */}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxHeight: '92vh', width: 'auto' }}
+          >
+            {/* Canvas com réguas */}
+            <div ref={canvasContainerRef} style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
             <canvas
               ref={previewCanvasRef}
               width={1080}
@@ -837,8 +842,8 @@ export function CarouselPage() {
               onMouseLeave={() => setDragging(null)}
               style={{
                 display: 'block',
-                maxWidth: 'min(80vh, calc(100vw - 160px))',
-                maxHeight: '80vh',
+                maxHeight: '85vh',
+                width: 'auto',
                 borderRadius: '12px',
                 boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
                 cursor: dragging ? 'grabbing' : 'grab',
@@ -865,21 +870,18 @@ export function CarouselPage() {
               <line x1="33.33" y1="0" x2="33.33" y2="100" stroke="rgba(255,0,0,0.3)" strokeWidth="0.2" strokeDasharray="1.5,2" />
               <line x1="66.66" y1="0" x2="66.66" y2="100" stroke="rgba(255,0,0,0.3)" strokeWidth="0.2" strokeDasharray="1.5,2" />
             </svg>
-            {/* Contador */}
-            <p style={{
-              textAlign: 'center', color: 'rgba(255,255,255,0.5)',
-              fontSize: '12px', marginTop: '12px',
-            }}>
-              {previewIndex + 1} / {slides.length}
-            </p>
+            </div>
 
-            {/* Controles em tempo real */}
+            {/* Painel lateral direito */}
             <div style={{
-              background: 'rgba(0,0,0,0.6)', padding: '16px', marginTop: '12px',
-              borderRadius: '10px', display: 'flex', gap: '20px', flexWrap: 'wrap',
-              justifyContent: 'center',
+              width: '240px',
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              maxHeight: '92vh',
+              overflowY: 'auto',
             }}>
-
               {/* Painel de edição de texto */}
               <div style={{
                 width: '260px', background: 'rgba(20,20,20,0.95)', borderRadius: '12px',
@@ -953,6 +955,13 @@ export function CarouselPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Controles em tempo real */}
+              <div style={{
+                background: 'rgba(0,0,0,0.6)', padding: '16px', marginTop: '0',
+                borderRadius: '10px', display: 'flex', gap: '20px', flexWrap: 'wrap',
+                justifyContent: 'center',
+              }}>
 
               {/* Cor de destaque */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
@@ -1210,21 +1219,19 @@ export function CarouselPage() {
               </div>
 
 
+              </div>
             </div>
           </div>
-
-
 
           {/* Botão fechar */}
           <button
             onClick={() => setPreviewIndex(null)}
             style={{
-              position: 'absolute', top: '20px', right: '20px',
+              position: 'absolute', top: '16px', right: '16px',
               width: '36px', height: '36px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.7)', fontSize: '18px', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff', fontSize: '18px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'inherit',
             }}
           >
             ×
