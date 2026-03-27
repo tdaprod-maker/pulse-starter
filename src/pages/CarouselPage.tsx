@@ -417,9 +417,15 @@ export function CarouselPage() {
       const result = await generateCarouselContent(prompt, slideCount)
       setSlides(result.slides)
       setCaption(result.caption)
-      const images = await Promise.all(
-        result.slides.map(s => generateImage(s.imagePrompt).catch(() => ''))
-      )
+      const images: string[] = []
+      for (const s of result.slides) {
+        try {
+          const url = await generateImage(s.imagePrompt)
+          images.push(url)
+        } catch {
+          images.push('')
+        }
+      }
       setSlideImages(images)
       setStatus('idle')
     } catch (err) {
