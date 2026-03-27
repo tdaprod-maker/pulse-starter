@@ -37,7 +37,7 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { titleFontScale: number; bodyFontScale: number; titleAlign: 'left' | 'center' | 'right'; bodyAlign: 'left' | 'center' | 'right'; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
+  options: { titleFontScale: number; bodyFontScale: number; titleAlign: 'left' | 'center' | 'right'; bodyAlign: 'left' | 'center' | 'right'; accentColor: string; accentPos: {x:number,y:number}; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
@@ -68,7 +68,7 @@ async function drawSlide(
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(80, 180, 6, 320)
+    ctx.fillRect(options.accentPos.x, options.accentPos.y, 6, 320)
     ctx.textAlign = options.titleAlign
     ctx.textBaseline = 'top'
     ctx.fillStyle = '#FFFFFF'
@@ -139,7 +139,7 @@ async function drawSlide(
     }
     cy += 32
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(options.titlePos.x - 60, cy, 120, 3)
+    ctx.fillRect(options.accentPos.x, cy, 120, 3)
     cy += 3
     if (slide.body) {
       let bcy = options.bodyPos.y
@@ -181,7 +181,7 @@ async function drawSlide(
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = '#FFCA1D'
-    ctx.fillRect(0, 0, 1080, 6)
+    ctx.fillRect(0, options.accentPos.y, 1080, 6)
     ctx.font = `bold ${Math.round(60 * options.titleFontScale)}px Inter, sans-serif`
     const ecTitle = wrapText(ctx, slide.title, 700)
     ctx.font = `${Math.round(26 * options.bodyFontScale)}px Inter, sans-serif`
@@ -242,7 +242,7 @@ async function drawSlide(
       cy += titleLineH
     }
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(options.titlePos.x - 60, cy + lineGap, 120, lineThick)
+    ctx.fillRect(options.accentPos.x - 60, cy + lineGap, 120, lineThick)
     cy += lineGap + lineThick
     if (tmBodyLines.length > 0) {
       let bcy = options.bodyPos.y
@@ -314,7 +314,8 @@ export function CarouselPage() {
   const [logoTint, setLogoTint] = useState<'original' | 'white'>(templateId === 'tech-minimal' ? 'white' : 'original')
   const [bgVariant, setBgVariant] = useState<'dark' | 'white'>('dark')
   const [slidePositions, setSlidePositions] = useState<Record<number, { titlePos: {x:number,y:number}, bodyPos: {x:number,y:number}, logoPos: {x:number,y:number} }>>({})
-  const [dragging, setDragging] = useState<'title' | 'body' | 'logo' | null>(null)
+  const [accentPos, setAccentPos] = useState({ x: 80, y: 180 })
+  const [dragging, setDragging] = useState<'title' | 'body' | 'logo' | 'accent' | null>(null)
   const [tokenBalance, setTokenBalance] = useState<number | null>(null)
   const [userEmail, setUserEmail] = useState<string>('')
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -370,8 +371,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
-  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, accentPos, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
+  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, accentPos, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -396,6 +397,7 @@ export function CarouselPage() {
 
   useEffect(() => {
     setSlidePositions({})
+    setAccentPos({ x: 80, y: 180 })
     setDragging(null)
   }, [templateId, slides])
 
@@ -470,7 +472,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, accentPos, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -814,6 +816,7 @@ export function CarouselPage() {
                 if (Math.abs(mx - titlePos.x) < 300 && Math.abs(my - titlePos.y) < HIT) setDragging('title')
                 else if (Math.abs(mx - bodyPos.x) < 300 && Math.abs(my - bodyPos.y) < HIT) setDragging('body')
                 else if (Math.abs(mx - logoPos.x) < 150 && Math.abs(my - logoPos.y) < 150) setDragging('logo')
+                else if (Math.abs(mx - accentPos.x) < 100 && Math.abs(my - accentPos.y) < 100) setDragging('accent')
               }}
               onMouseMove={e => {
                 if (!dragging) return
@@ -827,6 +830,7 @@ export function CarouselPage() {
                 if (dragging === 'title') updatePosition('titlePos', { x: mx, y: my })
                 else if (dragging === 'body') updatePosition('bodyPos', { x: mx, y: my })
                 else if (dragging === 'logo') updatePosition('logoPos', { x: mx, y: my })
+                else if (dragging === 'accent') setAccentPos({ x: mx, y: my })
               }}
               onMouseUp={() => setDragging(null)}
               onMouseLeave={() => setDragging(null)}
