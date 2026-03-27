@@ -241,16 +241,6 @@ export function AIPanel(_props: AIPanelProps) {
 
       // 2. Gera imagem de fundo — falha silenciosa, não interrompe o fluxo
       if (result.imagePrompt && result.template !== 'tech-minimal') {
-        // Debita 1 token antes de gerar imagem
-        if (userEmail) {
-          const { success, remaining } = await debitToken(userEmail)
-          setTokenBalance(remaining)
-          if (!success) {
-            setErrorMsg('Você não tem tokens suficientes. Contate o administrador.')
-            setStatus('error')
-            return
-          }
-        }
         try {
           const url      = await generateImage(result.imagePrompt)
           const activeId = useStore.getState().activeTemplateId
@@ -273,6 +263,11 @@ export function AIPanel(_props: AIPanelProps) {
           }
         } catch (imgErr) {
           console.error('Falha ao gerar imagem de fundo:', imgErr)
+        }
+        if (userEmail) {
+          import('../services/tokens').then(({ getTokenBalance }) => {
+            getTokenBalance(userEmail).then(setTokenBalance)
+          })
         }
       }
 
