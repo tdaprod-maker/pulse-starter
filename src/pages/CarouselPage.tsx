@@ -796,7 +796,7 @@ export function CarouselPage() {
             ‹
           </button>
 
-          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', maxHeight: '90vh' }}>
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', maxHeight: '90vh', margin: '0 auto' }}>
           {/* Canvas */}
           <div ref={canvasContainerRef} onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'inline-block' }}>
             <canvas
