@@ -301,7 +301,7 @@ export function EditorPage() {
                 })}
               </div>
             )}
-          <CaptionPanel />
+          <CaptionPanel stageRef={stageRef} template={activeTemplate} />
           </>
         ) : (
           <div style={{ textAlign: 'center' }}>

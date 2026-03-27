@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react'
+import type { RefObject } from 'react'
+import type Konva from 'konva'
+import type { Template } from '../state/useStore'
+import { calcAutoScale } from '../engine/CanvasEngine'
 import { useStore } from '../state/useStore'
 
-export function CaptionPanel() {
+interface CaptionPanelProps {
+  stageRef?: RefObject<Konva.Stage | null>
+  template?: Template
+}
+
+export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
   const caption = useStore((s) => s.caption)
-  const activeTemplate = useStore((s) => s.templates.find(t => t.id === s.activeTemplateId))
   const [tab, setTab] = useState<'instagram' | 'linkedin'>('instagram')
   const [linkedinToken, setLinkedinToken] = useState<string>('')
   const [linkedinSub, setLinkedinSub] = useState<string>('')
@@ -60,7 +68,27 @@ export function CaptionPanel() {
     setPublishStatus('idle')
     try {
       const text = `${caption.linkedin}\n\n${caption.hashtags}`
-      const imageBase64 = activeTemplate?.backgroundImage ?? null
+      let imageBase64: string | null = null
+      if (stageRef?.current && template) {
+        const autoScale = calcAutoScale(template)
+        const pixelRatio = 2 / autoScale
+        // Remove stroke de seleção temporariamente
+        const selectedNodes: any[] = []
+        stageRef.current.find('Text, Rect, Image').forEach((node: any) => {
+          if (node.stroke() === '#3A5AFF' && node.strokeWidth() > 0) {
+            selectedNodes.push({ node, stroke: node.stroke(), strokeWidth: node.strokeWidth() })
+            node.stroke('')
+            node.strokeWidth(0)
+          }
+        })
+        stageRef.current.batchDraw()
+        imageBase64 = stageRef.current.toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality: 0.92 })
+        selectedNodes.forEach(({ node, stroke, strokeWidth }) => {
+          node.stroke(stroke)
+          node.strokeWidth(strokeWidth)
+        })
+        stageRef.current.batchDraw()
+      }
 
       const res = await fetch('/api/linkedin-post', {
         method: 'POST',
