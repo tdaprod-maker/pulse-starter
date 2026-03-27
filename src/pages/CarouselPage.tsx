@@ -779,24 +779,7 @@ export function CarouselPage() {
             backdropFilter: 'blur(6px)',
           }}
         >
-          {/* Botão anterior */}
-          <button
-            onClick={e => { e.stopPropagation(); setPreviewIndex(i => i !== null ? Math.max(0, i - 1) : null) }}
-            disabled={previewIndex === 0}
-            style={{
-              position: 'absolute', left: '24px',
-              width: '44px', height: '44px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-              color: previewIndex === 0 ? 'rgba(255,255,255,0.2)' : '#fff',
-              fontSize: '20px', cursor: previewIndex === 0 ? 'default' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'inherit',
-            }}
-          >
-            ‹
-          </button>
-
-          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', maxHeight: '90vh', margin: '0 auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', maxHeight: '90vh', position: 'relative', zIndex: 1 }}>
           {/* Canvas */}
           <div ref={canvasContainerRef} onClick={e => e.stopPropagation()} style={{ position: 'relative', display: 'inline-block' }}>
             <canvas
@@ -1232,22 +1215,6 @@ export function CarouselPage() {
           </div>
           </div>
 
-          {/* Botão próximo */}
-          <button
-            onClick={e => { e.stopPropagation(); setPreviewIndex(i => i !== null ? Math.min(slides.length - 1, i + 1) : null) }}
-            disabled={previewIndex === slides.length - 1}
-            style={{
-              position: 'absolute', right: '24px',
-              width: '44px', height: '44px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-              color: previewIndex === slides.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff',
-              fontSize: '20px', cursor: previewIndex === slides.length - 1 ? 'default' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'inherit',
-            }}
-          >
-            ›
-          </button>
 
           {/* Botão fechar */}
           <button
