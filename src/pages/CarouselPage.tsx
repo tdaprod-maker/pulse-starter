@@ -217,8 +217,6 @@ async function drawSlide(
   } else {
     // tech-minimal
     const tmBg = options.bgVariant === 'white' ? '#ffffff' : '#111111'
-    const tmText = options.bgVariant === 'white' ? '#000000' : '#ffffff'
-    const tmBody = options.bgVariant === 'white' ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.65)'
 
     ctx.fillStyle = tmBg
     ctx.fillRect(0, 0, SIZE, SIZE)
