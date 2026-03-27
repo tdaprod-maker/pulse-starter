@@ -838,8 +838,8 @@ export function CarouselPage() {
               onMouseLeave={() => setDragging(null)}
               style={{
                 display: 'block',
-                maxWidth: 'min(80vh, calc(100vw - 160px))',
-                maxHeight: '80vh',
+                maxWidth: 'min(65vh, calc(100vw - 480px))',
+                maxHeight: '85vh',
                 borderRadius: '12px',
                 boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
                 cursor: dragging ? 'grabbing' : 'grab',
