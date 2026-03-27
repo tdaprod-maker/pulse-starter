@@ -813,7 +813,7 @@ export function CarouselPage() {
                 const mx = (e.clientX - rect.left) * scaleX
                 const my = (e.clientY - rect.top) * scaleY
                 const LOGO_HIT = logoSize * 0.8
-                const TITLE_HIT_W = 400
+                const TITLE_HIT_W = templateId === 'tech-statement' ? 200 : 400
                 const TITLE_HIT_H = Math.round(88 * titleFontScale) * 4 + 80
                 const BODY_HIT_W = 400
                 const BODY_HIT_H = Math.round(30 * bodyFontScale) * 5 + 60
