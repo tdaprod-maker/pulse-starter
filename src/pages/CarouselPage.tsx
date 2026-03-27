@@ -37,10 +37,12 @@ async function drawSlide(
   imgSrc: string,
   templateId: string,
   logoUrl: string,
-  options: { titleFontScale: number; bodyFontScale: number; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
+  options: { titleFontScale: number; bodyFontScale: number; titleAlign: 'left' | 'center' | 'right'; bodyAlign: 'left' | 'center' | 'right'; accentColor: string; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
 ) {
   const SIZE = 1080
   ctx.clearRect(0, 0, SIZE, SIZE)
+  const titleX = options.titleAlign === 'left' ? 80 : options.titleAlign === 'right' ? SIZE - 80 : SIZE / 2
+  const bodyX = options.bodyAlign === 'left' ? 80 : options.bodyAlign === 'right' ? SIZE - 80 : SIZE / 2
 
   if (templateId === 'tech-statement') {
     ctx.fillStyle = '#111111'
@@ -67,7 +69,7 @@ async function drawSlide(
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = options.accentColor
     ctx.fillRect(80, 180, 6, 320)
-    ctx.textAlign = 'center'
+    ctx.textAlign = options.titleAlign
     ctx.textBaseline = 'top'
     ctx.fillStyle = '#FFFFFF'
     ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
@@ -78,15 +80,16 @@ async function drawSlide(
     const tsTitle = wrapText(ctx, slide.title, 860)
     let cy = options.titlePos.y
     for (const line of tsTitle) {
-      ctx.fillText(line, options.titlePos.x, cy)
+      ctx.fillText(line, titleX, cy)
       cy += 80
     }
     if (slide.body) {
       let bcy = options.bodyPos.y
+      ctx.textAlign = options.bodyAlign
       ctx.font = `${Math.round(28 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.78)'
       for (const line of wrapText(ctx, slide.body, 860)) {
-        ctx.fillText(line, options.bodyPos.x, bcy)
+        ctx.fillText(line, bodyX, bcy)
         bcy += 40
       }
     }
@@ -126,12 +129,12 @@ async function drawSlide(
     ctx.shadowBlur = options.textShadow ? 12 : 0
     ctx.shadowOffsetX = options.textShadow ? 2 : 0
     ctx.shadowOffsetY = options.textShadow ? 2 : 0
-    ctx.textAlign = 'center'
+    ctx.textAlign = options.titleAlign
     ctx.textBaseline = 'top'
     const tpTitle = wrapText(ctx, slide.title, 900)
     let cy = options.titlePos.y
     for (const line of tpTitle) {
-      ctx.fillText(line, options.titlePos.x, cy)
+      ctx.fillText(line, titleX, cy)
       cy += 86
     }
     cy += 32
@@ -140,11 +143,12 @@ async function drawSlide(
     cy += 3
     if (slide.body) {
       let bcy = options.bodyPos.y
+      ctx.textAlign = options.bodyAlign
       ctx.font = `${Math.round(30 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.72)'
       ctx.textBaseline = 'top'
       for (const line of wrapText(ctx, slide.body, 900)) {
-        ctx.fillText(line, options.bodyPos.x, bcy)
+        ctx.fillText(line, bodyX, bcy)
         bcy += 44
       }
     }
@@ -185,7 +189,7 @@ async function drawSlide(
     const titleLineH = 72
     const bodyLineH = 36
     let cy = options.titlePos.y
-    ctx.textAlign = 'center'
+    ctx.textAlign = options.titleAlign
     ctx.textBaseline = 'top'
     ctx.fillStyle = '#FFFFFF'
     ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
@@ -194,15 +198,16 @@ async function drawSlide(
     ctx.shadowOffsetY = options.textShadow ? 2 : 0
     ctx.font = `bold ${Math.round(60 * options.titleFontScale)}px Inter, sans-serif`
     for (const line of ecTitle) {
-      ctx.fillText(line, options.titlePos.x, cy)
+      ctx.fillText(line, titleX, cy)
       cy += titleLineH
     }
     if (ecBody.length > 0) {
       let bcy = options.bodyPos.y
+      ctx.textAlign = options.bodyAlign
       ctx.font = `${Math.round(26 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = 'rgba(255,255,255,0.80)'
       for (const line of ecBody) {
-        ctx.fillText(line, options.bodyPos.x, bcy)
+        ctx.fillText(line, bodyX, bcy)
         bcy += bodyLineH
       }
     }
@@ -228,12 +233,12 @@ async function drawSlide(
     const lineGap = 20
     const lineThick = 2
     let cy = options.titlePos.y
-    ctx.textAlign = 'center'
+    ctx.textAlign = options.titleAlign
     ctx.textBaseline = 'top'
     ctx.fillStyle = tmText
     ctx.font = `bold ${Math.round(88 * options.titleFontScale)}px Montserrat, Inter, sans-serif`
     for (const line of tmTitle) {
-      ctx.fillText(line, options.titlePos.x, cy)
+      ctx.fillText(line, titleX, cy)
       cy += titleLineH
     }
     ctx.fillStyle = options.accentColor
@@ -241,11 +246,12 @@ async function drawSlide(
     cy += lineGap + lineThick
     if (tmBodyLines.length > 0) {
       let bcy = options.bodyPos.y
+      ctx.textAlign = options.bodyAlign
       ctx.font = `${Math.round(30 * options.bodyFontScale)}px Inter, sans-serif`
       ctx.fillStyle = tmBody
       ctx.textBaseline = 'top'
       for (const line of tmBodyLines) {
-        ctx.fillText(line, options.bodyPos.x, bcy)
+        ctx.fillText(line, bodyX, bcy)
         bcy += bodyLineH
       }
     }
@@ -300,6 +306,8 @@ export function CarouselPage() {
   const brandLogoWhiteUrl = '/logo-agente17-white.png'
   const [titleFontScale, setTitleFontScale] = useState(1)
   const [bodyFontScale, setBodyFontScale] = useState(1)
+  const [titleAlign, setTitleAlign] = useState<'left' | 'center' | 'right'>('center')
+  const [bodyAlign, setBodyAlign] = useState<'left' | 'center' | 'right'>('center')
   const [accentColor, setAccentColor] = useState('#3A5AFF')
   const [logoSize, setLogoSize] = useState(180)
   const [textShadow, setTextShadow] = useState(false)
@@ -362,8 +370,8 @@ export function CarouselPage() {
     if (!ctx) return
     const slide = slides[index]
     const imgSrc = slideImages[index] ?? ''
-    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { titleFontScale, bodyFontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
-  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, titleFontScale, bodyFontScale, accentColor, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos])
+    await drawSlide(ctx, slide, imgSrc, templateId, brandLogoUrl, { titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
+  }, [slides, slideImages, templateId, brandLogoUrl, brandLogoWhiteUrl, titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, logoSize, textShadow, logoTint, bgVariant, titlePos, bodyPos, logoPos])
 
   useEffect(() => {
     if (previewIndex === null) return
@@ -462,7 +470,7 @@ export function CarouselPage() {
         canvas.width  = 1080
         canvas.height = 1080
         const ctx = canvas.getContext('2d')!
-        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { titleFontScale, bodyFontScale, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { titleFontScale, bodyFontScale, titleAlign, bodyAlign, accentColor, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
         zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
       }
@@ -926,6 +934,52 @@ export function CarouselPage() {
                   <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', minWidth: '34px' }}>
                     {Math.round(bodyFontScale * 100)}%
                   </span>
+                </div>
+              </div>
+
+              {/* Alinhamento Título */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Alinhamento Título
+                </span>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {(['left', 'center', 'right'] as const).map(align => (
+                    <button
+                      key={align}
+                      onClick={() => setTitleAlign(align)}
+                      style={{
+                        width: '36px', height: '28px', borderRadius: '6px', cursor: 'pointer',
+                        background: titleAlign === align ? 'rgba(58,90,255,0.8)' : 'rgba(255,255,255,0.08)',
+                        border: titleAlign === align ? '1px solid rgba(58,90,255,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                        color: '#fff', fontSize: '12px', fontFamily: 'inherit',
+                      }}
+                    >
+                      {align === 'left' ? '≡' : align === 'center' ? '≡' : '≡'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Alinhamento Texto */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                  Alinhamento Texto
+                </span>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {(['left', 'center', 'right'] as const).map(align => (
+                    <button
+                      key={align}
+                      onClick={() => setBodyAlign(align)}
+                      style={{
+                        width: '36px', height: '28px', borderRadius: '6px', cursor: 'pointer',
+                        background: bodyAlign === align ? 'rgba(58,90,255,0.8)' : 'rgba(255,255,255,0.08)',
+                        border: bodyAlign === align ? '1px solid rgba(58,90,255,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                        color: '#fff', fontSize: '12px', fontFamily: 'inherit',
+                      }}
+                    >
+                      {align === 'left' ? 'E' : align === 'center' ? 'C' : 'D'}
+                    </button>
+                  ))}
                 </div>
               </div>
 
