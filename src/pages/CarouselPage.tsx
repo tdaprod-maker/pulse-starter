@@ -122,7 +122,7 @@ async function drawSlide(
     ctx.fillStyle = tpGrad
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(0, 0, 1080, 8)
+    ctx.fillRect(0, options.accentPos.y > 100 ? 0 : options.accentPos.y, 1080, 8)
     ctx.font = `bold ${Math.round(72 * options.titleFontScale)}px Inter, sans-serif`
     ctx.fillStyle = '#FFFFFF'
     ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
@@ -137,10 +137,8 @@ async function drawSlide(
       ctx.fillText(line, titleX, cy)
       cy += 86
     }
-    cy += 32
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(options.accentPos.x, cy, 120, 3)
-    cy += 3
+    ctx.fillRect(options.accentPos.x, options.accentPos.y, 120, 3)
     if (slide.body) {
       let bcy = options.bodyPos.y
       ctx.textAlign = options.bodyAlign
@@ -397,7 +395,7 @@ export function CarouselPage() {
 
   useEffect(() => {
     setSlidePositions({})
-    setAccentPos({ x: 80, y: 180 })
+    setAccentPos(templateId === 'tech-product' ? { x: 80, y: 400 } : { x: 80, y: 180 })
     setDragging(null)
   }, [templateId, slides])
 
