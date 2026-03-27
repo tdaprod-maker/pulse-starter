@@ -7,7 +7,6 @@ import { generateImage } from '../services/replicate'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
-import { debitToken } from '../services/tokens'
 import type Konva from 'konva'
 
 // ─── Qual elemento de cada template recebe a accentColor ─────────────────────
