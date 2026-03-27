@@ -179,7 +179,7 @@ async function drawSlide(
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, SIZE, SIZE)
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(options.accentPos.x, options.accentPos.y, 1080, 6)
+    ctx.fillRect(0, options.accentPos.y, 1080, 6)
     ctx.font = `bold ${Math.round(60 * options.titleFontScale)}px Inter, sans-serif`
     const ecTitle = wrapText(ctx, slide.title, 700)
     ctx.font = `${Math.round(26 * options.bodyFontScale)}px Inter, sans-serif`
@@ -842,7 +842,13 @@ export function CarouselPage() {
                 if (dragging === 'title') updatePosition('titlePos', { x: mx, y: my })
                 else if (dragging === 'body') updatePosition('bodyPos', { x: mx, y: my })
                 else if (dragging === 'logo') updatePosition('logoPos', { x: mx, y: my })
-                else if (dragging === 'accent') setAccentPos({ x: mx, y: my })
+                else if (dragging === 'accent') {
+                  if (templateId === 'editorial-card') {
+                    setAccentPos(prev => ({ ...prev, y: my }))
+                  } else {
+                    setAccentPos({ x: mx, y: my })
+                  }
+                }
               }}
               onMouseUp={() => setDragging(null)}
               onMouseLeave={() => setDragging(null)}
