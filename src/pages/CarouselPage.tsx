@@ -841,6 +841,38 @@ export function CarouselPage() {
             backdropFilter: 'blur(6px)',
           }}
         >
+          {/* Navegação por teclado/botão */}
+          {previewIndex !== null && previewIndex > 0 && (
+            <button
+              onClick={e => { e.stopPropagation(); setPreviewIndex(i => i !== null ? Math.max(0, i - 1) : null) }}
+              style={{
+                position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)',
+                width: '44px', height: '44px', borderRadius: '50%', zIndex: 1001,
+                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff', fontSize: '22px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'inherit',
+              }}
+            >
+              ‹
+            </button>
+          )}
+          {previewIndex !== null && previewIndex < slides.length - 1 && (
+            <button
+              onClick={e => { e.stopPropagation(); setPreviewIndex(i => i !== null ? Math.min(slides.length - 1, i + 1) : null) }}
+              style={{
+                position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                width: '44px', height: '44px', borderRadius: '50%', zIndex: 1001,
+                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff', fontSize: '22px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'inherit',
+              }}
+            >
+              ›
+            </button>
+          )}
+
           {/* Container principal centralizado */}
           <div
             onClick={e => e.stopPropagation()}
