@@ -382,7 +382,7 @@ export function AIPanel(_props: AIPanelProps) {
           borderRadius: '8px', padding: '8px 12px', marginBottom: '4px',
         }}>
           <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Tokens
+            Pulses
           </span>
           <span style={{ fontSize: '14px', fontWeight: 700, color: tokenBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-primary)' }}>
             {tokenBalance} restantes

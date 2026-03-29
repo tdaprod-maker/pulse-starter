@@ -581,7 +581,7 @@ export function CarouselPage() {
               border: `1px solid ${tokenBalance < 10 ? 'rgba(239,68,68,0.4)' : 'rgba(58,90,255,0.25)'}`,
               borderRadius: '8px', padding: '6px 12px', marginTop: '8px',
             }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tokens</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pulses</span>
               <span style={{ fontSize: '13px', fontWeight: 700, color: tokenBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-primary)' }}>
                 {tokenBalance} restantes
               </span>
