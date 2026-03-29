@@ -139,33 +139,31 @@ export interface CarouselResponse {
 }
 
 function buildCarouselPrompt(userInput: string, slideCount: number): string {
-  return `Você é um especialista em criação de carrosséis para Instagram.
-Crie um carrossel com exatamente ${slideCount} slides sobre o tema descrito.
+  const contentSlides = Array.from({ length: slideCount - 2 }, (_, i) =>
+    `    { "title": "...", "body": "...", "imagePrompt": "...", "type": "content" }`
+  ).join(',\n')
 
+  return `Você é um especialista em criação de carrosséis para Instagram.
+Crie um carrossel com EXATAMENTE ${slideCount} slides sobre o tema descrito. NÃO crie mais nem menos que ${slideCount} slides.
 REGRAS OBRIGATÓRIAS:
 - Slide 1: type "cover" — título curto e impactante (máximo 5 palavras), SEM body
 - Slides 2 a ${slideCount - 1}: type "content" — título direto (máximo 6 palavras) + body explicativo (máximo 2 linhas, 20 palavras)
 - Slide ${slideCount}: type "cta" — título de call to action (ex: "Siga para mais conteúdo", "Salve este post"), body com instrução ou contato
-
 REGRAS DE imagePrompt:
 - Descreva em inglês (máximo 8 palavras) uma cena fotográfica real e relacionada ao slide
 - Cada slide deve ter uma cena visualmente diferente mas tematicamente coerente
 - Sem adjetivos de estilo, sem "cinematic", sem "dark"
-
 REGRAS DE TEXTO:
 - Escrever em português do Brasil
 - Tom direto, profissional e envolvente
 - Títulos sem ponto final
-
 caption: legenda completa para Instagram com tom humano, máximo 150 palavras, incluindo 5 hashtags relevantes no final.
-
 Tema: "${userInput}"
-
-Responda SOMENTE com JSON válido, sem markdown:
+Responda SOMENTE com JSON válido, sem markdown, com EXATAMENTE ${slideCount} slides:
 {
   "slides": [
     { "title": "...", "imagePrompt": "...", "type": "cover" },
-    { "title": "...", "body": "...", "imagePrompt": "...", "type": "content" },
+${contentSlides},
     { "title": "...", "body": "...", "imagePrompt": "...", "type": "cta" }
   ],
   "caption": "..."
