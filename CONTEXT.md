@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 26 março 2026 (sessão 2).
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 29 março 2026.
 
 ---
 
@@ -202,6 +202,7 @@ pulse/
 - [x] Export sem bordas azuis de seleção
 - [x] imagePrompt do Gemini melhorado para prompts mais descritivos (até 20 palavras)
 - [x] Integração LinkedIn iniciada — app criado, OAuth configurado, API Routes criadas, botão no CaptionPanel
+- [x] Tokens renomeados para "Pulses" na interface — branding do produto
 
 ---
 
@@ -230,9 +231,8 @@ pulse/
 - **Uso interno:** Agente 17 usa o Pulse para criar conteúdo próprio
 - **Por cliente:** versão customizada (templates, Brand Kit, cores, logo) com deploy separado na Vercel
 - **Precificação sugerida:** R$ 2.500–4.000 de setup + R$ 800/mês por cliente
-- **Modelo de tokens:** cliente recebe X tokens/mês incluídos, pode comprar mais
-  - Custo real por imagem: R$ 0,017 (FLUX Schnell via FAL.ai)
-  - Margem embutida no preço dos tokens extras
+- **Modelo de Pulses:** cliente recebe X pulses/mês incluídos, pode comprar mais. Cada geração de imagem custa 1 pulse. Custo real por pulse: R$ 0,017 (FLUX Schnell via FAL.ai)
+  - Margem embutida no preço dos pulses extras
 
 ---
 
