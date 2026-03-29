@@ -317,6 +317,11 @@ export function CarouselPage() {
   const [dragging, setDragging] = useState<'title' | 'body' | 'logo' | 'accent' | null>(null)
   const [tokenBalance, setTokenBalance] = useState<number | null>(null)
   const [userEmail, setUserEmail] = useState<string>('')
+  const [linkedinToken, setLinkedinToken] = useState<string>('')
+  const [linkedinSub, setLinkedinSub] = useState<string>('')
+  const [linkedinName, setLinkedinName] = useState<string>('')
+  const [publishingLinkedIn, setPublishingLinkedIn] = useState(false)
+  const [linkedinStatus, setLinkedinStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const [canvasRect, setCanvasRect] = useState<{width: number, height: number} | null>(null)
@@ -429,6 +434,12 @@ export function CarouselPage() {
     })
   }, [])
 
+  useEffect(() => {
+    setLinkedinToken(localStorage.getItem('linkedin_token') ?? '')
+    setLinkedinSub(localStorage.getItem('linkedin_sub') ?? '')
+    setLinkedinName(localStorage.getItem('linkedin_name') ?? '')
+  }, [])
+
   async function handleGenerate() {
     if (!prompt.trim() || status === 'loading') return
     setStatus('loading')
@@ -484,6 +495,57 @@ export function CarouselPage() {
       URL.revokeObjectURL(url)
     } finally {
       setExporting(false)
+    }
+  }
+
+  async function handlePublishLinkedIn() {
+    if (!linkedinToken || !linkedinSub || !slides.length || publishingLinkedIn) return
+    setPublishingLinkedIn(true)
+    setLinkedinStatus('idle')
+    try {
+      // Renderiza todos os slides em canvas e converte para base64
+      const images: string[] = []
+      for (let i = 0; i < slides.length; i++) {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1080
+        canvas.height = 1080
+        const ctx = canvas.getContext('2d')!
+        const pos = slidePositions[i] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, {
+          titleFontScale, bodyFontScale, titleAlign, bodyAlign, titleColor, bodyColor, fontFamily,
+          accentColor, accentPos, logoSize, textShadow, logoTint,
+          logoWhiteUrl: brandLogoWhiteUrl, bgVariant,
+          titlePos: pos.titlePos, bodyPos: pos.bodyPos, logoPos: pos.logoPos,
+        })
+        images.push(canvas.toDataURL('image/jpeg', 0.92))
+      }
+
+      const text = caption || prompt
+
+      const res = await fetch('/api/linkedin-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: linkedinToken,
+          linkedinSub,
+          text,
+          images,
+        }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setLinkedinStatus('success')
+        setTimeout(() => setLinkedinStatus('idle'), 3000)
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (err) {
+      console.error('[CarouselPage] erro ao publicar LinkedIn:', err)
+      setLinkedinStatus('error')
+      setTimeout(() => setLinkedinStatus('idle'), 3000)
+    } finally {
+      setPublishingLinkedIn(false)
     }
   }
 
@@ -1218,6 +1280,42 @@ export function CarouselPage() {
                 </div>
               </div>
 
+              {/* LinkedIn */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                {linkedinToken ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%', maxWidth: '280px' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                      Conectado como <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{linkedinName || 'LinkedIn'}</strong>
+                    </span>
+                    <button
+                      onClick={handlePublishLinkedIn}
+                      disabled={publishingLinkedIn || !slides.length}
+                      style={{
+                        width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px',
+                        cursor: publishingLinkedIn || !slides.length ? 'default' : 'pointer',
+                        fontFamily: 'inherit', fontWeight: 600, border: 'none',
+                        opacity: publishingLinkedIn || !slides.length ? 0.6 : 1,
+                        background: linkedinStatus === 'success' ? 'rgba(34,197,94,0.8)' : linkedinStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #0077B5, #005e93)',
+                        color: 'white', transition: 'all 0.2s',
+                      }}
+                    >
+                      {publishingLinkedIn ? 'Publicando...' : linkedinStatus === 'success' ? 'Publicado!' : linkedinStatus === 'error' ? 'Erro ao publicar' : `Publicar ${slides.length} slides no LinkedIn`}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => window.location.href = '/api/linkedin-auth'}
+                    style={{
+                      fontSize: '12px', padding: '8px 20px', borderRadius: '8px',
+                      cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                      background: 'linear-gradient(135deg, #0077B5, #005e93)',
+                      border: 'none', color: 'white',
+                    }}
+                  >
+                    Conectar LinkedIn
+                  </button>
+                )}
+              </div>
 
               </div>
             </div>
