@@ -83,9 +83,11 @@ OUTRAS REGRAS:
   Ex: para negócios → "confident business professional in modern office, natural light, shallow depth of field"
 
 LEGENDA (campo "caption"):
-Gere legendas para redes sociais com base no conteúdo do post.
-- instagram: legenda direta, tom humano e envolvente, máximo 150 palavras, sem hashtags no corpo do texto.
-- linkedin: tom mais profissional e reflexivo, máximo 200 palavras, sem hashtags no corpo do texto.
+Gere legendas distintas e otimizadas para cada rede social com base no conteúdo do post.
+
+- instagram: legenda curta e impactante. Comece com uma frase de impacto ou pergunta provocativa. Tom humano, direto e envolvente. Máximo 80 palavras. Use quebras de linha para facilitar a leitura. Sem hashtags no corpo — elas ficam no campo "hashtags".
+
+- linkedin: legenda mais longa e aprofundada. Comece com uma observação ou dado relevante que prenda a atenção. Desenvolva o tema com insights práticos ou reflexão profissional. Finalize com uma pergunta ou convite à discussão para gerar engajamento. Tom profissional mas acessível. Entre 150 e 250 palavras. Sem hashtags no corpo — elas ficam no campo "hashtags".
 - hashtags: string com 5 a 8 hashtags relevantes separadas por espaço, misturando português e inglês. Ex: "#IA #automação #AItools #produtividade #inovação"
 - Se a descrição do usuário contiver palavras como "call to action", "cta", "link na bio" ou "acesse", adicione um CTA natural ao final de cada legenda. Caso contrário, NÃO inclua CTA.
 
