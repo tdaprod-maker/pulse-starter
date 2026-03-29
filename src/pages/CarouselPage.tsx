@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { getTokenBalance } from '../services/tokens'
 
-const SLIDE_COUNTS = [3, 4, 5]
+const SLIDE_COUNTS = [3, 4, 5, 7, 10]
 
 const CAROUSEL_TEMPLATES = [
   { id: 'tech-statement', label: 'Tech Statement' },
