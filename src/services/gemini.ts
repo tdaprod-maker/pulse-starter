@@ -139,7 +139,7 @@ export interface CarouselResponse {
 }
 
 function buildCarouselPrompt(userInput: string, slideCount: number): string {
-  const contentSlides = Array.from({ length: slideCount - 2 }, (_, i) =>
+  const contentSlides = Array.from({ length: slideCount - 2 }, () =>
     `    { "title": "...", "body": "...", "imagePrompt": "...", "type": "content" }`
   ).join(',\n')
 
