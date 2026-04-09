@@ -804,13 +804,13 @@ export function CarouselPage() {
                 onClick={handleSave}
                 disabled={saving || !slides.length}
                 style={{
-                  fontSize: '12px', padding: '5px 14px', borderRadius: '7px',
-                  cursor: saving || !slides.length ? 'default' : 'pointer',
+                  fontSize: '12px', padding: '5px 14px', borderRadius: '7px', cursor: saving || !slides.length ? 'default' : 'pointer',
                   fontFamily: 'inherit', transition: 'all 0.15s',
                   opacity: saving || !slides.length ? 0.6 : 1,
-                  background: saved ? 'rgba(34,197,94,0.15)' : 'rgba(58,90,255,0.15)',
-                  border: `1px solid ${saved ? 'rgba(34,197,94,0.4)' : 'rgba(58,90,255,0.4)'}`,
-                  color: saved ? 'rgb(34,197,94)' : 'var(--color-primary)',
+                  background: saved ? 'rgba(34,197,94,0.8)' : 'linear-gradient(135deg, rgba(58,90,255,0.9), rgba(91,143,212,0.8))',
+                  border: 'none',
+                  color: 'white',
+                  fontWeight: 600,
                 }}
               >
                 {saving ? 'Salvando...' : saved ? '✓ Salvo' : 'Salvar'}
