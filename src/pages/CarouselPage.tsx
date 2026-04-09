@@ -981,7 +981,6 @@ export function CarouselPage() {
                 width: '100%', background: 'rgba(20,20,20,0.95)', borderRadius: '12px',
                 border: '1px solid rgba(255,255,255,0.1)', padding: '16px',
                 display: 'flex', flexDirection: 'column', gap: '14px',
-                overflowY: 'auto', maxHeight: '90vh',
               }}>
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
                   Slide {(previewIndex ?? 0) + 1} de {slides.length}
