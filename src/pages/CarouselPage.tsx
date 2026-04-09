@@ -1386,19 +1386,27 @@ function SlidesIcon() {
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-  const words = text.split(' ')
   const lines: string[] = []
-  let current = ''
-  for (const word of words) {
-    const test = current ? `${current} ${word}` : word
-    if (ctx.measureText(test).width > maxWidth && current) {
-      lines.push(current)
-      current = word
-    } else {
-      current = test
+  // Respeita quebras de linha manuais (\n)
+  const paragraphs = text.split('\n')
+  for (const paragraph of paragraphs) {
+    if (paragraph.trim() === '') {
+      lines.push('')
+      continue
     }
+    const words = paragraph.split(' ')
+    let current = ''
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word
+      if (ctx.measureText(test).width > maxWidth && current) {
+        lines.push(current)
+        current = word
+      } else {
+        current = test
+      }
+    }
+    if (current) lines.push(current)
   }
-  if (current) lines.push(current)
   return lines
 }
 
