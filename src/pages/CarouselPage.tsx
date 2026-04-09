@@ -1,5 +1,6 @@
 // updated 23 mar 2026
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import JSZip from 'jszip'
 import { generateCarouselContent } from '../services/gemini'
 import type { CarouselSlide } from '../services/gemini'
@@ -297,6 +298,7 @@ export function CarouselPage() {
   const [caption, setCaption] = useState('')
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
@@ -440,6 +442,44 @@ export function CarouselPage() {
     setLinkedinToken(localStorage.getItem('linkedin_token') ?? '')
     setLinkedinSub(localStorage.getItem('linkedin_sub') ?? '')
     setLinkedinName(localStorage.getItem('linkedin_name') ?? '')
+  }, [])
+
+  useEffect(() => {
+    const restore = searchParams.get('restore')
+    if (!restore) return
+    try {
+      const data = JSON.parse(restore)
+      const parsedSlides = JSON.parse(data.slides)
+      const parsedImages = JSON.parse(data.slide_images)
+      const parsedSettings = data.settings ? JSON.parse(data.settings) : null
+
+      setSlides(parsedSlides)
+      setSlideImages(parsedImages)
+      setCaption(data.caption ?? '')
+      setPrompt(data.prompt ?? '')
+      setTemplateId(data.template_id ?? 'tech-statement')
+      setSlideCount(parsedSlides.length)
+
+      if (parsedSettings) {
+        if (parsedSettings.fontFamily) setFontFamily(parsedSettings.fontFamily)
+        if (parsedSettings.titleFontScale) setTitleFontScale(parsedSettings.titleFontScale)
+        if (parsedSettings.bodyFontScale) setBodyFontScale(parsedSettings.bodyFontScale)
+        if (parsedSettings.titleAlign) setTitleAlign(parsedSettings.titleAlign)
+        if (parsedSettings.bodyAlign) setBodyAlign(parsedSettings.bodyAlign)
+        if (parsedSettings.titleColor) setTitleColor(parsedSettings.titleColor)
+        if (parsedSettings.bodyColor) setBodyColor(parsedSettings.bodyColor)
+        if (parsedSettings.accentColor) setAccentColor(parsedSettings.accentColor)
+        if (parsedSettings.logoSize) setLogoSize(parsedSettings.logoSize)
+        if (parsedSettings.textShadow !== undefined) setTextShadow(parsedSettings.textShadow)
+        if (parsedSettings.logoTint) setLogoTint(parsedSettings.logoTint)
+        if (parsedSettings.bgVariant) setBgVariant(parsedSettings.bgVariant)
+      }
+
+      // Limpa os params da URL
+      setSearchParams({})
+    } catch (err) {
+      console.error('[CarouselPage] erro ao restaurar:', err)
+    }
   }, [])
 
   async function handleGenerate() {
