@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage'
 import { BrandPage } from './pages/BrandPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { CarouselPage } from './pages/CarouselPage'
+import { CarouselLibraryPage } from './pages/CarouselLibraryPage'
 import { supabase } from './lib/supabase'
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/" element={<EditorPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/carousel" element={<CarouselPage />} />
+            <Route path="/carousel-library" element={<CarouselLibraryPage />} />
             <Route path="/brand" element={<BrandPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Routes>
