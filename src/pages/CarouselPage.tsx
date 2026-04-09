@@ -297,6 +297,8 @@ export function CarouselPage() {
   const [caption, setCaption] = useState('')
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
   const brandLogoWhiteUrl = '/logo-agente17-white.png'
@@ -495,6 +497,43 @@ export function CarouselPage() {
       URL.revokeObjectURL(url)
     } finally {
       setExporting(false)
+    }
+  }
+
+  async function handleSave() {
+    if (!slides.length || saving) return
+    setSaving(true)
+    try {
+      const { data } = await supabase.auth.getUser()
+      const email = data.user?.email
+      if (!email) throw new Error('Usuário não autenticado')
+
+      const title = slides[0]?.title ?? prompt ?? 'Carrossel sem título'
+
+      const settings = {
+        templateId, fontFamily, titleFontScale, bodyFontScale,
+        titleAlign, bodyAlign, titleColor, bodyColor,
+        accentColor, logoSize, textShadow, logoTint, bgVariant,
+      }
+
+      const { error } = await supabase.from('carousels').insert({
+        user_email: email,
+        title,
+        prompt,
+        template_id: templateId,
+        slides: JSON.stringify(slides),
+        slide_images: JSON.stringify(slideImages),
+        caption,
+        settings: JSON.stringify(settings),
+      })
+
+      if (error) throw error
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      console.error('[CarouselPage] erro ao salvar:', err)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -718,6 +757,23 @@ export function CarouselPage() {
                 }}
               >
                 {exporting ? 'Exportando...' : 'Exportar ZIP'}
+              </button>
+            )}
+            {slides.length > 0 && (
+              <button
+                onClick={handleSave}
+                disabled={saving || !slides.length}
+                style={{
+                  fontSize: '12px', padding: '5px 14px', borderRadius: '7px',
+                  cursor: saving || !slides.length ? 'default' : 'pointer',
+                  fontFamily: 'inherit', transition: 'all 0.15s',
+                  opacity: saving || !slides.length ? 0.6 : 1,
+                  background: saved ? 'rgba(34,197,94,0.15)' : 'rgba(58,90,255,0.15)',
+                  border: `1px solid ${saved ? 'rgba(34,197,94,0.4)' : 'rgba(58,90,255,0.4)'}`,
+                  color: saved ? 'rgb(34,197,94)' : 'var(--color-primary)',
+                }}
+              >
+                {saving ? 'Salvando...' : saved ? '✓ Salvo' : 'Salvar'}
               </button>
             )}
           </div>
