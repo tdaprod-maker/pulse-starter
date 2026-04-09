@@ -978,7 +978,7 @@ export function CarouselPage() {
             }}>
               {/* Painel de edição de texto */}
               <div style={{
-                width: '260px', background: 'rgba(20,20,20,0.95)', borderRadius: '12px',
+                width: '100%', background: 'rgba(20,20,20,0.95)', borderRadius: '12px',
                 border: '1px solid rgba(255,255,255,0.1)', padding: '16px',
                 display: 'flex', flexDirection: 'column', gap: '14px',
                 overflowY: 'auto', maxHeight: '90vh',
