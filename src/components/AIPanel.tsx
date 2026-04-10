@@ -82,9 +82,6 @@ export function AIPanel(_props: AIPanelProps) {
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<{ stop(): void } | null>(null)
-  const [tokenBalance, setTokenBalance] = useState<number | null>(null)
-  const [userEmail, setUserEmail] = useState<string>('')
-
   function toggleMic() {
     if (isListening) {
       recognitionRef.current?.stop()
@@ -113,17 +110,6 @@ export function AIPanel(_props: AIPanelProps) {
     const id = setInterval(() => setPlaceholderIdx((i) => (i + 1) % PLACEHOLDERS.length), 3000)
     return () => clearInterval(id)
   }, [prompt])
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? ''
-      if (!email) return
-      setUserEmail(email)
-      import('../services/tokens').then(({ getTokenBalance }) => {
-        getTokenBalance(email).then(setTokenBalance)
-      })
-    })
-  }, [])
 
   const { addTemplate, setActiveTemplate, updateElement, setTemplateBackground, setTemplateImagePrompt, setCaption } = useStore()
   const { theme } = useTheme()
@@ -263,11 +249,6 @@ export function AIPanel(_props: AIPanelProps) {
         } catch (imgErr) {
           console.error('Falha ao gerar imagem de fundo:', imgErr)
         }
-        if (userEmail) {
-          import('../services/tokens').then(({ getTokenBalance }) => {
-            getTokenBalance(userEmail).then(setTokenBalance)
-          })
-        }
       }
 
       setStatus('idle')
@@ -372,22 +353,6 @@ export function AIPanel(_props: AIPanelProps) {
 
       {isListening && (
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Ouvindo...</p>
-      )}
-
-      {tokenBalance !== null && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: tokenBalance < 10 ? 'rgba(239,68,68,0.1)' : 'rgba(58,90,255,0.08)',
-          border: `1px solid ${tokenBalance < 10 ? 'rgba(239,68,68,0.4)' : 'rgba(58,90,255,0.25)'}`,
-          borderRadius: '8px', padding: '8px 12px', marginBottom: '4px',
-        }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Pulses
-          </span>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: tokenBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-primary)' }}>
-            {tokenBalance} restantes
-          </span>
-        </div>
       )}
 
       <button

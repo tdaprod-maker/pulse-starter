@@ -1,8 +1,28 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { getTokenBalance } from '../services/tokens'
 
 export function Topbar() {
   const { pathname } = useLocation()
+  const [pulseBalance, setPulseBalance] = useState<number | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? ''
+      if (email) getTokenBalance(email).then(setPulseBalance)
+    })
+
+    // Atualiza o saldo a cada 30 segundos
+    const interval = setInterval(() => {
+      supabase.auth.getUser().then(({ data }) => {
+        const email = data.user?.email ?? ''
+        if (email) getTokenBalance(email).then(setPulseBalance)
+      })
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <header style={{
@@ -80,6 +100,21 @@ export function Topbar() {
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {pulseBalance !== null && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: pulseBalance < 10 ? 'rgba(239,68,68,0.1)' : 'rgba(58,90,255,0.08)',
+            border: `1px solid ${pulseBalance < 10 ? 'rgba(239,68,68,0.3)' : 'rgba(58,90,255,0.2)'}`,
+            borderRadius: '8px', padding: '5px 10px',
+          }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: pulseBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-primary)' }}>
+              {pulseBalance}
+            </span>
+            <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+              pulses
+            </span>
+          </div>
+        )}
         <Link
           to="/brand"
           style={{

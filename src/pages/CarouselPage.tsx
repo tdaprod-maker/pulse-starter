@@ -7,7 +7,6 @@ import type { CarouselSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
-import { getTokenBalance } from '../services/tokens'
 
 const SLIDE_COUNTS = [3, 4, 5, 7, 10]
 
@@ -320,8 +319,6 @@ export function CarouselPage() {
   const [slidePositions, setSlidePositions] = useState<Record<number, { titlePos: {x:number,y:number}, bodyPos: {x:number,y:number}, logoPos: {x:number,y:number} }>>({})
   const [accentPos, setAccentPos] = useState({ x: 80, y: 180 })
   const [dragging, setDragging] = useState<'title' | 'body' | 'logo' | 'accent' | null>(null)
-  const [tokenBalance, setTokenBalance] = useState<number | null>(null)
-  const [userEmail, setUserEmail] = useState<string>('')
   const [linkedinToken, setLinkedinToken] = useState<string>('')
   const [linkedinSub, setLinkedinSub] = useState<string>('')
   const [linkedinName, setLinkedinName] = useState<string>('')
@@ -431,15 +428,6 @@ export function CarouselPage() {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? ''
-      if (!email) return
-      setUserEmail(email)
-      getTokenBalance(email).then(setTokenBalance)
-    })
-  }, [])
-
-  useEffect(() => {
     setLinkedinToken(localStorage.getItem('linkedin_token') ?? '')
     setLinkedinSub(localStorage.getItem('linkedin_sub') ?? '')
     setLinkedinName(localStorage.getItem('linkedin_name') ?? '')
@@ -503,9 +491,6 @@ export function CarouselPage() {
         }
       }
       setSlideImages(images)
-      if (userEmail) {
-        getTokenBalance(userEmail).then(setTokenBalance)
-      }
       setStatus('idle')
     } catch (err) {
       console.error('[CarouselPage] erro ao gerar:', err)
@@ -654,19 +639,6 @@ export function CarouselPage() {
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px' }}>
             Gere slides para carrossel do Instagram com IA.
           </p>
-          {tokenBalance !== null && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              background: tokenBalance < 10 ? 'rgba(239,68,68,0.1)' : 'rgba(58,90,255,0.08)',
-              border: `1px solid ${tokenBalance < 10 ? 'rgba(239,68,68,0.4)' : 'rgba(58,90,255,0.25)'}`,
-              borderRadius: '8px', padding: '6px 12px', marginTop: '8px',
-            }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pulses</span>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: tokenBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-primary)' }}>
-                {tokenBalance} restantes
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Config + Prompt */}
