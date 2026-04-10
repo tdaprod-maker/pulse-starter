@@ -789,6 +789,36 @@ export function CarouselPage() {
                 {saving ? 'Salvando...' : saved ? '✓ Salvo' : 'Salvar'}
               </button>
             )}
+          {slides.length > 0 && (
+            linkedinToken ? (
+              <button
+                onClick={handlePublishLinkedIn}
+                disabled={publishingLinkedIn}
+                style={{
+                  fontSize: '12px', padding: '5px 14px', borderRadius: '7px',
+                  cursor: publishingLinkedIn ? 'default' : 'pointer',
+                  fontFamily: 'inherit', transition: 'all 0.15s', fontWeight: 600,
+                  opacity: publishingLinkedIn ? 0.6 : 1, border: 'none',
+                  background: linkedinStatus === 'success' ? 'rgba(34,197,94,0.8)' : linkedinStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #0077B5, #005e93)',
+                  color: 'white',
+                }}
+              >
+                {publishingLinkedIn ? 'Publicando...' : linkedinStatus === 'success' ? '✓ Publicado' : linkedinStatus === 'error' ? 'Erro' : 'LinkedIn'}
+              </button>
+            ) : (
+              <button
+                onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
+                style={{
+                  fontSize: '12px', padding: '5px 14px', borderRadius: '7px',
+                  cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                  background: 'linear-gradient(135deg, #0077B5, #005e93)',
+                  border: 'none', color: 'white',
+                }}
+              >
+                Conectar LinkedIn
+              </button>
+            )
+          )}
           </div>
 
           {slides.length === 0 ? (
