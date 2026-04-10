@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { LogoSection } from './LogoSection'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
+import { debitToken } from '../services/tokens'
 
 interface ImagePanelProps {
   template: Template
@@ -58,6 +59,18 @@ export function ImagePanel({ template }: ImagePanelProps) {
     setEditing(true)
     setEditError('')
     try {
+      // Debita 1 pulse antes de editar
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      if (email) {
+        const { success } = await debitToken(email)
+        if (!success) {
+          setEditError('Pulses insuficientes. Recarregue seu saldo.')
+          setEditing(false)
+          return
+        }
+      }
+
       const res = await fetch('/api/edit-image-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
