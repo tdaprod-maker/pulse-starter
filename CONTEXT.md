@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 09 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 10 abril 2026.
 
 ---
 
@@ -212,13 +212,23 @@ pulse/
 - [x] Interface — tokens renomeados para "Pulses" (branding do produto)
 - [x] LinkedIn — publicação de carrossel com múltiplas imagens funcionando
 - [x] Navegação entre slides no modal restaurada com botões fixos
+- [x] Contador de pulses na Topbar com destaque azul, atualiza a cada 30s
+- [x] Débito de pulse na edição de imagem com IA (ImagePanel)
+- [x] OAuth LinkedIn abre em nova aba sem perder estado da página
+- [x] Retry automático no Gemini (3 tentativas com fallback para gemini-1.5-flash)
+- [x] Botão publicar no LinkedIn na página do carrossel (fora do modal)
+- [x] Carrossel — campos de edição de texto visíveis e funcionando
+- [x] Carrossel — quebra de linha manual respeitada no canvas
+- [x] Carrossel — biblioteca com visualização, recarregamento e exclusão
+- [x] Carrossel — formato 4:5 (1080x1350) para Instagram
+- [x] Carrossel — opções de 7 e 10 slides
 
 ---
 
 ## 7. Próximos Passos — Roadmap
 
-1. Verificar e testar o formato 4:5 no carrossel após deploy
-2. Débito de pulse na edição de imagem com IA (edit-image-ai)
+1. Verificar botão LinkedIn no CaptionPanel do Editor (quando Gemini voltar)
+2. Botão LinkedIn na Biblioteca de Carrossel (nos cards)
 3. Retomar integração Instagram — convites pendentes para agente17ia e tdaprod
 4. Ajustes finos no drag de textos no modal do carrossel
 5. Sistema de pulses com pagamento (Stripe ou Hotmart)
@@ -260,6 +270,7 @@ O carrossel usa canvas HTML5 2D com `drawSlide()` — sistema separado do Editor
 
 ## 10. Bugs Conhecidos
 
+- Gemini 2.5 Flash com instabilidade frequente (erros 503) — retry implementado mas não resolve quando sobrecarga é prolongada
 - Integração Instagram em andamento — convites pendentes de aceite nas contas agente17ia e tdaprod
 - URL de produção da Vercel não documentada no código — verificar no dashboard
 - Token GitHub exposto em log do Claude Code em março 2026 — revogar se ainda não feito
