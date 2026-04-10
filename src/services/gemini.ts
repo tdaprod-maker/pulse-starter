@@ -173,63 +173,77 @@ ${contentSlides},
 }
 
 export async function generateCarouselContent(userInput: string, slideCount: number): Promise<CarouselResponse> {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: buildCarouselPrompt(userInput, slideCount) }] }],
-      generationConfig: {
-        response_mime_type: 'application/json',
-        temperature: 0.8,
-        maxOutputTokens: 1200,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(body?.error?.message ?? `Erro ${res.status} da API Gemini`)
+  let lastError: Error | null = null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt))
+      }
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: buildCarouselPrompt(userInput, slideCount) }] }],
+          generationConfig: {
+            response_mime_type: 'application/json',
+            temperature: 0.8,
+            maxOutputTokens: 1200,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: { message?: string } }
+        throw new Error(body?.error?.message ?? `Erro ${res.status} da API Gemini`)
+      }
+      const data = await res.json() as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+      }
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      if (!text) throw new Error('A API retornou uma resposta vazia')
+      return extractJSON(text) as unknown as CarouselResponse
+    } catch (err) {
+      lastError = err as Error
+    }
   }
-
-  const data = await res.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-  }
-
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  if (!text) throw new Error('A API retornou uma resposta vazia')
-
-  return extractJSON(text) as unknown as CarouselResponse
+  throw lastError
 }
 
 // ─── Chamada principal ────────────────────────────────────────────────────────
 
 export async function generatePostContent(userInput: string): Promise<AIResponse> {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(userInput) }] }],
-      generationConfig: {
-        response_mime_type: 'application/json',
-        temperature: 0.8,
-        maxOutputTokens: 500,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(body?.error?.message ?? `Erro ${res.status} da API Gemini`)
+  let lastError: Error | null = null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt))
+      }
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: buildPrompt(userInput) }] }],
+          generationConfig: {
+            response_mime_type: 'application/json',
+            temperature: 0.8,
+            maxOutputTokens: 500,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: { message?: string } }
+        throw new Error(body?.error?.message ?? `Erro ${res.status} da API Gemini`)
+      }
+      const data = await res.json() as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+      }
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      if (!text) throw new Error('A API retornou uma resposta vazia')
+      return extractJSON(text) as unknown as AIResponse
+    } catch (err) {
+      lastError = err as Error
+    }
   }
-
-  const data = await res.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-  }
-
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  if (!text) throw new Error('A API retornou uma resposta vazia')
-
-  return extractJSON(text)
+  throw lastError
 }
