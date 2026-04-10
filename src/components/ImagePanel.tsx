@@ -7,7 +7,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { LogoSection } from './LogoSection'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
-import { debitToken, getTokenBalance } from '../services/tokens'
+import { debitToken } from '../services/tokens'
 
 interface ImagePanelProps {
   template: Template
@@ -28,20 +28,12 @@ export function ImagePanel({ template }: ImagePanelProps) {
   const [editError, setEditError] = useState('')
   const { theme } = useTheme()
   const [brandPhotos, setBrandPhotos] = useState<string[]>([])
-  const [pulseBalance, setPulseBalance] = useState<number | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? ''
       if (!email) return
       loadBrandConfig(email).then(c => setBrandPhotos(c.photos ?? []))
-    })
-  }, [])
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? ''
-      if (email) getTokenBalance(email).then(setPulseBalance)
     })
   }, [])
 
@@ -99,9 +91,6 @@ export function ImagePanel({ template }: ImagePanelProps) {
         })
       }
       setEditPrompt('')
-      if (email) {
-        getTokenBalance(email).then(setPulseBalance)
-      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao editar imagem'
       setEditError(msg)
