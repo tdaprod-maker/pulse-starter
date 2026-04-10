@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 29 março 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 09 abril 2026.
 
 ---
 
@@ -203,26 +203,26 @@ pulse/
 - [x] imagePrompt do Gemini melhorado para prompts mais descritivos (até 20 palavras)
 - [x] Integração LinkedIn iniciada — app criado, OAuth configurado, API Routes criadas, botão no CaptionPanel
 - [x] Tokens renomeados para "Pulses" na interface — branding do produto
+- [x] Carrossel — campos de edição de texto (título e body) visíveis e funcionando no modal
+- [x] Carrossel — quebra de linha manual respeitada no canvas (wrapText atualizado)
+- [x] Carrossel — botão Salvar no Supabase (tabela carousels)
+- [x] Carrossel — Biblioteca de Carrossel com visualização, recarregamento e exclusão
+- [x] Carrossel — restauração completa de carrossel salvo (slides, imagens, configurações)
+- [x] Carrossel — formato 4:5 (1080x1350) para Instagram
+- [x] Interface — tokens renomeados para "Pulses" (branding do produto)
+- [x] LinkedIn — publicação de carrossel com múltiplas imagens funcionando
+- [x] Navegação entre slides no modal restaurada com botões fixos
 
 ---
 
 ## 7. Próximos Passos — Roadmap
 
-### Curto prazo (próxima sessão)
-1. - [x] Substituir Pexels por FAL.ai + FLUX Schnell — concluído em 25/03/2026
-2. - [x] Edição de imagem com IA no ImagePanel (FLUX Kontext) — concluído em 26/03/2026
-3. - [x] Sistema de tokens implementado — concluído em 26/03/2026
-4. - [x] Integração LinkedIn iniciada (OAuth + API Routes + botão) — concluído em 26/03/2026
-5. Finalizar integração LinkedIn — testar login, autorização e publicação de post com imagem
-6. Sistema de tokens — adicionar débito também no carrossel
-
-### Médio prazo (antes da primeira venda para cliente)
-7. Publicação no Instagram
-8. Upload de foto do cliente com melhoria via IA (Clipdrop ou Replicate)
-
-### Longo prazo
-9. Geração de vídeo para Reels (Runway ML, Kling ou Pika — US$ 0,50–2,00/vídeo)
-10. Isolamento por cliente (deploy separado na Vercel por cliente)
+1. Verificar e testar o formato 4:5 no carrossel após deploy
+2. Débito de pulse na edição de imagem com IA (edit-image-ai)
+3. Retomar integração Instagram — convites pendentes para agente17ia e tdaprod
+4. Ajustes finos no drag de textos no modal do carrossel
+5. Sistema de pulses com pagamento (Stripe ou Hotmart)
+6. Geração de vídeo para Reels (longo prazo)
 
 ---
 
@@ -260,6 +260,7 @@ O carrossel usa canvas HTML5 2D com `drawSlide()` — sistema separado do Editor
 
 ## 10. Bugs Conhecidos
 
+- Integração Instagram em andamento — convites pendentes de aceite nas contas agente17ia e tdaprod
 - URL de produção da Vercel não documentada no código — verificar no dashboard
 - Token GitHub exposto em log do Claude Code em março 2026 — revogar se ainda não feito
 - `replicate.ts` tem comentário de cache bust manual — workaround para problema de deploy
