@@ -64,6 +64,7 @@ export function ImagePanel({ template }: ImagePanelProps) {
       const email = authData.user?.email ?? ''
       if (email) {
         const { success } = await debitToken(email)
+        console.log('[ImagePanel] debitToken result:', { success, email })
         if (!success) {
           setEditError('Pulses insuficientes. Recarregue seu saldo.')
           setEditing(false)
