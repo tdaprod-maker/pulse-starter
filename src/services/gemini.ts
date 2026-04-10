@@ -18,6 +18,7 @@ export interface AIResponse {
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
 const API_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`
+const API_URL_FALLBACK = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
 
@@ -179,7 +180,8 @@ export async function generateCarouselContent(userInput: string, slideCount: num
       if (attempt > 0) {
         await new Promise(resolve => setTimeout(resolve, 2000 * attempt))
       }
-      const res = await fetch(API_URL, {
+      const url = attempt < 2 ? API_URL : API_URL_FALLBACK
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -218,7 +220,8 @@ export async function generatePostContent(userInput: string): Promise<AIResponse
       if (attempt > 0) {
         await new Promise(resolve => setTimeout(resolve, 2000 * attempt))
       }
-      const res = await fetch(API_URL, {
+      const url = attempt < 2 ? API_URL : API_URL_FALLBACK
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
