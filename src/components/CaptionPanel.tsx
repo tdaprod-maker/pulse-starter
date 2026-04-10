@@ -50,7 +50,7 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
   }, [])
 
   function handleConnectLinkedIn() {
-    window.location.href = '/api/linkedin-auth'
+    window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')
   }
 
   function handleDisconnectLinkedIn() {

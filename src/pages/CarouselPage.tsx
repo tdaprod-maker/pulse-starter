@@ -1432,7 +1432,7 @@ export function CarouselPage() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => window.location.href = '/api/linkedin-auth'}
+                    onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
                     style={{
                       fontSize: '12px', padding: '8px 20px', borderRadius: '8px',
                       cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
