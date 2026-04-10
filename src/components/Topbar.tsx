@@ -103,14 +103,15 @@ export function Topbar() {
         {pulseBalance !== null && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '6px',
-            background: pulseBalance < 10 ? 'rgba(239,68,68,0.1)' : 'rgba(58,90,255,0.08)',
-            border: `1px solid ${pulseBalance < 10 ? 'rgba(239,68,68,0.3)' : 'rgba(58,90,255,0.2)'}`,
-            borderRadius: '8px', padding: '5px 10px',
+            background: pulseBalance < 10 ? 'rgba(239,68,68,0.15)' : 'linear-gradient(135deg, rgba(58,90,255,0.2), rgba(91,143,212,0.15))',
+            border: `1px solid ${pulseBalance < 10 ? 'rgba(239,68,68,0.4)' : 'rgba(58,90,255,0.4)'}`,
+            borderRadius: '8px', padding: '5px 12px',
+            boxShadow: pulseBalance < 10 ? 'none' : '0 0 8px rgba(58,90,255,0.15)',
           }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: pulseBalance < 10 ? 'rgb(239,68,68)' : 'var(--text-primary)' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: pulseBalance < 10 ? 'rgb(239,68,68)' : '#7BA7E8' }}>
               {pulseBalance}
             </span>
-            <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: pulseBalance < 10 ? 'rgba(239,68,68,0.7)' : 'rgba(91,143,212,0.8)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               pulses
             </span>
           </div>
