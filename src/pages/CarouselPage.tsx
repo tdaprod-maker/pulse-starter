@@ -40,34 +40,35 @@ async function drawSlide(
   logoUrl: string,
   options: { titleFontScale: number; bodyFontScale: number; titleAlign: 'left' | 'center' | 'right'; bodyAlign: 'left' | 'center' | 'right'; titleColor: string; bodyColor: string; fontFamily: string; accentColor: string; accentPos: {x:number,y:number}; logoSize: number; textShadow: boolean; logoTint: 'original' | 'white'; logoWhiteUrl: string; bgVariant: 'dark' | 'white'; titlePos: {x:number,y:number}; bodyPos: {x:number,y:number}; logoPos: {x:number,y:number} },
 ) {
-  const SIZE = 1080
-  ctx.clearRect(0, 0, SIZE, SIZE)
-  const titleX = options.titleAlign === 'left' ? 80 : options.titleAlign === 'right' ? SIZE - 80 : SIZE / 2
-  const bodyX = options.bodyAlign === 'left' ? 80 : options.bodyAlign === 'right' ? SIZE - 80 : SIZE / 2
+  const W = 1080
+  const H = 1350
+  ctx.clearRect(0, 0, W, H)
+  const titleX = options.titleAlign === 'left' ? 80 : options.titleAlign === 'right' ? W - 80 : W / 2
+  const bodyX = options.bodyAlign === 'left' ? 80 : options.bodyAlign === 'right' ? W - 80 : W / 2
 
   if (templateId === 'tech-statement') {
     ctx.fillStyle = '#111111'
-    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillRect(0, 0, W, H)
     if (imgSrc) {
       await new Promise<void>(resolve => {
         const img = new window.Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
-          const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
+          const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight)
           const w = img.naturalWidth * scale
           const h = img.naturalHeight * scale
-          ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+          ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h)
           resolve()
         }
         img.onerror = () => resolve()
         img.src = imgSrc
       })
     }
-    const grad = ctx.createLinearGradient(0, 0, 0, SIZE)
+    const grad = ctx.createLinearGradient(0, 0, 0, H)
     grad.addColorStop(0, 'rgba(0,0,0,0)')
     grad.addColorStop(1, 'rgba(0,0,0,0.82)')
     ctx.fillStyle = grad
-    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = options.accentColor
     ctx.fillRect(options.accentPos.x, options.accentPos.y, 6, 320)
     ctx.textAlign = options.titleAlign
@@ -101,29 +102,29 @@ async function drawSlide(
 
   } else if (templateId === 'tech-product') {
     ctx.fillStyle = '#0D0D0D'
-    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillRect(0, 0, W, H)
     if (imgSrc) {
       await new Promise<void>(resolve => {
         const img = new window.Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
-          const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
+          const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight)
           const w = img.naturalWidth * scale
           const h = img.naturalHeight * scale
-          ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+          ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h)
           resolve()
         }
         img.onerror = () => resolve()
         img.src = imgSrc
       })
     }
-    const tpGrad = ctx.createLinearGradient(0, 0, 0, SIZE)
+    const tpGrad = ctx.createLinearGradient(0, 0, 0, H)
     tpGrad.addColorStop(0, 'rgba(0,0,0,0.3)')
     tpGrad.addColorStop(1, 'rgba(0,0,0,0.75)')
     ctx.fillStyle = tpGrad
-    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(0, options.accentPos.y > 100 ? 0 : options.accentPos.y, 1080, 8)
+    ctx.fillRect(0, options.accentPos.y > 100 ? 0 : options.accentPos.y, W, 8)
     ctx.font = `bold ${Math.round(72 * options.titleFontScale)}px ${options.fontFamily}, sans-serif`
     ctx.fillStyle = options.titleColor
     ctx.shadowColor = options.textShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
@@ -158,16 +159,16 @@ async function drawSlide(
 
   } else if (templateId === 'editorial-card') {
     ctx.fillStyle = '#111111'
-    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillRect(0, 0, W, H)
     if (imgSrc) {
       await new Promise<void>(resolve => {
         const img = new window.Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
-          const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight)
+          const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight)
           const w = img.naturalWidth * scale
           const h = img.naturalHeight * scale
-          ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+          ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h)
           resolve()
         }
         img.onerror = () => resolve()
@@ -178,9 +179,9 @@ async function drawSlide(
     grad.addColorStop(0, 'rgba(0,0,0,0.88)')
     grad.addColorStop(1, 'rgba(0,0,0,0.1)')
     ctx.fillStyle = grad
-    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = options.accentColor
-    ctx.fillRect(0, options.accentPos.y, 1080, 6)
+    ctx.fillRect(0, options.accentPos.y, W, 6)
     ctx.font = `bold ${Math.round(60 * options.titleFontScale)}px ${options.fontFamily}, sans-serif`
     const ecTitle = wrapText(ctx, slide.title, 700)
     ctx.font = `${Math.round(26 * options.bodyFontScale)}px ${options.fontFamily}, sans-serif`
@@ -220,7 +221,7 @@ async function drawSlide(
     const tmBg = options.bgVariant === 'white' ? '#ffffff' : '#111111'
 
     ctx.fillStyle = tmBg
-    ctx.fillRect(0, 0, SIZE, SIZE)
+    ctx.fillRect(0, 0, W, H)
     ctx.font = `bold ${Math.round(88 * options.titleFontScale)}px ${options.fontFamily}, sans-serif`
     const tmTitle = wrapText(ctx, slide.title, 900)
     ctx.font = `${Math.round(30 * options.bodyFontScale)}px ${options.fontFamily}, sans-serif`
@@ -330,7 +331,7 @@ export function CarouselPage() {
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const [canvasRect, setCanvasRect] = useState<{width: number, height: number} | null>(null)
 
-  const currentPositions = slidePositions[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }
+  const currentPositions = slidePositions[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 500 }, bodyPos: { x: 540, y: 750 }, logoPos: { x: 960, y: 1200 } }
   const titlePos = currentPositions.titlePos
   const bodyPos = currentPositions.bodyPos
   const logoPos = currentPositions.logoPos
@@ -342,7 +343,7 @@ export function CarouselPage() {
         const updated: typeof prev = {}
         for (let i = 0; i < slides.length; i++) {
           updated[i] = {
-            ...(prev[i] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }),
+            ...(prev[i] ?? { titlePos: { x: 540, y: 500 }, bodyPos: { x: 540, y: 750 }, logoPos: { x: 960, y: 1200 } }),
             logoPos: value,
           }
         }
@@ -352,7 +353,7 @@ export function CarouselPage() {
       setSlidePositions(prev => ({
         ...prev,
         [previewIndex ?? 0]: {
-          ...(prev[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }),
+          ...(prev[previewIndex ?? 0] ?? { titlePos: { x: 540, y: 500 }, bodyPos: { x: 540, y: 750 }, logoPos: { x: 960, y: 1200 } }),
           [key]: value,
         }
       }))
@@ -522,7 +523,7 @@ export function CarouselPage() {
       for (let i = 0; i < slides.length; i++) {
         const canvas = document.createElement('canvas')
         canvas.width  = 1080
-        canvas.height = 1080
+        canvas.height = 1350
         const ctx = canvas.getContext('2d')!
         await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, { titleFontScale, bodyFontScale, titleAlign, bodyAlign, titleColor, bodyColor, fontFamily, accentColor, accentPos, logoSize, textShadow, logoTint, logoWhiteUrl: brandLogoWhiteUrl, bgVariant, titlePos, bodyPos, logoPos })
         const base64 = canvas.toDataURL('image/png').split(',')[1]
@@ -587,9 +588,9 @@ export function CarouselPage() {
       for (let i = 0; i < slides.length; i++) {
         const canvas = document.createElement('canvas')
         canvas.width = 1080
-        canvas.height = 1080
+        canvas.height = 1350
         const ctx = canvas.getContext('2d')!
-        const pos = slidePositions[i] ?? { titlePos: { x: 540, y: 400 }, bodyPos: { x: 540, y: 600 }, logoPos: { x: 960, y: 960 } }
+        const pos = slidePositions[i] ?? { titlePos: { x: 540, y: 500 }, bodyPos: { x: 540, y: 750 }, logoPos: { x: 960, y: 1200 } }
         await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, {
           titleFontScale, bodyFontScale, titleAlign, bodyAlign, titleColor, bodyColor, fontFamily,
           accentColor, accentPos, logoSize, textShadow, logoTint,
@@ -979,7 +980,7 @@ export function CarouselPage() {
             <canvas
               ref={previewCanvasRef}
               width={1080}
-              height={1080}
+              height={1350}
               onMouseDown={e => {
                 const canvas = previewCanvasRef.current
                 if (!canvas) return

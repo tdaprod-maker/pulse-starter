@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         prompt: prompt,
-        image_size: 'square_hd',
+        image_size: { width: 1080, height: 1350 },
         num_inference_steps: 4,
         num_images: 1,
         enable_safety_checker: true,
