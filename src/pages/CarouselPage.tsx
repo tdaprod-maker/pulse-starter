@@ -1116,6 +1116,43 @@ export function CarouselPage() {
                     Próximo ›
                   </button>
                 </div>
+
+                {/* LinkedIn */}
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {linkedinToken ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                        Conectado como <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{linkedinName || 'LinkedIn'}</strong>
+                      </span>
+                      <button
+                        onClick={handlePublishLinkedIn}
+                        disabled={publishingLinkedIn || !slides.length}
+                        style={{
+                          width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px',
+                          cursor: publishingLinkedIn || !slides.length ? 'default' : 'pointer',
+                          fontFamily: 'inherit', fontWeight: 600, border: 'none',
+                          opacity: publishingLinkedIn || !slides.length ? 0.6 : 1,
+                          background: linkedinStatus === 'success' ? 'rgba(34,197,94,0.8)' : linkedinStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #0077B5, #005e93)',
+                          color: 'white', transition: 'all 0.2s',
+                        }}
+                      >
+                        {publishingLinkedIn ? 'Publicando...' : linkedinStatus === 'success' ? 'Publicado!' : linkedinStatus === 'error' ? 'Erro ao publicar' : `Publicar ${slides.length} slides`}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
+                      style={{
+                        width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px',
+                        cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                        background: 'linear-gradient(135deg, #0077B5, #005e93)',
+                        border: 'none', color: 'white',
+                      }}
+                    >
+                      Conectar LinkedIn
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Controles em tempo real */}
@@ -1378,43 +1415,6 @@ export function CarouselPage() {
                     )
                   })}
                 </div>
-              </div>
-
-              {/* LinkedIn */}
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                {linkedinToken ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%', maxWidth: '280px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
-                      Conectado como <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{linkedinName || 'LinkedIn'}</strong>
-                    </span>
-                    <button
-                      onClick={handlePublishLinkedIn}
-                      disabled={publishingLinkedIn || !slides.length}
-                      style={{
-                        width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px',
-                        cursor: publishingLinkedIn || !slides.length ? 'default' : 'pointer',
-                        fontFamily: 'inherit', fontWeight: 600, border: 'none',
-                        opacity: publishingLinkedIn || !slides.length ? 0.6 : 1,
-                        background: linkedinStatus === 'success' ? 'rgba(34,197,94,0.8)' : linkedinStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #0077B5, #005e93)',
-                        color: 'white', transition: 'all 0.2s',
-                      }}
-                    >
-                      {publishingLinkedIn ? 'Publicando...' : linkedinStatus === 'success' ? 'Publicado!' : linkedinStatus === 'error' ? 'Erro ao publicar' : `Publicar ${slides.length} slides no LinkedIn`}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
-                    style={{
-                      fontSize: '12px', padding: '8px 20px', borderRadius: '8px',
-                      cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
-                      background: 'linear-gradient(135deg, #0077B5, #005e93)',
-                      border: 'none', color: 'white',
-                    }}
-                  >
-                    Conectar LinkedIn
-                  </button>
-                )}
               </div>
 
               </div>
