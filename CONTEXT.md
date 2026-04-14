@@ -1,6 +1,6 @@
 # Pulse — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 10 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 14 abril 2026.
 
 ---
 
@@ -222,17 +222,23 @@ pulse/
 - [x] Carrossel — biblioteca com visualização, recarregamento e exclusão
 - [x] Carrossel — formato 4:5 (1080x1350) para Instagram
 - [x] Carrossel — opções de 7 e 10 slides
+- [x] Integração Instagram funcionando — publicação de posts e carrossel nativo
+- [x] Token do Instagram da agente17ia configurado no Vercel
+- [x] Upload de imagens para Supabase Storage como intermediário para o Instagram
+- [x] Botão publicar no Instagram no CaptionPanel do Editor
+- [x] Botão publicar no Instagram na página do carrossel e no modal
+- [x] Botão publicar no Instagram na Biblioteca de Carrossel
+- [x] API Route instagram-post suporta imagem única e carrossel nativo (até 10 imagens)
 
 ---
 
 ## 7. Próximos Passos — Roadmap
 
-1. Verificar botão LinkedIn no CaptionPanel do Editor (quando Gemini voltar)
+1. Geração de vídeo com clips do Pexels — montar vídeos para Reels/Stories combinando clipes de vídeo do Pexels com texto e música
 2. Botão LinkedIn na Biblioteca de Carrossel (nos cards)
-3. Retomar integração Instagram — convites pendentes para agente17ia e tdaprod
-4. Ajustes finos no drag de textos no modal do carrossel
-5. Sistema de pulses com pagamento (Stripe ou Hotmart)
-6. Geração de vídeo para Reels (longo prazo)
+3. Ajustes finos no drag de textos no modal do carrossel
+4. Sistema de pulses com pagamento (Stripe ou Hotmart)
+5. Geração de vídeo com IA (Runway ML, Kling ou Pika) — longo prazo
 
 ---
 
@@ -243,6 +249,7 @@ pulse/
 - **Precificação sugerida:** R$ 2.500–4.000 de setup + R$ 800/mês por cliente
 - **Modelo de Pulses:** cliente recebe X pulses/mês incluídos, pode comprar mais. Cada geração de imagem custa 1 pulse. Custo real por pulse: R$ 0,017 (FLUX Schnell via FAL.ai)
   - Margem embutida no preço dos pulses extras
+- **Vídeo:** clips do Pexels (gratuito) combinados com texto e logo para Reels e Stories
 
 ---
 
@@ -270,12 +277,9 @@ O carrossel usa canvas HTML5 2D com `drawSlide()` — sistema separado do Editor
 
 ## 10. Bugs Conhecidos
 
-- Gemini 2.5 Flash com instabilidade frequente (erros 503) — retry implementado mas não resolve quando sobrecarga é prolongada
-- Integração Instagram em andamento — convites pendentes de aceite nas contas agente17ia e tdaprod
-- URL de produção da Vercel não documentada no código — verificar no dashboard
-- Token GitHub exposto em log do Claude Code em março 2026 — revogar se ainda não feito
-- `replicate.ts` tem comentário de cache bust manual — workaround para problema de deploy
-- Imagens do Pexels frequentemente irrelevantes para temas de IA — será resolvido com FAL.ai
+- Gemini 2.5 Flash com instabilidade frequente (erros 503) — retry implementado com fallback para gemini-1.5-flash
+- Token do Instagram expira periodicamente — precisará ser renovado manualmente no Vercel
+- Remoção de imagens temporárias do Supabase Storage após publicação no Instagram pode falhar se o fileName não bater com o gerado no momento do upload
 
 ---
 
