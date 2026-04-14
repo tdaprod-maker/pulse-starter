@@ -4,6 +4,7 @@ import type Konva from 'konva'
 import type { Template } from '../state/useStore'
 import { calcAutoScale } from '../engine/CanvasEngine'
 import { useStore } from '../state/useStore'
+import { supabase } from '../lib/supabase'
 
 interface CaptionPanelProps {
   stageRef?: RefObject<Konva.Stage | null>
@@ -18,6 +19,8 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
   const [linkedinName, setLinkedinName] = useState<string>('')
   const [publishing, setPublishing] = useState(false)
   const [publishStatus, setPublishStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [publishingInstagram, setPublishingInstagram] = useState(false)
+  const [instagramStatus, setInstagramStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   // Lê token do LinkedIn salvo no localStorage
   useEffect(() => {
@@ -116,6 +119,59 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
     }
   }
 
+  async function handlePublishInstagram() {
+    if (!caption || !stageRef?.current || publishingInstagram) return
+    setPublishingInstagram(true)
+    setInstagramStatus('idle')
+    try {
+      // Exporta o canvas como blob
+      const autoScale = template ? calcAutoScale(template) : 1
+      const pixelRatio = 2 / autoScale
+      const dataUrl = stageRef.current.toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality: 0.92 })
+      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '')
+      const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+      const blob = new Blob([byteArray], { type: 'image/jpeg' })
+
+      // Faz upload para o Supabase Storage
+      const fileName = `instagram-temp-${Date.now()}.jpg`
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+
+      if (uploadError) throw new Error('Erro ao fazer upload da imagem')
+
+      // Obtém URL pública
+      const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+      const imageUrl = urlData.publicUrl
+
+      // Publica no Instagram
+      const igUserId = '17841479034844249' // agente17ia
+      const text = `${caption.instagram}\n\n${caption.hashtags}`
+
+      const res = await fetch('/api/instagram-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl, caption: text, igUserId }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setInstagramStatus('success')
+        setTimeout(() => setInstagramStatus('idle'), 3000)
+        // Remove imagem temporária do Storage
+        await supabase.storage.from('media').remove([fileName])
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (err: unknown) {
+      console.error('[CaptionPanel] erro Instagram:', err)
+      setInstagramStatus('error')
+      setTimeout(() => setInstagramStatus('idle'), 3000)
+    } finally {
+      setPublishingInstagram(false)
+    }
+  }
+
   if (!caption) return null
 
   return (
@@ -211,6 +267,23 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
             Conectar LinkedIn
           </button>
         )}
+      </div>
+      {/* Instagram */}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <button
+          onClick={handlePublishInstagram}
+          disabled={publishingInstagram || !caption}
+          style={{
+            width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px',
+            cursor: publishingInstagram || !caption ? 'default' : 'pointer',
+            fontFamily: 'inherit', fontWeight: 600, border: 'none',
+            opacity: publishingInstagram || !caption ? 0.6 : 1,
+            background: instagramStatus === 'success' ? 'rgba(34,197,94,0.8)' : instagramStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+            color: 'white', transition: 'all 0.2s',
+          }}
+        >
+          {publishingInstagram ? 'Publicando...' : instagramStatus === 'success' ? 'Publicado!' : instagramStatus === 'error' ? 'Erro ao publicar' : 'Publicar no Instagram'}
+        </button>
       </div>
     </div>
   )
