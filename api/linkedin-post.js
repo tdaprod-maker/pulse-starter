@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           registerUploadRequest: {
             recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-            owner: `urn:li:person:${linkedinSub}`,
+            owner: `urn:li:organization:111151250`,
             serviceRelationships: [{
               relationshipType: 'OWNER',
               identifier: 'urn:li:userGeneratedContent',
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
       }
 
       postBody = {
-        author: `urn:li:person:${linkedinSub}`,
+        author: `urn:li:organization:111151250`,
         lifecycleState: 'PUBLISHED',
         specificContent: {
           'com.linkedin.ugc.ShareContent': {
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
       // Imagem única
       const asset = await uploadImage(imageBase64)
       postBody = {
-        author: `urn:li:person:${linkedinSub}`,
+        author: `urn:li:organization:111151250`,
         lifecycleState: 'PUBLISHED',
         specificContent: {
           'com.linkedin.ugc.ShareContent': {
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
       }
     } else {
       postBody = {
-        author: `urn:li:person:${linkedinSub}`,
+        author: `urn:li:organization:111151250`,
         lifecycleState: 'PUBLISHED',
         specificContent: {
           'com.linkedin.ugc.ShareContent': {
