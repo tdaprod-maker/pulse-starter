@@ -19,10 +19,19 @@ export function CarouselLibraryPage() {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [linkedinToken, setLinkedinToken] = useState<string>('')
+  const [linkedinSub, setLinkedinSub] = useState<string>('')
+  const [publishingId, setPublishingId] = useState<string | null>(null)
+  const [publishStatus, setPublishStatus] = useState<Record<string, 'success' | 'error'>>({})
   const navigate = useNavigate()
 
   useEffect(() => {
     loadCarousels()
+  }, [])
+
+  useEffect(() => {
+    setLinkedinToken(localStorage.getItem('linkedin_token') ?? '')
+    setLinkedinSub(localStorage.getItem('linkedin_sub') ?? '')
   }, [])
 
   async function loadCarousels() {
@@ -61,6 +70,39 @@ export function CarouselLibraryPage() {
     }
     setCarousels(prev => prev.filter(c => !selected.has(c.id)))
     setSelected(new Set())
+  }
+
+  async function handlePublishLinkedIn(carousel: CarouselRecord) {
+    if (!linkedinToken || !linkedinSub || publishingId) return
+    setPublishingId(carousel.id)
+    try {
+      const images = JSON.parse(carousel.slide_images) as string[]
+      const text = carousel.caption || carousel.prompt || carousel.title
+
+      const res = await fetch('/api/linkedin-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: linkedinToken,
+          linkedinSub,
+          text,
+          images: images.filter(Boolean),
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setPublishStatus(prev => ({ ...prev, [carousel.id]: 'success' }))
+        setTimeout(() => setPublishStatus(prev => { const n = { ...prev }; delete n[carousel.id]; return n }), 3000)
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (err) {
+      console.error('[CarouselLibrary] erro ao publicar:', err)
+      setPublishStatus(prev => ({ ...prev, [carousel.id]: 'error' }))
+      setTimeout(() => setPublishStatus(prev => { const n = { ...prev }; delete n[carousel.id]; return n }), 3000)
+    } finally {
+      setPublishingId(null)
+    }
   }
 
   function handleRestore(carousel: CarouselRecord) {
@@ -181,6 +223,33 @@ export function CarouselLibraryPage() {
                     >
                       Recarregar
                     </button>
+                    {linkedinToken ? (
+                      <button
+                        onClick={() => handlePublishLinkedIn(carousel)}
+                        disabled={publishingId === carousel.id}
+                        style={{
+                          fontSize: '11px', padding: '6px 10px', borderRadius: '6px', cursor: publishingId === carousel.id ? 'default' : 'pointer',
+                          fontFamily: 'inherit', fontWeight: 600, border: 'none',
+                          opacity: publishingId === carousel.id ? 0.6 : 1,
+                          background: publishStatus[carousel.id] === 'success' ? 'rgba(34,197,94,0.8)' : publishStatus[carousel.id] === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #0077B5, #005e93)',
+                          color: 'white',
+                        }}
+                      >
+                        {publishingId === carousel.id ? '...' : publishStatus[carousel.id] === 'success' ? '✓' : publishStatus[carousel.id] === 'error' ? '!' : 'LinkedIn'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
+                        style={{
+                          fontSize: '11px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer',
+                          fontFamily: 'inherit', fontWeight: 600,
+                          background: 'linear-gradient(135deg, #0077B5, #005e93)',
+                          border: 'none', color: 'white',
+                        }}
+                      >
+                        LinkedIn
+                      </button>
+                    )}
                     <button
                       onClick={() => toggleSelect(carousel.id)}
                       style={{
