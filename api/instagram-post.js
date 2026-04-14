@@ -3,10 +3,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { imageBase64, caption, igUserId } = req.body
+  const { imageUrl, caption, igUserId } = req.body
 
-  if (!imageBase64 || !caption || !igUserId) {
-    return res.status(400).json({ error: 'imageBase64, caption e igUserId são obrigatórios' })
+  if (!imageUrl || !caption || !igUserId) {
+    return res.status(400).json({ error: 'imageUrl, caption e igUserId são obrigatórios' })
   }
 
   const accessToken = process.env.INSTAGRAM_TOKEN_AGENTE17
@@ -16,20 +16,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Passo 1: faz upload da imagem para um servidor temporário
-    // O Instagram não aceita base64 diretamente — precisa de uma URL pública
-    // Vamos usar o upload para o Supabase Storage como intermediário
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '')
-    const imageBuffer = Buffer.from(base64Data, 'base64')
-
-    // Passo 2: cria o container de mídia no Instagram
+    // Passo 1: cria o container de mídia no Instagram
     const containerRes = await fetch(
       `https://graph.instagram.com/v21.0/${igUserId}/media`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image_url: imageBase64, // temporário — vamos ajustar
+          image_url: imageUrl,
           caption,
           access_token: accessToken,
         }),
@@ -37,7 +31,7 @@ export default async function handler(req, res) {
     )
 
     const containerData = await containerRes.json()
-    console.log('[instagram-post] container:', containerData)
+    console.log('[instagram-post] container:', JSON.stringify(containerData))
 
     if (containerData.error) {
       return res.status(500).json({ error: containerData.error.message })
@@ -45,7 +39,10 @@ export default async function handler(req, res) {
 
     const creationId = containerData.id
 
-    // Passo 3: publica o container
+    // Aguarda 3 segundos para o Instagram processar a imagem
+    await new Promise(resolve => setTimeout(resolve, 3000))
+
+    // Passo 2: publica o container
     const publishRes = await fetch(
       `https://graph.instagram.com/v21.0/${igUserId}/media_publish`,
       {
@@ -59,7 +56,7 @@ export default async function handler(req, res) {
     )
 
     const publishData = await publishRes.json()
-    console.log('[instagram-post] publish:', publishData)
+    console.log('[instagram-post] publish:', JSON.stringify(publishData))
 
     if (publishData.error) {
       return res.status(500).json({ error: publishData.error.message })
