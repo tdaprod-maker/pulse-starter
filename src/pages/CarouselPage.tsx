@@ -1267,6 +1267,24 @@ export function CarouselPage() {
                     </button>
                   )}
                 </div>
+
+                {/* Instagram */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button
+                    onClick={handlePublishInstagram}
+                    disabled={publishingInstagram || !slides.length}
+                    style={{
+                      width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px',
+                      cursor: publishingInstagram || !slides.length ? 'default' : 'pointer',
+                      fontFamily: 'inherit', fontWeight: 600, border: 'none',
+                      opacity: publishingInstagram || !slides.length ? 0.6 : 1,
+                      background: instagramStatus === 'success' ? 'rgba(34,197,94,0.8)' : instagramStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                      color: 'white', transition: 'all 0.2s',
+                    }}
+                  >
+                    {publishingInstagram ? 'Publicando...' : instagramStatus === 'success' ? 'Publicado!' : instagramStatus === 'error' ? 'Erro ao publicar' : `Publicar ${slides.length} slides no Instagram`}
+                  </button>
+                </div>
               </div>
 
               {/* Controles em tempo real */}
