@@ -324,6 +324,8 @@ export function CarouselPage() {
   const [linkedinName, setLinkedinName] = useState<string>('')
   const [publishingLinkedIn, setPublishingLinkedIn] = useState(false)
   const [linkedinStatus, setLinkedinStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [publishingInstagram, setPublishingInstagram] = useState(false)
+  const [instagramStatus, setInstagramStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const [canvasRect, setCanvasRect] = useState<{width: number, height: number} | null>(null)
@@ -614,6 +616,72 @@ export function CarouselPage() {
     }
   }
 
+  async function handlePublishInstagram() {
+    if (!slides.length || publishingInstagram) return
+    setPublishingInstagram(true)
+    setInstagramStatus('idle')
+    try {
+      // Renderiza todos os slides e faz upload para o Supabase Storage
+      const imageUrls: string[] = []
+      for (let i = 0; i < slides.length; i++) {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1080
+        canvas.height = 1350
+        const ctx = canvas.getContext('2d')!
+        const pos = slidePositions[i] ?? { titlePos: { x: 540, y: 500 }, bodyPos: { x: 540, y: 750 }, logoPos: { x: 960, y: 1200 } }
+        await drawSlide(ctx, slides[i], slideImages[i] ?? '', templateId, brandLogoUrl, {
+          titleFontScale, bodyFontScale, titleAlign, bodyAlign, titleColor, bodyColor, fontFamily,
+          accentColor, accentPos, logoSize, textShadow, logoTint,
+          logoWhiteUrl: brandLogoWhiteUrl, bgVariant,
+          titlePos: pos.titlePos, bodyPos: pos.bodyPos, logoPos: pos.logoPos,
+        })
+
+        // Converte canvas para blob e faz upload
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+        const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '')
+        const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        const blob = new Blob([byteArray], { type: 'image/jpeg' })
+        const fileName = `instagram-carousel-${Date.now()}-${i}.jpg`
+
+        const { error: uploadError } = await supabase.storage
+          .from('media')
+          .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+
+        if (uploadError) throw new Error(`Erro ao fazer upload do slide ${i + 1}`)
+
+        const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+        imageUrls.push(urlData.publicUrl)
+      }
+
+      // Publica no Instagram
+      const igUserId = '17841479034844249'
+      const text = caption || prompt
+
+      const res = await fetch('/api/instagram-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrls, caption: text, igUserId }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setInstagramStatus('success')
+        setTimeout(() => setInstagramStatus('idle'), 3000)
+        // Remove imagens temporárias
+        const fileNames = imageUrls.map((_, i) => `instagram-carousel-${Date.now()}-${i}.jpg`)
+        await supabase.storage.from('media').remove(fileNames)
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (err: unknown) {
+      console.error('[CarouselPage] erro Instagram:', err)
+      setInstagramStatus('error')
+      setTimeout(() => setInstagramStatus('idle'), 3000)
+    } finally {
+      setPublishingInstagram(false)
+    }
+  }
+
   function handleCopyCaption() {
     navigator.clipboard.writeText(caption).then(() => {
       setCopied(true)
@@ -818,6 +886,22 @@ export function CarouselPage() {
                 Conectar LinkedIn
               </button>
             )
+          )}
+          {slides.length > 0 && (
+            <button
+              onClick={handlePublishInstagram}
+              disabled={publishingInstagram}
+              style={{
+                fontSize: '12px', padding: '5px 14px', borderRadius: '7px',
+                cursor: publishingInstagram ? 'default' : 'pointer',
+                fontFamily: 'inherit', transition: 'all 0.15s', fontWeight: 600,
+                opacity: publishingInstagram ? 0.6 : 1, border: 'none',
+                background: instagramStatus === 'success' ? 'rgba(34,197,94,0.8)' : instagramStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                color: 'white',
+              }}
+            >
+              {publishingInstagram ? 'Publicando...' : instagramStatus === 'success' ? '✓ Publicado' : instagramStatus === 'error' ? 'Erro' : 'Instagram'}
+            </button>
           )}
           </div>
 
