@@ -26,7 +26,9 @@ export default function App() {
           .select('id')
           .eq('user_email', data.session.user.email)
           .maybeSingle()
+        console.log('[App] brandData:', brandData, 'brandError:', brandError, 'email:', data.session.user.email)
         const hasOnboarded = brandData !== null && !brandError
+        console.log('[App] hasOnboarded:', hasOnboarded, 'pathname:', window.location.pathname)
         if (!hasOnboarded && window.location.pathname !== '/onboarding') {
           window.location.href = '/onboarding'
         }
