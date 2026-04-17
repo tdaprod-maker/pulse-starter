@@ -91,7 +91,8 @@ export function OnboardingPage() {
     const email = sessionData.session?.user?.email ?? ''
     const urls: string[] = []
     for (const file of files.slice(0, 5 - refImages.length)) {
-      const path = `references/${email}/${Date.now()}_${file.name}`
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `references/${email}/${Date.now()}_${safeName}`
       const url = await uploadMedia(file, path)
       if (url) urls.push(url)
     }
