@@ -274,3 +274,69 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
   }
   throw lastError
 }
+
+export async function analyzeVisualReferences(imageUrls: string[]): Promise<string> {
+  const imageParts = await Promise.all(
+    imageUrls.map(async (url) => {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve((reader.result as string).split(',')[1])
+        reader.readAsDataURL(blob)
+      })
+      return {
+        inline_data: {
+          mime_type: blob.type || 'image/jpeg',
+          data: base64,
+        }
+      }
+    })
+  )
+
+  const prompt = `Analise essas ${imageUrls.length} imagem(ns) de referência visual de uma marca e extraia um perfil visual resumido em português.
+
+Retorne um JSON com:
+{
+  "estilo": "descrição do estilo visual geral (ex: minimalista moderno, vibrante e colorido, sóbrio corporativo)",
+  "cores_predominantes": ["cor1", "cor2", "cor3"],
+  "tipo_imagem": "descrição do tipo de imagem usada (ex: fotos de produto, pessoas reais, ilustrações, fundos sólidos)",
+  "composicao": "como os elementos são organizados (ex: texto centralizado, imagem à esquerda, muito espaço negativo)",
+  "tom_visual": "descrição do tom emocional visual (ex: sofisticado, acolhedor, energético, profissional)",
+  "instrucoes_ia": "instrução resumida de 2 linhas para a IA replicar esse estilo ao gerar posts"
+}
+
+Responda SOMENTE com JSON válido, sem markdown.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              ...imageParts,
+              { text: prompt }
+            ]
+          }],
+          generationConfig: {
+            response_mime_type: 'application/json',
+            temperature: 0.3,
+            maxOutputTokens: 500,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      })
+      if (!res.ok) throw new Error(`Erro ${res.status}`)
+      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      if (!text) throw new Error('Resposta vazia')
+      return text
+    } catch (err) {
+      if (attempt === 2) throw err
+    }
+  }
+  return '{}'
+}
