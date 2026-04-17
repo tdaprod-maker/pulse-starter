@@ -21,12 +21,13 @@ export default function App() {
       setSession(data.session)
       setLoading(false)
       if (data.session?.user?.email) {
-        const { data: brandData } = await supabase
+        const { data: brandData, error: brandError } = await supabase
           .from('brand_config')
           .select('id')
           .eq('user_email', data.session.user.email)
-          .single()
-        if (!brandData && window.location.pathname !== '/onboarding') {
+          .maybeSingle()
+        const hasOnboarded = brandData !== null && !brandError
+        if (!hasOnboarded && window.location.pathname !== '/onboarding') {
           window.location.href = '/onboarding'
         }
       }
