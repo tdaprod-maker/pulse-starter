@@ -277,17 +277,22 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
 
 export async function analyzeVisualReferences(imageUrls: string[]): Promise<string> {
   const imageParts = await Promise.all(
-    imageUrls.map(async (url) => {
+    imageUrls.slice(0, 3).map(async (url) => {
       const res = await fetch(url)
       const blob = await res.blob()
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve((reader.result as string).split(',')[1])
-        reader.readAsDataURL(blob)
-      })
+      // Redimensiona para máximo 800px antes de converter
+      const bitmap = await createImageBitmap(blob)
+      const maxSize = 800
+      const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(bitmap.width * scale)
+      canvas.height = Math.round(bitmap.height * scale)
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+      const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1]
       return {
         inline_data: {
-          mime_type: blob.type || 'image/jpeg',
+          mime_type: 'image/jpeg',
           data: base64,
         }
       }

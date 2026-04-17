@@ -90,13 +90,13 @@ export function OnboardingPage() {
     const { data: sessionData } = await supabase.auth.getSession()
     const email = sessionData.session?.user?.email ?? ''
     const urls: string[] = []
-    for (const file of files.slice(0, 5 - refImages.length)) {
+    for (const file of files.slice(0, 3 - refImages.length)) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
       const path = `references/${email}/${Date.now()}_${safeName}`
       const url = await uploadMedia(file, path)
       if (url) urls.push(url)
     }
-    setRefImages(prev => [...prev, ...urls].slice(0, 5))
+    setRefImages(prev => [...prev, ...urls].slice(0, 3))
     e.target.value = ''
   }
 
@@ -409,11 +409,11 @@ export function OnboardingPage() {
 
               <input ref={refInputRef} type="file" accept="image/*" multiple onChange={handleRefUpload} style={{ display: 'none' }} />
 
-              {refImages.length < 5 && (
+              {refImages.length < 3 && (
                 <button onClick={() => refInputRef.current?.click()}
                   style={{ width: '100%', padding: '20px', borderRadius: '12px', cursor: 'pointer', background: 'var(--bg-surface)', border: '2px dashed var(--border)', color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '28px' }}>+</span>
-                  <span>Adicionar referências ({refImages.length}/5)</span>
+                  <span>Adicionar referências ({refImages.length}/3)</span>
                   <span style={{ fontSize: '11px' }}>PNG, JPG ou JPEG</span>
                 </button>
               )}
