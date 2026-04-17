@@ -204,7 +204,11 @@ export function AIPanel(_props: AIPanelProps) {
 
     try {
       // 1. Gera textos via Gemini
-      const result = await generatePostContent(prompt.trim())
+      const result = await generatePostContent(prompt.trim(), {
+        businessName: brand.business_name || brand.brand_name,
+        segment: brand.segment,
+        tone: brand.tone,
+      })
       await applyResult(result)
 
       // Verificação de segurança: se o formato mudou após applyResult, restaura
