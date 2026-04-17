@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { uploadLogo } from '../services/brandKit'
+import { uploadLogo, uploadMedia } from '../services/brandKit'
+import { analyzeVisualReferences } from '../services/gemini'
 
 const SEGMENTS = [
   'Restaurante / Food',
@@ -55,13 +56,17 @@ export function OnboardingPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [fontTitle, setFontTitle] = useState('Montserrat')
   const [fontBody, setFontBody] = useState('Inter')
+  const [refImages, setRefImages] = useState<string[]>([])
+  const [analyzingRefs, setAnalyzingRefs] = useState(false)
+  const [visualStyle, setVisualStyle] = useState<string>('')
+  const refInputRef = useRef<HTMLInputElement>(null)
   const [colorPrimary, setColorPrimary] = useState('#3A5AFF')
   const [colorSecondary, setColorSecondary] = useState('#000000')
   const [loading, setLoading] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [error, setError] = useState('')
   const logoInputRef = useRef<HTMLInputElement>(null)
-  const TOTAL_STEPS = 6
+  const TOTAL_STEPS = 7
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -77,6 +82,34 @@ export function OnboardingPage() {
       }
     }
     setUploadingLogo(false)
+  }
+
+  async function handleRefUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const { data: sessionData } = await supabase.auth.getSession()
+    const email = sessionData.session?.user?.email ?? ''
+    const urls: string[] = []
+    for (const file of files.slice(0, 5 - refImages.length)) {
+      const path = `references/${email}/${Date.now()}_${file.name}`
+      const url = await uploadMedia(file, path)
+      if (url) urls.push(url)
+    }
+    setRefImages(prev => [...prev, ...urls].slice(0, 5))
+    e.target.value = ''
+  }
+
+  async function handleAnalyzeRefs() {
+    if (!refImages.length) return
+    setAnalyzingRefs(true)
+    try {
+      const analysis = await analyzeVisualReferences(refImages)
+      setVisualStyle(analysis)
+    } catch {
+      setVisualStyle('')
+    } finally {
+      setAnalyzingRefs(false)
+    }
   }
 
   async function handleFinish() {
@@ -104,6 +137,8 @@ export function OnboardingPage() {
           color_accent: colorPrimary,
           font_title: fontTitle,
           font_body: fontBody,
+          visual_references: refImages.length > 0 ? refImages : null,
+          visual_style: visualStyle || null,
         }, { onConflict: 'user_email' })
 
       if (error) throw error
@@ -353,9 +388,70 @@ export function OnboardingPage() {
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => setStep(5)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(7) }}
+                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                  Continuar →
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Passo 7 — Referências visuais */}
+          {step === 7 && (
+            <>
+              <div>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Referências visuais</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
+                  Suba até 5 posts que você admira. A IA vai aprender o estilo visual e replicar nos seus posts.
+                </p>
+              </div>
+
+              <input ref={refInputRef} type="file" accept="image/*" multiple onChange={handleRefUpload} style={{ display: 'none' }} />
+
+              {refImages.length < 5 && (
+                <button onClick={() => refInputRef.current?.click()}
+                  style={{ width: '100%', padding: '20px', borderRadius: '12px', cursor: 'pointer', background: 'var(--bg-surface)', border: '2px dashed var(--border)', color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '28px' }}>+</span>
+                  <span>Adicionar referências ({refImages.length}/5)</span>
+                  <span style={{ fontSize: '11px' }}>PNG, JPG ou JPEG</span>
+                </button>
+              )}
+
+              {refImages.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  {refImages.map((url, i) => (
+                    <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden' }}>
+                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button onClick={() => setRefImages(prev => prev.filter((_, idx) => idx !== i))}
+                        style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: 'white', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {refImages.length > 0 && !visualStyle && (
+                <button onClick={handleAnalyzeRefs} disabled={analyzingRefs}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', cursor: analyzingRefs ? 'default' : 'pointer', background: 'rgba(58,90,255,0.1)', border: '1px solid rgba(58,90,255,0.3)', color: 'var(--accent)', fontSize: '13px', fontFamily: 'inherit', fontWeight: 600, opacity: analyzingRefs ? 0.7 : 1 }}>
+                  {analyzingRefs ? 'Analisando referências...' : 'Analisar estilo com IA'}
+                </button>
+              )}
+
+              {visualStyle && (
+                <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', padding: '12px' }}>
+                  <p style={{ fontSize: '12px', color: 'rgb(34,197,94)', margin: 0, fontWeight: 600 }}>✓ Estilo analisado e salvo</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0' }}>A IA vai usar esse perfil para gerar posts no seu estilo.</p>
+                </div>
+              )}
+
+              {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setStep(6)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
                 <button onClick={handleFinish} disabled={loading}
                   className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-                  {loading ? 'Salvando...' : 'Começar a usar o Pulse →'}
+                  {loading ? 'Salvando...' : refImages.length > 0 ? 'Começar a usar o Pulse →' : 'Pular por agora →'}
                 </button>
               </div>
             </>
