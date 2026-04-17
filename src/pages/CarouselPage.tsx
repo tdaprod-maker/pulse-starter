@@ -303,6 +303,7 @@ export function CarouselPage() {
   const [saved, setSaved] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
+  const [brandContext, setBrandContext] = useState<{ businessName?: string; segment?: string; tone?: string }>({})
   const brandLogoWhiteUrl = '/logo-agente17-white.png'
   const [titleFontScale, setTitleFontScale] = useState(1)
   const [bodyFontScale, setBodyFontScale] = useState(1)
@@ -367,6 +368,11 @@ export function CarouselPage() {
       loadBrandConfig(email).then(cfg => {
         const first = cfg.logos?.[0]?.url
         if (first) setBrandLogoUrl(first)
+        setBrandContext({
+          businessName: cfg.business_name || cfg.brand_name,
+          segment: cfg.segment,
+          tone: cfg.tone,
+        })
       })
     })
   }, [])
@@ -480,7 +486,7 @@ export function CarouselPage() {
     setSlideImages([])
     setCaption('')
     try {
-      const result = await generateCarouselContent(prompt, slideCount)
+      const result = await generateCarouselContent(prompt, slideCount, brandContext)
       setSlides(result.slides)
       setCaption(result.caption)
       const images: string[] = []
