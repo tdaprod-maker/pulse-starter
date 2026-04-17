@@ -76,7 +76,7 @@ export function OnboardingPage() {
           segment,
           tone,
           logo_url: logoUrl,
-          logos: JSON.stringify(logos),
+          logos: logos,
           color_primary: colorPrimary,
           color_secondary: colorSecondary,
           color_accent: colorPrimary,
