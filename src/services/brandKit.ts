@@ -11,6 +11,9 @@ export interface BrandConfig {
   color_accent: string
   font_title: string
   font_body: string
+  segment?: string
+  tone?: string
+  business_name?: string
   photos: string[]
 }
 
@@ -23,6 +26,9 @@ export const DEFAULT_BRAND: BrandConfig = {
   color_accent: '#FFCA1D',
   font_title: 'Bebas Neue',
   font_body: 'Inter',
+  segment: '',
+  tone: '',
+  business_name: 'AGENTE 17',
   photos: [],
 }
 

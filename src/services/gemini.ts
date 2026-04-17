@@ -13,6 +13,14 @@ export interface AIResponse {
   }
 }
 
+// ─── Brand Context ────────────────────────────────────────────────────────────
+
+export interface BrandContext {
+  businessName?: string
+  segment?: string
+  tone?: string
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
@@ -22,9 +30,17 @@ const API_URL_FALLBACK = `https://generativelanguage.googleapis.com/v1beta/model
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
 
-function buildPrompt(userInput: string): string {
+function buildPrompt(userInput: string, brand?: BrandContext): string {
+  const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
+    : brand?.tone === 'casual' ? 'descontraído e próximo'
+    : brand?.tone === 'inspirational' ? 'inspiracional e motivador'
+    : brand?.tone === 'technical' ? 'técnico e especialista'
+    : null
   return `Você é um assistente de design de posts para redes sociais.
 Escolha o template mais adequado para a descrição e gere os textos.
+${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
+${brand?.segment ? `Segmento: ${brand.segment}` : ''}
+${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
 
 TEMPLATES DISPONÍVEIS:
 - "hero-title"     → título principal + subtítulo
@@ -141,12 +157,20 @@ export interface CarouselResponse {
   caption: string
 }
 
-function buildCarouselPrompt(userInput: string, slideCount: number): string {
+function buildCarouselPrompt(userInput: string, slideCount: number, brand?: BrandContext): string {
+  const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
+    : brand?.tone === 'casual' ? 'descontraído e próximo'
+    : brand?.tone === 'inspirational' ? 'inspiracional e motivador'
+    : brand?.tone === 'technical' ? 'técnico e especialista'
+    : null
   const contentSlides = Array.from({ length: slideCount - 2 }, () =>
     `    { "title": "...", "body": "...", "imagePrompt": "...", "type": "content" }`
   ).join(',\n')
 
   return `Você é um especialista em criação de carrosséis para Instagram.
+${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
+${brand?.segment ? `Segmento: ${brand.segment}` : ''}
+${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
 Crie um carrossel com EXATAMENTE ${slideCount} slides sobre o tema descrito. NÃO crie mais nem menos que ${slideCount} slides.
 REGRAS OBRIGATÓRIAS:
 - Slide 1: type "cover" — título curto e impactante (máximo 5 palavras), SEM body
@@ -173,7 +197,7 @@ ${contentSlides},
 }`
 }
 
-export async function generateCarouselContent(userInput: string, slideCount: number): Promise<CarouselResponse> {
+export async function generateCarouselContent(userInput: string, slideCount: number, brand?: BrandContext): Promise<CarouselResponse> {
   let lastError: Error | null = null
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -185,7 +209,7 @@ export async function generateCarouselContent(userInput: string, slideCount: num
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildCarouselPrompt(userInput, slideCount) }] }],
+          contents: [{ parts: [{ text: buildCarouselPrompt(userInput, slideCount, brand) }] }],
           generationConfig: {
             response_mime_type: 'application/json',
             temperature: 0.8,
@@ -213,7 +237,7 @@ export async function generateCarouselContent(userInput: string, slideCount: num
 
 // ─── Chamada principal ────────────────────────────────────────────────────────
 
-export async function generatePostContent(userInput: string): Promise<AIResponse> {
+export async function generatePostContent(userInput: string, brand?: BrandContext): Promise<AIResponse> {
   let lastError: Error | null = null
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -225,7 +249,7 @@ export async function generatePostContent(userInput: string): Promise<AIResponse
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(userInput) }] }],
+          contents: [{ parts: [{ text: buildPrompt(userInput, brand) }] }],
           generationConfig: {
             response_mime_type: 'application/json',
             temperature: 0.8,
