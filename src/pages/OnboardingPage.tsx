@@ -38,8 +38,8 @@ export function OnboardingPage() {
     setLoading(true)
     setError('')
     try {
-      const { data } = await supabase.auth.getUser()
-      const email = data.user?.email
+      const { data: sessionData } = await supabase.auth.getSession()
+      const email = sessionData.session?.user?.email
       if (!email) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase
