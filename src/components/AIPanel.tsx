@@ -204,11 +204,14 @@ export function AIPanel(_props: AIPanelProps) {
 
     try {
       // 1. Gera textos via Gemini
-      const result = await generatePostContent(prompt.trim(), {
-        businessName: brand.business_name || brand.brand_name,
-        segment: brand.segment,
-        tone: brand.tone,
-      })
+      const { data: authData } = await supabase.auth.getUser()
+      const userEmail = authData.user?.email ?? ''
+      const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+      const result = await generatePostContent(prompt.trim(), brandCtx ? {
+        businessName: brandCtx.business_name || brandCtx.brand_name,
+        segment: brandCtx.segment,
+        tone: brandCtx.tone,
+      } : undefined)
       await applyResult(result)
 
       // Verificação de segurança: se o formato mudou após applyResult, restaura
