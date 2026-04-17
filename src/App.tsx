@@ -9,6 +9,7 @@ import { BrandPage } from './pages/BrandPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { CarouselPage } from './pages/CarouselPage'
 import { CarouselLibraryPage } from './pages/CarouselLibraryPage'
+import { OnboardingPage } from './pages/OnboardingPage'
 import { supabase } from './lib/supabase'
 
 export default function App() {
@@ -16,9 +17,19 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session)
       setLoading(false)
+      if (data.session?.user?.email) {
+        const { data: brandData } = await supabase
+          .from('brand_config')
+          .select('id')
+          .eq('user_email', data.session.user.email)
+          .single()
+        if (!brandData && window.location.pathname !== '/onboarding') {
+          window.location.href = '/onboarding'
+        }
+      }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
@@ -39,6 +50,7 @@ export default function App() {
             <Route path="/carousel-library" element={<CarouselLibraryPage />} />
             <Route path="/brand" element={<BrandPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
           </Routes>
         </div>
       </BrowserRouter>
