@@ -4,9 +4,18 @@ import { supabase } from '../lib/supabase'
 import { uploadLogo } from '../services/brandKit'
 
 const SEGMENTS = [
-  'Restaurante / Food', 'Consultoria / Serviços', 'Varejo / E-commerce',
-  'Saúde / Bem-estar', 'Educação / Cursos', 'Tecnologia / SaaS',
-  'Imobiliário', 'Moda / Beleza', 'Agência / Marketing', 'Outro',
+  'Restaurante / Food',
+  'Consultoria / Serviços',
+  'Varejo / E-commerce',
+  'Saúde / Bem-estar',
+  'Academia / Esportes',
+  'Educação / Cursos',
+  'Tecnologia / SaaS',
+  'Imobiliário',
+  'Moda / Beleza',
+  'Agência / Marketing',
+  'Jurídico / Contabilidade',
+  'Outro',
 ]
 
 const TONES = [
@@ -14,6 +23,17 @@ const TONES = [
   { value: 'casual', label: 'Descontraído', description: 'Amigável, próximo e humano' },
   { value: 'inspirational', label: 'Inspiracional', description: 'Motivador, emotivo e impactante' },
   { value: 'technical', label: 'Técnico', description: 'Especialista, preciso e informativo' },
+]
+
+const FONT_OPTIONS = [
+  { value: 'Inter', label: 'Inter', description: 'Moderna e legível' },
+  { value: 'Montserrat', label: 'Montserrat', description: 'Elegante e versátil' },
+  { value: 'Playfair Display', label: 'Playfair Display', description: 'Sofisticada e editorial' },
+  { value: 'Bebas Neue', label: 'Bebas Neue', description: 'Impactante e bold' },
+  { value: 'Raleway', label: 'Raleway', description: 'Refinada e geométrica' },
+  { value: 'Oswald', label: 'Oswald', description: 'Forte e condensada' },
+  { value: 'Lora', label: 'Lora', description: 'Clássica e serifada' },
+  { value: 'Space Grotesk', label: 'Space Grotesk', description: 'Técnica e contemporânea' },
 ]
 
 const COLOR_PRESETS = [
@@ -33,13 +53,15 @@ export function OnboardingPage() {
   const [tone, setTone] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [fontTitle, setFontTitle] = useState('Montserrat')
+  const [fontBody, setFontBody] = useState('Inter')
   const [colorPrimary, setColorPrimary] = useState('#3A5AFF')
   const [colorSecondary, setColorSecondary] = useState('#000000')
   const [loading, setLoading] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [error, setError] = useState('')
   const logoInputRef = useRef<HTMLInputElement>(null)
-  const TOTAL_STEPS = 5
+  const TOTAL_STEPS = 6
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -80,6 +102,8 @@ export function OnboardingPage() {
           color_primary: colorPrimary,
           color_secondary: colorSecondary,
           color_accent: colorPrimary,
+          font_title: fontTitle,
+          font_body: fontBody,
         }, { onConflict: 'user_email' })
 
       if (error) throw error
@@ -229,8 +253,58 @@ export function OnboardingPage() {
             </>
           )}
 
-          {/* Passo 5 — Cores */}
+          {/* Passo 5 — Fontes */}
           {step === 5 && (
+            <>
+              <div>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Fontes da marca</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>Escolha as fontes para títulos e textos dos seus posts.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Fonte do título</span>
+                {FONT_OPTIONS.map(f => (
+                  <button key={f.value} onClick={() => setFontTitle(f.value)} style={{
+                    padding: '12px 16px', borderRadius: '8px', cursor: 'pointer', fontFamily: f.value,
+                    textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: fontTitle === f.value ? 'rgba(58,90,255,0.15)' : 'var(--bg-surface)',
+                    border: `1px solid ${fontTitle === f.value ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`,
+                    transition: 'all 0.15s',
+                  }}>
+                    <span style={{ fontSize: '15px', fontWeight: 700, color: fontTitle === f.value ? 'var(--accent)' : 'var(--text-primary)', fontFamily: f.value }}>{f.label}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'Inter' }}>{f.description}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Fonte do texto</span>
+                {FONT_OPTIONS.map(f => (
+                  <button key={f.value} onClick={() => setFontBody(f.value)} style={{
+                    padding: '12px 16px', borderRadius: '8px', cursor: 'pointer',
+                    textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: fontBody === f.value ? 'rgba(58,90,255,0.15)' : 'var(--bg-surface)',
+                    border: `1px solid ${fontBody === f.value ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`,
+                    transition: 'all 0.15s',
+                  }}>
+                    <span style={{ fontSize: '14px', color: fontBody === f.value ? 'var(--accent)' : 'var(--text-primary)', fontFamily: f.value }}>{f.label}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'Inter' }}>{f.description}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setStep(4)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(6) }}
+                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                  Continuar →
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Passo 6 — Cores */}
+          {step === 6 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Cores da marca</h2>
@@ -278,7 +352,7 @@ export function OnboardingPage() {
 
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(4)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
+                <button onClick={() => setStep(5)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
                 <button onClick={handleFinish} disabled={loading}
                   className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
                   {loading ? 'Salvando...' : 'Começar a usar o Pulse →'}
