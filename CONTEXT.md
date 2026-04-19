@@ -1,6 +1,6 @@
 # Pulse Starter — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 18 abril 2026 (final).
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 19 abril 2026.
 
 ---
 
@@ -118,16 +118,20 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Turbinador de prompt — botão ⚡ no AIPanel que enriquece o prompt com contexto da marca via Gemini
 - [x] Limite de referências visuais aumentado para 5
 - [x] brand_description integrado em todo o fluxo de geração
+- [x] PostReviewer — agente de análise com score visual, score de legenda, pontos positivos e sugestões
+- [x] Cor de destaque usa color_primary do Brand Kit automaticamente
+- [x] Templates renomeados para linguagem genérica
+- [x] Descrições dos templates no prompt do Gemini atualizadas
+- [x] Aviso visual na Topbar quando pulses estão baixos (vermelho) ou zerados (saldo esgotado)
+- [x] Erro claro ao tentar gerar post sem pulses suficientes
+- [x] Débito de pulses funcionando corretamente no Editor
 
 ### Pendente
-- [ ] Agente de IA que analisa título, descrição e qualidade dos posts gerados e sugere melhorias
-- [ ] Edição de elementos nos posts que ainda não são editáveis (identificar quais)
-- [ ] Melhorar análise das referências visuais (Nível 2 — perguntas mais específicas ao Gemini)
-- [ ] Pesquisar modelo FAL.ai que suporte style reference sem copiar conteúdo
-- [ ] Mais templates com estilos visuais distintos
-- [ ] Integração com Stripe para pagamento
-- [ ] Planos de pulses (Starter 100, Pro 300, Business 700)
-- [ ] Painel administrativo
+- [ ] Integração com Stripe — pagamento mensal + recarga de pulses
+- [ ] Botão "Comprar mais pulses" na tela quando saldo zera
+- [ ] Sugestão de template baseada nas referências visuais do cliente
+- [ ] Elementos não editáveis nos posts (identificar e corrigir)
+- [ ] Painel administrativo (ver clientes, saldos, uso)
 - [ ] Landing page de vendas
 - [ ] Supabase separado do Pulse
 - [ ] Email de boas-vindas automático
@@ -143,6 +147,15 @@ Para layouts verdadeiramente únicos por cliente, há dois caminhos:
 - **Caminho B:** Templates gerados dinamicamente pela IA (1-2 meses)
 
 Decisão pendente.
+
+---
+
+## 8b. Fluxo de Pulses Previsto com Stripe
+
+**Fluxo de pulses previsto com Stripe:**
+- Cliente paga mensalidade → recebe 100 pulses
+- Pulses acabam → aviso na Topbar + mensagem de erro → botão "Comprar mais pulses"
+- Renovação automática mensal se pagamento ativo
 
 ---
 
