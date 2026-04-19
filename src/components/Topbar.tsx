@@ -100,7 +100,22 @@ export function Topbar() {
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {pulseBalance !== null && (
+        {pulseBalance !== null && pulseBalance === 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)',
+            borderRadius: '8px', padding: '5px 12px',
+            animation: 'pulse 2s infinite',
+          }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'rgb(239,68,68)' }}>
+              0 pulses
+            </span>
+            <span style={{ fontSize: '10px', color: 'rgba(239,68,68,0.8)' }}>
+              — Saldo esgotado
+            </span>
+          </div>
+        )}
+        {pulseBalance !== null && pulseBalance > 0 && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             background: pulseBalance < 10 ? 'rgba(239,68,68,0.15)' : 'linear-gradient(135deg, rgba(58,90,255,0.2), rgba(91,143,212,0.15))',
@@ -112,7 +127,7 @@ export function Topbar() {
               {pulseBalance}
             </span>
             <span style={{ fontSize: '10px', fontWeight: 600, color: pulseBalance < 10 ? 'rgba(239,68,68,0.7)' : 'rgba(91,143,212,0.8)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              pulses
+              {pulseBalance < 10 ? 'pulses restantes!' : 'pulses'}
             </span>
           </div>
         )}
