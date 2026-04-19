@@ -125,16 +125,23 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Aviso visual na Topbar quando pulses estão baixos (vermelho) ou zerados (saldo esgotado)
 - [x] Erro claro ao tentar gerar post sem pulses suficientes
 - [x] Débito de pulses funcionando corretamente no Editor
+- [x] PULSE_COSTS definido — POST: 2 pulses, CAROUSEL_SLIDE: 1 pulse, EDIT_IMAGE: 3 pulses, REVIEW_POST: 1 pulse
+- [x] Débito variável de pulses por tipo de ação
+- [x] Botão de gerar post mostra custo "✦ Gerar · 2 pulses"
+- [x] Botão de gerar carrossel mostra custo dinâmico (ex: "Gerar Carrossel · 4 pulses")
+- [x] generateImage aceita custo variável para diferenciar post de slide de carrossel
+- [x] Aviso visual na Topbar com estados: normal (azul), baixo (vermelho), zerado (saldo esgotado)
+- [x] Erro claro ao tentar gerar sem pulses suficientes
 
 ### Pendente
-- [ ] Integração com Stripe — pagamento mensal + recarga de pulses
-- [ ] Botão "Comprar mais pulses" na tela quando saldo zera
-- [ ] Sugestão de template baseada nas referências visuais do cliente
-- [ ] Elementos não editáveis nos posts (identificar e corrigir)
-- [ ] Painel administrativo (ver clientes, saldos, uso)
+- [ ] Atualizar débito no carrossel para usar PULSE_COSTS.CAROUSEL_SLIDE por slide
+- [ ] Débito de PULSE_COSTS.EDIT_IMAGE na edição de imagem com IA
+- [ ] Débito de PULSE_COSTS.REVIEW_POST na revisão de post
+- [ ] Histórico de uso de pulses (tabela no Supabase)
+- [ ] Integração com Stripe (médio prazo)
+- [ ] Painel administrativo
 - [ ] Landing page de vendas
 - [ ] Supabase separado do Pulse
-- [ ] Email de boas-vindas automático
 
 ---
 
@@ -161,13 +168,24 @@ Decisão pendente.
 
 ## 9. Modelo de Negócio Previsto
 
-| Plano | Pulses/mês | Preço |
-|---|---|---|
-| Starter | 100 | R$ 97/mês |
-| Pro | 300 | R$ 197/mês |
-| Business | 700 | R$ 397/mês |
+**Plano Starter (único por enquanto):**
+- 50 pulses/mês
+- Equivale a ~25 posts simples OU ~10 carrosséis de 5 slides OU mix de ~19 publicações
+- Preço sugerido: R$ 47/mês
+- Custo real: ~R$ 0,85/mês
+- Margem: ~98%
 
-Pulses extras: R$ 29 a cada 100 pulses adicionais.
+**Custos por ação:**
+- Gerar post (1 imagem): 2 pulses
+- Slide de carrossel: 1 pulse por slide
+- Editar imagem com IA: 3 pulses
+- Revisar post (agente): 1 pulse
+- Turbinar prompt: gratuito
+
+**Estratégia MVP:**
+- Venda manual via PIX
+- Cliente paga → você cria conta + adiciona 50 pulses no Supabase
+- Sem Stripe por enquanto
 
 ---
 
