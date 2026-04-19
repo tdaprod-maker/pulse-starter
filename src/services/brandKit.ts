@@ -14,6 +14,7 @@ export interface BrandConfig {
   segment?: string
   tone?: string
   business_name?: string
+  brand_description?: string
   photos: string[]
 }
 
@@ -29,6 +30,7 @@ export const DEFAULT_BRAND: BrandConfig = {
   segment: '',
   tone: '',
   business_name: 'AGENTE 17',
+  brand_description: '',
   photos: [],
 }
 
