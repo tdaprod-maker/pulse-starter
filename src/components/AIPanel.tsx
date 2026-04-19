@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
-import { generatePostContent } from '../services/gemini'
+import { generatePostContent, turboPrompt } from '../services/gemini'
 import type { AIResponse } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { useTheme } from '../contexts/ThemeContext'
@@ -76,6 +76,7 @@ const PLACEHOLDERS = [
 
 export function AIPanel(_props: AIPanelProps) {
   const [prompt, setPrompt]           = useState('')
+  const [turboing, setTurboing]       = useState(false)
   const [status, setStatus]           = useState<'idle' | 'loading' | 'error'>('idle')
   const [errorMsg, setErrorMsg]       = useState('')
   const [saveWarning, setSaveWarning] = useState(false)
@@ -300,6 +301,28 @@ export function AIPanel(_props: AIPanelProps) {
     }
   }
 
+  async function handleTurbo() {
+    if (!prompt.trim() || turboing) return
+    setTurboing(true)
+    try {
+      const { data: authData } = await supabase.auth.getSession()
+      const userEmail = authData.session?.user?.email ?? ''
+      const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+      const turboed = await turboPrompt(prompt.trim(), brandCtx ? {
+        businessName: brandCtx.business_name || brandCtx.brand_name,
+        segment: brandCtx.segment,
+        tone: brandCtx.tone,
+        brandDescription: brandCtx.brand_description ?? undefined,
+        visualStyle: brandCtx.visual_style ?? undefined,
+      } : undefined)
+      setPrompt(turboed)
+    } catch {
+      // silencioso — mantém o prompt original
+    } finally {
+      setTurboing(false)
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -340,6 +363,30 @@ export function AIPanel(_props: AIPanelProps) {
             outline: 'none', lineHeight: 1.5,
           }}
         />
+        <button
+    onClick={handleTurbo}
+    disabled={turboing || !prompt.trim()}
+    title="Turbinar prompt com IA"
+    style={{
+      background: turboing ? 'rgba(255,202,29,0.2)' : 'rgba(255,202,29,0.1)',
+      border: '1px solid rgba(255,202,29,0.3)',
+      borderRadius: '8px',
+      padding: '6px 10px',
+      cursor: turboing || !prompt.trim() ? 'default' : 'pointer',
+      color: '#FFCA1D',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      opacity: !prompt.trim() ? 0.4 : 1,
+      transition: 'all 0.2s',
+      fontFamily: 'inherit',
+      fontWeight: 600,
+      whiteSpace: 'nowrap',
+    }}
+  >
+    {turboing ? '...' : '⚡'}
+  </button>
         <button
             onClick={toggleMic}
             disabled={loading}
