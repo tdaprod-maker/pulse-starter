@@ -67,7 +67,8 @@ export function PostReviewer({ stageRef, template }: PostReviewerProps) {
       const brand = email ? await loadBrandConfig(email) : null
 
       // Busca textos do template
-      const titulo = template.elements?.find(e => e.id === 'title' || e.id === 'phrase' || e.id === 'line1')?.text ?? ''
+      const el = template.elements?.find(e => e.id === 'title' || e.id === 'phrase' || e.id === 'line1')
+      const titulo = (el as any)?.text ?? ''
 
       const result = await reviewPost({
         imageBase64,
