@@ -207,6 +207,9 @@ export function AIPanel(_props: AIPanelProps) {
       const { data: authData } = await supabase.auth.getUser()
       const userEmail = authData.user?.email ?? ''
       const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+      const referenceImage = brandCtx?.visual_references && Array.isArray(brandCtx.visual_references) && brandCtx.visual_references.length > 0
+        ? brandCtx.visual_references[0]
+        : undefined
       const result = await generatePostContent(prompt.trim(), brandCtx ? {
         businessName: brandCtx.business_name || brandCtx.brand_name,
         segment: brandCtx.segment,
@@ -236,7 +239,7 @@ export function AIPanel(_props: AIPanelProps) {
       // 2. Gera imagem de fundo — falha silenciosa, não interrompe o fluxo
       if (result.imagePrompt && result.template !== 'tech-minimal') {
         try {
-          const url      = await generateImage(result.imagePrompt)
+          const url      = await generateImage(result.imagePrompt, referenceImage)
           const activeId = useStore.getState().activeTemplateId
           if (activeId) {
             setTemplateBackground(activeId, url)
