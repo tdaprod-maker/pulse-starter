@@ -12,6 +12,7 @@ import { PropertiesPanel } from '../components/PropertiesPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { AIPanel } from '../components/AIPanel'
 import { CaptionPanel } from '../components/CaptionPanel'
+import { PostReviewer } from '../components/PostReviewer'
 import { TextEditor } from '../components/TextEditor'
 import { generateImage } from '../services/replicate'
 
@@ -302,6 +303,7 @@ export function EditorPage() {
               </div>
             )}
           <CaptionPanel stageRef={stageRef} template={activeTemplate} />
+          <PostReviewer stageRef={stageRef} template={activeTemplate} />
           </>
         ) : (
           <div style={{ textAlign: 'center' }}>
