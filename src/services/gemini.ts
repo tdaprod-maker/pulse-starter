@@ -63,18 +63,16 @@ TEMPLATES DISPONÍVEIS:
 - "food-promo"       → template para restaurantes e delivery, com nome do prato em destaque, chamada e preço
   Campos: label (categoria em maiúsculas, ex: "PIZZA", "HAMBÚRGUER"), title (nome do prato, 1-3 palavras EM MAIÚSCULAS), subtitle (preço ou chamada, ex: "R$ 49,90" ou "Peça agora!")
 
-- "tech-news"       → posts de notícias e novidades sobre IA, tecnologia, inovação
+- "tech-news"       → posts de notícias, novidades e destaques sobre qualquer tema ou segmento
   Campos: category (categoria em maiúsculas, ex: "INTELIGÊNCIA ARTIFICIAL"), title (headline 2 linhas, até 6 palavras EM MAIÚSCULAS, use \\n para quebrar), brand (SEMPRE use exatamente o nome da marca do usuário ou "AGENTE 17" como padrão — NUNCA coloque data, evento ou outro texto nesse campo)
 
-- "tech-statement"  → frases de impacto, pensamentos, provocações sobre negócios e IA
+- "tech-statement"  → frases de impacto, pensamentos e declarações poderosas sobre qualquer tema
   Campos: phrase (frase em maiúsculas, max 8 palavras, use \\n para quebrar em 2-3 linhas), brand (nome da marca)
 
-- "tech-product"    → apresentação de produto, serviço ou solução de IA
+- "tech-product"    → apresentação de produto, serviço ou solução de qualquer segmento
   Campos: tag (categoria em maiúsculas), title (nome do produto EM MAIÚSCULAS, 1-3 palavras), subtitle (descrição curta, 8-15 palavras), cta (chamada para ação curta, ex: "Conheça agora →")
 
-- "tech-minimal"    → frase única impactante, fundo sólido preto, sem imagem
-  Campo: phrase (frase curta e poderosa, máximo 8 palavras, pode ter quebra de linha \\n)
-  Exemplos: frases filosóficas sobre IA, provocações de negócio, statements minimalistas.
+- "tech-minimal"    → frase única impactante, fundo sólido, sem imagem. Ideal para citações, pensamentos e declarações marcantes de qualquer segmento
   IMPORTANTE: para o tech-minimal, o texto do campo phrase NUNCA deve estar em caixa alta (caps lock). Use capitalização normal, apenas a primeira letra de cada frase em maiúscula.
 
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
