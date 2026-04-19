@@ -215,6 +215,10 @@ export function AIPanel(_props: AIPanelProps) {
         visualStyle: brandCtx.visual_style ?? undefined,
         brandDescription: brandCtx.brand_description ?? undefined,
       } : undefined)
+      // Usa cor primária do Brand Kit como accentColor se disponível
+      if (brandCtx?.color_primary && result.accentColor) {
+        result.accentColor = brandCtx.color_primary
+      }
       await applyResult(result)
 
       // Verificação de segurança: se o formato mudou após applyResult, restaura
