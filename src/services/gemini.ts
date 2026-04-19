@@ -305,19 +305,23 @@ export async function analyzeVisualReferences(imageUrls: string[]): Promise<stri
     })
   )
 
-  const prompt = `Analise essas ${imageUrls.length} imagem(ns) de referência visual de uma marca e extraia um perfil visual resumido em português.
+  const prompt = `Você é um especialista em design e identidade visual de marcas para redes sociais.
 
-Retorne um JSON com:
+Analise essas ${imageUrls.slice(0, 5).length} imagem(ns) de referência visual e extraia um perfil detalhado e acionável em português.
+
+Responda SOMENTE com JSON válido, sem markdown:
 {
-  "estilo": "descrição do estilo visual geral (ex: minimalista moderno, vibrante e colorido, sóbrio corporativo)",
-  "cores_predominantes": ["cor1", "cor2", "cor3"],
-  "tipo_imagem": "descrição do tipo de imagem usada (ex: fotos de produto, pessoas reais, ilustrações, fundos sólidos)",
-  "composicao": "como os elementos são organizados (ex: texto centralizado, imagem à esquerda, muito espaço negativo)",
-  "tom_visual": "descrição do tom emocional visual (ex: sofisticado, acolhedor, energético, profissional)",
-  "instrucoes_ia": "instrução resumida de 2 linhas para a IA replicar esse estilo ao gerar posts"
-}
-
-Responda SOMENTE com JSON válido, sem markdown.`
+  "estilo_geral": "descrição precisa do estilo visual (ex: esportivo e dinâmico com muito contraste, minimalista corporativo com espaço negativo, colorido e festivo com elementos gráficos)",
+  "cores_predominantes": ["cor hex ou nome 1", "cor hex ou nome 2", "cor hex ou nome 3"],
+  "proporcao_texto_imagem": "descrição de quanto espaço o texto ocupa vs imagem (ex: texto domina 40% do layout, imagem de fundo com overlay, texto pequeno no rodapé)",
+  "estilo_tipografia": "como os textos aparecem (ex: títulos em caixa alta bold, textos curtos e impactantes, mix de tamanhos grandes e pequenos, serifado elegante)",
+  "tipo_imagem": "que tipo de foto ou visual é usado (ex: atletas em ação com motion blur, produtos em fundo branco, pessoas celebrando, abstratos geométricos, paisagens urbanas)",
+  "composicao": "como os elementos são organizados (ex: título no topo esquerdo com imagem ocupando 70% direito, texto centralizado sobre gradiente escuro, grade de 3 colunas)",
+  "elementos_recorrentes": "elementos visuais que aparecem com frequência (ex: barra colorida lateral, moldura dourada, logo sempre no canto inferior direito, ícones esportivos)",
+  "tom_visual": "sensação emocional transmitida (ex: energia e adrenalina, sofisticação e exclusividade, acolhimento e comunidade, urgência e escassez)",
+  "tamanho_textos": "os títulos são curtos ou longos (ex: títulos de 1-3 palavras em destaque, frases completas de 8-12 palavras, combinação de headline curto com subtítulo longo)",
+  "instrucoes_geracao": "instrução direta e específica de 3-4 linhas para a IA usar ao gerar novos posts neste estilo. Inclua dicas sobre imagePrompt, escolha de template e tom do texto"
+}`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
