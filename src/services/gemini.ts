@@ -488,4 +488,3 @@ Responda SOMENTE com JSON válido, sem markdown.`
   }
   throw new Error('Falha na análise')
 }
-}
