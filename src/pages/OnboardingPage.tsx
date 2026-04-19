@@ -106,6 +106,7 @@ export function OnboardingPage() {
     setAnalyzingRefs(true)
     try {
       const analysis = await analyzeVisualReferences(refImages)
+      console.log('[Onboarding] visual_style análise:', analysis)
       setVisualStyle(analysis)
     } catch {
       setVisualStyle('')
