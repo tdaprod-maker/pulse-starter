@@ -303,7 +303,7 @@ export function CarouselPage() {
   const [saved, setSaved] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
-  const [brandContext, setBrandContext] = useState<{ businessName?: string; segment?: string; tone?: string }>({})
+  const [brandContext, setBrandContext] = useState<{ businessName?: string; segment?: string; tone?: string; visualStyle?: string }>({})
   const brandLogoWhiteUrl = '/logo-agente17-white.png'
   const [titleFontScale, setTitleFontScale] = useState(1)
   const [bodyFontScale, setBodyFontScale] = useState(1)
@@ -372,6 +372,7 @@ export function CarouselPage() {
           businessName: cfg.business_name || cfg.brand_name,
           segment: cfg.segment,
           tone: cfg.tone,
+          visualStyle: cfg.visual_style ?? undefined,
         })
       })
     })
