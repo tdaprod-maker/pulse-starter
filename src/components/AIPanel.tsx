@@ -260,7 +260,13 @@ export function AIPanel(_props: AIPanelProps) {
               }
             }
           }
-        } catch (imgErr) {
+        } catch (imgErr: unknown) {
+          const msg = imgErr instanceof Error ? imgErr.message : ''
+          if (msg.includes('insuficientes') || msg.includes('Pulses')) {
+            setErrorMsg('Seus pulses acabaram. Contate o administrador para recarregar seu saldo.')
+            setStatus('error')
+            return
+          }
           console.error('Falha ao gerar imagem de fundo:', imgErr)
         }
       }
