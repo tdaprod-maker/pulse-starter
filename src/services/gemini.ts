@@ -414,3 +414,78 @@ Responda APENAS com o prompt turbinado, sem explicações, sem aspas, sem markdo
   }
   return userPrompt
 }
+
+export interface PostReview {
+  score_visual: number
+  score_legenda: number
+  pontos_positivos: string[]
+  sugestoes: string[]
+  resumo: string
+}
+
+export async function reviewPost(params: {
+  imageBase64: string
+  titulo: string
+  legenda: string
+  hashtags: string
+  segmento?: string
+  tone?: string
+}): Promise<PostReview> {
+  const { imageBase64, titulo, legenda, hashtags, segmento, tone } = params
+
+  const prompt = `Você é um especialista em marketing digital e redes sociais para pequenas empresas.
+
+Analise este post para Instagram e dê um feedback simples e encorajador.
+
+Informações do post:
+- Título/texto principal: "${titulo}"
+- Legenda: "${legenda}"
+- Hashtags: "${hashtags}"
+${segmento ? `- Segmento da empresa: ${segmento}` : ''}
+${tone ? `- Tom de voz: ${tone}` : ''}
+
+Analise a imagem e os textos e retorne um JSON com:
+{
+  "score_visual": número de 0 a 10 baseado em: contraste texto/fundo, presença e tamanho do logo, qualidade da imagem, hierarquia visual,
+  "score_legenda": número de 0 a 10 baseado em: clareza da mensagem, presença de CTA, adequação ao segmento, engajamento potencial,
+  "pontos_positivos": ["ponto positivo 1 em linguagem simples", "ponto positivo 2"],
+  "sugestoes": ["sugestão prática 1 em linguagem simples, máximo 15 palavras", "sugestão prática 2", "sugestão prática 3"],
+  "resumo": "frase encorajadora de 1 linha resumindo a avaliação"
+}
+
+Use linguagem simples e encorajadora. O usuário é leigo em design e marketing.
+Responda SOMENTE com JSON válido, sem markdown.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: 'image/jpeg', data: imageBase64.replace(/^data:image\/\w+;base64,/, '') } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: {
+            response_mime_type: 'application/json',
+            temperature: 0.4,
+            maxOutputTokens: 600,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      })
+      if (!res.ok) throw new Error(`Erro ${res.status}`)
+      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      if (!text) throw new Error('Resposta vazia')
+      return JSON.parse(text) as PostReview
+    } catch (err) {
+      if (attempt === 2) throw err
+    }
+  }
+  throw new Error('Falha na análise')
+}
+}
