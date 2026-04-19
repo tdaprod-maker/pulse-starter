@@ -1,6 +1,6 @@
 # Pulse Starter — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 18 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 18 abril 2026 (final).
 
 ---
 
@@ -115,10 +115,16 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] visual_style das referências visuais injetado no prompt do Gemini
 - [x] brand_description passado para o Gemini no Editor e Carrossel
 - [x] Brand Kit refletindo dados do onboarding (getSession corrigido)
+- [x] Turbinador de prompt — botão ⚡ no AIPanel que enriquece o prompt com contexto da marca via Gemini
+- [x] Limite de referências visuais aumentado para 5
+- [x] brand_description integrado em todo o fluxo de geração
 
 ### Pendente
-- [ ] FLUX Kontext com referências visuais para imagens mais próximas do estilo do cliente
-- [ ] Mais templates com estilos visuais distintos (decisão pendente)
+- [ ] Agente de IA que analisa título, descrição e qualidade dos posts gerados e sugere melhorias
+- [ ] Edição de elementos nos posts que ainda não são editáveis (identificar quais)
+- [ ] Melhorar análise das referências visuais (Nível 2 — perguntas mais específicas ao Gemini)
+- [ ] Pesquisar modelo FAL.ai que suporte style reference sem copiar conteúdo
+- [ ] Mais templates com estilos visuais distintos
 - [ ] Integração com Stripe para pagamento
 - [ ] Planos de pulses (Starter 100, Pro 300, Business 700)
 - [ ] Painel administrativo
