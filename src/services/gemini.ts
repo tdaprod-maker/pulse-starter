@@ -20,6 +20,7 @@ export interface BrandContext {
   segment?: string
   tone?: string
   visualStyle?: string
+  brandDescription?: string
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ ${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
 ${brand?.segment ? `Segmento: ${brand.segment}` : ''}
 ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
 ${brand?.visualStyle ? `\nEstilo visual de referência: ${brand.visualStyle}` : ''}
+${brand?.brandDescription ? `\nDescrição detalhada da marca: ${brand.brandDescription}` : ''}
 
 TEMPLATES DISPONÍVEIS:
 - "hero-title"     → título principal + subtítulo
@@ -174,6 +176,7 @@ ${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
 ${brand?.segment ? `Segmento: ${brand.segment}` : ''}
 ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
 ${brand?.visualStyle ? `\nEstilo visual de referência: ${brand.visualStyle}` : ''}
+${brand?.brandDescription ? `\nDescrição detalhada da marca: ${brand.brandDescription}` : ''}
 Crie um carrossel com EXATAMENTE ${slideCount} slides sobre o tema descrito. NÃO crie mais nem menos que ${slideCount} slides.
 REGRAS OBRIGATÓRIAS:
 - Slide 1: type "cover" — título curto e impactante (máximo 5 palavras), SEM body
