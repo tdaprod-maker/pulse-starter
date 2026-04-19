@@ -1,12 +1,12 @@
 import { supabase } from '../lib/supabase'
 import { debitToken, PULSE_COSTS } from './tokens'
 
-export async function generateImage(imagePrompt: string): Promise<string> {
-  // Debita 1 pulse antes de gerar
+export async function generateImage(imagePrompt: string, cost?: number): Promise<string> {
   const { data: authData } = await supabase.auth.getSession()
   const email = authData.session?.user?.email ?? ''
   if (email) {
-    const { success } = await debitToken(email, PULSE_COSTS.POST)
+    const pulses = cost ?? PULSE_COSTS.POST
+    const { success } = await debitToken(email, pulses)
     if (!success) {
       throw new Error('Pulses insuficientes. Recarregue seu saldo.')
     }
