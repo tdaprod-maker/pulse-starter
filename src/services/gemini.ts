@@ -283,7 +283,7 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
 
 export async function analyzeVisualReferences(imageUrls: string[]): Promise<string> {
   const imageParts = await Promise.all(
-    imageUrls.slice(0, 3).map(async (url) => {
+    imageUrls.slice(0, 5).map(async (url) => {
       const res = await fetch(url)
       const blob = await res.blob()
       // Redimensiona para máximo 800px antes de converter
