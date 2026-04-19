@@ -15,6 +15,7 @@ export interface BrandConfig {
   tone?: string
   business_name?: string
   brand_description?: string
+  visual_style?: string
   photos: string[]
 }
 
