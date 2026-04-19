@@ -457,28 +457,3 @@ export function AIPanel(_props: AIPanelProps) {
     </div>
   )
 }
-
-// ─── Ícones ───────────────────────────────────────────────────────────────────
-
-function SpinnerIcon() {
-  return (
-    <svg className="animate-spin shrink-0" width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" />
-      <path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function SparkleIcon() {
-  return (
-    <svg className="shrink-0" width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <path
-        d="M7 1.5 L8.3 5.2 L12 7 L8.3 8.8 L7 12.5 L5.7 8.8 L2 7 L5.7 5.2 Z"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
-  )
-}
