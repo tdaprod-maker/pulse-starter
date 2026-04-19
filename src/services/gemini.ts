@@ -351,3 +351,62 @@ Responda SOMENTE com JSON válido, sem markdown.`
   }
   return '{}'
 }
+
+export async function turboPrompt(userPrompt: string, brand?: BrandContext): Promise<string> {
+  const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
+    : brand?.tone === 'casual' ? 'descontraído e próximo'
+    : brand?.tone === 'inspirational' ? 'inspiracional e motivador'
+    : brand?.tone === 'technical' ? 'técnico e especialista'
+    : null
+
+  const systemContext = [
+    brand?.businessName ? `Empresa: ${brand.businessName}` : '',
+    brand?.segment ? `Segmento: ${brand.segment}` : '',
+    toneLabel ? `Tom de voz: ${toneLabel}` : '',
+    brand?.brandDescription ? `Descrição da marca: ${brand.brandDescription}` : '',
+    brand?.visualStyle ? `Estilo visual: ${brand.visualStyle}` : '',
+  ].filter(Boolean).join('\n')
+
+  const prompt = `Você é um especialista em criação de conteúdo para redes sociais.
+
+Contexto da marca:
+${systemContext}
+
+O usuário digitou esse prompt simples para gerar um post:
+"${userPrompt}"
+
+Reescreva esse prompt de forma mais rica e específica, incorporando o contexto da marca. O prompt turbinado deve:
+- Manter a intenção original do usuário
+- Incluir detalhes específicos do segmento e tom de voz da marca
+- Ser mais descritivo e direcionado
+- Ter no máximo 2 linhas
+- Estar em português do Brasil
+
+Responda APENAS com o prompt turbinado, sem explicações, sem aspas, sem markdown.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 150,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      })
+      if (!res.ok) throw new Error(`Erro ${res.status}`)
+      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      if (!text) throw new Error('Resposta vazia')
+      return text.trim()
+    } catch (err) {
+      if (attempt === 2) throw err
+    }
+  }
+  return userPrompt
+}
