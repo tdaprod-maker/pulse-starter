@@ -339,7 +339,7 @@ Responda SOMENTE com JSON válido, sem markdown:
           generationConfig: {
             response_mime_type: 'application/json',
             temperature: 0.3,
-            maxOutputTokens: 500,
+            maxOutputTokens: 1000,
             thinkingConfig: { thinkingBudget: 0 },
           },
         }),
