@@ -51,6 +51,7 @@ export function OnboardingPage() {
   const [step, setStep] = useState(1)
   const [businessName, setBusinessName] = useState('')
   const [segment, setSegment] = useState('')
+  const [brandDescription, setBrandDescription] = useState('')
   const [tone, setTone] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -140,6 +141,7 @@ export function OnboardingPage() {
           font_body: fontBody,
           visual_references: refImages.length > 0 ? refImages : null,
           visual_style: visualStyle || null,
+          brand_description: brandDescription || null,
         }, { onConflict: 'user_email' })
 
       if (error) throw error
@@ -212,6 +214,28 @@ export function OnboardingPage() {
                     color: segment === s ? 'var(--accent)' : 'var(--text-secondary)', transition: 'all 0.15s',
                   }}>{s}</button>
                 ))}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Descreva sua marca em detalhes <span style={{ color: 'var(--text-muted)', fontWeight: 400, textTransform: 'none' }}>(opcional mas recomendado)</span>
+                </label>
+                <textarea
+                  value={brandDescription}
+                  onChange={e => setBrandDescription(e.target.value)}
+                  placeholder="Ex: Somos um time de beisebol amador chamado Indaiá, focado em jovens atletas entre 15 e 25 anos. Nossos posts são energéticos, usam muito amarelo e preto, e celebram vitórias e treinos da equipe."
+                  rows={4}
+                  style={{
+                    background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                    borderRadius: '8px', padding: '12px', color: 'var(--text-primary)',
+                    fontSize: '13px', fontFamily: 'inherit', resize: 'none', outline: 'none',
+                    lineHeight: 1.6, boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                />
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+                  Quanto mais detalhes, mais personalizados serão os posts gerados pela IA.
+                </p>
               </div>
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
