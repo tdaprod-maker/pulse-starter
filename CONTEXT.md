@@ -1,6 +1,6 @@
 # Pulse Starter — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 17 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 18 abril 2026.
 
 ---
 
@@ -111,17 +111,20 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Análise de referências visuais via Gemini Vision
 - [x] Redirecionamento automático para onboarding em novos usuários
 - [x] Sanitização de nome de arquivo no upload de referências
+- [x] Campo brand_description (descrição livre da marca) no onboarding e no Gemini
+- [x] visual_style das referências visuais injetado no prompt do Gemini
+- [x] brand_description passado para o Gemini no Editor e Carrossel
+- [x] Brand Kit refletindo dados do onboarding (getSession corrigido)
 
 ### Pendente
-- [ ] Passar visual_style para o buildPrompt e buildCarouselPrompt no Gemini
-- [ ] Brand Kit refletindo dados do onboarding (logo, cores, fontes)
+- [ ] FLUX Kontext com referências visuais para imagens mais próximas do estilo do cliente
+- [ ] Mais templates com estilos visuais distintos (decisão pendente)
 - [ ] Integração com Stripe para pagamento
 - [ ] Planos de pulses (Starter 100, Pro 300, Business 700)
-- [ ] Painel administrativo (ver clientes, saldos, uso)
+- [ ] Painel administrativo
 - [ ] Landing page de vendas
-- [ ] Supabase separado do Pulse (isolamento total)
+- [ ] Supabase separado do Pulse
 - [ ] Email de boas-vindas automático
-- [ ] Decisão sobre templates únicos por cliente (Caminho A: mais templates / Caminho B: templates dinâmicos)
 
 ---
 
