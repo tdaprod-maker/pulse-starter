@@ -7,6 +7,7 @@ import type { CarouselSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
+import { PULSE_COSTS } from '../services/tokens'
 
 const SLIDE_COUNTS = [3, 4, 5, 7, 10]
 
@@ -818,7 +819,7 @@ export function CarouselPage() {
               opacity: prompt.trim() && !isLoading ? 1 : 0.5, transition: 'opacity 0.2s',
             }}
           >
-            {isLoading ? 'Gerando...' : 'Gerar Carrossel'}
+            {status === 'loading' ? 'Gerando...' : `Gerar Carrossel  ·  ${slideCount * PULSE_COSTS.CAROUSEL_SLIDE} pulses`}
           </button>
 
           {status === 'error' && (
