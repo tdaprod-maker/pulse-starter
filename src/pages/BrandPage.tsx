@@ -16,8 +16,8 @@ export function BrandPage() {
   const logoLibInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? ''
+    supabase.auth.getSession().then(({ data }) => {
+      const email = data.session?.user?.email ?? ''
       setUserEmail(email)
       loadBrandConfig(email).then(c => {
         setConfig(c)
