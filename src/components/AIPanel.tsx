@@ -212,6 +212,7 @@ export function AIPanel(_props: AIPanelProps) {
         segment: brandCtx.segment,
         tone: brandCtx.tone,
         visualStyle: brandCtx.visual_style ?? undefined,
+        brandDescription: brandCtx.brand_description ?? undefined,
       } : undefined)
       await applyResult(result)
 

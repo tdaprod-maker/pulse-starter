@@ -373,6 +373,7 @@ export function CarouselPage() {
           segment: cfg.segment,
           tone: cfg.tone,
           visualStyle: cfg.visual_style ?? undefined,
+          brandDescription: cfg.brand_description ?? undefined,
         })
       })
     })
