@@ -222,7 +222,7 @@ export function OnboardingPage() {
                 <textarea
                   value={brandDescription}
                   onChange={e => setBrandDescription(e.target.value)}
-                  placeholder="Ex: Somos um time de beisebol amador chamado Indaiá, focado em jovens atletas entre 15 e 25 anos. Nossos posts são energéticos, usam muito amarelo e preto, e celebram vitórias e treinos da equipe."
+                  placeholder="Ex: Somos uma consultoria de RH focada em pequenas empresas. Nosso público são donos de negócio que precisam contratar melhor. Gostamos de posts diretos, com dados e dicas práticas. Tons de azul e branco predominam na nossa comunicação."
                   rows={4}
                   style={{
                     background: 'var(--bg-surface)', border: '1px solid var(--border)',
