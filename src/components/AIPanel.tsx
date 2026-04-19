@@ -211,6 +211,7 @@ export function AIPanel(_props: AIPanelProps) {
         businessName: brandCtx.business_name || brandCtx.brand_name,
         segment: brandCtx.segment,
         tone: brandCtx.tone,
+        visualStyle: brandCtx.visual_style ?? undefined,
       } : undefined)
       await applyResult(result)
 
