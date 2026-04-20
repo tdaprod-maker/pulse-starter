@@ -303,7 +303,7 @@ export function EditorPage() {
               </div>
             )}
           <CaptionPanel stageRef={stageRef} template={activeTemplate} />
-          <PostReviewer stageRef={stageRef} template={activeTemplate} />
+          <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
           </>
         ) : (
           <div style={{ textAlign: 'center' }}>
