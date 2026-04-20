@@ -307,6 +307,7 @@ export function CarouselPage() {
   const [saved, setSaved] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
+  const [brandPhotos, setBrandPhotos] = useState<string[]>([])
   const [brandContext, setBrandContext] = useState<{ businessName?: string; segment?: string; tone?: string; visualStyle?: string; brandDescription?: string }>({})
   const brandLogoWhiteUrl = '/logo-agente17-white.png'
   const [titleFontScale, setTitleFontScale] = useState(1)
@@ -379,6 +380,7 @@ export function CarouselPage() {
           visualStyle: cfg.visual_style ?? undefined,
           brandDescription: cfg.brand_description ?? undefined,
         })
+        setBrandPhotos(cfg.photos ?? [])
       })
     })
   }, [])
@@ -1349,6 +1351,34 @@ export function CarouselPage() {
                   >
                     Usar minha foto
                   </button>
+                  {brandPhotos.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Biblioteca
+                      </span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+                        {brandPhotos.map((url, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              if (previewIndex === null) return
+                              setSlideImages(prev => {
+                                const next = [...prev]
+                                next[previewIndex] = url
+                                return next
+                              })
+                            }}
+                            style={{
+                              padding: 0, border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px',
+                              overflow: 'hidden', cursor: 'pointer', background: 'none', aspectRatio: '1',
+                            }}
+                          >
+                            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* LinkedIn */}
