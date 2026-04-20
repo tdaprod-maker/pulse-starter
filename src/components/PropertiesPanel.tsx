@@ -201,6 +201,26 @@ function TextField({ el, templateId }: TextFieldProps) {
         spellCheck={false}
         style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', padding: '8px 10px', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5 }}
       />
+
+      {/* Emojis rápidos */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        {['🔥','⚡','🏆','💡','🚀','✅','❤️','👊','🎯','💪','😊','🙌','📣','💥','⭐','🎉','👏','🤝','💰','📈'].map(emoji => (
+          <button
+            key={emoji}
+            onClick={() => {
+              const newText = text + emoji
+              handleText({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>)
+            }}
+            style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border)',
+              borderRadius: '5px', padding: '2px 5px', cursor: 'pointer',
+              fontSize: '14px', lineHeight: 1.4,
+            }}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
