@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { CanvasElement, Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
@@ -95,7 +95,7 @@ function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void }) {
   return (
     <div style={{ position: 'relative' }}>
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o: boolean) => !o)}
         style={{
           background: open ? 'var(--bg-hover)' : 'var(--bg-surface)',
           border: '1px solid var(--border)', borderRadius: '6px',
