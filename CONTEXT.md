@@ -1,6 +1,6 @@
 # Pulse Starter — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 19 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 20 abril 2026.
 
 ---
 
@@ -132,16 +132,24 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] generateImage aceita custo variável para diferenciar post de slide de carrossel
 - [x] Aviso visual na Topbar com estados: normal (azul), baixo (vermelho), zerado (saldo esgotado)
 - [x] Erro claro ao tentar gerar sem pulses suficientes
+- [x] Prompt turbinado no CarouselPage (⚡ Turbinar prompt)
+- [x] Regerar imagem de slide específico no modal do carrossel (1 pulse)
+- [x] Upload manual de foto em slide específico no modal
+- [x] Biblioteca de fotos do Brand Kit disponível no modal do carrossel
+- [x] Seletor de emojis em dropdown no PropertiesPanel (editor de texto)
+- [x] Débitos corretos por tipo de ação implementados em todos os componentes
+- [x] Atualização imediata do saldo de pulses via evento customizado
 
 ### Pendente
-- [ ] Atualizar débito no carrossel para usar PULSE_COSTS.CAROUSEL_SLIDE por slide
-- [ ] Débito de PULSE_COSTS.EDIT_IMAGE na edição de imagem com IA
-- [ ] Débito de PULSE_COSTS.REVIEW_POST na revisão de post
-- [ ] Histórico de uso de pulses (tabela no Supabase)
-- [ ] Integração com Stripe (médio prazo)
+- [ ] Emoji como elemento independente e movível no canvas (complexo)
+- [ ] Qualidade visual e de texto — melhorar PostReviewer para cobrir hashtags e legenda separadamente
+- [ ] Skill de performance — dicas estratégicas de postagem integradas
+- [ ] Histórico de uso de pulses
+- [ ] Integração com Stripe
 - [ ] Painel administrativo
 - [ ] Landing page de vendas
 - [ ] Supabase separado do Pulse
+- [ ] Email de boas-vindas automático
 
 ---
 
