@@ -89,6 +89,51 @@ interface TextFieldProps {
   templateId: string
 }
 
+function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const EMOJIS = ['🔥','⚡','🏆','💡','🚀','✅','❤️','👊','🎯','💪','😊','🙌','📣','💥','⭐','🎉','👏','🤝','💰','📈','🙏','💯','🌟','👍','✨','🎁','📱','💻','🎶','🌈']
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: open ? 'var(--bg-hover)' : 'var(--bg-surface)',
+          border: '1px solid var(--border)', borderRadius: '6px',
+          padding: '4px 8px', cursor: 'pointer', fontSize: '14px',
+          display: 'flex', alignItems: 'center', gap: '4px',
+          color: 'var(--text-muted)', fontFamily: 'inherit',
+        }}
+      >
+        😊 Emojis
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, zIndex: 100, marginTop: '4px',
+          background: 'var(--bg-panel)', border: '1px solid var(--border)',
+          borderRadius: '10px', padding: '8px', display: 'flex', flexWrap: 'wrap',
+          gap: '4px', width: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+        }}>
+          {EMOJIS.map(emoji => (
+            <button
+              key={emoji}
+              onClick={() => { onSelect(emoji); setOpen(false) }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '18px', padding: '4px', borderRadius: '4px',
+                lineHeight: 1,
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TextField({ el, templateId }: TextFieldProps) {
   const { updateElement, syncElementStyle } = useStore()
   const ensureSiblings = useEnsureSiblings()
@@ -202,25 +247,11 @@ function TextField({ el, templateId }: TextFieldProps) {
         style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', padding: '8px 10px', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5 }}
       />
 
-      {/* Emojis rápidos */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-        {['🔥','⚡','🏆','💡','🚀','✅','❤️','👊','🎯','💪','😊','🙌','📣','💥','⭐','🎉','👏','🤝','💰','📈'].map(emoji => (
-          <button
-            key={emoji}
-            onClick={() => {
-              const newText = text + emoji
-              handleText({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>)
-            }}
-            style={{
-              background: 'var(--bg-surface)', border: '1px solid var(--border)',
-              borderRadius: '5px', padding: '2px 5px', cursor: 'pointer',
-              fontSize: '14px', lineHeight: 1.4,
-            }}
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
+      {/* Seletor de emojis */}
+      <EmojiPicker onSelect={(emoji) => {
+        const newText = text + emoji
+        handleText({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>)
+      }} />
     </div>
   )
 }
