@@ -6,7 +6,7 @@ import { calcAutoScale } from '../engine/CanvasEngine'
 import { reviewPost, type PostReview } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
-import { debitToken, PULSE_COSTS } from '../services/tokens'
+import { debitToken, PULSE_COSTS, notifyBalanceUpdate } from '../services/tokens'
 
 interface PostReviewerProps {
   stageRef: RefObject<Konva.Stage | null>
@@ -81,6 +81,7 @@ export function PostReviewer({ stageRef, template }: PostReviewerProps) {
           setReviewing(false)
           return
         }
+        notifyBalanceUpdate()
       }
 
       const result = await reviewPost({

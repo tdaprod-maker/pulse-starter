@@ -24,6 +24,17 @@ export function Topbar() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    function handleBalanceUpdate() {
+      supabase.auth.getSession().then(({ data }) => {
+        const email = data.session?.user?.email ?? ''
+        if (email) getTokenBalance(email).then(setPulseBalance)
+      })
+    }
+    window.addEventListener('pulse-balance-updated', handleBalanceUpdate)
+    return () => window.removeEventListener('pulse-balance-updated', handleBalanceUpdate)
+  }, [])
+
   return (
     <header style={{
       display: 'flex',

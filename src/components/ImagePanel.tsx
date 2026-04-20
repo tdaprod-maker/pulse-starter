@@ -7,7 +7,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { LogoSection } from './LogoSection'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
-import { debitToken, PULSE_COSTS } from '../services/tokens'
+import { debitToken, PULSE_COSTS, notifyBalanceUpdate } from '../services/tokens'
 
 interface ImagePanelProps {
   template: Template
@@ -69,6 +69,7 @@ export function ImagePanel({ template }: ImagePanelProps) {
           setEditing(false)
           return
         }
+        notifyBalanceUpdate()
       }
 
       const res = await fetch('/api/edit-image-ai', {

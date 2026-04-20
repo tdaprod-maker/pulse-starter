@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { debitToken, PULSE_COSTS } from './tokens'
+import { debitToken, PULSE_COSTS, notifyBalanceUpdate } from './tokens'
 
 export async function generateImage(imagePrompt: string, cost?: number): Promise<string> {
   const { data: authData } = await supabase.auth.getSession()
@@ -10,6 +10,7 @@ export async function generateImage(imagePrompt: string, cost?: number): Promise
     if (!success) {
       throw new Error('Pulses insuficientes. Recarregue seu saldo.')
     }
+    notifyBalanceUpdate()
   }
 
   const res = await fetch('/api/generate-image-ai', {

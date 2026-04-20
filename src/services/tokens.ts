@@ -40,3 +40,7 @@ export async function debitToken(email: string, amount: number = 1): Promise<{ s
   if (updateError) return { success: false, remaining: data.tokens_remaining }
   return { success: true, remaining: data.tokens_remaining - amount }
 }
+
+export function notifyBalanceUpdate() {
+  window.dispatchEvent(new CustomEvent('pulse-balance-updated'))
+}
