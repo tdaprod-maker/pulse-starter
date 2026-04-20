@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import JSZip from 'jszip'
-import { generateCarouselContent } from '../services/gemini'
+import { generateCarouselContent, turboPrompt } from '../services/gemini'
 import type { CarouselSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { supabase } from '../lib/supabase'
@@ -293,6 +293,7 @@ export function CarouselPage() {
   const [slideCount, setSlideCount] = useState(4)
   const [templateId, setTemplateId] = useState('tech-statement')
   const [prompt, setPrompt] = useState('')
+  const [turboing, setTurboing] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [slides, setSlides] = useState<CarouselSlide[]>([])
   const [slideImages, setSlideImages] = useState<string[]>([])
@@ -508,6 +509,19 @@ export function CarouselPage() {
       setStatus('error')
     } finally {
       setStatus(s => s === 'loading' ? 'error' : s)
+    }
+  }
+
+  async function handleTurbo() {
+    if (!prompt.trim() || turboing) return
+    setTurboing(true)
+    try {
+      const turboed = await turboPrompt(prompt.trim(), brandContext)
+      setPrompt(turboed)
+    } catch {
+      // silencioso — mantém o prompt original
+    } finally {
+      setTurboing(false)
     }
   }
 
@@ -806,6 +820,31 @@ export function CarouselPage() {
               onBlur={e  => { e.currentTarget.style.borderColor = 'var(--border)' }}
             />
           </div>
+
+          <button
+            onClick={handleTurbo}
+            disabled={turboing || !prompt.trim()}
+            title="Turbinar prompt com IA"
+            style={{
+              alignSelf: 'flex-end',
+              background: turboing ? 'rgba(255,202,29,0.2)' : 'rgba(255,202,29,0.1)',
+              border: '1px solid rgba(255,202,29,0.3)',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              cursor: turboing || !prompt.trim() ? 'default' : 'pointer',
+              color: '#FFCA1D',
+              fontSize: '13px',
+              fontFamily: 'inherit',
+              fontWeight: 600,
+              opacity: !prompt.trim() ? 0.4 : 1,
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            {turboing ? 'Turbinando...' : '⚡ Turbinar prompt'}
+          </button>
 
           {/* Botão gerar */}
           <button
