@@ -6,6 +6,7 @@ import { calcAutoScale } from '../engine/CanvasEngine'
 import { reviewPost, type PostReview } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
+import { debitToken, PULSE_COSTS } from '../services/tokens'
 
 interface PostReviewerProps {
   stageRef: RefObject<Konva.Stage | null>
@@ -69,6 +70,18 @@ export function PostReviewer({ stageRef, template }: PostReviewerProps) {
       // Busca textos do template
       const el = template.elements?.find(e => e.id === 'title' || e.id === 'phrase' || e.id === 'line1')
       const titulo = (el as any)?.text ?? ''
+
+      // Debita 1 pulse pela revisão
+      const { data: authData } = await supabase.auth.getSession()
+      const email = authData.session?.user?.email ?? ''
+      if (email) {
+        const { success } = await debitToken(email, PULSE_COSTS.REVIEW_POST)
+        if (!success) {
+          setError('Pulses insuficientes para revisar o post.')
+          setReviewing(false)
+          return
+        }
+      }
 
       const result = await reviewPost({
         imageBase64,
