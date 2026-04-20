@@ -72,10 +72,10 @@ export function PostReviewer({ stageRef, template }: PostReviewerProps) {
       const titulo = (el as any)?.text ?? ''
 
       // Debita 1 pulse pela revisão
-      const { data: authData } = await supabase.auth.getSession()
-      const email = authData.session?.user?.email ?? ''
-      if (email) {
-        const { success } = await debitToken(email, PULSE_COSTS.REVIEW_POST)
+      const { data: reviewAuthData } = await supabase.auth.getSession()
+      const reviewEmail = reviewAuthData.session?.user?.email ?? ''
+      if (reviewEmail) {
+        const { success } = await debitToken(reviewEmail, PULSE_COSTS.REVIEW_POST)
         if (!success) {
           setError('Pulses insuficientes para revisar o post.')
           setReviewing(false)
