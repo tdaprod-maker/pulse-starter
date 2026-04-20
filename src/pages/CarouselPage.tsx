@@ -294,6 +294,8 @@ export function CarouselPage() {
   const [templateId, setTemplateId] = useState('tech-statement')
   const [prompt, setPrompt] = useState('')
   const [turboing, setTurboing] = useState(false)
+  const [regeneratingSlide, setRegeneratingSlide] = useState(false)
+  const slideImageInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [slides, setSlides] = useState<CarouselSlide[]>([])
   const [slideImages, setSlideImages] = useState<string[]>([])
@@ -523,6 +525,45 @@ export function CarouselPage() {
     } finally {
       setTurboing(false)
     }
+  }
+
+  async function handleRegenerateSlideImage() {
+    if (previewIndex === null || regeneratingSlide) return
+    setRegeneratingSlide(true)
+    try {
+      const slide = slides[previewIndex]
+      const url = await generateImage(slide.imagePrompt, PULSE_COSTS.CAROUSEL_SLIDE)
+      setSlideImages(prev => {
+        const next = [...prev]
+        next[previewIndex] = url
+        return next
+      })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes('insuficientes')) {
+        alert('Pulses insuficientes para regerar a imagem.')
+      }
+    } finally {
+      setRegeneratingSlide(false)
+    }
+  }
+
+  function handleSlideImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || previewIndex === null) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const result = ev.target?.result
+      if (typeof result === 'string') {
+        setSlideImages(prev => {
+          const next = [...prev]
+          next[previewIndex] = result
+          return next
+        })
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   async function handleExport() {
@@ -1276,6 +1317,37 @@ export function CarouselPage() {
                     }}
                   >
                     Próximo ›
+                  </button>
+                </div>
+
+                {/* Imagem do slide */}
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
+                    Imagem do slide
+                  </span>
+                  <input ref={slideImageInputRef} type="file" accept="image/*" onChange={handleSlideImageUpload} style={{ display: 'none' }} />
+                  <button
+                    onClick={handleRegenerateSlideImage}
+                    disabled={regeneratingSlide}
+                    style={{
+                      width: '100%', fontSize: '12px', padding: '7px', borderRadius: '7px',
+                      cursor: regeneratingSlide ? 'default' : 'pointer', fontFamily: 'inherit',
+                      background: 'rgba(58,90,255,0.15)', border: '1px solid rgba(58,90,255,0.3)',
+                      color: 'var(--accent)', opacity: regeneratingSlide ? 0.6 : 1,
+                    }}
+                  >
+                    {regeneratingSlide ? 'Gerando...' : `⚡ Regerar imagem · ${PULSE_COSTS.CAROUSEL_SLIDE} pulse`}
+                  </button>
+                  <button
+                    onClick={() => slideImageInputRef.current?.click()}
+                    style={{
+                      width: '100%', fontSize: '12px', padding: '7px', borderRadius: '7px',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                      background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'rgba(255,255,255,0.7)',
+                    }}
+                  >
+                    Usar minha foto
                   </button>
                 </div>
 
