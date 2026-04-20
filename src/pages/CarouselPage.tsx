@@ -495,7 +495,7 @@ export function CarouselPage() {
       const images: string[] = []
       for (const s of result.slides) {
         try {
-          const url = await generateImage(s.imagePrompt)
+          const url = await generateImage(s.imagePrompt, PULSE_COSTS.CAROUSEL_SLIDE)
           images.push(url)
         } catch {
           images.push('')
