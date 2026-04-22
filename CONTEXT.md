@@ -1,6 +1,6 @@
 # Pulse Starter — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 20 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 22 abril 2026.
 
 ---
 
@@ -141,17 +141,19 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Atualização imediata do saldo de pulses via evento customizado
 - [x] Sidebar renomeada — Templates e Samples unificados como "Estilos"
 - [x] Vídeo de intro antes da tela de login (/public/intro.mp4)
+- [x] Painel administrativo (/admin) — lista de usuários, saldo de pulses, botão de adicionar pulses — acesso restrito ao admin
+- [x] Página Minha Conta (/account) — saldo de pulses, % utilizado, custo por ação, dados da conta
+- [x] Link "Minha Conta" na Topbar para todos os usuários
+- [x] Link "Admin" na Topbar visível apenas para o administrador
 
 ### Pendente
-- [ ] Painel administrativo (/admin) — ver clientes, saldos, pulses, botão de adicionar pulses — acesso restrito ao email do admin
-- [ ] Emoji como elemento independente e movível no canvas
-- [ ] Melhorar PostReviewer — cobrir hashtags e legenda separadamente
-- [ ] Skill de performance — dicas estratégicas de postagem
-- [ ] Histórico de uso de pulses
-- [ ] Integração com Stripe
-- [ ] Landing page de vendas
+- [ ] Stripe — pagamento automático e renovação de pulses
+- [ ] Data de renovação de pulses na página Minha Conta (depende do Stripe)
 - [ ] Email de boas-vindas automático
-- [ ] Supabase separado do Pulse
+- [ ] Landing page de vendas
+- [ ] Histórico de uso de pulses detalhado
+- [ ] Qualidade do PostReviewer — cobrir hashtags e legenda separadamente
+- [ ] Supabase separado do Pulse (quando tiver múltiplos clientes)
 
 ---
 
@@ -192,10 +194,10 @@ Decisão pendente.
 - Revisar post (agente): 1 pulse
 - Turbinar prompt: gratuito
 
-**Estratégia MVP:**
-- Venda manual via PIX
-- Cliente paga → você cria conta + adiciona 50 pulses no Supabase
-- Sem Stripe por enquanto
+**Estratégia MVP — Pronto para vender:**
+- Produto funcional com onboarding completo, geração de posts, carrossel, publicação no LinkedIn e Instagram
+- Venda manual via PIX — cliente paga, admin cria conta e adiciona 50 pulses no painel
+- Painel admin permite gerenciar clientes sem acesso ao Supabase
 
 ---
 
