@@ -106,8 +106,8 @@ export function VideoPage() {
 
       setProgress('Finalizando...')
       const outputData = await ffmpeg.readFile('output.mp4')
-      const uint8 = outputData instanceof Uint8Array ? outputData : new Uint8Array(outputData as unknown as ArrayBuffer)
-      const blob = new Blob([uint8.buffer.slice(uint8.byteOffset, uint8.byteOffset + uint8.byteLength)], { type: 'video/mp4' })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob = new Blob([outputData as any], { type: 'video/mp4' })
       const url = URL.createObjectURL(blob)
       setVideoUrl(url)
       setStatus('done')
