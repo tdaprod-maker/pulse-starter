@@ -73,13 +73,8 @@ export function Sidebar() {
       gap: '2px',
       boxShadow: 'inset -1px 0 0 rgba(91,143,212,0.08)',
     }}>
-      <p style={labelStyle}>Templates</p>
-      {renderGroup(OFFICIAL)}
-
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '10px 0' }} />
-
-      <p style={labelStyle}>Samples</p>
-      {renderGroup(SAMPLES)}
+      <p style={labelStyle}>ESTILOS</p>
+      {renderGroup([...OFFICIAL, ...SAMPLES])}
     </aside>
   )
 }
