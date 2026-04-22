@@ -145,8 +145,12 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Página Minha Conta (/account) — saldo de pulses, % utilizado, custo por ação, dados da conta
 - [x] Link "Minha Conta" na Topbar para todos os usuários
 - [x] Link "Admin" na Topbar visível apenas para o administrador
+- [x] Página de Vídeo — busca clipes do Pexels por tema com tradução automática via Gemini
+- [x] Download de clipes individuais do Pexels
 
 ### Pendente
+- [ ] Montagem de vídeo via Railway + FFmpeg — unir clipes em um único MP4 pronto para Reels (US$ 5/mês no Railway)
+- [ ] Upload de vídeos do cliente para o Supabase Storage
 - [ ] Stripe — pagamento automático e renovação de pulses
 - [ ] Data de renovação de pulses na página Minha Conta (depende do Stripe)
 - [ ] Email de boas-vindas automático
