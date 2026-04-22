@@ -9,6 +9,7 @@ import { IntroPage } from './pages/IntroPage'
 import { BrandPage } from './pages/BrandPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { CarouselPage } from './pages/CarouselPage'
+import { VideoPage } from './pages/VideoPage'
 import { CarouselLibraryPage } from './pages/CarouselLibraryPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { AdminPage } from './pages/AdminPage'
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/carousel" element={<CarouselPage />} />
             <Route path="/carousel-library" element={<CarouselLibraryPage />} />
+            <Route path="/video" element={<VideoPage />} />
             <Route path="/brand" element={<BrandPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />

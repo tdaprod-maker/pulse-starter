@@ -83,6 +83,7 @@ export function Topbar() {
         {[
           { label: 'Editor', to: '/' },
           { label: 'Carrossel', to: '/carousel' },
+          { label: 'Vídeo', to: '/video' },
           { label: 'Biblioteca de Carrossel', to: '/carousel-library' },
           { label: 'Biblioteca de Posts', to: '/templates' },
         ].map(({ label, to }) => {
