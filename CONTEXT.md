@@ -139,17 +139,19 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Seletor de emojis em dropdown no PropertiesPanel (editor de texto)
 - [x] Débitos corretos por tipo de ação implementados em todos os componentes
 - [x] Atualização imediata do saldo de pulses via evento customizado
+- [x] Sidebar renomeada — Templates e Samples unificados como "Estilos"
+- [x] Vídeo de intro antes da tela de login (/public/intro.mp4)
 
 ### Pendente
-- [ ] Emoji como elemento independente e movível no canvas (complexo)
-- [ ] Qualidade visual e de texto — melhorar PostReviewer para cobrir hashtags e legenda separadamente
-- [ ] Skill de performance — dicas estratégicas de postagem integradas
+- [ ] Painel administrativo (/admin) — ver clientes, saldos, pulses, botão de adicionar pulses — acesso restrito ao email do admin
+- [ ] Emoji como elemento independente e movível no canvas
+- [ ] Melhorar PostReviewer — cobrir hashtags e legenda separadamente
+- [ ] Skill de performance — dicas estratégicas de postagem
 - [ ] Histórico de uso de pulses
 - [ ] Integração com Stripe
-- [ ] Painel administrativo
 - [ ] Landing page de vendas
-- [ ] Supabase separado do Pulse
 - [ ] Email de boas-vindas automático
+- [ ] Supabase separado do Pulse
 
 ---
 
