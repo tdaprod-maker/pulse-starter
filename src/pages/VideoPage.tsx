@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import { supabase } from '../lib/supabase'
-import { debitToken, PULSE_COSTS } from '../services/tokens'
+import { debitToken } from '../services/tokens'
 import { notifyBalanceUpdate } from '../services/tokens'
 
 const VIDEO_PULSE_COST = 10
@@ -68,7 +68,7 @@ export function VideoPage() {
       const ffmpeg = new FFmpeg()
       ffmpegRef.current = ffmpeg
 
-      ffmpeg.on('progress', ({ progress }) => {
+      ffmpeg.on('progress', ({ progress }: { progress: number }) => {
         setProgress(`Processando... ${Math.round(progress * 100)}%`)
       })
 
@@ -79,7 +79,6 @@ export function VideoPage() {
       })
 
       setProgress('Baixando clipes...')
-      const clipDuration = Math.floor(duration / selected.length)
 
       for (let i = 0; i < selected.length; i++) {
         setProgress(`Baixando clipe ${i + 1} de ${selected.length}...`)
