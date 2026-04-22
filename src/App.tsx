@@ -11,6 +11,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { CarouselPage } from './pages/CarouselPage'
 import { CarouselLibraryPage } from './pages/CarouselLibraryPage'
 import { OnboardingPage } from './pages/OnboardingPage'
+import { AdminPage } from './pages/AdminPage'
 import { supabase } from './lib/supabase'
 
 export default function App() {
@@ -57,6 +58,7 @@ export default function App() {
             <Route path="/brand" element={<BrandPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </div>
       </BrowserRouter>

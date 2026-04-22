@@ -6,11 +6,13 @@ import { getTokenBalance } from '../services/tokens'
 export function Topbar() {
   const { pathname } = useLocation()
   const [pulseBalance, setPulseBalance] = useState<number | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? ''
       if (email) getTokenBalance(email).then(setPulseBalance)
+      if (email === 'ricardo_jimenes@yahoo.com.br') setIsAdmin(true)
     })
 
     // Atualiza o saldo a cada 30 segundos
@@ -141,6 +143,18 @@ export function Topbar() {
               {pulseBalance < 10 ? 'pulses restantes!' : 'pulses'}
             </span>
           </div>
+        )}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            style={{
+              padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
+              fontWeight: 600, color: 'white', background: 'rgba(239,68,68,0.8)',
+              border: 'none', textDecoration: 'none', transition: 'all 0.2s ease',
+            }}
+          >
+            Admin
+          </Link>
         )}
         <Link
           to="/brand"
