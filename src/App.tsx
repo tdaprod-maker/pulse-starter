@@ -5,6 +5,7 @@ import { Topbar } from './components/Topbar'
 import { EditorPage } from './pages/EditorPage'
 import { TemplatesPage } from './pages/TemplatesPage'
 import { LoginPage } from './pages/LoginPage'
+import { IntroPage } from './pages/IntroPage'
 import { BrandPage } from './pages/BrandPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { CarouselPage } from './pages/CarouselPage'
@@ -15,6 +16,7 @@ import { supabase } from './lib/supabase'
 export default function App() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [showIntro, setShowIntro] = useState(true)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -37,7 +39,10 @@ export default function App() {
   }, [])
 
   if (loading) return null
-  if (!session) return <LoginPage />
+  if (!session) {
+    if (showIntro) return <IntroPage onFinish={() => setShowIntro(false)} />
+    return <LoginPage />
+  }
 
   return (
     <ThemeProvider>
