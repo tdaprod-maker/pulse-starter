@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { getTokenBalance } from '../services/tokens'
 import { loadBrandConfig } from '../services/brandKit'
 
 export function AccountPage() {
