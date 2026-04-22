@@ -73,10 +73,9 @@ export function VideoPage() {
         setProgress(`Processando... ${Math.round(progress * 100)}%`)
       })
 
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL: await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js', 'text/javascript'),
+        wasmURL: await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm', 'application/wasm'),
       })
 
       setProgress('Baixando clipes...')
