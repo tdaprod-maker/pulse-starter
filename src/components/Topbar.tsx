@@ -157,6 +157,19 @@ export function Topbar() {
           </Link>
         )}
         <Link
+          to="/account"
+          style={{
+            padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
+            fontWeight: 500, color: 'var(--text-secondary)',
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+            textDecoration: 'none', transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)' }}
+        >
+          Minha Conta
+        </Link>
+        <Link
           to="/brand"
           style={{
             padding: '6px 14px',
