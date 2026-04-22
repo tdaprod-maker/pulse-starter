@@ -106,7 +106,7 @@ export function VideoPage() {
 
       setProgress('Finalizando...')
       const outputData = await ffmpeg.readFile('output.mp4')
-      const blob = new Blob([outputData], { type: 'video/mp4' })
+      const blob = new Blob([outputData instanceof Uint8Array ? outputData : new Uint8Array(outputData as ArrayBuffer)], { type: 'video/mp4' })
       const url = URL.createObjectURL(blob)
       setVideoUrl(url)
       setStatus('done')
