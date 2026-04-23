@@ -1,6 +1,6 @@
 # Pulse Starter — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 22 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 23 abril 2026.
 
 ---
 
@@ -147,17 +147,21 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Link "Admin" na Topbar visível apenas para o administrador
 - [x] Página de Vídeo — busca clipes do Pexels por tema com tradução automática via Gemini
 - [x] Download de clipes individuais do Pexels
+- [x] Fluxo de navegação corrigido — intro → login → onboarding (novo) ou editor (existente)
+- [x] Logo do carrossel usa Brand Kit do cliente em vez do logo hardcoded
+- [x] Drag do logo no carrossel corrigido (scaleY 1350)
+- [x] Edge Function send-welcome-email criada no Supabase com Resend
+- [x] Railway + FFmpeg funcionando para montagem de vídeo
+- [x] Upload de clipes próprios do cliente na página de vídeo
 
 ### Pendente
-- [ ] Montagem de vídeo via Railway + FFmpeg — unir clipes em um único MP4 pronto para Reels (US$ 5/mês no Railway)
-- [ ] Upload de vídeos do cliente para o Supabase Storage
+- [ ] Email de boas-vindas — aguardando verificação do domínio agente17.com.br no Resend (André tem acesso ao DNS)
+- [ ] Trigger automático do email de boas-vindas via Supabase webhook
+- [ ] Logo e texto sobrepostos nos vídeos gerados
 - [ ] Stripe — pagamento automático e renovação de pulses
-- [ ] Data de renovação de pulses na página Minha Conta (depende do Stripe)
-- [ ] Email de boas-vindas automático
+- [ ] Painel administrativo melhorado
 - [ ] Landing page de vendas
-- [ ] Histórico de uso de pulses detalhado
-- [ ] Qualidade do PostReviewer — cobrir hashtags e legenda separadamente
-- [ ] Supabase separado do Pulse (quando tiver múltiplos clientes)
+- [ ] Supabase separado do Pulse
 
 ---
 
