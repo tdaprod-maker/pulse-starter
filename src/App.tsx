@@ -22,23 +22,11 @@ export default function App() {
   const [showIntro, setShowIntro] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
-      if (data.session?.user?.email) {
-        const { data: brandData } = await supabase
-          .from('brand_config')
-          .select('id')
-          .eq('user_email', data.session.user.email)
-          .maybeSingle()
-        const hasOnboarded = brandData !== null
-        const currentPath = window.location.pathname
-        console.log('[App] email:', data.session.user.email, 'brandData:', brandData, 'hasOnboarded:', hasOnboarded, 'path:', currentPath)
-        if (!hasOnboarded && currentPath !== '/onboarding') {
-          window.location.href = '/onboarding'
-        }
-      }
     })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
       setSession(s)
       if (s?.user?.email) {
@@ -47,12 +35,14 @@ export default function App() {
           .select('id')
           .eq('user_email', s.user.email)
           .maybeSingle()
+        console.log('[App] onAuthStateChange email:', s.user.email, 'brandData:', brandData)
         const hasOnboarded = brandData !== null
         if (!hasOnboarded && window.location.pathname !== '/onboarding') {
           window.location.href = '/onboarding'
         }
       }
     })
+
     return () => subscription.unsubscribe()
   }, [])
 
