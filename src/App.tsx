@@ -31,7 +31,7 @@ export default function App() {
           .select('id')
           .eq('user_email', data.session.user.email)
           .maybeSingle()
-        const hasOnboarded = brandData !== null && !brandError
+        const hasOnboarded = brandData !== null
         const currentPath = window.location.pathname
         if (!hasOnboarded && currentPath !== '/onboarding') {
           window.location.href = '/onboarding'
@@ -46,7 +46,7 @@ export default function App() {
           .select('id')
           .eq('user_email', s.user.email)
           .maybeSingle()
-        const hasOnboarded = brandData !== null && !brandError
+        const hasOnboarded = brandData !== null
         if (!hasOnboarded && window.location.pathname !== '/onboarding') {
           window.location.href = '/onboarding'
         }
