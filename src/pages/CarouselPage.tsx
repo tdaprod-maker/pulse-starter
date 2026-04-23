@@ -1163,7 +1163,7 @@ export function CarouselPage() {
                 if (!canvas) return
                 const rect = canvas.getBoundingClientRect()
                 const scaleX = 1080 / rect.width
-                const scaleY = 1080 / rect.height
+                const scaleY = 1350 / rect.height
                 const mx = (e.clientX - rect.left) * scaleX
                 const my = (e.clientY - rect.top) * scaleY
                 const LOGO_HIT = logoSize * 0.8
@@ -1192,7 +1192,7 @@ export function CarouselPage() {
                 if (!canvas) return
                 const rect = canvas.getBoundingClientRect()
                 const scaleX = 1080 / rect.width
-                const scaleY = 1080 / rect.height
+                const scaleY = 1350 / rect.height
                 const mx = Math.round((e.clientX - rect.left) * scaleX)
                 const my = Math.round((e.clientY - rect.top) * scaleY)
                 if (dragging === 'title') updatePosition('titlePos', { x: mx, y: my })
