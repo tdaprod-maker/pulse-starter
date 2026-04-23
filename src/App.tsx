@@ -16,55 +16,54 @@ import { VideoPage } from './pages/VideoPage'
 import { IntroPage } from './pages/IntroPage'
 import { supabase } from './lib/supabase'
 
+type AppState = 'intro' | 'login' | 'onboarding' | 'app'
+
 export default function App() {
-  const [session, setSession] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null)
-  const [showIntro, setShowIntro] = useState(true)
+  const [appState, setAppState] = useState<AppState>('intro')
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session)
-      if (data.session?.user?.email) {
-        await checkOnboarding(data.session.user.email)
-      } else {
-        setLoading(false)
+      if (!data.session?.user?.email) {
+        setAppState('intro')
+        return
       }
+      const email = data.session.user.email
+      const { data: brandData } = await supabase
+        .from('brand_config')
+        .select('id')
+        .eq('user_email', email)
+        .maybeSingle()
+      setAppState(brandData ? 'app' : 'onboarding')
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
-      setSession(s)
-      if (s?.user?.email) {
-        await checkOnboarding(s.user.email)
-      } else {
-        setHasOnboarded(null)
-        setLoading(false)
+      if (!s?.user?.email) {
+        setAppState('login')
+        return
       }
+      const email = s.user.email
+      const { data: brandData } = await supabase
+        .from('brand_config')
+        .select('id')
+        .eq('user_email', email)
+        .maybeSingle()
+      setAppState(brandData ? 'app' : 'onboarding')
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  async function checkOnboarding(email: string) {
-    const { data: brandData } = await supabase
-      .from('brand_config')
-      .select('id')
-      .eq('user_email', email)
-      .maybeSingle()
-    setHasOnboarded(brandData !== null)
-    setLoading(false)
-  }
+  if (appState === 'intro') return <IntroPage onFinish={() => setAppState('login')} />
+  if (appState === 'login') return <LoginPage />
+  if (appState === 'onboarding') return (
+    <BrowserRouter>
+      <OnboardingPage onComplete={() => setAppState('app')} />
+    </BrowserRouter>
+  )
 
-  if (loading || (session && hasOnboarded === null)) return null
-  if (!session) {
-    if (showIntro) return <IntroPage onFinish={() => setShowIntro(false)} />
-    return <LoginPage />
-  }
   return (
     <ThemeProvider>
       <BrowserRouter>
-        {hasOnboarded === false && <OnboardingPage onComplete={() => setHasOnboarded(true)} />}
-        {hasOnboarded === true && (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)' }}>
           <Topbar />
           <Routes>
@@ -74,13 +73,12 @@ export default function App() {
             <Route path="/carousel-library" element={<CarouselLibraryPage />} />
             <Route path="/brand" element={<BrandPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/onboarding" element={<OnboardingPage onComplete={() => setHasOnboarded(true)} />} />
+            <Route path="/onboarding" element={<OnboardingPage onComplete={() => setAppState('app')} />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/video" element={<VideoPage />} />
           </Routes>
         </div>
-        )}
       </BrowserRouter>
     </ThemeProvider>
   )
