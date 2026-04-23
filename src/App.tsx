@@ -26,7 +26,7 @@ export default function App() {
       setSession(data.session)
       setLoading(false)
       if (data.session?.user?.email) {
-        const { data: brandData, error: brandError } = await supabase
+        const { data: brandData } = await supabase
           .from('brand_config')
           .select('id')
           .eq('user_email', data.session.user.email)
@@ -41,7 +41,7 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
       setSession(s)
       if (s?.user?.email) {
-        const { data: brandData, error: brandError } = await supabase
+        const { data: brandData } = await supabase
           .from('brand_config')
           .select('id')
           .eq('user_email', s.user.email)
