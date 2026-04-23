@@ -55,7 +55,7 @@ export default function App() {
     setLoading(false)
   }
 
-  if (loading) return null
+  if (loading || (session && hasOnboarded === null)) return null
   if (!session) {
     if (showIntro) return <IntroPage onFinish={() => setShowIntro(false)} />
     return <LoginPage />
@@ -64,7 +64,7 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         {hasOnboarded === false && <OnboardingPage onComplete={() => setHasOnboarded(true)} />}
-        {hasOnboarded !== false && (
+        {hasOnboarded === true && (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)' }}>
           <Topbar />
           <Routes>
