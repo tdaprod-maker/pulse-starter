@@ -16,45 +16,30 @@ import { VideoPage } from './pages/VideoPage'
 import { IntroPage } from './pages/IntroPage'
 import { supabase } from './lib/supabase'
 
-type AppState = 'intro' | 'login' | 'onboarding' | 'app'
+type AppState = 'intro' | 'login' | 'checking' | 'onboarding' | 'app'
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>('intro')
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session?.user?.email) {
-        setAppState('intro')
-        return
-      }
-      const email = data.session.user.email
-      const { data: brandData } = await supabase
-        .from('brand_config')
-        .select('id')
-        .eq('user_email', email)
-        .maybeSingle()
-      setAppState(brandData ? 'app' : 'onboarding')
-    })
+  async function checkAndRoute() {
+    setAppState('checking')
+    const { data } = await supabase.auth.getSession()
+    if (!data.session?.user?.email) {
+      setAppState('login')
+      return
+    }
+    const email = data.session.user.email
+    const { data: brandData } = await supabase
+      .from('brand_config')
+      .select('id')
+      .eq('user_email', email)
+      .maybeSingle()
+    setAppState(brandData ? 'app' : 'onboarding')
+  }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
-      if (!s?.user?.email) {
-        setAppState('login')
-        return
-      }
-      const email = s.user.email
-      const { data: brandData } = await supabase
-        .from('brand_config')
-        .select('id')
-        .eq('user_email', email)
-        .maybeSingle()
-      setAppState(brandData ? 'app' : 'onboarding')
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  if (appState === 'intro') return <IntroPage onFinish={() => setAppState('login')} />
-  if (appState === 'login') return <LoginPage />
+  if (appState === 'intro') return <IntroPage onFinish={checkAndRoute} />
+  if (appState === 'checking') return null
+  if (appState === 'login') return <LoginPage onLogin={checkAndRoute} />
   if (appState === 'onboarding') return (
     <BrowserRouter>
       <OnboardingPage onComplete={() => setAppState('app')} />
