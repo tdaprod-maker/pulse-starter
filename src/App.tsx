@@ -33,6 +33,7 @@ export default function App() {
           .maybeSingle()
         const hasOnboarded = brandData !== null
         const currentPath = window.location.pathname
+        console.log('[App] email:', data.session.user.email, 'brandData:', brandData, 'hasOnboarded:', hasOnboarded, 'path:', currentPath)
         if (!hasOnboarded && currentPath !== '/onboarding') {
           window.location.href = '/onboarding'
         }
