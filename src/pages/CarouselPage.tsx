@@ -309,7 +309,7 @@ export function CarouselPage() {
   const [brandLogoUrl, setBrandLogoUrl] = useState('')
   const [brandPhotos, setBrandPhotos] = useState<string[]>([])
   const [brandContext, setBrandContext] = useState<{ businessName?: string; segment?: string; tone?: string; visualStyle?: string; brandDescription?: string }>({})
-  const brandLogoWhiteUrl = '/logo-agente17-white.png'
+  const brandLogoWhiteUrl = brandLogoUrl
   const [titleFontScale, setTitleFontScale] = useState(1)
   const [bodyFontScale, setBodyFontScale] = useState(1)
   const [titleAlign, setTitleAlign] = useState<'left' | 'center' | 'right'>('center')
