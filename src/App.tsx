@@ -37,9 +37,19 @@ export default function App() {
     setAppState(brandData ? 'app' : 'onboarding')
   }
 
+  useEffect(() => {
+    if (appState !== 'login') return
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
+      if (s?.user?.email) {
+        await checkAndRoute()
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [appState])
+
   if (appState === 'intro') return <IntroPage onFinish={checkAndRoute} />
   if (appState === 'checking') return null
-  if (appState === 'login') return <LoginPage onLogin={checkAndRoute} />
+  if (appState === 'login') return <LoginPage />
   if (appState === 'onboarding') return (
     <BrowserRouter>
       <OnboardingPage onComplete={() => setAppState('app')} />
