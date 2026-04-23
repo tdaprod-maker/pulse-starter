@@ -32,12 +32,26 @@ export default function App() {
           .eq('user_email', data.session.user.email)
           .maybeSingle()
         const hasOnboarded = brandData !== null && !brandError
+        const currentPath = window.location.pathname
+        if (!hasOnboarded && currentPath !== '/onboarding') {
+          window.location.href = '/onboarding'
+        }
+      }
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
+      setSession(s)
+      if (s?.user?.email) {
+        const { data: brandData, error: brandError } = await supabase
+          .from('brand_config')
+          .select('id')
+          .eq('user_email', s.user.email)
+          .maybeSingle()
+        const hasOnboarded = brandData !== null && !brandError
         if (!hasOnboarded && window.location.pathname !== '/onboarding') {
           window.location.href = '/onboarding'
         }
       }
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
