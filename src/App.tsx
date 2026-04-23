@@ -60,11 +60,11 @@ export default function App() {
     if (showIntro) return <IntroPage onFinish={() => setShowIntro(false)} />
     return <LoginPage />
   }
-  if (hasOnboarded === false) return <OnboardingPage onComplete={() => setHasOnboarded(true)} />
-
   return (
     <ThemeProvider>
       <BrowserRouter>
+        {hasOnboarded === false && <OnboardingPage onComplete={() => setHasOnboarded(true)} />}
+        {hasOnboarded !== false && (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)' }}>
           <Topbar />
           <Routes>
@@ -80,6 +80,7 @@ export default function App() {
             <Route path="/video" element={<VideoPage />} />
           </Routes>
         </div>
+        )}
       </BrowserRouter>
     </ThemeProvider>
   )
