@@ -1,8 +1,9 @@
 // @ts-nocheck
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { debitToken, notifyBalanceUpdate } from '../services/tokens'
+import { uploadMedia } from '../services/brandKit'
 
 const VIDEO_PULSE_COST = 10
 const VIDEO_SERVER_URL = import.meta.env.VITE_VIDEO_SERVER_URL
@@ -24,6 +25,17 @@ export function VideoPage() {
   const [progress, setProgress] = useState('')
   const [error, setError] = useState('')
   const [turboing, setTurboing] = useState(false)
+  const [myClips, setMyClips] = useState<{url: string, name: string}[]>([])
+  const [uploadingClip, setUploadingClip] = useState(false)
+  const [activeTab, setActiveTab] = useState<'pexels' | 'myvideos'>('pexels')
+  const clipInputRef = useRef<HTMLInputElement>(null)
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserEmail(data.session?.user?.email ?? '')
+    })
+  }, [])
 
   async function handleTurbo() {
     if (!prompt.trim() || turboing) return
@@ -52,6 +64,23 @@ export function VideoPage() {
       // silencioso
     } finally {
       setTurboing(false)
+    }
+  }
+
+  async function handleClipUpload(e) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length || !userEmail) return
+    setUploadingClip(true)
+    try {
+      for (const file of files) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const path = `videos/${userEmail}/${Date.now()}_${safeName}`
+        const url = await uploadMedia(file, path)
+        if (url) setMyClips(prev => [...prev, { url, name: file.name }])
+      }
+    } finally {
+      setUploadingClip(false)
+      e.target.value = ''
     }
   }
 
@@ -188,7 +217,71 @@ export function VideoPage() {
 
         {error && <p style={{ fontSize: '13px', color: 'rgb(239,68,68)', margin: 0 }}>{error}</p>}
 
-        {clips.length > 0 && (
+        {/* Abas */}
+        <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-surface)', borderRadius: '10px', padding: '3px', border: '1px solid var(--border)' }}>
+          {[{ id: 'pexels', label: 'Clipes do Pexels' }, { id: 'myvideos', label: 'Meus Vídeos' }].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
+              style={{
+                flex: 1, padding: '7px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: '13px', fontWeight: activeTab === tab.id ? 600 : 400,
+                background: activeTab === tab.id ? 'linear-gradient(135deg, rgba(58,90,255,0.9), rgba(91,143,212,0.8))' : 'transparent',
+                color: activeTab === tab.id ? 'white' : 'var(--text-muted)', transition: 'all 0.2s',
+              }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Meus vídeos */}
+        {activeTab === 'myvideos' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <input ref={clipInputRef} type="file" accept="video/*" multiple onChange={handleClipUpload} style={{ display: 'none' }} />
+            <button onClick={() => clipInputRef.current?.click()} disabled={uploadingClip}
+              style={{
+                width: '100%', padding: '20px', borderRadius: '12px', cursor: 'pointer',
+                background: 'var(--bg-surface)', border: '2px dashed var(--border)',
+                color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'inherit',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                opacity: uploadingClip ? 0.6 : 1,
+              }}>
+              <span style={{ fontSize: '28px' }}>+</span>
+              <span>{uploadingClip ? 'Enviando...' : 'Adicionar meus clipes de vídeo'}</span>
+              <span style={{ fontSize: '11px' }}>MP4, MOV ou AVI</span>
+            </button>
+
+            {myClips.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {myClips.map((clip, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                    borderRadius: '8px', padding: '10px 14px',
+                  }}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                      {clip.name}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const selected = { id: Date.now(), url: clip.url, thumbnail: '', duration: 0, selected: true }
+                        setClips(prev => [...prev, selected])
+                        setActiveTab('pexels')
+                      }}
+                      style={{
+                        fontSize: '12px', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer',
+                        background: 'rgba(58,90,255,0.15)', border: '1px solid rgba(58,90,255,0.3)',
+                        color: 'var(--accent)', fontFamily: 'inherit', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: '8px',
+                      }}
+                    >
+                      + Usar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'pexels' && clips.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
