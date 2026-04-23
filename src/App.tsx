@@ -49,7 +49,10 @@ export default function App() {
   }, [appState])
 
   // Vídeo sempre vai para login — nunca pula direto para o app
-  if (appState === 'intro') return <IntroPage onFinish={() => setAppState('login')} />
+  if (appState === 'intro') return <IntroPage onFinish={async () => {
+    await supabase.auth.signOut()
+    setAppState('login')
+  }} />
   if (appState === 'login') return <LoginPage />
   if (appState === 'checking') return null
   if (appState === 'onboarding') return (
