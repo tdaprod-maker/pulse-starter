@@ -37,6 +37,7 @@ export default function App() {
     setAppState(brandData ? 'app' : 'onboarding')
   }
 
+  // Só escuta mudanças de auth quando está na tela de login
   useEffect(() => {
     if (appState !== 'login') return
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
@@ -47,9 +48,10 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [appState])
 
-  if (appState === 'intro') return <IntroPage onFinish={checkAndRoute} />
-  if (appState === 'checking') return null
+  // Vídeo sempre vai para login — nunca pula direto para o app
+  if (appState === 'intro') return <IntroPage onFinish={() => setAppState('login')} />
   if (appState === 'login') return <LoginPage />
+  if (appState === 'checking') return null
   if (appState === 'onboarding') return (
     <BrowserRouter>
       <OnboardingPage onComplete={() => setAppState('app')} />
