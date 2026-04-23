@@ -162,6 +162,7 @@ O Gemini recebe contexto de marca em cada geração:
 - [ ] Painel administrativo melhorado
 - [ ] Landing page de vendas
 - [ ] Supabase separado do Pulse
+- [ ] Revisar e atualizar templates (Estilos) para padrões visuais mais virais — layouts modernos, tipografia impactante, composições que performam melhor em redes sociais
 
 ---
 
