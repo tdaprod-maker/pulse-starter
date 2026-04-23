@@ -46,7 +46,7 @@ const COLOR_PRESETS = [
   { primary: '#000000', secondary: '#FFFFFF', label: 'Preto' },
 ]
 
-export function OnboardingPage() {
+export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {}) {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [businessName, setBusinessName] = useState('')
@@ -145,6 +145,7 @@ export function OnboardingPage() {
         }, { onConflict: 'user_email' })
 
       if (error) throw error
+      onComplete?.()
       navigate('/')
     } catch (err) {
       setError('Erro ao salvar. Tente novamente.')
