@@ -231,3 +231,15 @@ git add .
 git commit -m "..."
 git push
 ```
+
+## 11. Próxima Sessão
+
+### Redesign dos Templates (Estilos)
+- Fluxo definido: Claude apresenta previews visuais estáticos de 4 novos templates no chat → Ricardo aprova ou ajusta → implementação no código
+- Referências analisadas: carrosséis dark com tipografia bold, editorial com foto full-frame, InstaChic com texturas, posts Vogue/Breton/Maido/Zara/Nike
+- Padrão dominante nas referências: foto ocupa o frame, texto mínimo e intencional, tipografia com personalidade, composição como bloco único
+- Cada template novo precisa ter: fonte diferente, elemento gráfico diferente, zona de texto diferente — não variações do mesmo layout
+- Dois modos de post a suportar: gerado por IA (FLUX) e foto do próprio cliente
+
+### Correções feitas nesta sessão
+- Download corrigido: crossOrigin anonymous adicionado no carregamento do logo para evitar canvas contaminado no export
