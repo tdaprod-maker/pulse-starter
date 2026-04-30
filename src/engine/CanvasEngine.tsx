@@ -79,6 +79,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     useEffect(() => {
       if (!template.logoImage) { setLogoImg(null); return }
       const img = new window.Image()
+      img.crossOrigin = 'anonymous'
       img.onload = () => setLogoImg(img)
       img.src = template.logoImage
     }, [template.logoImage])
