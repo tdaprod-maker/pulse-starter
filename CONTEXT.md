@@ -1,6 +1,6 @@
 # Pulse Starter — Contexto do Projeto
 
-> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 23 abril 2026.
+> Arquivo de contexto para uso em novas conversas de IA. Atualizado em: 30 abril 2026.
 
 ---
 
@@ -148,6 +148,9 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Página de Vídeo — busca clipes do Pexels por tema com tradução automática via Gemini
 - [x] Download de clipes individuais do Pexels
 - [x] Fluxo de navegação corrigido — intro → login → onboarding (novo) ou editor (existente)
+- [x] Página de Política de Privacidade em /privacy (acessível sem login)
+- [x] Fluxo de navegação corrigido — intro (com logout) → login → onboarding (novo) ou editor (existente)
+- [x] GPT Image 2 identificado como próximo modelo de imagem (via FAL.ai, US$ 0,01/imagem baixa qualidade)
 - [x] Logo do carrossel usa Brand Kit do cliente em vez do logo hardcoded
 - [x] Drag do logo no carrossel corrigido (scaleY 1350)
 - [x] Edge Function send-welcome-email criada no Supabase com Resend
@@ -155,6 +158,11 @@ O Gemini recebe contexto de marca em cada geração:
 - [x] Upload de clipes próprios do cliente na página de vídeo
 
 ### Pendente
+- [ ] Meta/Instagram OAuth para múltiplos usuários — app em desenvolvimento, painel com bugs, retomar quando estável
+- [ ] Configurar política de privacidade no painel Meta (URL: pulse-starter.vercel.app/privacy)
+- [ ] Submeter app Meta para revisão e publicação
+- [ ] Redesign dos templates (Estilos) para padrões visuais virais e profissionais — aguardando referências visuais do Ricardo
+- [ ] Avaliar substituição do FLUX Schnell pelo GPT Image 2 (baixa qualidade US$ 0,01 vs US$ 0,003 atual)
 - [ ] Email de boas-vindas — aguardando verificação do domínio agente17.com.br no Resend (André tem acesso ao DNS)
 - [ ] Trigger automático do email de boas-vindas via Supabase webhook
 - [ ] Logo e texto sobrepostos nos vídeos gerados
