@@ -14,6 +14,7 @@ import { AdminPage } from './pages/AdminPage'
 import { AccountPage } from './pages/AccountPage'
 import { VideoPage } from './pages/VideoPage'
 import { IntroPage } from './pages/IntroPage'
+import { PrivacyPage } from './pages/PrivacyPage'
 import { supabase } from './lib/supabase'
 
 type AppState = 'intro' | 'login' | 'checking' | 'onboarding' | 'app'
@@ -48,6 +49,14 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [appState])
 
+  if (window.location.pathname === '/privacy') return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/privacy" element={<PrivacyPage />} />
+      </Routes>
+    </BrowserRouter>
+  )
+
   // Vídeo sempre vai para login — nunca pula direto para o app
   if (appState === 'intro') return <IntroPage onFinish={async () => {
     await supabase.auth.signOut()
@@ -77,6 +86,7 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/video" element={<VideoPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
           </Routes>
         </div>
       </BrowserRouter>
