@@ -1,8 +1,8 @@
 export function PrivacyPage() {
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '60px 24px', fontFamily: 'Inter, sans-serif', color: '#333', lineHeight: 1.8 }}>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '60px 24px', fontFamily: 'Inter, sans-serif', color: '#ffffff', lineHeight: 1.8 }}>
       <h1 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px' }}>Política de Privacidade</h1>
-      <p style={{ color: '#666', marginBottom: '40px' }}>Última atualização: abril de 2026</p>
+      <p style={{ color: '#aaaaaa', marginBottom: '40px' }}>Última atualização: abril de 2026</p>
 
       <h2 style={{ fontSize: '20px', fontWeight: 600, marginTop: '32px' }}>1. Quem somos</h2>
       <p>O Pulse é um produto da <strong>Agente 17</strong>, empresa brasileira especializada em inteligência artificial e automação. Este documento explica como coletamos, usamos e protegemos seus dados pessoais.</p>
@@ -55,7 +55,7 @@ export function PrivacyPage() {
       <h2 style={{ fontSize: '20px', fontWeight: 600, marginTop: '32px' }}>8. Contato</h2>
       <p>Para exercer seus direitos ou tirar dúvidas sobre esta política, entre em contato pelo e-mail: <a href="mailto:contato@agente17.com.br" style={{ color: '#3A5AFF' }}>contato@agente17.com.br</a></p>
 
-      <p style={{ marginTop: '48px', color: '#999', fontSize: '13px' }}>Agente 17 — agente17.com.br</p>
+      <p style={{ marginTop: '48px', color: '#666666', fontSize: '13px' }}>Agente 17 — agente17.com.br</p>
     </div>
   )
 }
