@@ -67,7 +67,7 @@ TEMPLATES DISPONÍVEIS:
   Campos: category (categoria em maiúsculas, ex: "INTELIGÊNCIA ARTIFICIAL"), title (headline 2 linhas, até 6 palavras EM MAIÚSCULAS, use \\n para quebrar), brand (SEMPRE use exatamente o nome da marca do usuário ou "AGENTE 17" como padrão — NUNCA coloque data, evento ou outro texto nesse campo)
 
 - "game-day"       → posts esportivos com evento, resultado ou convocação. Ideal para times, academias e competições
-  Campos: tag (categoria em maiúsculas, ex: "CAMPEONATO PAULISTA", "TREINO DO DIA"), title (título em maiúsculas, MÁXIMO 2 linhas, 2-3 palavras por linha, use \n para quebrar UMA vez, ex: "BORA\nJOGAR!", "É DIA\nDE JOGO!"), subtitle (detalhe do evento, ex: "Sub-11 · Sábado 15h · Arena Central")
+  Campos: tag (categoria em maiúsculas, ex: "CAMPEONATO PAULISTA", "TREINO DO DIA"), title (título em maiúsculas, EXATAMENTE 2 linhas, use \n para quebrar, cada linha com NO MÁXIMO 2 palavras curtas, ex: "BORA\nJOGAR!", "É DIA\nDE JOGO!", "VAMOS\nVENCER!"), subtitle (detalhe do evento, ex: "Sub-11 · Sábado 15h · Arena Central")
 
 - "tech-statement"  → frases de impacto, pensamentos e declarações poderosas sobre qualquer tema
   Campos: phrase (frase em maiúsculas, max 8 palavras, use \\n para quebrar em 2-3 linhas), brand (nome da marca)
