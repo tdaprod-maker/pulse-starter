@@ -243,3 +243,37 @@ git push
 
 ### Correções feitas nesta sessão
 - Download corrigido: crossOrigin anonymous adicionado no carregamento do logo para evitar canvas contaminado no export
+
+## 12. Sessão 01/05/2026 — O que foi feito
+
+### Correções
+- Download corrigido: crossOrigin anonymous adicionado no logo para evitar canvas contaminado
+- Tamanho padrão do logo reduzido de 400px para 160px
+
+### Tema por Brand Kit
+- ThemeContext refatorado para aceitar initialTheme
+- App.tsx agora carrega o Brand Kit do Supabase e monta o tema com color_primary, font_title e font_body antes de renderizar
+- Todos os templates agora recebem cores e fontes reais do cliente via theme
+
+### Fontes
+- Adicionadas 4 novas fontes: Cormorant Garamond, DM Sans, Plus Jakarta Sans, Lato
+- Total de 12 fontes disponíveis
+
+### Templates criados
+- Sport Arena (ex Game Day) — esporte, 4 variantes, usa Brand Kit do cliente, overlay 0.65, prompt Gemini configurado
+- Food Editorial — gastronomia premium, fundo escuro, tipografia serifada no rodapé, 4 variantes
+- Food Promo — gastronomia comercial, fundo bege, bold, botão CTA com cor do Brand Kit, substitui o Promoção antigo
+
+### Biblioteca de Fotos
+- Botão "Gerar variação com IA · 3 pulses" adicionado no ImagePanel
+- Cliente seleciona foto da biblioteca → aplica como fundo → pode gerar variação com FLUX Kontext
+
+### Próxima sessão — Templates a criar
+- Negócios (business card, resultado, dado de impacto)
+- Medicina
+- Construção Civil
+- Arquitetura
+- Odontologia
+- Imobiliária
+- Moda
+- Móveis
