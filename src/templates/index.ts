@@ -7,6 +7,8 @@ import { makeFoodEditorialVariants }  from './food-editorial/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
+import { makeBuildImpactVariants }     from './build-impact/variants'
+import { makeBuildEditorialVariants }   from './build-editorial/variants'
 import { makeHealthContentVariants }    from './health-content/variants'
 import { makeHealthStatsVariants }       from './health-stats/variants'
 import { makeBusinessStatementVariants } from './business-statement/variants'
@@ -49,6 +51,18 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Health Content',
     category: 'instagram-post',
     getVariants: makeHealthContentVariants,
+  },
+  {
+    id: 'build-impact',
+    name: 'Build Impact',
+    category: 'instagram-post',
+    getVariants: makeBuildImpactVariants,
+  },
+  {
+    id: 'build-editorial',
+    name: 'Build Editorial',
+    category: 'instagram-post',
+    getVariants: makeBuildEditorialVariants,
   },
   {
     id: 'health-stats',

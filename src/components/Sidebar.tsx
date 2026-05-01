@@ -4,7 +4,7 @@ import { useStore } from '../state/useStore'
 import { useTheme } from '../contexts/ThemeContext'
 import type { Template } from '../state/useStore'
 
-const OFFICIAL = ['sport-arena', 'sport-brand', 'business-statement', 'business-card', 'health-content', 'health-stats', 'food-editorial', 'food-promo', 'tech-statement', 'tech-news', 'tech-product', 'tech-minimal']
+const OFFICIAL = ['sport-arena', 'sport-brand', 'business-statement', 'business-card', 'health-content', 'health-stats', 'build-impact', 'build-editorial', 'food-editorial', 'food-promo', 'tech-statement', 'tech-news', 'tech-product', 'tech-minimal']
 const SAMPLES  = ['hero-title', 'big-statement', 'editorial-card', 'big-number']
 
 const labelStyle: React.CSSProperties = {
