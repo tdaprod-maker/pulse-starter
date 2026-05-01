@@ -3,6 +3,7 @@ import { makeBigStatementVariants }   from './big-statement/variants'
 import { makeEditorialCardVariants }  from './editorial-card/variants'
 import { makeBigNumberVariants }      from './big-number/variants'
 import { makeFoodPromoVariants }      from './food-promo/variants'
+import { makeFoodEditorialVariants }  from './food-editorial/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
@@ -49,6 +50,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Minimalista',
     category: 'instagram-post',
     getVariants: makeTechMinimalVariants,
+  },
+  {
+    id: 'food-editorial',
+    name: 'Food Editorial',
+    category: 'instagram-post',
+    getVariants: makeFoodEditorialVariants,
   },
   {
     id: 'food-promo',

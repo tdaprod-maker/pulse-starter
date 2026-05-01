@@ -60,8 +60,11 @@ TEMPLATES DISPONÍVEIS:
 - "big-number"     → número em destaque + legenda, ideal para estatísticas ou conquistas
   Campos: number (1 número ou símbolo, ex: "42", "3×", "98%"), caption (5-10 palavras)
 
-- "food-promo"       → template para restaurantes e delivery, com nome do prato em destaque, chamada e preço
-  Campos: label (categoria em maiúsculas, ex: "PIZZA", "HAMBÚRGUER"), title (nome do prato, 1-3 palavras EM MAIÚSCULAS), subtitle (preço ou chamada, ex: "R$ 49,90" ou "Peça agora!")
+- "food-promo"       → layout claro premium para restaurantes e delivery, com nome do prato bold e preço em destaque
+  Campos: cat (categoria em maiúsculas, ex: "PIZZA DO DIA", "HAMBÚRGUER"), dish (nome do prato EM MAIÚSCULAS, 1-3 palavras, use \\n para quebrar), body (acompanhamentos ou descrição curta, 4-8 palavras), price (preço, ex: "R$ 49,90"), cta (chamada curta, ex: "PEÇA AGORA")
+
+- "food-editorial"   → layout editorial escuro, premium, estilo restaurante sofisticado ou alta gastronomia
+  Campos: label (categoria em maiúsculas, ex: "PRATO PRINCIPAL", "ENTRADA"), dish (nome do prato com capitalização normal, 1-2 linhas, use \\n para quebrar, ex: "Risoto de\nTrufas"), price (preço, ex: "R$ 89,00"), cta (chamada curta, ex: "RESERVE JÁ")
 
 - "tech-news"       → posts de notícias, novidades e destaques sobre qualquer tema ou segmento
   Campos: category (categoria em maiúsculas, ex: "INTELIGÊNCIA ARTIFICIAL"), title (headline 2 linhas, até 6 palavras EM MAIÚSCULAS, use \\n para quebrar), brand (SEMPRE use exatamente o nome da marca do usuário ou "AGENTE 17" como padrão — NUNCA coloque data, evento ou outro texto nesse campo)
@@ -85,7 +88,8 @@ REGRAS DE SELEÇÃO DE TEMPLATE:
 - "big-statement"   → para declarações ousadas, lançamentos ou afirmações de impacto máximo
 - "editorial-card"  → para conteúdo informativo, artigos, dicas ou textos com contexto e corpo
 - "big-number"      → obrigatório quando o conteúdo contém dados, estatísticas, porcentagens ou conquistas numéricas
-- "food-promo"      → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida
+- "food-editorial"  → obrigatório quando o conteúdo mencionar restaurante premium, alta gastronomia, prato especial, menu degustação, chef ou experiência gastronômica sofisticada
+- "food-promo"      → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida (use food-editorial se o contexto for premium/sofisticado)
 - "tech-news"       → quando o prompt mencionar notícia, novidade, lançamento, evento, summit, atualização de tecnologia ou IA
 - "sport-arena"        → obrigatório quando o conteúdo mencionar esporte, time, jogo, partida, campeonato, treino, academia, competição ou resultado esportivo
 - "tech-statement"  → quando o prompt for uma frase, reflexão, provocação ou pensamento sobre negócios, IA ou automação

@@ -1,154 +1,91 @@
 import type { Template } from '../../state/useStore'
 import type { Theme } from '../../themes'
 
-// ─── Cores default ────────────────────────────────────────────────────────────
-const BG_DEFAULT    = '#1A1A1A'
-const TEXT_WHITE    = '#FFFFFF'
-const LABEL_COLOR   = 'rgba(255,255,255,0.7)'
+export function makeFoodPromoVariants(theme: Theme): Template[] {
+  const BG      = '#F7F3EE'
+  const ACCENT  = theme.colors.accent
+  const DARK    = '#1A1008'
+  const MUTED   = '#888888'
+  const WHITE   = '#FFFFFF'
+  const HEADING = theme.fonts.heading
+  const BODY    = theme.fonts.body
 
-
-// ─── Tipografia ───────────────────────────────────────────────────────────────
-const textH = (fs: number, lh: number, lines: number) => Math.ceil(fs * lh * lines)
-
-const LABEL_FS = 28
-const LABEL_LH = 1.5
-const LABEL_H  = textH(LABEL_FS, LABEL_LH, 1)  // 42px
-
-const TITLE_FS = 110
-const TITLE_LH = 1.1
-const TITLE_H  = textH(TITLE_FS, TITLE_LH, 2)  // 242px
-
-const SUBTITLE_FS = 42
-const SUBTITLE_LH = 1.5
-const SUBTITLE_H  = textH(SUBTITLE_FS, SUBTITLE_LH, 1)  // 63px
-
-// ─── Layout 1080px de largura ─────────────────────────────────────────────────
-const MX       = 60
-const CONTENT_W = 1080 - MX * 2  // 960px
-
-const LABEL_Y   = 80
-const TITLE_Y   = 220
-const SUBTITLE_Y = TITLE_Y + TITLE_H + 40  // 548px
-
-// ─── Factory ──────────────────────────────────────────────────────────────────
-// theme mantido na assinatura para compatibilidade com o registry
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function makeFoodPromoVariants(_theme: Theme): Template[] {
-
-  // bg-color precisa cobrir o canvas inteiro — dimensões por variante
-  const makeElements = (canvasW: number, canvasH: number) => [
-    {
-      id: 'bg-color',
-      type: 'shape' as const,
-      x: 0,
-      y: 0,
-      width: canvasW,
-      height: canvasH,
-      props: { fill: 'rgba(0,0,0,0)', cornerRadius: 0 },
-    },
-    {
-      id: 'label',
-      type: 'text' as const,
-      x: MX,
-      y: LABEL_Y,
-      width: CONTENT_W,
-      height: LABEL_H,
-      props: {
-        text: 'CATEGORIA',
-        fontSize: LABEL_FS,
-        fontFamily: 'Inter',
-        fontStyle: 'normal',
-        lineHeight: LABEL_LH,
-        letterSpacing: 6,
-        align: 'center',
-        fill: LABEL_COLOR,
-      },
-    },
-    {
-      id: 'title',
-      type: 'text' as const,
-      x: 0,
-      y: TITLE_Y,
-      width: 1080,
-      height: TITLE_H,
-      props: {
-        text: 'NOME DO\nPRATO',
-        fontSize: TITLE_FS,
-        fontFamily: 'Bebas Neue',
-        fontStyle: 'bold',
-        lineHeight: TITLE_LH,
-        align: 'center',
-        fill: TEXT_WHITE,
-      },
-    },
-    {
-      id: 'subtitle-bg',
-      type: 'shape' as const,
-      x: MX + (CONTENT_W - CONTENT_W * 0.7) / 2,
-      y: SUBTITLE_Y - 8,
-      width: CONTENT_W * 0.7,
-      height: SUBTITLE_H + 16,
-      props: {
-        fill: '#000000',
-        opacity: 0.45,
-        cornerRadius: 6,
-      },
-    },
-    {
-      id: 'subtitle',
-      type: 'text' as const,
-      x: MX,
-      y: SUBTITLE_Y,
-      width: CONTENT_W,
-      height: SUBTITLE_H,
-      props: {
-        text: 'R$ 49,90 · Peça agora!',
-        fontSize: SUBTITLE_FS,
-        fontFamily: 'Montserrat',
-        fontStyle: 'bold',
-        lineHeight: SUBTITLE_LH,
-        align: 'center',
-        fill: '#FFFFFF',
-        shadowColor: '#000000',
-        shadowBlur: 12,
-        shadowOpacity: 1,
-        shadowOffsetX: 0,
-        shadowOffsetY: 2,
-      },
-    },
-  ]
-
-  // 1:1
+  // ─── 1:1 (1080×1080) ──────────────────────────────────────────────────────
   const foodPromo1x1: Template = {
     id: 'food-promo-1x1',
     name: 'Food Promo — 1:1',
     category: 'instagram-post',
     width: 1080,
     height: 1080,
-    background: BG_DEFAULT,
-    elements: makeElements(1080, 1080),
+    background: BG,
+    elements: [
+      { id: 'top-dot', type: 'shape', x: 60, y: 42, width: 10, height: 10,
+        props: { fill: ACCENT, cornerRadius: 5 } },
+      { id: 'cat', type: 'text', x: 60, y: 60, width: 960, height: 40,
+        props: { text: 'PROMOÇÃO DO DIA', fontSize: 18, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: ACCENT, letterSpacing: 5, wrap: 'none' } },
+      { id: 'dish', type: 'text', x: 60, y: 280, width: 960, height: 420,
+        props: { text: 'NOME DO\nPRATO', fontSize: 130, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1.0, align: 'left', fill: DARK, wrap: 'word', autoFit: true } },
+      { id: 'body', type: 'text', x: 60, y: 720, width: 960, height: 50,
+        props: { text: 'Acompanhamentos e detalhes do prato', fontSize: 28, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
+      { id: 'price', type: 'text', x: 60, y: 860, width: 500, height: 100,
+        props: { text: 'R$ 00,00', fontSize: 72, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1, align: 'left', fill: ACCENT, wrap: 'none' } },
+      { id: 'cta-bg', type: 'shape', x: 60, y: 990, width: 280, height: 52,
+        props: { fill: ACCENT, cornerRadius: 6 } },
+      { id: 'cta', type: 'text', x: 60, y: 1002, width: 280, height: 30,
+        props: { text: 'PEÇA AGORA', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'center', fill: WHITE, letterSpacing: 3, wrap: 'none' } },
+    ],
   }
 
-  // 4:5 — canvas mais alto, conteúdo ancorado no topo
+  // ─── 4:5 (1080×1350) ──────────────────────────────────────────────────────
   const foodPromo4x5: Template = {
     id: 'food-promo-4x5',
     name: 'Food Promo — 4:5',
     category: 'instagram-post',
     width: 1080,
     height: 1350,
-    background: BG_DEFAULT,
-    elements: makeElements(1080, 1350),
+    background: BG,
+    elements: [
+      { id: 'top-dot', type: 'shape', x: 60, y: 42, width: 10, height: 10,
+        props: { fill: ACCENT, cornerRadius: 5 } },
+      { id: 'cat', type: 'text', x: 60, y: 60, width: 960, height: 40,
+        props: { text: 'PROMOÇÃO DO DIA', fontSize: 18, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: ACCENT, letterSpacing: 5, wrap: 'none' } },
+      { id: 'dish', type: 'text', x: 60, y: 380, width: 960, height: 520,
+        props: { text: 'NOME DO\nPRATO', fontSize: 130, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1.0, align: 'left', fill: DARK, wrap: 'word', autoFit: true } },
+      { id: 'body', type: 'text', x: 60, y: 940, width: 960, height: 50,
+        props: { text: 'Acompanhamentos e detalhes do prato', fontSize: 28, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
+      { id: 'price', type: 'text', x: 60, y: 1080, width: 500, height: 100,
+        props: { text: 'R$ 00,00', fontSize: 72, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1, align: 'left', fill: ACCENT, wrap: 'none' } },
+      { id: 'cta-bg', type: 'shape', x: 60, y: 1252, width: 280, height: 52,
+        props: { fill: ACCENT, cornerRadius: 6 } },
+      { id: 'cta', type: 'text', x: 60, y: 1264, width: 280, height: 30,
+        props: { text: 'PEÇA AGORA', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'center', fill: WHITE, letterSpacing: 3, wrap: 'none' } },
+    ],
   }
 
-  // 9:16 — story com texto no terço superior, espaço visual embaixo
+  // ─── 9:16 (1080×1920) ──────────────────────────────────────────────────────
   const foodPromo9x16: Template = {
     id: 'food-promo-9x16',
     name: 'Food Promo — 9:16',
     category: 'instagram-story',
     width: 1080,
     height: 1920,
-    background: BG_DEFAULT,
-    elements: makeElements(1080, 1920),
+    background: BG,
+    elements: [
+      { id: 'top-dot', type: 'shape', x: 60, y: 62, width: 10, height: 10,
+        props: { fill: ACCENT, cornerRadius: 5 } },
+      { id: 'cat', type: 'text', x: 60, y: 80, width: 960, height: 40,
+        props: { text: 'PROMOÇÃO DO DIA', fontSize: 18, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: ACCENT, letterSpacing: 5, wrap: 'none' } },
+      { id: 'dish', type: 'text', x: 60, y: 620, width: 960, height: 680,
+        props: { text: 'NOME DO\nPRATO', fontSize: 130, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1.0, align: 'left', fill: DARK, wrap: 'word', autoFit: true } },
+      { id: 'body', type: 'text', x: 60, y: 1350, width: 960, height: 50,
+        props: { text: 'Acompanhamentos e detalhes do prato', fontSize: 28, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
+      { id: 'price', type: 'text', x: 60, y: 1520, width: 500, height: 100,
+        props: { text: 'R$ 00,00', fontSize: 72, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1, align: 'left', fill: ACCENT, wrap: 'none' } },
+      { id: 'cta-bg', type: 'shape', x: 60, y: 1764, width: 280, height: 52,
+        props: { fill: ACCENT, cornerRadius: 6 } },
+      { id: 'cta', type: 'text', x: 60, y: 1776, width: 280, height: 30,
+        props: { text: 'PEÇA AGORA', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'center', fill: WHITE, letterSpacing: 3, wrap: 'none' } },
+    ],
   }
 
   return [foodPromo1x1, foodPromo4x5, foodPromo9x16]
