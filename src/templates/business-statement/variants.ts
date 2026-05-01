@@ -84,5 +84,31 @@ export function makeBusinessStatementVariants(theme: Theme): Template[] {
     ],
   }
 
-  return [bs1x1, bs4x5, bs9x16]
+
+  const bs16x9: Template = {
+    id: 'business-statement-16x9',
+    name: 'Business Statement — 16:9',
+    category: 'linkedin-banner',
+    width: 1920,
+    height: 1080,
+    background: BG,
+    elements: [
+      { id: 'cat', type: 'text', x: 100, y: 60, width: 1200, height: 30,
+        props: { text: 'RESULTADO DO PERÍODO', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, letterSpacing: 5, wrap: 'none' } },
+      { id: 'dot', type: 'shape', x: 1840, y: 64, width: 20, height: 20,
+        props: { fill: PRIMARY, cornerRadius: 10 } },
+      { id: 'number', type: 'text', x: 100, y: 260, width: 860, height: 480,
+        props: { text: '+00', fontSize: 480, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1, align: 'left', fill: DARK, wrap: 'none', autoFit: true } },
+      { id: 'symbol', type: 'text', x: 880, y: 360, width: 260, height: 240,
+        props: { text: '%', fontSize: 240, fontFamily: HEADING, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, wrap: 'none' } },
+      { id: 'label', type: 'text', x: 1140, y: 480, width: 680, height: 60,
+        props: { text: 'de crescimento no período', fontSize: 36, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
+      { id: 'divider', type: 'shape', x: 1140, y: 580, width: 680, height: 1,
+        props: { fill: '#E0E0E0', cornerRadius: 0 } },
+      { id: 'body', type: 'text', x: 1140, y: 600, width: 680, height: 160,
+        props: { text: 'Descreva aqui o contexto e o resultado conquistado pela sua empresa neste período.', fontSize: 26, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1.5, align: 'left', fill: MUTED, wrap: 'word' } },
+    ],
+  }
+
+  return [bs1x1, bs4x5, bs9x16, bs16x9]
 }

@@ -90,5 +90,34 @@ export function makeBusinessCardVariants(theme: Theme): Template[] {
     ],
   }
 
-  return [bc1x1, bc4x5, bc9x16]
+
+  const bc16x9: Template = {
+    id: 'business-card-16x9',
+    name: 'Business Card — 16:9',
+    category: 'linkedin-banner',
+    width: 1920,
+    height: 1080,
+    background: BG,
+    elements: [
+      { id: 'cat', type: 'text', x: 100, y: 60, width: 1000, height: 30,
+        props: { text: 'SUA EMPRESA', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, letterSpacing: 5, wrap: 'none' } },
+      { id: 'accent-line', type: 'shape', x: 1800, y: 68, width: 60, height: 2,
+        props: { fill: PRIMARY, cornerRadius: 0 } },
+      { id: 'tag', type: 'text', x: 100, y: 380, width: 400, height: 40,
+        props: { text: 'SERVIÇO', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 5, wrap: 'none' } },
+      { id: 'tag-line', type: 'shape', x: 100, y: 428, width: 40, height: 2,
+        props: { fill: PRIMARY, cornerRadius: 0 } },
+      { id: 'title', type: 'text', x: 100, y: 460, width: 860, height: 380,
+        props: { text: 'Nome do
+Serviço', fontSize: 180, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 1.0, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
+      { id: 'body', type: 'text', x: 1060, y: 460, width: 760, height: 200,
+        props: { text: 'Descreva brevemente o seu serviço ou produto de forma clara e direta.', fontSize: 28, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1.5, align: 'left', fill: MUTED, wrap: 'word' } },
+      { id: 'divider', type: 'shape', x: 1060, y: 720, width: 760, height: 1,
+        props: { fill: '#1A1A1A', cornerRadius: 0 } },
+      { id: 'cta', type: 'text', x: 1060, y: 740, width: 600, height: 50,
+        props: { text: 'SAIBA MAIS →', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 4, wrap: 'none' } },
+    ],
+  }
+
+  return [bc1x1, bc4x5, bc9x16, bc16x9]
 }
