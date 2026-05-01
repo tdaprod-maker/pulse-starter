@@ -7,6 +7,8 @@ import { makeFoodEditorialVariants }  from './food-editorial/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
+import { makeHealthContentVariants }    from './health-content/variants'
+import { makeHealthStatsVariants }       from './health-stats/variants'
 import { makeBusinessStatementVariants } from './business-statement/variants'
 import { makeBusinessCardVariants }      from './business-card/variants'
 import { makeSportBrandVariants }    from './sport-brand/variants'
@@ -41,6 +43,18 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Business Statement',
     category: 'instagram-post',
     getVariants: makeBusinessStatementVariants,
+  },
+  {
+    id: 'health-content',
+    name: 'Health Content',
+    category: 'instagram-post',
+    getVariants: makeHealthContentVariants,
+  },
+  {
+    id: 'health-stats',
+    name: 'Health Stats',
+    category: 'instagram-post',
+    getVariants: makeHealthStatsVariants,
   },
   {
     id: 'business-card',
