@@ -35,6 +35,10 @@ const FONT_OPTIONS = [
   { value: 'Oswald', label: 'Oswald', description: 'Forte e condensada' },
   { value: 'Lora', label: 'Lora', description: 'Clássica e serifada' },
   { value: 'Space Grotesk', label: 'Space Grotesk', description: 'Técnica e contemporânea' },
+  { value: 'Cormorant Garamond', label: 'Cormorant Garamond', description: 'Refinada e alta costura' },
+  { value: 'DM Sans', label: 'DM Sans', description: 'Moderna e profissional' },
+  { value: 'Plus Jakarta Sans', label: 'Plus Jakarta Sans', description: 'Contemporânea e versátil' },
+  { value: 'Lato', label: 'Lato', description: 'Neutra e institucional' },
 ]
 
 const COLOR_PRESETS = [
