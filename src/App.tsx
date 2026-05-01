@@ -70,6 +70,13 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [appState])
 
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session) setAppState('login')
+    })
+    return () => subscription.unsubscribe()
+  }, [])
   if (window.location.pathname === '/privacy') return (
     <BrowserRouter>
       <Routes>
