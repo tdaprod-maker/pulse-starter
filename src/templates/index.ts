@@ -7,6 +7,7 @@ import { makeFoodEditorialVariants }  from './food-editorial/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
+import { makeSportBrandVariants }    from './sport-brand/variants'
 import { makeSportArenaVariants }        from './sport-arena/variants'
 import { makeTechMinimalVariants }    from './tech-minimal/variants'
 import type { Template } from '../state/useStore'
@@ -26,6 +27,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Sport Arena',
     category: 'instagram-post',
     getVariants: makeSportArenaVariants,
+  },
+  {
+    id: 'sport-brand',
+    name: 'Sport Brand',
+    category: 'instagram-post',
+    getVariants: makeSportBrandVariants,
   },
   {
     id: 'tech-statement',
