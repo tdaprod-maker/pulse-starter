@@ -21,7 +21,7 @@ export function makeGameDayVariants(theme: Theme): Template[] {
       { id: 'tag', type: 'text', x: 60, y: 40, width: 960, height: 40,
         props: { text: 'CATEGORIA DO EVENTO', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 5, wrap: 'none' } },
       { id: 'tag-line', type: 'shape', x: 60, y: 92, width: 48, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
-      { id: 'title', type: 'text', x: 60, y: 600, width: 900, height: 340,
+      { id: 'title', type: 'text', x: 60, y: 520, width: 900, height: 380,
         props: { text: 'É HORA\nDE JOGAR!', fontSize: 160, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.92, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
       { id: 'subtitle', type: 'text', x: 60, y: 980, width: 900, height: 44,
         props: { text: 'Categoria · Data · Local', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
