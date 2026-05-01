@@ -246,6 +246,7 @@ export const useStore = create<PulseStore>()(
     }),
     {
       name: 'pulse-store',
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         activeTemplateId: state.activeTemplateId,
