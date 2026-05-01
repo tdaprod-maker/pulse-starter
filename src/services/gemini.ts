@@ -72,6 +72,12 @@ TEMPLATES DISPONÍVEIS:
 - "sport-arena"       → posts esportivos com evento, resultado ou convocação. Ideal para times, academias e competições
   Campos: tag (categoria em maiúsculas, ex: "CAMPEONATO PAULISTA", "TREINO DO DIA"), title (título em maiúsculas, EXATAMENTE 2 linhas, use \n para quebrar, cada linha com NO MÁXIMO 2 palavras curtas, ex: "BORA\nJOGAR!", "É DIA\nDE JOGO!", "VAMOS\nVENCER!"), subtitle (detalhe do evento, ex: "Sub-11 · Sábado 15h · Arena Central")
 
+- "business-statement" → posts com dado numérico de impacto, resultado, conquista ou estatística de negócios
+  Campos: cat (categoria em maiúsculas, ex: "RESULTADO Q1 2026"), number (número com símbolo, ex: "+47", "3×", "98"), symbol (símbolo isolado, ex: "%", "K", "×"), label (métrica em minúsculas, ex: "de crescimento no período"), body (contexto em 15-20 palavras)
+
+- "business-card"      → apresentação de empresa, serviço ou solução profissional
+  Campos: cat (nome da empresa em maiúsculas), tag (categoria do serviço em maiúsculas, ex: "CONSULTORIA"), title (nome do serviço, 2-3 palavras), body (descrição curta, 10-15 palavras), cta (chamada curta, ex: "SAIBA MAIS →")
+
 - "tech-statement"  → frases de impacto, pensamentos e declarações poderosas sobre qualquer tema
   Campos: phrase (frase em maiúsculas, max 8 palavras, use \\n para quebrar em 2-3 linhas), brand (nome da marca)
 
@@ -92,6 +98,8 @@ REGRAS DE SELEÇÃO DE TEMPLATE:
 - "food-promo"      → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida (use food-editorial se o contexto for premium/sofisticado)
 - "tech-news"       → quando o prompt mencionar notícia, novidade, lançamento, evento, summit, atualização de tecnologia ou IA
 - "sport-arena"        → obrigatório quando o conteúdo mencionar esporte, time, jogo, partida, campeonato, treino, academia, competição ou resultado esportivo
+- "business-statement" → obrigatório quando o prompt contiver números, porcentagens, estatísticas, metas, resultados ou conquistas de negócios
+- "business-card"      → quando o prompt mencionar apresentação de empresa, serviço, produto, solução ou proposta de valor profissional
 - "tech-statement"  → quando o prompt for uma frase, reflexão, provocação ou pensamento sobre negócios, IA ou automação
 - "tech-product"    → quando o prompt mencionar produto, serviço, agente, solução, ferramenta de IA ou automação
 - "tech-minimal"    → fundo sólido sem imagem, frase única e impactante de até 8 palavras. Use quando o usuário pedir algo minimalista, clean, fundo preto, ou quando a mensagem for uma frase curta e poderosa sem necessidade de imagem de fundo.
