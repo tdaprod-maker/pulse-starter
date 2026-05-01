@@ -7,6 +7,8 @@ import { makeFoodEditorialVariants }  from './food-editorial/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
+import { makeRealtyPremiumVariants }   from './realty-premium/variants'
+import { makeRealtyLaunchVariants }    from './realty-launch/variants'
 import { makeBuildImpactVariants }     from './build-impact/variants'
 import { makeBuildEditorialVariants }   from './build-editorial/variants'
 import { makeHealthContentVariants }    from './health-content/variants'
@@ -57,6 +59,18 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Build Impact',
     category: 'instagram-post',
     getVariants: makeBuildImpactVariants,
+  },
+  {
+    id: 'realty-premium',
+    name: 'Realty Premium',
+    category: 'instagram-post',
+    getVariants: makeRealtyPremiumVariants,
+  },
+  {
+    id: 'realty-launch',
+    name: 'Realty Launch',
+    category: 'instagram-post',
+    getVariants: makeRealtyLaunchVariants,
   },
   {
     id: 'build-editorial',
