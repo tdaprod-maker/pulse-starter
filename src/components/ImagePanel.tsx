@@ -28,6 +28,9 @@ export function ImagePanel({ template }: ImagePanelProps) {
   const [editError, setEditError] = useState('')
   const { theme } = useTheme()
   const [brandPhotos, setBrandPhotos] = useState<string[]>([])
+  const [selectedLibraryPhoto, setSelectedLibraryPhoto] = useState<string | null>(null)
+  const [generatingVariation, setGeneratingVariation] = useState(false)
+  const [variationError, setVariationError] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -36,6 +39,45 @@ export function ImagePanel({ template }: ImagePanelProps) {
       loadBrandConfig(email).then(c => setBrandPhotos(c.photos ?? []))
     })
   }, [])
+
+  async function handleGenerateVariation() {
+    if (!selectedLibraryPhoto || !template.imagePrompt || generatingVariation) return
+    setGeneratingVariation(true)
+    setVariationError('')
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      if (email) {
+        const { success } = await debitToken(email, PULSE_COSTS.EDIT_IMAGE)
+        if (!success) {
+          setVariationError('Pulses insuficientes. Recarregue seu saldo.')
+          setGeneratingVariation(false)
+          return
+        }
+        notifyBalanceUpdate()
+      }
+      const res = await fetch('/api/edit-image-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: selectedLibraryPhoto, prompt: template.imagePrompt }),
+      })
+      if (!res.ok) throw new Error(`Erro: ${res.status}`)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setTemplateBackground(template.id, data.image)
+      const templateBase = templateRegistry.find(d => template.id.startsWith(d.id))
+      if (templateBase) {
+        templateBase.getVariants(theme).forEach(v => {
+          if (v.id !== template.id) setTemplateBackground(v.id, data.image)
+        })
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao gerar variação'
+      setVariationError(msg)
+    } finally {
+      setGeneratingVariation(false)
+    }
+  }
 
   async function handleNewImage() {
     if (!template.imagePrompt || regenerating) return
@@ -152,6 +194,7 @@ export function ImagePanel({ template }: ImagePanelProps) {
                 key={url}
                 onClick={() => {
                   setTemplateBackground(template.id, url)
+                  setSelectedLibraryPhoto(url)
                   const templateBase = templateRegistry.find(d => template.id.startsWith(d.id))
                   if (templateBase) {
                     templateBase.getVariants(theme).forEach(v => {
@@ -169,6 +212,26 @@ export function ImagePanel({ template }: ImagePanelProps) {
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
             Adicione fotos no Brand Kit
           </p>
+        )}
+        {selectedLibraryPhoto && template.imagePrompt && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <button
+              onClick={handleGenerateVariation}
+              disabled={generatingVariation}
+              style={{
+                width: '100%', fontSize: '12px', padding: '7px 10px', borderRadius: '6px',
+                cursor: generatingVariation ? 'default' : 'pointer',
+                background: 'linear-gradient(135deg, rgba(58,90,255,0.9), rgba(91,143,212,0.8))',
+                border: 'none', color: 'white', fontFamily: 'inherit',
+                opacity: generatingVariation ? 0.5 : 1, transition: 'opacity 0.2s',
+              }}
+            >
+              {generatingVariation ? 'Gerando...' : 'Gerar variação com IA · 3 pulses'}
+            </button>
+            {variationError && (
+              <p style={{ fontSize: '11px', color: 'rgb(239,68,68)', margin: 0 }}>{variationError}</p>
+            )}
+          </div>
         )}
       </div>
 
