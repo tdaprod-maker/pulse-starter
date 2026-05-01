@@ -59,7 +59,7 @@ export const templateRegistry: TemplateDefinition[] = [
   },
   {
     id: 'food-promo',
-    name: 'Promoção',
+    name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
   },
