@@ -6,6 +6,7 @@ import { makeFoodPromoVariants }      from './food-promo/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
+import { makeGameDayVariants }        from './game-day/variants'
 import { makeTechMinimalVariants }    from './tech-minimal/variants'
 import type { Template } from '../state/useStore'
 import type { Theme } from '../themes'
@@ -19,6 +20,12 @@ export interface TemplateDefinition {
 }
 
 export const templateRegistry: TemplateDefinition[] = [
+  {
+    id: 'game-day',
+    name: 'Game Day',
+    category: 'instagram-post',
+    getVariants: makeGameDayVariants,
+  },
   {
     id: 'tech-statement',
     name: 'Frase de Impacto',
