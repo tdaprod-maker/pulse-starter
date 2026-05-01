@@ -7,6 +7,8 @@ import { makeFoodEditorialVariants }  from './food-editorial/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
 import { makeTechStatementVariants }  from './tech-statement/variants'
 import { makeTechProductVariants }    from './tech-product/variants'
+import { makeBusinessStatementVariants } from './business-statement/variants'
+import { makeBusinessCardVariants }      from './business-card/variants'
 import { makeSportBrandVariants }    from './sport-brand/variants'
 import { makeSportArenaVariants }        from './sport-arena/variants'
 import { makeTechMinimalVariants }    from './tech-minimal/variants'
@@ -33,6 +35,18 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Sport Brand',
     category: 'instagram-post',
     getVariants: makeSportBrandVariants,
+  },
+  {
+    id: 'business-statement',
+    name: 'Business Statement',
+    category: 'instagram-post',
+    getVariants: makeBusinessStatementVariants,
+  },
+  {
+    id: 'business-card',
+    name: 'Business Card',
+    category: 'instagram-post',
+    getVariants: makeBusinessCardVariants,
   },
   {
     id: 'tech-statement',
