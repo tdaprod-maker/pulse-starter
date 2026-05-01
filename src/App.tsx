@@ -16,11 +16,15 @@ import { VideoPage } from './pages/VideoPage'
 import { IntroPage } from './pages/IntroPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { supabase } from './lib/supabase'
+import { loadBrandConfig } from './services/brandKit'
+import { defaultTheme } from './themes'
+import type { Theme } from './themes'
 
 type AppState = 'intro' | 'login' | 'checking' | 'onboarding' | 'app'
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>('intro')
+  const [brandTheme, setBrandTheme] = useState<Theme>(defaultTheme)
 
   async function checkAndRoute() {
     setAppState('checking')
@@ -35,10 +39,27 @@ export default function App() {
       .select('id')
       .eq('user_email', email)
       .maybeSingle()
-    setAppState(brandData ? 'app' : 'onboarding')
+
+    if (brandData) {
+      const brand = await loadBrandConfig(email)
+      setBrandTheme({
+        ...defaultTheme,
+        colors: {
+          ...defaultTheme.colors,
+          accent: brand.color_primary ?? defaultTheme.colors.accent,
+          primary: brand.color_secondary ?? defaultTheme.colors.primary,
+        },
+        fonts: {
+          heading: brand.font_title ?? defaultTheme.fonts.heading,
+          body: brand.font_body ?? defaultTheme.fonts.body,
+        },
+      })
+      setAppState('app')
+    } else {
+      setAppState('onboarding')
+    }
   }
 
-  // Só escuta mudanças de auth quando está na tela de login
   useEffect(() => {
     if (appState !== 'login') return
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
@@ -57,7 +78,6 @@ export default function App() {
     </BrowserRouter>
   )
 
-  // Vídeo sempre vai para login — nunca pula direto para o app
   if (appState === 'intro') return <IntroPage onFinish={async () => {
     await supabase.auth.signOut()
     setAppState('login')
@@ -71,7 +91,7 @@ export default function App() {
   )
 
   return (
-    <ThemeProvider>
+    <ThemeProvider initialTheme={brandTheme}>
       <BrowserRouter>
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)' }}>
           <Topbar />
