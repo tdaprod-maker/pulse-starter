@@ -5,11 +5,10 @@ export function makeGameDayVariants(theme: Theme): Template[] {
   const BG      = '#0A0A0A'
   const PRIMARY = theme.colors.accent
   const WHITE   = '#FFFFFF'
-  const MUTED   = '#888888'
+  const MUTED   = 'rgba(255,255,255,0.65)'
   const HEADING = theme.fonts.heading
   const BODY    = theme.fonts.body
 
-  // ─── 1:1 (1080×1080) ──────────────────────────────────────────────────────
   const gameDay1x1: Template = {
     id: 'game-day-1x1',
     name: 'Game Day — 1:1',
@@ -18,76 +17,18 @@ export function makeGameDayVariants(theme: Theme): Template[] {
     height: 1080,
     background: BG,
     elements: [
-      // Barra topo (acento primário)
-      {
-        id: 'top-bar',
-        type: 'shape',
-        x: 0, y: 0,
-        width: 1080, height: 6,
-        props: { fill: PRIMARY, cornerRadius: 0 },
-      },
-      // Tag / categoria
-      {
-        id: 'tag',
-        type: 'text',
-        x: 60, y: 80,
-        width: 960, height: 40,
-        props: {
-          text: 'CAMPEONATO PAULISTA',
-          fontSize: 22, fontFamily: BODY,
-          fontStyle: 'normal', lineHeight: 1,
-          align: 'left', fill: PRIMARY,
-          letterSpacing: 6, wrap: 'none',
-        },
-      },
-      // Linha separadora
-      {
-        id: 'tag-line',
-        type: 'shape',
-        x: 60, y: 136,
-        width: 60, height: 3,
-        props: { fill: PRIMARY, cornerRadius: 0 },
-      },
-      // Título principal
-      {
-        id: 'title',
-        type: 'text',
-        x: 60, y: 200,
-        width: 960, height: 480,
-        props: {
-          text: 'É FINAL,\nINDAIÁ!',
-          fontSize: 180, fontFamily: HEADING,
-          fontStyle: 'bold', lineHeight: 0.95,
-          align: 'left', fill: WHITE,
-          wrap: 'word', autoFit: true,
-        },
-      },
-      // Subtítulo / detalhe do evento
-      {
-        id: 'subtitle',
-        type: 'text',
-        x: 60, y: 920,
-        width: 960, height: 60,
-        props: {
-          text: 'Pré-infantil · Sábado 15h · Arena Central',
-          fontSize: 28, fontFamily: BODY,
-          fontStyle: 'normal', lineHeight: 1.4,
-          align: 'left', fill: MUTED,
-          wrap: 'word',
-        },
-      },
-      // Barra rodapé
-      {
-        id: 'bottom-bar',
-        type: 'shape',
-        x: 0, y: 1074,
-        width: 1080, height: 6,
-        props: { fill: PRIMARY, cornerRadius: 0 },
-      },
+      { id: 'top-bar', type: 'shape', x: 0, y: 0, width: 1080, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
+      { id: 'tag', type: 'text', x: 60, y: 40, width: 960, height: 40,
+        props: { text: 'CATEGORIA DO EVENTO', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 5, wrap: 'none' } },
+      { id: 'tag-line', type: 'shape', x: 60, y: 92, width: 48, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
+      { id: 'title', type: 'text', x: 60, y: 600, width: 900, height: 340,
+        props: { text: 'É HORA\nDE JOGAR!', fontSize: 160, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.92, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
+      { id: 'subtitle', type: 'text', x: 60, y: 980, width: 900, height: 44,
+        props: { text: 'Categoria · Data · Local', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
+      { id: 'bottom-bar', type: 'shape', x: 0, y: 1074, width: 1080, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
     ],
   }
 
-  // ─── 4:5 (1080×1350) ──────────────────────────────────────────────────────
   const gameDay4x5: Template = {
     id: 'game-day-4x5',
     name: 'Game Day — 4:5',
@@ -97,18 +38,17 @@ export function makeGameDayVariants(theme: Theme): Template[] {
     background: BG,
     elements: [
       { id: 'top-bar', type: 'shape', x: 0, y: 0, width: 1080, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
-      { id: 'tag', type: 'text', x: 60, y: 100, width: 960, height: 40,
-        props: { text: 'CAMPEONATO PAULISTA', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 6, wrap: 'none' } },
-      { id: 'tag-line', type: 'shape', x: 60, y: 156, width: 60, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
-      { id: 'title', type: 'text', x: 60, y: 240, width: 960, height: 600,
-        props: { text: 'É FINAL,\nINDAIÁ!', fontSize: 200, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.95, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
-      { id: 'subtitle', type: 'text', x: 60, y: 960, width: 960, height: 60,
-        props: { text: 'Pré-infantil · Sábado 15h · Arena Central', fontSize: 28, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1.4, align: 'left', fill: MUTED, wrap: 'word' } },
+      { id: 'tag', type: 'text', x: 60, y: 40, width: 960, height: 40,
+        props: { text: 'CATEGORIA DO EVENTO', fontSize: 20, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 5, wrap: 'none' } },
+      { id: 'tag-line', type: 'shape', x: 60, y: 92, width: 48, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
+      { id: 'title', type: 'text', x: 60, y: 820, width: 900, height: 400,
+        props: { text: 'É HORA\nDE JOGAR!', fontSize: 180, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.92, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
+      { id: 'subtitle', type: 'text', x: 60, y: 1280, width: 900, height: 44,
+        props: { text: 'Categoria · Data · Local', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
       { id: 'bottom-bar', type: 'shape', x: 0, y: 1344, width: 1080, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
     ],
   }
 
-  // ─── 9:16 (1080×1920) ──────────────────────────────────────────────────────
   const gameDay9x16: Template = {
     id: 'game-day-9x16',
     name: 'Game Day — 9:16',
@@ -118,18 +58,17 @@ export function makeGameDayVariants(theme: Theme): Template[] {
     background: BG,
     elements: [
       { id: 'top-bar', type: 'shape', x: 0, y: 0, width: 1080, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
-      { id: 'tag', type: 'text', x: 60, y: 120, width: 960, height: 40,
-        props: { text: 'CAMPEONATO PAULISTA', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 6, wrap: 'none' } },
-      { id: 'tag-line', type: 'shape', x: 60, y: 176, width: 60, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
-      { id: 'title', type: 'text', x: 60, y: 700, width: 960, height: 600,
-        props: { text: 'É FINAL,\nINDAIÁ!', fontSize: 200, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.95, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
-      { id: 'subtitle', type: 'text', x: 60, y: 1400, width: 960, height: 60,
-        props: { text: 'Pré-infantil · Sábado 15h · Arena Central', fontSize: 28, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1.4, align: 'left', fill: MUTED, wrap: 'word' } },
+      { id: 'tag', type: 'text', x: 60, y: 60, width: 960, height: 40,
+        props: { text: 'CATEGORIA DO EVENTO', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 5, wrap: 'none' } },
+      { id: 'tag-line', type: 'shape', x: 60, y: 114, width: 48, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
+      { id: 'title', type: 'text', x: 60, y: 1260, width: 900, height: 500,
+        props: { text: 'É HORA\nDE JOGAR!', fontSize: 200, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.92, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
+      { id: 'subtitle', type: 'text', x: 60, y: 1836, width: 900, height: 44,
+        props: { text: 'Categoria · Data · Local', fontSize: 26, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
       { id: 'bottom-bar', type: 'shape', x: 0, y: 1914, width: 1080, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
     ],
   }
 
-  // ─── 16:9 (1920×1080) ──────────────────────────────────────────────────────
   const gameDay16x9: Template = {
     id: 'game-day-16x9',
     name: 'Game Day — 16:9',
@@ -139,13 +78,13 @@ export function makeGameDayVariants(theme: Theme): Template[] {
     background: BG,
     elements: [
       { id: 'top-bar', type: 'shape', x: 0, y: 0, width: 1920, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
-      { id: 'tag', type: 'text', x: 100, y: 100, width: 1720, height: 40,
-        props: { text: 'CAMPEONATO PAULISTA', fontSize: 24, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 6, wrap: 'none' } },
-      { id: 'tag-line', type: 'shape', x: 100, y: 156, width: 60, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
-      { id: 'title', type: 'text', x: 100, y: 220, width: 1720, height: 480,
-        props: { text: 'É FINAL, INDAIÁ!', fontSize: 220, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.95, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
-      { id: 'subtitle', type: 'text', x: 100, y: 780, width: 1720, height: 60,
-        props: { text: 'Pré-infantil · Sábado 15h · Arena Central', fontSize: 32, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1.4, align: 'left', fill: MUTED, wrap: 'word' } },
+      { id: 'tag', type: 'text', x: 100, y: 50, width: 1720, height: 40,
+        props: { text: 'CATEGORIA DO EVENTO', fontSize: 22, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: PRIMARY, letterSpacing: 5, wrap: 'none' } },
+      { id: 'tag-line', type: 'shape', x: 100, y: 104, width: 48, height: 3, props: { fill: PRIMARY, cornerRadius: 0 } },
+      { id: 'title', type: 'text', x: 100, y: 520, width: 1400, height: 420,
+        props: { text: 'É HORA DE JOGAR!', fontSize: 220, fontFamily: HEADING, fontStyle: 'bold', lineHeight: 0.92, align: 'left', fill: WHITE, wrap: 'word', autoFit: true } },
+      { id: 'subtitle', type: 'text', x: 100, y: 1010, width: 1400, height: 44,
+        props: { text: 'Categoria · Data · Local', fontSize: 28, fontFamily: BODY, fontStyle: 'normal', lineHeight: 1, align: 'left', fill: MUTED, wrap: 'none' } },
       { id: 'bottom-bar', type: 'shape', x: 0, y: 1074, width: 1920, height: 6, props: { fill: PRIMARY, cornerRadius: 0 } },
     ],
   }
