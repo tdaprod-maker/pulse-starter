@@ -1,7 +1,7 @@
 import type { Template } from '../../state/useStore'
 import type { Theme } from '../../themes'
 
-export function makeGameDayVariants(theme: Theme): Template[] {
+export function makeSportArenaVariants(theme: Theme): Template[] {
   const BG      = '#0A0A0A'
   const PRIMARY = theme.colors.accent
   const WHITE   = '#FFFFFF'
@@ -10,8 +10,8 @@ export function makeGameDayVariants(theme: Theme): Template[] {
   const BODY    = theme.fonts.body
 
   const gameDay1x1: Template = {
-    id: 'game-day-1x1',
-    name: 'Game Day — 1:1',
+    id: 'sport-arena-1x1',
+    name: 'Sport Arena — 1:1',
     category: 'instagram-post',
     width: 1080,
     height: 1080,
@@ -30,8 +30,8 @@ export function makeGameDayVariants(theme: Theme): Template[] {
   }
 
   const gameDay4x5: Template = {
-    id: 'game-day-4x5',
-    name: 'Game Day — 4:5',
+    id: 'sport-arena-4x5',
+    name: 'Sport Arena — 4:5',
     category: 'instagram-post',
     width: 1080,
     height: 1350,
@@ -50,8 +50,8 @@ export function makeGameDayVariants(theme: Theme): Template[] {
   }
 
   const gameDay9x16: Template = {
-    id: 'game-day-9x16',
-    name: 'Game Day — 9:16',
+    id: 'sport-arena-9x16',
+    name: 'Sport Arena — 9:16',
     category: 'instagram-story',
     width: 1080,
     height: 1920,
@@ -70,8 +70,8 @@ export function makeGameDayVariants(theme: Theme): Template[] {
   }
 
   const gameDay16x9: Template = {
-    id: 'game-day-16x9',
-    name: 'Game Day — 16:9',
+    id: 'sport-arena-16x9',
+    name: 'Sport Arena — 16:9',
     category: 'linkedin-banner',
     width: 1920,
     height: 1080,

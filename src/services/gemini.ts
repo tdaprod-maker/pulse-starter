@@ -66,7 +66,7 @@ TEMPLATES DISPONÍVEIS:
 - "tech-news"       → posts de notícias, novidades e destaques sobre qualquer tema ou segmento
   Campos: category (categoria em maiúsculas, ex: "INTELIGÊNCIA ARTIFICIAL"), title (headline 2 linhas, até 6 palavras EM MAIÚSCULAS, use \\n para quebrar), brand (SEMPRE use exatamente o nome da marca do usuário ou "AGENTE 17" como padrão — NUNCA coloque data, evento ou outro texto nesse campo)
 
-- "game-day"       → posts esportivos com evento, resultado ou convocação. Ideal para times, academias e competições
+- "sport-arena"       → posts esportivos com evento, resultado ou convocação. Ideal para times, academias e competições
   Campos: tag (categoria em maiúsculas, ex: "CAMPEONATO PAULISTA", "TREINO DO DIA"), title (título em maiúsculas, EXATAMENTE 2 linhas, use \n para quebrar, cada linha com NO MÁXIMO 2 palavras curtas, ex: "BORA\nJOGAR!", "É DIA\nDE JOGO!", "VAMOS\nVENCER!"), subtitle (detalhe do evento, ex: "Sub-11 · Sábado 15h · Arena Central")
 
 - "tech-statement"  → frases de impacto, pensamentos e declarações poderosas sobre qualquer tema
@@ -87,7 +87,7 @@ REGRAS DE SELEÇÃO DE TEMPLATE:
 - "big-number"      → obrigatório quando o conteúdo contém dados, estatísticas, porcentagens ou conquistas numéricas
 - "food-promo"      → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida
 - "tech-news"       → quando o prompt mencionar notícia, novidade, lançamento, evento, summit, atualização de tecnologia ou IA
-- "game-day"        → obrigatório quando o conteúdo mencionar esporte, time, jogo, partida, campeonato, treino, academia, competição ou resultado esportivo
+- "sport-arena"        → obrigatório quando o conteúdo mencionar esporte, time, jogo, partida, campeonato, treino, academia, competição ou resultado esportivo
 - "tech-statement"  → quando o prompt for uma frase, reflexão, provocação ou pensamento sobre negócios, IA ou automação
 - "tech-product"    → quando o prompt mencionar produto, serviço, agente, solução, ferramenta de IA ou automação
 - "tech-minimal"    → fundo sólido sem imagem, frase única e impactante de até 8 palavras. Use quando o usuário pedir algo minimalista, clean, fundo preto, ou quando a mensagem for uma frase curta e poderosa sem necessidade de imagem de fundo.
