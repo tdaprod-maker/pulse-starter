@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import type { Template } from '../state/useStore'
 
 const OFFICIAL = ['sport-arena', 'sport-brand', 'food-editorial', 'food-promo', 'tech-statement', 'tech-news', 'tech-product', 'tech-minimal']
-const SAMPLES  = ['hero-title', 'big-statement', 'editorial-card', 'big-number', 'food-promo']
+const SAMPLES  = ['hero-title', 'big-statement', 'editorial-card', 'big-number']
 
 const labelStyle: React.CSSProperties = {
   fontSize: '10px',
