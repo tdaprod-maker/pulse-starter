@@ -66,7 +66,7 @@ export function makeGameDayVariants(theme: Theme): Template[] {
       {
         id: 'subtitle',
         type: 'text',
-        x: 60, y: 740,
+        x: 60, y: 920,
         width: 960, height: 60,
         props: {
           text: 'Pré-infantil · Sábado 15h · Arena Central',
