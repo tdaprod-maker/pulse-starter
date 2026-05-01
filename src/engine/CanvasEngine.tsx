@@ -148,7 +148,8 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
 
     // ── Overlay opacity por template ───────────────────────────────────────────
     const overlayOpacity =
-      template.id.startsWith('editorial-card') ? 0.6
+      template.id.startsWith('game-day')       ? 0.65
+      : template.id.startsWith('editorial-card') ? 0.6
       : template.id.startsWith('hero-title')   ? 0.65
       : template.id.startsWith('food-promo')   ? 0.35
       : 0.5
