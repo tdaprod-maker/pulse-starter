@@ -11,6 +11,7 @@ const GROUPS = [
   { label: 'Health', ids: ['health-content', 'health-stats'] },
   { label: 'Construction', ids: ['build-impact', 'build-editorial'] },
   { label: 'Realty', ids: ['realty-premium', 'realty-launch'] },
+  { label: 'Fashion', ids: ['fashion-editorial', 'fashion-drop'] },
   { label: 'Outros', ids: ['tech-statement', 'tech-news', 'tech-product', 'tech-minimal', 'hero-title', 'big-statement', 'editorial-card', 'big-number'] },
 ]
 
