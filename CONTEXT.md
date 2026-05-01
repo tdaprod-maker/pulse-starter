@@ -277,3 +277,31 @@ git push
 - Imobiliária
 - Moda
 - Móveis
+
+## 14. Sessão 01/05/2026 (tarde)
+
+### Templates criados
+- Sport Brand — estilo Nike/Reebok, fundo preto, duas linhas bold, 4 variantes
+- Business Statement — número grande, cor primária no símbolo, fundo claro, 4 variantes
+- Business Card — fundo escuro, tag de serviço, título bold, CTA, 4 variantes
+- Health Content — fundo azul claro, badge, título, corpo, assinatura médico, 4 variantes
+- Health Stats — fundo azul escuro, dois números em destaque, CTA, 4 variantes
+- Build Impact — fundo preto industrial, número grande com m2 em cor primária, 4 variantes
+- Build Editorial — fundo bege, título bold, CTA orçamento, 4 variantes
+- Realty Premium — fundo escuro elegante, detalhes do imóvel, 4 variantes
+- Realty Launch — fundo branco, título bold, specs do empreendimento, 4 variantes
+- Fashion Editorial — fundo branco minimalista, nome da peça centralizado em serifada, 4 variantes
+- Fashion Drop — fundo preto, tipografia ultra bold, promoção em cor primária, 4 variantes
+
+### Melhorias
+- Sidebar com accordion por segmento: Sport, Food, Business, Health, Construction, Realty, Fashion, Outros
+- Store com version: 2 para limpar cache de templates antigos
+- Botão Sair corrigido com useEffect global
+- Logo padrão reduzido de 400px para 160px
+- Tema carregado do Brand Kit do cliente (color_primary, font_title, font_body)
+
+### Próxima sessão
+- Adicionar mais segmentos: Odontologia, Arquitetura, Pets, Educação
+- Adicionar prompt do Gemini para todos os novos templates
+- Avaliar substituição do FLUX Schnell por modelo de maior qualidade
+- Continuar processo Meta/Instagram
