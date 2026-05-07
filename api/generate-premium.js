@@ -39,7 +39,7 @@ Requirements:
         n: 1,
         size: '1024x1024',
         quality: 'medium',
-        output_format: 'png',
+        response_format: 'b64_json',
       }),
     })
 
@@ -49,15 +49,11 @@ Requirements:
     }
 
     const data = await response.json()
-    const imageUrl = data.data?.[0]?.url
+    const imageB64 = data.data?.[0]?.b64_json
 
-    if (!imageUrl) {
+    if (!imageB64) {
       return res.status(500).json({ error: 'No image returned from OpenAI' })
     }
-
-    const imageResponse = await fetch(imageUrl)
-    const arrayBuffer = await imageResponse.arrayBuffer()
-    const imageB64 = Buffer.from(arrayBuffer).toString('base64')
 
     return res.status(200).json({
       image: `data:image/png;base64,${imageB64}`
