@@ -243,7 +243,8 @@ export function PremiumPage() {
                   {slide.label}
                 </div>
                 <img src={slide.image} alt={slide.label} style={{ width: '100%', display: 'block' }} />
-                <button
+                </div>
+              <button
                   onClick={() => handleDownload(slide.image, slide.label)}
                   style={{
                     position: 'absolute',
