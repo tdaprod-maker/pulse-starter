@@ -88,7 +88,7 @@ export function PremiumPage() {
         brand?.color_primary ? `Primary color: ${brand.color_primary}` : '',
       ].filter(Boolean).join('. ')
 
-      const generated: { image: string; label: string }[] = []
+      const generated: { image: string; label: string; aspectRatio?: string }[] = []
 
       if (mode === 'single') {
         setTotalSteps(1)
