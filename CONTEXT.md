@@ -305,3 +305,22 @@ git push
 - Adicionar prompt do Gemini para todos os novos templates
 - Avaliar substituição do FLUX Schnell por modelo de maior qualidade
 - Continuar processo Meta/Instagram
+
+### Posts Premium — continuação sessão 07/05/2026
+
+**Implementado:**
+- Post único gera 1 imagem 1024x1024 e exporta nas 4 proporções via crop canvas
+- Crop correto por proporção: 1:1, 4:5, 9:16, 16:9
+- Carrossel gera slides em 1024x1536 (4:5)
+- Custo: post único 4 pulses, carrossel 2 pulses por slide
+
+**Pendente Posts Premium:**
+- Upload de foto do cliente como base para geração (resolve o "suco de IA")
+- Sobreposição do logo real do cliente após geração
+- Ajuste do crop 16:9 (ainda com problema visual)
+- Débito real de pulses (ainda não implementado)
+- Publicação direta no Instagram/LinkedIn
+
+**Limitação conhecida:**
+- Sem foto real do cliente, GPT Image 2 gera no estilo padrão dele
+- Logo inventado pela IA — não usa o logo real do Brand Kit
