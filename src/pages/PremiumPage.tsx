@@ -8,13 +8,20 @@ const PULSE_SINGLE = 4
 const PULSE_PER_SLIDE = 2
 
 type Mode = 'single' | 'carousel'
+type Slide = { image: string; label: string; aspectRatio?: string }
 
+const CROP_STYLES: Record<string, React.CSSProperties> = {
+  '1/1':  { aspectRatio: '1/1' },
+  '4/5':  { aspectRatio: '4/5' },
+  '9/16': { aspectRatio: '9/16' },
+  '16/9': { aspectRatio: '16/9' },
+}
 
 export function PremiumPage() {
   const [prompt, setPrompt] = useState('')
   const [mode, setMode] = useState<Mode>('single')
   const [slideCount, setSlideCount] = useState(3)
-  const [slides, setSlides] = useState<{ image: string; label: string; aspectRatio?: string }[]>([])
+  const [slides, setSlides] = useState<Slide[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [currentStep, setCurrentStep] = useState(0)
   const [totalSteps, setTotalSteps] = useState(0)
@@ -39,25 +46,15 @@ export function PremiumPage() {
         brandDescription: brand.brand_description ?? undefined,
       } : undefined)
       setPrompt(enriched)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setTurbining(false)
-    }
+    } catch (e) { console.error(e) }
+    finally { setTurbining(false) }
   }
 
   async function generateImage(slidePrompt: string, slideIndex: number, totalSlides: number, styleContext: string, size: string, refs: string[] = []) {
     const res = await fetch('/api/generate-premium', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: slidePrompt,
-        slideIndex,
-        totalSlides,
-        styleContext,
-        size,
-        visualReferences: refs,
-      }),
+      body: JSON.stringify({ prompt: slidePrompt, slideIndex, totalSlides, styleContext, size, visualReferences: refs }),
     })
     if (!res.ok) {
       const err = await res.json()
@@ -88,23 +85,18 @@ export function PremiumPage() {
         brand?.color_primary ? `Primary color: ${brand.color_primary}` : '',
       ].filter(Boolean).join('. ')
 
-      const generated: { image: string; label: string; aspectRatio?: string }[] = []
+      const generated: Slide[] = []
 
       if (mode === 'single') {
         setTotalSteps(1)
         setCurrentStep(1)
-
-        // Gera apenas 1 imagem em 1024x1024 e exibe nas 4 proporções com crop
-        const mainPrompt = `Create a professional Instagram post. Content: ${prompt}. Design must work well when cropped to different aspect ratios (1:1, 4:5, 9:16, 16:9). Place key visual elements and text in the center. Visually impactful with text integrated into the design.`
+        const mainPrompt = `Create a professional Instagram post. Content: ${prompt}. Design must work well when cropped to different aspect ratios. Place key visual elements and text in the center. Visually impactful with text integrated into the design.`
         const mainImage = await generateImage(mainPrompt, 1, 1, styleContext, '1024x1024', visualReferences)
-
-        // Exibe a mesma imagem nas 4 proporções
         generated.push({ image: mainImage, label: '1:1', aspectRatio: '1/1' })
         generated.push({ image: mainImage, label: '4:5', aspectRatio: '4/5' })
         generated.push({ image: mainImage, label: '9:16', aspectRatio: '9/16' })
         generated.push({ image: mainImage, label: '16:9', aspectRatio: '16/9' })
         setSlides([...generated])
-        setCurrentStep(1)
       } else {
         setTotalSteps(slideCount)
         for (let i = 1; i <= slideCount; i++) {
@@ -114,7 +106,7 @@ export function PremiumPage() {
             : i === slideCount
             ? `FINAL slide of carousel about: ${prompt}. Closing slide with call-to-action. Format 4:5 vertical.`
             : `SLIDE ${i} of ${slideCount} of carousel about: ${prompt}. Point ${i - 1} of the topic. Format 4:5 vertical.`
-          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '832x1024', visualReferences)
+          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
           generated.push({ image, label: `Slide ${i}` })
           setSlides([...generated])
         }
@@ -130,7 +122,7 @@ export function PremiumPage() {
   function handleDownload(imageUrl: string, label: string) {
     const link = document.createElement('a')
     link.href = imageUrl
-    link.download = `premium-${label.toLowerCase().replace(/\s/g, '-')}.png`
+    link.download = `premium-${label.toLowerCase().replace(/[\s:/]/g, '-')}.png`
     link.click()
   }
 
@@ -145,35 +137,13 @@ export function PremiumPage() {
   const isDone = status === 'done'
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      background: 'var(--bg-base)',
-      overflow: 'hidden',
-      position: 'relative',
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)', overflow: 'hidden', position: 'relative' }}>
+
       {/* Área de resultado */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: isIdle ? '0' : '32px 24px 220px',
-        gap: '20px',
-      }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isIdle ? '0' : '32px 24px 220px', gap: '20px' }}>
+
         {isIdle && (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            color: 'var(--text-muted)',
-            padding: '0 24px 200px',
-          }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '0 24px 200px' }}>
             <div style={{ fontSize: '40px', opacity: 0.5, marginBottom: '8px', color: 'var(--accent)' }}>✦</div>
             <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Posts Premium</p>
             <p style={{ fontSize: '13px', margin: 0, opacity: 0.8, textAlign: 'center', maxWidth: '420px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
@@ -183,27 +153,12 @@ export function PremiumPage() {
         )}
 
         {isLoading && slides.length === 0 && (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            color: 'var(--text-muted)',
-            padding: '0 24px 200px',
-          }}>
-            <p style={{ fontSize: '14px', margin: 0 }}>
-              {mode === 'single' ? `Gerando proporção ${currentStep} de ${totalSteps}...` : `Gerando slide ${currentStep} de ${totalSteps}...`}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0 24px 200px' }}>
+            <p style={{ fontSize: '14px', margin: 0, color: 'var(--text-muted)' }}>
+              {mode === 'single' ? 'Gerando post...' : `Gerando slide ${currentStep} de ${totalSteps}...`}
             </p>
             <div style={{ width: '240px', height: '4px', background: 'var(--bg-surface)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%',
-                width: `${(currentStep / totalSteps) * 100}%`,
-                background: 'var(--accent)',
-                borderRadius: '2px',
-                transition: 'width 0.4s',
-              }} />
+              <div style={{ height: '100%', width: `${(currentStep / totalSteps) * 100}%`, background: 'var(--accent)', borderRadius: '2px', transition: 'width 0.4s' }} />
             </div>
           </div>
         )}
@@ -217,64 +172,34 @@ export function PremiumPage() {
             gridTemplateColumns: mode === 'single' ? 'repeat(2, 1fr)' : undefined,
             flexDirection: mode === 'single' ? undefined : 'column',
             gap: '16px',
-            alignItems: mode === 'single' ? undefined : 'center',
+            alignItems: mode === 'single' ? 'start' : 'center',
           }}>
             {slides.map((slide, i) => (
-              <div key={i} style={{
-                position: 'relative',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                border: '1px solid var(--border)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                width: mode === 'single' ? '100%' : '100%',
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '10px',
-                  left: '10px',
-                  background: 'rgba(0,0,0,0.65)',
-                  color: '#fff',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: '4px',
-                  backdropFilter: 'blur(4px)',
-                }}>
+              <div key={i} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+                <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '4px', backdropFilter: 'blur(4px)', zIndex: 2 }}>
                   {slide.label}
                 </div>
-                <img src={slide.image} alt={slide.label} style={{ width: '100%', display: 'block' }} />
+                {/* Container com crop por proporção */}
+                <div style={slide.aspectRatio ? { ...CROP_STYLES[slide.aspectRatio], overflow: 'hidden', position: 'relative' } : {}}>
+                  <img
+                    src={slide.image}
+                    alt={slide.label}
+                    style={slide.aspectRatio ? {
+                      position: 'absolute', top: '50%', left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '100%', height: '100%',
+                      objectFit: 'cover', display: 'block',
+                    } : { width: '100%', display: 'block' }}
+                  />
                 </div>
-              <button
+                <button
                   onClick={() => handleDownload(slide.image, slide.label)}
-                  style={{
-                    position: 'absolute',
-                    bottom: '10px',
-                    right: '10px',
-                    background: 'rgba(0,0,0,0.65)',
-                    color: '#fff',
-                    fontSize: '11px',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    backdropFilter: 'blur(4px)',
-                    fontFamily: 'inherit',
-                  }}
+                  style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '11px', padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backdropFilter: 'blur(4px)', fontFamily: 'inherit', zIndex: 2 }}
                 >
                   Baixar
                 </button>
-                {isLoading && i === slides.length - 1 && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '10px',
-                    left: '10px',
-                    background: 'rgba(0,0,0,0.65)',
-                    color: 'var(--accent)',
-                    fontSize: '11px',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    backdropFilter: 'blur(4px)',
-                  }}>
+                {isLoading && i === slides.length - 1 && mode === 'carousel' && (
+                  <div style={{ position: 'absolute', bottom: '10px', left: '10px', background: 'rgba(0,0,0,0.65)', color: 'var(--accent)', fontSize: '11px', padding: '5px 10px', borderRadius: '6px', backdropFilter: 'blur(4px)', zIndex: 2 }}>
                     Gerando próximo...
                   </div>
                 )}
@@ -284,75 +209,28 @@ export function PremiumPage() {
         )}
 
         {isDone && (
-          <button
-            onClick={handleDownloadAll}
-            style={{
-              padding: '12px 24px',
-              borderRadius: '10px',
-              border: '1px solid var(--border)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-secondary)',
-              fontSize: '13px',
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-              marginBottom: '24px',
-            }}
-          >
+          <button onClick={handleDownloadAll} style={{ padding: '12px 24px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer', marginBottom: '24px' }}>
             Baixar tudo ({slides.length} imagens)
           </button>
         )}
       </div>
 
       {/* Input fixo no rodapé */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: '12px 24px 24px',
-        background: 'linear-gradient(to top, var(--bg-base) 75%, transparent)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '10px',
-      }}>
-        {error && (
-          <p style={{ fontSize: '12px', color: 'rgb(239,68,68)', margin: 0 }}>{error}</p>
-        )}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 24px 24px', background: 'linear-gradient(to top, var(--bg-base) 75%, transparent)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
 
-        {/* Seletor de modo e slides */}
+        {error && <p style={{ fontSize: '12px', color: 'rgb(239,68,68)', margin: 0 }}>{error}</p>}
+
+        {/* Seletor de modo */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={() => setMode('single')}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '6px',
-              border: '1px solid',
-              borderColor: mode === 'single' ? 'var(--accent)' : 'var(--border)',
-              background: mode === 'single' ? 'var(--accent-glow)' : 'var(--bg-surface)',
-              color: mode === 'single' ? 'var(--accent)' : 'var(--text-secondary)',
-              fontSize: '12px',
-              fontWeight: mode === 'single' ? 600 : 400,
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-            }}
+            style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid', borderColor: mode === 'single' ? 'var(--accent)' : 'var(--border)', background: mode === 'single' ? 'var(--accent-glow)' : 'var(--bg-surface)', color: mode === 'single' ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '12px', fontWeight: mode === 'single' ? 600 : 400, fontFamily: 'inherit', cursor: 'pointer' }}
           >
             Post único · {PULSE_SINGLE} pulses
           </button>
           <button
             onClick={() => { setMode('carousel'); setSlideCount(3) }}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '6px',
-              border: '1px solid',
-              borderColor: mode === 'carousel' ? 'var(--accent)' : 'var(--border)',
-              background: mode === 'carousel' ? 'var(--accent-glow)' : 'var(--bg-surface)',
-              color: mode === 'carousel' ? 'var(--accent)' : 'var(--text-secondary)',
-              fontSize: '12px',
-              fontWeight: mode === 'carousel' ? 600 : 400,
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-            }}
+            style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid', borderColor: mode === 'carousel' ? 'var(--accent)' : 'var(--border)', background: mode === 'carousel' ? 'var(--accent-glow)' : 'var(--bg-surface)', color: mode === 'carousel' ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '12px', fontWeight: mode === 'carousel' ? 600 : 400, fontFamily: 'inherit', cursor: 'pointer' }}
           >
             Carrossel
           </button>
@@ -362,23 +240,7 @@ export function PremiumPage() {
               <div style={{ width: '1px', height: '20px', background: 'var(--border)' }} />
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Slides:</span>
               {SLIDE_OPTIONS.map(n => (
-                <button
-                  key={n}
-                  onClick={() => setSlideCount(n)}
-                  style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: slideCount === n ? 'var(--accent)' : 'var(--border)',
-                    background: slideCount === n ? 'var(--accent-glow)' : 'var(--bg-surface)',
-                    color: slideCount === n ? 'var(--accent)' : 'var(--text-secondary)',
-                    fontSize: '12px',
-                    fontWeight: slideCount === n ? 600 : 400,
-                    fontFamily: 'inherit',
-                    cursor: 'pointer',
-                  }}
-                >
+                <button key={n} onClick={() => setSlideCount(n)} style={{ width: '30px', height: '30px', borderRadius: '6px', border: '1px solid', borderColor: slideCount === n ? 'var(--accent)' : 'var(--border)', background: slideCount === n ? 'var(--accent-glow)' : 'var(--bg-surface)', color: slideCount === n ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '12px', fontWeight: slideCount === n ? 600 : 400, fontFamily: 'inherit', cursor: 'pointer' }}>
                   {n}
                 </button>
               ))}
@@ -388,17 +250,7 @@ export function PremiumPage() {
         </div>
 
         {/* Caixa de prompt */}
-        <div style={{
-          width: '100%',
-          maxWidth: '720px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: '14px',
-          padding: '12px 14px',
-          display: 'flex',
-          alignItems: 'flex-end',
-          gap: '10px',
-        }}>
+        <div style={{ width: '100%', maxWidth: '720px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '12px 14px', display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
           <textarea
             ref={textareaRef}
             value={prompt}
@@ -407,72 +259,21 @@ export function PremiumPage() {
               e.target.style.height = 'auto'
               e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'
             }}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate()
-            }}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate() }}
             placeholder="Descreva o post ou carrossel que deseja criar..."
             rows={1}
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-primary)',
-              fontSize: '14px',
-              fontFamily: 'inherit',
-              resize: 'none',
-              outline: 'none',
-              lineHeight: 1.5,
-              maxHeight: '160px',
-              overflowY: 'auto',
-            }}
+            style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5, maxHeight: '160px', overflowY: 'auto' }}
           />
           <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-            <button
-              onClick={handleTurbo}
-              disabled={!prompt.trim() || turbining}
-              title="Turbinar prompt"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                background: 'var(--bg-base)',
-                color: 'var(--text-muted)',
-                fontSize: '16px',
-                cursor: !prompt.trim() || turbining ? 'default' : 'pointer',
-                opacity: !prompt.trim() || turbining ? 0.4 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <button onClick={handleTurbo} disabled={!prompt.trim() || turbining} title="Turbinar prompt" style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-muted)', fontSize: '16px', cursor: !prompt.trim() || turbining ? 'default' : 'pointer', opacity: !prompt.trim() || turbining ? 0.4 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ⚡
             </button>
-            <button
-              onClick={handleGenerate}
-              disabled={!prompt.trim() || isLoading}
-              className="btn-gerar"
-              style={{
-                height: '36px',
-                padding: '0 16px',
-                borderRadius: '8px',
-                border: 'none',
-                color: 'white',
-                fontSize: '13px',
-                fontWeight: 600,
-                fontFamily: 'inherit',
-                cursor: !prompt.trim() || isLoading ? 'default' : 'pointer',
-                opacity: !prompt.trim() || isLoading ? 0.5 : 1,
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <button onClick={handleGenerate} disabled={!prompt.trim() || isLoading} className="btn-gerar" style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: !prompt.trim() || isLoading ? 'default' : 'pointer', opacity: !prompt.trim() || isLoading ? 0.5 : 1, whiteSpace: 'nowrap' }}>
               {isLoading ? `${currentStep}/${totalSteps}...` : 'Gerar'}
             </button>
           </div>
         </div>
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-          ⌘ + Enter para gerar · GPT Image 2
-        </p>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>⌘ + Enter para gerar · GPT Image 2</p>
       </div>
     </div>
   )
