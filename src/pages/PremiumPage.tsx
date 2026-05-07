@@ -9,18 +9,12 @@ const PULSE_PER_SLIDE = 2
 
 type Mode = 'single' | 'carousel'
 
-const PROPORTIONS = [
-  { label: '1:1', width: 1024, height: 1024, display: '1080×1080' },
-  { label: '4:5', width: 1024, height: 1536, display: '1080×1350' },
-  { label: '9:16', width: 1024, height: 1536, display: '1080×1920' },
-  { label: '16:9', width: 1536, height: 1024, display: '1920×1080' },
-]
 
 export function PremiumPage() {
   const [prompt, setPrompt] = useState('')
   const [mode, setMode] = useState<Mode>('single')
   const [slideCount, setSlideCount] = useState(3)
-  const [slides, setSlides] = useState<{ image: string; label: string }[]>([])
+  const [slides, setSlides] = useState<{ image: string; label: string; aspectRatio?: string }[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [currentStep, setCurrentStep] = useState(0)
   const [totalSteps, setTotalSteps] = useState(0)
