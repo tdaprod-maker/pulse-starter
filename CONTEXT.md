@@ -324,3 +324,28 @@ git push
 **Limitação conhecida:**
 - Sem foto real do cliente, GPT Image 2 gera no estilo padrão dele
 - Logo inventado pela IA — não usa o logo real do Brand Kit
+
+## 16. Sessão 07/05/2026 (continuação tarde)
+
+### Posts Premium — progresso
+- Upload de foto de referência implementado (biblioteca do Brand Kit ou upload novo)
+- Com foto real do cliente, GPT Image 2 já se inspira nos atletas e cores reais
+- Crop via canvas implementado para exportar nas proporções corretas
+- Geração confirmada: 1 imagem principal + crop para 4 proporções
+
+### Pendências Posts Premium (prioridade para próxima sessão)
+1. Sobrepor logo real do Brand Kit via canvas após geração — PRIMEIRA PRIORIDADE
+2. Corrigir crop 16:9 (ainda com problema visual)
+3. Implementar débito real de pulses
+4. Melhorar consistência visual entre gerações (ainda com "cara de IA")
+
+### Descoberta importante
+- Com foto real do cliente como referência, o GPT Image 2 usa os atletas reais como base
+- Isso resolve grande parte do problema de identidade visual
+- O logo ainda é inventado — sobreposição via canvas é a solução
+
+### Outras pendências gerais
+- Replicar templates de posts para o carrossel
+- Adicionar segmentos: Odontologia, Arquitetura, Pets, Educação
+- Adicionar prompt do Gemini para todos os novos templates
+- Continuar processo Meta/Instagram
