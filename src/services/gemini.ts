@@ -32,7 +32,7 @@ const API_URL_FALLBACK = `https://generativelanguage.googleapis.com/v1beta/model
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
 
-function buildPrompt(userInput: string, brand?: BrandContext): string {
+function buildPrompt(userInput: string, brand?: BrandContext, forcedTemplate?: string): string {
   const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
     : brand?.tone === 'casual' ? 'descontraído e próximo'
     : brand?.tone === 'inspirational' ? 'inspiracional e motivador'
@@ -86,6 +86,8 @@ TEMPLATES DISPONÍVEIS:
 
 - "tech-minimal"    → frase única impactante, fundo sólido, sem imagem. Ideal para citações, pensamentos e declarações marcantes de qualquer segmento
   IMPORTANTE: para o tech-minimal, o texto do campo phrase NUNCA deve estar em caixa alta (caps lock). Use capitalização normal, apenas a primeira letra de cada frase em maiúscula.
+
+IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario (forcedTemplate), use OBRIGATORIAMENTE esse template, ignorando todas as regras de selecao automatica: ${forcedTemplate ? `\nTEMPLATE OBRIGATORIO: "${forcedTemplate}" — use este template independente do conteudo.` : ''}
 
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
@@ -257,7 +259,7 @@ export async function generateCarouselContent(userInput: string, slideCount: num
 
 // ─── Chamada principal ────────────────────────────────────────────────────────
 
-export async function generatePostContent(userInput: string, brand?: BrandContext): Promise<AIResponse> {
+export async function generatePostContent(userInput: string, brand?: BrandContext, forcedTemplate?: string): Promise<AIResponse> {
   let lastError: Error | null = null
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -269,7 +271,7 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(userInput, brand) }] }],
+          contents: [{ parts: [{ text: buildPrompt(userInput, brand, forcedTemplate) }] }],
           generationConfig: {
             response_mime_type: 'application/json',
             temperature: 0.8,
