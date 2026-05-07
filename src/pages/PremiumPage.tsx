@@ -11,7 +11,7 @@ type Mode = 'single' | 'carousel'
 
 const PROPORTIONS = [
   { label: '1:1', width: 1024, height: 1024, display: '1080×1080' },
-  { label: '4:5', width: 819, height: 1024, display: '1080×1350' },
+  { label: '4:5', width: 832, height: 1024, display: '1080×1350' },
   { label: '9:16', width: 576, height: 1024, display: '1080×1920' },
   { label: '16:9', width: 1024, height: 576, display: '1920×1080' },
 ]
@@ -113,7 +113,7 @@ export function PremiumPage() {
             : i === slideCount
             ? `FINAL slide of carousel about: ${prompt}. Closing slide with call-to-action. Format 4:5 vertical.`
             : `SLIDE ${i} of ${slideCount} of carousel about: ${prompt}. Point ${i - 1} of the topic. Format 4:5 vertical.`
-          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '819x1024')
+          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '832x1024')
           generated.push({ image, label: `Slide ${i}` })
           setSlides([...generated])
         }
