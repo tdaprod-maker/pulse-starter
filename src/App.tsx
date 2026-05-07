@@ -13,6 +13,7 @@ import { OnboardingPage } from './pages/OnboardingPage'
 import { AdminPage } from './pages/AdminPage'
 import { AccountPage } from './pages/AccountPage'
 import { VideoPage } from './pages/VideoPage'
+import { PremiumPage } from './pages/PremiumPage'
 import { IntroPage } from './pages/IntroPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { supabase } from './lib/supabase'
@@ -113,6 +114,7 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/video" element={<VideoPage />} />
+            <Route path="/premium" element={<PremiumPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
           </Routes>
         </div>
