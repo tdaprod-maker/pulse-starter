@@ -27,9 +27,21 @@ export function PremiumPage() {
   const [totalSteps, setTotalSteps] = useState(0)
   const [error, setError] = useState('')
   const [turbining, setTurbining] = useState(false)
+  const [referencePhoto, setReferencePhoto] = useState<string | null>(null)
+  const [brandPhotos, setBrandPhotos] = useState<string[]>([])
+  const [showPhotoLibrary, setShowPhotoLibrary] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const totalCost = mode === 'single' ? PULSE_SINGLE : slideCount * PULSE_PER_SLIDE
+
+  useState(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? ''
+      if (!email) return
+      loadBrandConfig(email).then(b => setBrandPhotos(b.photos ?? []))
+    })
+  })
 
   async function handleTurbo() {
     if (!prompt.trim() || turbining) return
@@ -75,7 +87,9 @@ export function PremiumPage() {
       const { data } = await supabase.auth.getUser()
       const email = data.user?.email ?? ''
       const brand = email ? await loadBrandConfig(email) : null
-      const visualReferences = brand?.visual_references ?? []
+      const visualReferences = referencePhoto
+        ? [referencePhoto]
+        : brand?.visual_references ?? []
 
       const styleContext = [
         brand?.segment ? `Segment: ${brand.segment}` : '',
@@ -260,6 +274,52 @@ export function PremiumPage() {
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 24px 24px', background: 'linear-gradient(to top, var(--bg-base) 75%, transparent)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
 
         {error && <p style={{ fontSize: '12px', color: 'rgb(239,68,68)', margin: 0 }}>{error}</p>}
+
+        {/* Foto de referência */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+            const file = e.target.files?.[0]
+            if (!file) return
+            const reader = new FileReader()
+            reader.onload = ev => setReferencePhoto(ev.target?.result as string)
+            reader.readAsDataURL(file)
+            e.target.value = ''
+          }} />
+          {referencePhoto ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img src={referencePhoto} style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--accent)' }} alt="ref" />
+              <span style={{ fontSize: '11px', color: 'var(--accent)' }}>Foto selecionada</span>
+              <button onClick={() => setReferencePhoto(null)} style={{ fontSize: '11px', color: 'rgba(239,68,68,0.7)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Remover</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                style={{ padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'inherit', cursor: 'pointer' }}
+              >
+                + Upload de foto
+              </button>
+              {brandPhotos.length > 0 && (
+                <button
+                  onClick={() => setShowPhotoLibrary(!showPhotoLibrary)}
+                  style={{ padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: showPhotoLibrary ? 'var(--accent-glow)' : 'var(--bg-surface)', color: showPhotoLibrary ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '11px', fontFamily: 'inherit', cursor: 'pointer' }}
+                >
+                  Biblioteca ({brandPhotos.length})
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {showPhotoLibrary && !referencePhoto && (
+          <div style={{ width: '100%', maxWidth: '720px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+            {brandPhotos.map(url => (
+              <button key={url} onClick={() => { setReferencePhoto(url); setShowPhotoLibrary(false) }} style={{ padding: 0, border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', background: 'none', aspectRatio: '1' }}>
+                <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="" />
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Seletor de modo */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
