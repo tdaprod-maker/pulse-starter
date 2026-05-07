@@ -62,6 +62,7 @@ export function PremiumPage() {
         totalSlides,
         styleContext,
         size,
+        visualReferences: refs,
       }),
     })
     if (!res.ok) {
