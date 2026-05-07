@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig, saveBrandConfig, uploadMedia, uploadPhoto, uploadLogo, DEFAULT_BRAND } from '../services/brandKit'
+import { analyzeVisualReferences } from '../services/gemini'
 import type { BrandConfig, BrandLogo } from '../services/brandKit'
 export function BrandPage() {
   const navigate = useNavigate()
@@ -11,6 +12,8 @@ export function BrandPage() {
   const [saved, setSaved] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [uploadingRefs, setUploadingRefs] = useState(false)
+  const [analyzingRefs, setAnalyzingRefs] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const logoLibInputRef = useRef<HTMLInputElement>(null)
@@ -86,6 +89,58 @@ export function BrandPage() {
       Carregando...
     </div>
   )
+
+  async function handleUploadRef(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    setUploadingRefs(true)
+    try {
+      const { data } = await supabase.auth.getUser()
+      const email = data.user?.email ?? ''
+      const current = config.visual_references ?? []
+      const urls: string[] = []
+      for (const file of files.slice(0, 5 - current.length)) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const path = `references/${email}/${Date.now()}_${safeName}`
+        const url = await uploadMedia(file, path)
+        if (url) urls.push(url)
+      }
+      const newRefs = [...current, ...urls].slice(0, 5)
+      setConfig(prev => ({ ...prev, visual_references: newRefs }))
+      await saveBrandConfig(email, { visual_references: newRefs })
+      if (newRefs.length > 0) {
+        setAnalyzingRefs(true)
+        try {
+          const analysis = await analyzeVisualReferences(newRefs)
+          setConfig(prev => ({ ...prev, visual_style: analysis }))
+          await saveBrandConfig(email, { visual_style: analysis })
+        } finally {
+          setAnalyzingRefs(false)
+        }
+      }
+    } finally {
+      setUploadingRefs(false)
+      e.target.value = ''
+    }
+  }
+
+  async function handleRemoveRef(url: string) {
+    const { data } = await supabase.auth.getUser()
+    const email = data.user?.email ?? ''
+    const newRefs = (config.visual_references ?? []).filter(u => u !== url)
+    setConfig(prev => ({ ...prev, visual_references: newRefs }))
+    await saveBrandConfig(email, { visual_references: newRefs })
+    if (newRefs.length > 0) {
+      setAnalyzingRefs(true)
+      try {
+        const analysis = await analyzeVisualReferences(newRefs)
+        setConfig(prev => ({ ...prev, visual_style: analysis }))
+        await saveBrandConfig(email, { visual_style: analysis })
+      } finally {
+        setAnalyzingRefs(false)
+      }
+    }
+  }
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-base)' }}>
@@ -222,6 +277,38 @@ export function BrandPage() {
           </Section>
 
           {/* Cores */}
+          <Section title="Referências Visuais">
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
+              Suba até 5 posts que admira — o Gemini analisa o estilo e usa como referência nas gerações.
+              {analyzingRefs && <span style={{ color: 'var(--accent)', marginLeft: '8px' }}>Analisando...</span>}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+              {(config.visual_references ?? []).map((url) => (
+                <div key={url} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1', border: '1px solid var(--border)' }}>
+                  <img src={url} alt="Referência" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button
+                    onClick={() => handleRemoveRef(url)}
+                    style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239,68,68,0.8)', border: 'none', borderRadius: '4px', color: '#fff', fontSize: '10px', padding: '2px 6px', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+            {(config.visual_references ?? []).length < 5 && (
+              <label style={{ display: 'block', padding: '10px', borderRadius: '8px', border: '1px dashed var(--border)', textAlign: 'center', cursor: uploadingRefs ? 'default' : 'pointer', color: 'var(--text-muted)', fontSize: '12px', opacity: uploadingRefs ? 0.5 : 1 }}>
+                <input type="file" accept="image/*" multiple onChange={handleUploadRef} style={{ display: 'none' }} disabled={uploadingRefs} />
+                {uploadingRefs ? 'Enviando...' : `Adicionar referência (${(config.visual_references ?? []).length}/5)`}
+              </label>
+            )}
+            {config.visual_style && (
+              <div style={{ marginTop: '12px', padding: '10px', borderRadius: '8px', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Estilo analisado</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{config.visual_style}</p>
+              </div>
+            )}
+          </Section>
+
           <Section title="Cores da Marca">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
