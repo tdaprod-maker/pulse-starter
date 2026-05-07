@@ -19,7 +19,7 @@ const PROPORTIONS = [
 export function PremiumPage() {
   const [prompt, setPrompt] = useState('')
   const [mode, setMode] = useState<Mode>('single')
-  const [slideCount, setSlideCount] = useState(5)
+  const [slideCount, setSlideCount] = useState(3)
   const [slides, setSlides] = useState<{ image: string; label: string }[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [currentStep, setCurrentStep] = useState(0)
@@ -173,9 +173,9 @@ export function PremiumPage() {
             color: 'var(--text-muted)',
             padding: '0 24px 200px',
           }}>
-            <div style={{ fontSize: '40px', opacity: 0.2, marginBottom: '8px' }}>✦</div>
-            <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)', margin: 0 }}>Posts Premium</p>
-            <p style={{ fontSize: '13px', margin: 0, opacity: 0.6, textAlign: 'center', maxWidth: '420px', lineHeight: 1.6 }}>
+            <div style={{ fontSize: '40px', opacity: 0.5, marginBottom: '8px', color: 'var(--accent)' }}>✦</div>
+            <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Posts Premium</p>
+            <p style={{ fontSize: '13px', margin: 0, opacity: 0.8, textAlign: 'center', maxWidth: '420px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
               Design completo gerado por GPT Image 2 — texto integrado à imagem, sem templates.
             </p>
           </div>
@@ -338,7 +338,7 @@ export function PremiumPage() {
             Post único · {PULSE_SINGLE} pulses
           </button>
           <button
-            onClick={() => setMode('carousel')}
+            onClick={() => { setMode('carousel'); setSlideCount(3) }}
             style={{
               padding: '6px 14px',
               borderRadius: '6px',
