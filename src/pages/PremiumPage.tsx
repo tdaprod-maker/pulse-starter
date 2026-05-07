@@ -98,11 +98,25 @@ export function PremiumPage() {
 
       if (mode === 'single') {
         setTotalSteps(PROPORTIONS.length)
-        for (let i = 0; i < PROPORTIONS.length; i++) {
-          setCurrentStep(i + 1)
-          const prop = PROPORTIONS[i]
-          const singlePrompt = `Create a professional single Instagram post. Content: ${prompt}. Format: ${prop.label} (${prop.display}). Make it visually impactful with text integrated into the design.`
-          const image = await generateImage(singlePrompt, 1, 1, styleContext, `${prop.width}x${prop.height}`, visualReferences)
+
+        // Gera a imagem principal em 1:1
+        setCurrentStep(1)
+        const mainPrompt = `Create a professional Instagram post. Content: ${prompt}. Square 1:1 format. Visually impactful with text integrated into the design.`
+        const mainImage = await generateImage(mainPrompt, 1, 1, styleContext, '1024x1024', visualReferences)
+        generated.push({ image: mainImage, label: '1:1' })
+        setSlides([...generated])
+
+        // Adapta para as outras proporções usando a imagem principal como referência
+        const adaptProps = [
+          { label: '4:5', size: '1024x1536', display: '1080×1350' },
+          { label: '9:16', size: '1024x1536', display: '1080×1920' },
+          { label: '16:9', size: '1536x1024', display: '1920×1080' },
+        ]
+        for (let i = 0; i < adaptProps.length; i++) {
+          setCurrentStep(i + 2)
+          const prop = adaptProps[i]
+          const adaptPrompt = `Adapt this exact same post design to ${prop.label} (${prop.display}) format. Keep all text, colors, style and visual elements identical. Only adjust the layout and composition to fit the new aspect ratio.`
+          const image = await generateImage(adaptPrompt, 1, 1, styleContext, prop.size, [mainImage])
           generated.push({ image, label: prop.label })
           setSlides([...generated])
         }
