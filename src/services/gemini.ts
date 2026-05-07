@@ -32,6 +32,32 @@ const API_URL_FALLBACK = `https://generativelanguage.googleapis.com/v1beta/model
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
 
+
+const TEMPLATE_FIELDS: Record<string, string> = {
+  'sport-arena':          'tag (categoria do evento em maiusculas), title (titulo em maiusculas, 2 linhas com \\n), subtitle (detalhe do evento)',
+  'sport-brand':          'brand-label (nome da marca), phrase-line1 (1 palavra em maiusculas), phrase-line2 (1 palavra em maiusculas na cor de destaque), tagline (slogan curto com pontos separadores)',
+  'food-editorial':       'label (categoria em maiusculas), dish (nome do prato, 1-2 linhas), price (preco com R$), cta (chamada curta)',
+  'food-promo':           'cat (categoria em maiusculas), dish (nome do prato em maiusculas), body (acompanhamentos curtos), price (preco com R$), cta (chamada)',
+  'business-statement':   'cat (categoria em maiusculas), number (numero com simbolo, ex: +47), symbol (simbolo isolado, ex: %), label (metrica em minusculas), body (contexto em 15-20 palavras)',
+  'business-card':        'cat (nome da empresa em maiusculas), tag (categoria do servico em maiusculas), title (nome do servico 2-3 palavras), body (descricao curta 10-15 palavras), cta (chamada curta)',
+  'health-content':       'badge (especialidade em maiusculas), title (titulo direto 4-8 palavras), body (explicacao 15-25 palavras), doctor (nome do medico), crm (especialidade e CRM)',
+  'health-stats':         'cat (especialidade em maiusculas), tag (tipo do dado em maiusculas), title (pergunta ou afirmacao impactante), stat1-num (primeiro numero), stat1-label (label do primeiro numero), stat2-num (segundo numero), stat2-label (label do segundo numero), cta (chamada)',
+  'build-impact':         'cat (categoria em maiusculas), number (numero com unidade, ex: +120), label (metrica em maiusculas), body (descricao da obra em 15-20 palavras)',
+  'build-editorial':      'cat (tipo de empresa em maiusculas), tag (categoria do servico em maiusculas), title (nome do servico em maiusculas), body (descricao 10-15 palavras), cta (chamada)',
+  'realty-premium':       'cat (tipo de imovel e bairro), tag (classificacao, ex: EXCLUSIVO), type (tipo e localizacao), title (descricao elegante do imovel), detail1-num (area), detail2-num (suites), detail3-num (vagas), price (preco formatado), cta (chamada)',
+  'realty-launch':        'cat (tipo de empresa), tag (status, ex: LANCAMENTO), tag-text (texto da badge), title (nome do empreendimento em maiusculas), spec1-val (area), spec2-val (quartos), spec3-val (ano de entrega), price (preco inicial), cta (chamada)',
+  'fashion-editorial':    'brand (nome da marca em maiusculas), num (numero da peca, ex: 001), title (nome da peca em portugues, pode ser em 2 linhas), cat (colecao e ano)',
+  'fashion-drop':         'brand (nome da marca em maiusculas), tag (tipo de oferta, ex: SALE), label (descricao da oferta em maiusculas), line1 (primeira linha do destaque em maiusculas), line2 (segunda linha do destaque em maiusculas com %), cta (chamada)',
+  'hero-title':           'title (titulo principal 3-6 palavras), subtitle (subtitulo explicativo 8-14 palavras)',
+  'big-statement':        'line1 (1-3 palavras), line2 (1-3 palavras)',
+  'editorial-card':       'label (1-2 palavras em maiusculas), title (4-7 palavras), body (15-25 palavras)',
+  'big-number':           'number (numero ou simbolo), caption (5-10 palavras)',
+  'tech-statement':       'phrase (frase em maiusculas max 8 palavras com \\n), brand (nome da marca)',
+  'tech-news':            'category (categoria em maiusculas), title (headline 2 linhas em maiusculas com \\n), brand (nome da marca)',
+  'tech-product':         'tag (categoria em maiusculas), title (nome do produto em maiusculas), subtitle (descricao 8-15 palavras), cta (chamada curta)',
+  'tech-minimal':         'phrase (frase impactante em capitalizacao normal)',
+}
+
 function buildPrompt(userInput: string, brand?: BrandContext, forcedTemplate?: string): string {
   const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
     : brand?.tone === 'casual' ? 'descontraído e próximo'
@@ -87,7 +113,7 @@ TEMPLATES DISPONÍVEIS:
 - "tech-minimal"    → frase única impactante, fundo sólido, sem imagem. Ideal para citações, pensamentos e declarações marcantes de qualquer segmento
   IMPORTANTE: para o tech-minimal, o texto do campo phrase NUNCA deve estar em caixa alta (caps lock). Use capitalização normal, apenas a primeira letra de cada frase em maiúscula.
 
-IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario (forcedTemplate), use OBRIGATORIAMENTE esse template, ignorando todas as regras de selecao automatica: ${forcedTemplate ? `\nTEMPLATE OBRIGATORIO: "${forcedTemplate}" — use este template independente do conteudo.` : ''}
+IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario, use OBRIGATORIAMENTE esse template, ignorando todas as regras de selecao automatica.${forcedTemplate ? `\nTEMPLATE OBRIGATORIO: "${forcedTemplate}"\nCAMPOS OBRIGATORIOS PARA ESTE TEMPLATE: ${TEMPLATE_FIELDS[forcedTemplate] ?? 'use os campos mais adequados ao template'}` : ''}
 
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
