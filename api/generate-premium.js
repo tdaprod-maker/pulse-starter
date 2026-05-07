@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'OPENAI_API_KEY not configured' })
   }
 
-  const slidePrompt = `You are creating slide ${slideIndex} of ${totalSlides} for an Instagram post.
+  const fullPrompt = `You are creating slide ${slideIndex} of ${totalSlides} for an Instagram post.
 
 VISUAL STYLE (follow strictly):
 ${styleContext || 'modern, clean, professional Brazilian social media post'}
@@ -26,31 +26,102 @@ RULES:
 - All text in Portuguese (Brazil)
 - Typography integrated into design
 - No watermarks
-- Cohesive visual identity across slides`
+- Cohesive visual identity`
 
   try {
-    const requestBody = {
-      model: 'gpt-image-2',
-      prompt: slidePrompt,
-      n: 1,
-      size: size || '1024x1024',
-      quality: 'medium',
+    // Se tem referência de imagem (base64 ou URL), usa edits
+    const refImage = visualReferences?.[0]
+    
+    if (refImage) {
+      // Converte base64 para blob via fetch de data URL
+      let imageBuffer
+      if (refImage.startsWith('data:')) {
+        const base64Data = refImage.split(',')[1]
+        imageBuffer = Buffer.from(base64Data, 'base64')
+      } else {
+        // É uma URL — faz fetch
+        const imgRes = await fetch(refImage)
+        const ab = await imgRes.arrayBuffer()
+        imageBuffer = Buffer.from(ab)
+      }
+
+      // Monta FormData manualmente
+      const boundary = '----FormBoundary' + Math.random().toString(36).slice(2)
+      const CRLF = '\r\n'
+      
+      const parts = []
+      
+      // model
+      parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="model"${CRLF}${CRLF}gpt-image-2`)
+      // prompt
+      parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="prompt"${CRLF}${CRLF}${fullPrompt}`)
+      // n
+      parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="n"${CRLF}${CRLF}1`)
+      // size
+      parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="size"${CRLF}${CRLF}${size || '1024x1024'}`)
+      // quality
+      parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="quality"${CRLF}${CRLF}medium`)
+
+      const preamble = parts.join(CRLF) + CRLF
+      const imageHeader = `--${boundary}${CRLF}Content-Disposition: form-data; name="image"; filename="reference.png"${CRLF}Content-Type: image/png${CRLF}${CRLF}`
+      const epilogue = `${CRLF}--${boundary}--`
+
+      const body = Buffer.concat([
+        Buffer.from(preamble),
+        Buffer.from(imageHeader),
+        imageBuffer,
+        Buffer.from(epilogue),
+      ])
+
+      const response = await fetch('https://api.openai.com/v1/images/edits', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': body.length.toString(),
+        },
+        body,
+      })
+
+      const responseText = await response.text()
+      console.log('[premium] edits status:', response.status)
+      console.log('[premium] edits preview:', responseText.substring(0, 300))
+
+      if (response.ok) {
+        const data = JSON.parse(responseText)
+        const item = data.data?.[0]
+        if (item?.b64_json) {
+          return res.status(200).json({ image: `data:image/png;base64,${item.b64_json}` })
+        }
+        if (item?.url) {
+          const imgRes = await fetch(item.url)
+          const ab = await imgRes.arrayBuffer()
+          const b64 = Buffer.from(ab).toString('base64')
+          return res.status(200).json({ image: `data:image/png;base64,${b64}` })
+        }
+      }
+      // Se edits falhou, cai no fallback abaixo
+      console.log('[premium] edits failed, falling back to generations')
     }
 
-    console.log('[premium] request size:', size)
-
+    // Fallback: generations sem referência
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        model: 'gpt-image-2',
+        prompt: fullPrompt,
+        n: 1,
+        size: size || '1024x1024',
+        quality: 'medium',
+      }),
     })
 
     const responseText = await response.text()
-    console.log('[premium] status:', response.status)
-    console.log('[premium] response preview:', responseText.substring(0, 300))
+    console.log('[premium] generations status:', response.status)
 
     if (!response.ok) {
       return res.status(500).json({ error: `OpenAI API error: ${responseText}` })
@@ -59,22 +130,17 @@ RULES:
     const data = JSON.parse(responseText)
     const item = data.data?.[0]
 
-    if (!item) {
-      return res.status(500).json({ error: 'No image returned from OpenAI' })
-    }
-
-    if (item.b64_json) {
+    if (item?.b64_json) {
       return res.status(200).json({ image: `data:image/png;base64,${item.b64_json}` })
     }
-
-    if (item.url) {
-      const imageResponse = await fetch(item.url)
-      const arrayBuffer = await imageResponse.arrayBuffer()
-      const imageB64 = Buffer.from(arrayBuffer).toString('base64')
-      return res.status(200).json({ image: `data:image/png;base64,${imageB64}` })
+    if (item?.url) {
+      const imgRes = await fetch(item.url)
+      const ab = await imgRes.arrayBuffer()
+      const b64 = Buffer.from(ab).toString('base64')
+      return res.status(200).json({ image: `data:image/png;base64,${b64}` })
     }
 
-    return res.status(500).json({ error: 'No image data in response' })
+    return res.status(500).json({ error: 'No image returned from OpenAI' })
 
   } catch (err) {
     console.error('[generate-premium] erro:', err)
