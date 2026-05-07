@@ -52,7 +52,7 @@ export function PremiumPage() {
     }
   }
 
-  async function generateImage(slidePrompt: string, slideIndex: number, totalSlides: number, styleContext: string, size: string) {
+  async function generateImage(slidePrompt: string, slideIndex: number, totalSlides: number, styleContext: string, size: string, refs: string[] = []) {
     const res = await fetch('/api/generate-premium', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -101,7 +101,7 @@ export function PremiumPage() {
           setCurrentStep(i + 1)
           const prop = PROPORTIONS[i]
           const singlePrompt = `Create a professional single Instagram post. Content: ${prompt}. Format: ${prop.label} (${prop.display}). Make it visually impactful with text integrated into the design.`
-          const image = await generateImage(singlePrompt, 1, 1, styleContext, `${prop.width}x${prop.height}`)
+          const image = await generateImage(singlePrompt, 1, 1, styleContext, `${prop.width}x${prop.height}`, visualReferences)
           generated.push({ image, label: prop.label })
           setSlides([...generated])
         }
@@ -114,7 +114,7 @@ export function PremiumPage() {
             : i === slideCount
             ? `FINAL slide of carousel about: ${prompt}. Closing slide with call-to-action. Format 4:5 vertical.`
             : `SLIDE ${i} of ${slideCount} of carousel about: ${prompt}. Point ${i - 1} of the topic. Format 4:5 vertical.`
-          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '832x1024')
+          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '832x1024', visualReferences)
           generated.push({ image, label: `Slide ${i}` })
           setSlides([...generated])
         }
