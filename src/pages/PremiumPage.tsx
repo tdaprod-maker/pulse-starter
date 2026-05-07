@@ -119,6 +119,38 @@ export function PremiumPage() {
     }
   }
 
+
+  async function cropImageToRatio(imageUrl: string, aspectRatio: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const [rw, rh] = aspectRatio.split('/').map(Number)
+        const targetRatio = rw / rh
+        const srcRatio = img.width / img.height
+
+        let sx = 0, sy = 0, sw = img.width, sh = img.height
+
+        if (srcRatio > targetRatio) {
+          sw = Math.round(img.height * targetRatio)
+          sx = Math.round((img.width - sw) / 2)
+        } else {
+          sh = Math.round(img.width / targetRatio)
+          sy = Math.round((img.height - sh) / 2)
+        }
+
+        const canvas = document.createElement('canvas')
+        const outputW = rw * 512
+        const outputH = rh * 512
+        canvas.width = outputW
+        canvas.height = outputH
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outputW, outputH)
+        resolve(canvas.toDataURL('image/png'))
+      }
+      img.src = imageUrl
+    })
+  }
+
   function handleDownload(imageUrl: string, label: string) {
     const link = document.createElement('a')
     link.href = imageUrl
@@ -126,10 +158,14 @@ export function PremiumPage() {
     link.click()
   }
 
-  function handleDownloadAll() {
-    slides.forEach((slide, i) => {
-      setTimeout(() => handleDownload(slide.image, slide.label), i * 300)
-    })
+  async function handleDownloadAll() {
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i]
+      const imageUrl = slide.aspectRatio
+        ? await cropImageToRatio(slide.image, slide.aspectRatio)
+        : slide.image
+      setTimeout(() => handleDownload(imageUrl, slide.label), i * 300)
+    }
   }
 
   const isIdle = status === 'idle'
@@ -193,7 +229,12 @@ export function PremiumPage() {
                   />
                 </div>
                 <button
-                  onClick={() => handleDownload(slide.image, slide.label)}
+                  onClick={async () => {
+                    const imageUrl = slide.aspectRatio
+                      ? await cropImageToRatio(slide.image, slide.aspectRatio)
+                      : slide.image
+                    handleDownload(imageUrl, slide.label)
+                  }}
                   style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '11px', padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backdropFilter: 'blur(4px)', fontFamily: 'inherit', zIndex: 2 }}
                 >
                   Baixar
