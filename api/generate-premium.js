@@ -48,6 +48,8 @@ Requirements:
     }
 
     const data = await response.json()
+    console.log('[premium] response keys:', JSON.stringify(Object.keys(data)))
+    console.log('[premium] data[0] keys:', JSON.stringify(data.data?.[0] ? Object.keys(data.data[0]) : 'no data'))
     const imageUrl = data.data?.[0]?.url
 
     if (!imageUrl) {
