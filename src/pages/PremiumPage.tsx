@@ -26,6 +26,7 @@ export function PremiumPage() {
   const [totalSteps, setTotalSteps] = useState(0)
   const [error, setError] = useState('')
   const [turbining, setTurbining] = useState(false)
+  const [visualReferences, setVisualReferences] = useState<string[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const totalCost = mode === 'single' ? PULSE_SINGLE : slideCount * PULSE_PER_SLIDE
@@ -83,6 +84,7 @@ export function PremiumPage() {
       const { data } = await supabase.auth.getUser()
       const email = data.user?.email ?? ''
       const brand = email ? await loadBrandConfig(email) : null
+      if (brand?.visual_references?.length) setVisualReferences(brand.visual_references)
 
       const styleContext = [
         brand?.segment ? `Segment: ${brand.segment}` : '',
