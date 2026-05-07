@@ -97,29 +97,20 @@ export function PremiumPage() {
       const generated: { image: string; label: string }[] = []
 
       if (mode === 'single') {
-        setTotalSteps(PROPORTIONS.length)
-
-        // Gera a imagem principal em 1:1
+        setTotalSteps(1)
         setCurrentStep(1)
-        const mainPrompt = `Create a professional Instagram post. Content: ${prompt}. Square 1:1 format. Visually impactful with text integrated into the design.`
-        const mainImage = await generateImage(mainPrompt, 1, 1, styleContext, '1024x1024', visualReferences)
-        generated.push({ image: mainImage, label: '1:1' })
-        setSlides([...generated])
 
-        // Adapta para as outras proporções usando a imagem principal como referência
-        const adaptProps = [
-          { label: '4:5', size: '1024x1536', display: '1080×1350' },
-          { label: '9:16', size: '1024x1536', display: '1080×1920' },
-          { label: '16:9', size: '1536x1024', display: '1920×1080' },
-        ]
-        for (let i = 0; i < adaptProps.length; i++) {
-          setCurrentStep(i + 2)
-          const prop = adaptProps[i]
-          const adaptPrompt = `Adapt this exact same post design to ${prop.label} (${prop.display}) format. Keep all text, colors, style and visual elements identical. Only adjust the layout and composition to fit the new aspect ratio.`
-          const image = await generateImage(adaptPrompt, 1, 1, styleContext, prop.size, [mainImage])
-          generated.push({ image, label: prop.label })
-          setSlides([...generated])
-        }
+        // Gera apenas 1 imagem em 1024x1024 e exibe nas 4 proporções com crop
+        const mainPrompt = `Create a professional Instagram post. Content: ${prompt}. Design must work well when cropped to different aspect ratios (1:1, 4:5, 9:16, 16:9). Place key visual elements and text in the center. Visually impactful with text integrated into the design.`
+        const mainImage = await generateImage(mainPrompt, 1, 1, styleContext, '1024x1024', visualReferences)
+
+        // Exibe a mesma imagem nas 4 proporções
+        generated.push({ image: mainImage, label: '1:1', aspectRatio: '1/1' })
+        generated.push({ image: mainImage, label: '4:5', aspectRatio: '4/5' })
+        generated.push({ image: mainImage, label: '9:16', aspectRatio: '9/16' })
+        generated.push({ image: mainImage, label: '16:9', aspectRatio: '16/9' })
+        setSlides([...generated])
+        setCurrentStep(1)
       } else {
         setTotalSteps(slideCount)
         for (let i = 1; i <= slideCount; i++) {
