@@ -117,8 +117,8 @@ export function AIPanel(_props: AIPanelProps) {
   const { theme } = useTheme()
 
   // ── Aplica o resultado da IA no store ──────────────────────────────────────
-  async function applyResult(result: AIResponse) {
-    const templateId = normalizeTemplateId(result.template)
+  async function applyResult(result: AIResponse, forcedTemplateId?: string) {
+    const templateId = forcedTemplateId ? normalizeTemplateId(forcedTemplateId) : normalizeTemplateId(result.template)
     const def = templateRegistry.find((d) => d.id === templateId)
     if (!def) throw new Error(`Template "${result.template}" não reconhecido`)
 
@@ -221,7 +221,7 @@ export function AIPanel(_props: AIPanelProps) {
       if (brandCtx?.color_primary && result.accentColor) {
         result.accentColor = brandCtx.color_primary
       }
-      await applyResult(result)
+      await applyResult(result, activeTemplateBase ?? undefined)
 
       // Verificação de segurança: se o formato mudou após applyResult, restaura
       const afterId     = useStore.getState().activeTemplateId
