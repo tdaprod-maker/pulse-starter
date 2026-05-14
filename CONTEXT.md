@@ -349,3 +349,42 @@ git push
 - Adicionar segmentos: Odontologia, Arquitetura, Pets, Educação
 - Adicionar prompt do Gemini para todos os novos templates
 - Continuar processo Meta/Instagram
+
+## 17. Sessão 14/05/2026
+
+### Posts Premium — melhorias implementadas
+- Legenda gerada automaticamente pelo Gemini após geração (Instagram + LinkedIn)
+- Hashtags geradas junto com a legenda
+- Campos de legenda e hashtags editáveis antes de publicar
+- Publicação direta no Instagram (post único e carrossel)
+- Publicação direta no LinkedIn (post único e carrossel)
+- Analisador de post integrado (scores visual + legenda + sugestões)
+- Logo real do Brand Kit sobreposto via canvas após geração
+- Posts Premium salvos automaticamente na Biblioteca de Posts
+- Legenda salva junto com o post e exibida na biblioteca ao clicar
+- Post único gera imagens separadas por proporção (1024x1024 para 1:1/4:5, 1024x1536 para 9:16, 1536x1024 para 16:9)
+- Prompt reescrito para estilo clean e premium com restrições explícitas
+- Estado persistido no sessionStorage para não perder ao trocar de aba
+- Foto de referência: upload para Supabase antes de enviar para API (resolve erro 413)
+
+### Biblioteca de Posts criada
+- Nova página /post-library com grid de posts gerados
+- Badge PREMIUM nos posts gerados via Posts Premium
+- Clique em post Premium abre painel com legenda Instagram + LinkedIn + hashtags
+- Botões copiar legenda por plataforma
+- Exclusão individual e em lote
+
+### Análise competitiva
+- PDF v4 com logos do Pulse e Agente 17
+- Precificação definida: R$ 47,90/mês · 100 pulses + R$ 9,90 por 10 pulses extras
+
+### Pendências para próxima sessão
+- Testar publicação Instagram e LinkedIn no Posts Premium
+- Implementar débito real de pulses no Posts Premium
+- Resolver perda de estado ao trocar de aba (sessionStorage não restaura)
+- Melhorar MUITO a qualidade visual dos templates existentes no editor Konva — estão desatualizados e com cara de 2023
+- Adicionar novos templates por segmento (Odontologia, Arquitetura, Pets, Educação, Móveis)
+- Replicar os templates de posts para o carrossel
+- Continuar processo Meta/Instagram (OAuth para múltiplos usuários)
+- Stripe — pagamento e renovação de pulses
+- Landing page de vendas
