@@ -85,7 +85,7 @@ export function Topbar() {
           { label: 'Carrossel', to: '/carousel' },
           { label: 'Posts Premium', to: '/premium' },
           { label: 'Biblioteca de Carrossel', to: '/carousel-library' },
-          { label: 'Biblioteca de Posts', to: '/templates' },
+          { label: 'Biblioteca de Posts', to: '/post-library' },
         ].map(({ label, to }) => {
           const active = pathname === to || (to === '/' && pathname === '/editor')
           return (
