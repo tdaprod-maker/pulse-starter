@@ -359,12 +359,23 @@ export function PremiumPage() {
       const { data } = await supabase.auth.getUser()
       const email = data.user?.email ?? ''
       if (!email) return
+      const newUrls: string[] = []
       for (const slide of images) {
         const base64 = slide.image.replace(/^data:image\/\w+;base64,/, '')
         const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
         const blob = new Blob([byteArray], { type: 'image/jpeg' })
         const fileName = `photos/${email}/premium-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-        await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+        const { error } = await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+        if (!error) {
+          const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+          newUrls.push(urlData.publicUrl)
+        }
+      }
+      if (newUrls.length > 0) {
+        const brand = await loadBrandConfig(email)
+        const current = brand.photos ?? []
+        await saveBrandConfig(email, { photos: [...current, ...newUrls] })
+        console.log('[saveToLibrary] salvou', newUrls.length, 'fotos na biblioteca')
       }
     } catch (e) {
       console.error('[saveToLibrary]', e)
