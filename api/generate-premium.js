@@ -37,8 +37,10 @@ MANDATORY DESIGN RULES:
 - STRICT TEXT LIMIT: ONE headline (maximum 6 words) + ONE supporting sentence (maximum 10 words) — nothing more
 - If the content requires more text, choose only the most impactful phrase and discard the rest
 - Never repeat the same information in different text elements
-- CRITICAL: All text must fit COMPLETELY within the image boundaries — never cut off at edges
-- CRITICAL: Maintain safe margins of at least 8% on all sides — no text near edges
+- CRITICAL: This image will be cropped to multiple aspect ratios (1:1, 4:5, 9:16, 16:9)
+- CRITICAL: Place ALL text and key visual elements in the CENTER 60% of the image only
+- CRITICAL: The outer 20% on each side must be empty or background only — no text near edges
+- CRITICAL: Safe zone for all content: centered rectangle using only 60% width and 70% height of the total image
 - CRITICAL: Do NOT include any logo, brand mark, or icon — leave space at top-left corner for logo overlay
 - CRITICAL: Do NOT invent or recreate any brand logo — the logo will be added separately
 
