@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { generatePremiumCaption, reviewPost, type PostReview } from '../services/gemini'
-import { loadBrandConfig } from '../services/brandKit'
+import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
 
 const SLIDE_OPTIONS = [3, 4, 5, 6, 7]
@@ -199,7 +199,7 @@ export function PremiumPage() {
 
       setStatus('done')
       // Salva na biblioteca de fotos
-      saveToLibrary(generated, email)
+      saveToLibrary(generated, email, mode)
       // Gera legenda automaticamente
       setGeneratingCaption(true)
       console.log('[premium] gerando legenda para prompt:', prompt.slice(0, 50))
@@ -402,35 +402,24 @@ export function PremiumPage() {
     })
   }
 
-  async function saveToLibrary(images: Slide[], userEmail: string) {
+  async function saveToLibrary(images: Slide[], userEmail: string, currentMode: 'single' | 'carousel') {
     if (!userEmail) return
     try {
-      const newUrls: string[] = []
-      for (const slide of images) {
-        const base64 = slide.image.replace(/^data:image\/\w+;base64,/, '')
-        const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-        const blob = new Blob([byteArray], { type: 'image/jpeg' })
-        const fileName = `photos/${userEmail}/premium-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-        const { error } = await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
-        if (!error) {
-          const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
-          newUrls.push(urlData.publicUrl)
-        }
-      }
-      if (newUrls.length > 0) {
-        const brand = await loadBrandConfig(userEmail)
-        const current = brand.photos ?? []
-        const updated = [...current, ...newUrls]
-        // Usa update direto para garantir compatibilidade com tipo ARRAY do PostgreSQL
-        const { error: saveErr } = await supabase
-          .from('brand_config')
-          .update({ photos: updated, updated_at: new Date().toISOString() })
-          .eq('user_email', userEmail)
-        if (saveErr) {
-          console.error('[saveToLibrary] erro ao salvar:', saveErr)
-        } else {
-          console.log('[saveToLibrary] salvou', newUrls.length, 'fotos. Total:', updated.length)
-        }
+      // Usa a primeira imagem como thumbnail
+      const firstImage = images[0]?.image
+      if (!firstImage) return
+
+      const postId = await savePost(userEmail, {
+        template_id: currentMode === 'single' ? 'premium-single' : 'premium-carousel',
+        texts: {},
+        accent_color: '',
+        image_prompt: prompt,
+      })
+
+      if (postId && firstImage) {
+        const thumbUrl = await uploadThumbnail(postId, userEmail, firstImage)
+        if (thumbUrl) await updatePostThumbnail(postId, thumbUrl)
+        console.log('[saveToLibrary] post Premium salvo na biblioteca:', postId)
       }
     } catch (e) {
       console.error('[saveToLibrary] erro:', e)
