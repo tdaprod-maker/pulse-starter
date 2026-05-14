@@ -138,6 +138,8 @@ export function PremiumPage() {
       }
 
       setStatus('done')
+      // Salva na biblioteca de fotos
+      saveToLibrary(generated)
       // Gera legenda automaticamente
       setGeneratingCaption(true)
       try {
@@ -278,6 +280,23 @@ export function PremiumPage() {
       setTimeout(() => setLiStatus('idle'), 3000)
     } finally {
       setPublishingLI(false)
+    }
+  }
+
+  async function saveToLibrary(images: Slide[]) {
+    try {
+      const { data } = await supabase.auth.getUser()
+      const email = data.user?.email ?? ''
+      if (!email) return
+      for (const slide of images) {
+        const base64 = slide.image.replace(/^data:image\/\w+;base64,/, '')
+        const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        const blob = new Blob([byteArray], { type: 'image/jpeg' })
+        const fileName = `photos/${email}/premium-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+        await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+      }
+    } catch (e) {
+      console.error('[saveToLibrary]', e)
     }
   }
 
