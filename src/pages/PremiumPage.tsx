@@ -379,6 +379,57 @@ export function PremiumPage() {
           </div>
         )}
 
+        {generatingCaption && (
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Gerando legenda...</p>
+        )}
+
+        {isDone && caption && (
+          <div style={{ width: '100%', maxWidth: mode === 'single' ? '900px' : '520px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Legenda gerada</span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {(['instagram', 'linkedin'] as const).map(t => (
+                <button key={t} onClick={() => setCaptionTab(t)} style={{ flex: 1, fontSize: '11px', padding: '5px', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, ...(captionTab === t ? { background: 'var(--accent)', border: 'none', color: 'white' } : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }) }}>
+                  {t === 'instagram' ? 'Instagram' : 'LinkedIn'}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={caption[captionTab]}
+              onChange={e => setCaption(prev => prev ? { ...prev, [captionTab]: e.target.value } : prev)}
+              rows={5}
+              style={{ width: '100%', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '12px', padding: '8px 10px', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.6, boxSizing: 'border-box' }}
+            />
+            <textarea
+              value={caption.hashtags}
+              onChange={e => setCaption(prev => prev ? { ...prev, hashtags: e.target.value } : prev)}
+              rows={2}
+              style={{ width: '100%', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-muted)', fontSize: '11px', padding: '8px 10px', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.6, boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button onClick={() => navigator.clipboard.writeText(`${caption[captionTab]}\n\n${caption.hashtags}`)} style={{ flex: 1, fontSize: '11px', padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar legenda</button>
+              <button onClick={() => navigator.clipboard.writeText(caption.hashtags)} style={{ fontSize: '11px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar hashtags</button>
+            </div>
+            <button onClick={handlePublishInstagram} disabled={publishingIG} style={{ width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px', cursor: publishingIG ? 'default' : 'pointer', fontFamily: 'inherit', fontWeight: 600, border: 'none', opacity: publishingIG ? 0.6 : 1, background: igStatus === 'success' ? 'rgba(34,197,94,0.8)' : igStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: 'white' }}>
+              {publishingIG ? 'Publicando...' : igStatus === 'success' ? 'Publicado!' : igStatus === 'error' ? 'Erro ao publicar' : 'Publicar no Instagram'}
+            </button>
+            {linkedinToken ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Conectado como <strong style={{ color: 'var(--text-primary)' }}>{linkedinName || 'LinkedIn'}</strong></span>
+                  <button onClick={() => { localStorage.removeItem('linkedin_token'); localStorage.removeItem('linkedin_sub'); localStorage.removeItem('linkedin_name'); setLinkedinToken(''); setLinkedinSub(''); setLinkedinName('') }} style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '5px', cursor: 'pointer', background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: 'rgba(239,68,68,0.6)', fontFamily: 'inherit' }}>Desconectar</button>
+                </div>
+                <button onClick={handlePublishLinkedIn} disabled={publishingLI} style={{ width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px', cursor: publishingLI ? 'default' : 'pointer', fontFamily: 'inherit', fontWeight: 600, border: 'none', opacity: publishingLI ? 0.6 : 1, background: liStatus === 'success' ? 'rgba(34,197,94,0.8)' : liStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg,#0077B5,#005e93)', color: 'white' }}>
+                  {publishingLI ? 'Publicando...' : liStatus === 'success' ? 'Publicado!' : liStatus === 'error' ? 'Erro ao publicar' : 'Publicar no LinkedIn'}
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')} style={{ width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg,#0077B5,#005e93)', border: 'none', color: 'white' }}>
+                Conectar LinkedIn
+              </button>
+            )}
+          </div>
+        )}
+
         {isDone && (
           <button onClick={handleDownloadAll} style={{ padding: '12px 24px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer', marginBottom: '24px' }}>
             Baixar tudo ({slides.length} imagens)
