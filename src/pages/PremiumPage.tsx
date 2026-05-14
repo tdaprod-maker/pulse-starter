@@ -181,6 +181,22 @@ export function PremiumPage() {
         }
       }
 
+      // Aplica logo real do Brand Kit em todas as imagens
+      const brandForLogo = await loadBrandConfig(email)
+      if (brandForLogo.logo_url) {
+        for (let i = 0; i < generated.length; i++) {
+          try {
+            generated[i] = {
+              ...generated[i],
+              image: await overlayLogo(generated[i].image, brandForLogo.logo_url)
+            }
+          } catch (e) {
+            console.error('[logo overlay]', e)
+          }
+        }
+        setSlides([...generated])
+      }
+
       setStatus('done')
       // Salva na biblioteca de fotos
       saveToLibrary(generated)
@@ -352,6 +368,38 @@ export function PremiumPage() {
     } finally {
       setReviewing(false)
     }
+  }
+
+  async function overlayLogo(imageBase64: string, logoUrl: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        const logo = new Image()
+        logo.crossOrigin = 'anonymous'
+        logo.onload = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')!
+          ctx.drawImage(img, 0, 0)
+          // Logo no canto inferior direito com margem de 4%
+          const margin = img.width * 0.04
+          const maxLogoW = img.width * 0.20
+          const ratio = logo.naturalWidth / logo.naturalHeight
+          const logoW = Math.min(maxLogoW, logo.naturalWidth)
+          const logoH = logoW / ratio
+          const x = img.width - logoW - margin
+          const y = img.height - logoH - margin
+          ctx.drawImage(logo, x, y, logoW, logoH)
+          resolve(canvas.toDataURL('image/png'))
+        }
+        logo.onerror = () => resolve(imageBase64)
+        logo.src = logoUrl
+      }
+      img.onerror = () => resolve(imageBase64)
+      img.src = imageBase64
+    })
   }
 
   async function saveToLibrary(images: Slide[]) {
