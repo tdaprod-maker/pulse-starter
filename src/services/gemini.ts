@@ -561,10 +561,11 @@ Retorne APENAS JSON válido sem markdown:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text }] }],
-          generationConfig: { response_mime_type: 'application/json', temperature: 0.7 },
+          generationConfig: { temperature: 0.7 },
         }),
       })
       const data = await res.json()
+      console.log('[caption] raw response:', JSON.stringify(data).slice(0, 200))
       const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
       const clean = raw.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
