@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { generatePremiumCaption, reviewPost, type PostReview } from '../services/gemini'
-import { loadBrandConfig, saveBrandConfig } from '../services/brandKit'
+import { loadBrandConfig } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
 
 const SLIDE_OPTIONS = [3, 4, 5, 6, 7]
