@@ -554,8 +554,8 @@ Retorne APENAS JSON válido sem markdown:
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const url = attempt < 2
-        ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent'
-        : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+? API_URL
+        : API_URL_FALLBACK
       const res = await fetch(`${url}?key=${API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
