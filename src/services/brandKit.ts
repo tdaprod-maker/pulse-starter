@@ -65,7 +65,7 @@ export async function saveBrandConfig(
 ): Promise<void> {
   await supabase
     .from('brand_config')
-    .upsert({ user_email: userEmail, ...config, updated_at: new Date().toISOString() })
+    .upsert({ user_email: userEmail, ...config, updated_at: new Date().toISOString() }, { onConflict: 'user_email' })
 }
 
 export async function uploadMedia(
