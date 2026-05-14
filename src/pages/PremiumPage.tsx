@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { generatePremiumCaption, reviewPost, type PostReview } from '../services/gemini'
 import { loadBrandConfig } from '../services/brandKit'
@@ -48,6 +48,27 @@ export function PremiumPage() {
 
   const totalCost = mode === 'single' ? PULSE_SINGLE : slideCount * PULSE_PER_SLIDE
 
+  // Restaura estado ao montar
+  useState(() => {
+    try {
+      const saved = sessionStorage.getItem('premium_state')
+      if (saved) {
+        const { slides: s, caption: c, status: st } = JSON.parse(saved)
+        if (s?.length) { setSlides(s); setStatus(st ?? 'done') }
+        if (c) setCaption(c)
+      }
+    } catch {}
+  })
+
+  // Persiste slides e caption no sessionStorage
+  useEffect(() => {
+    if (slides.length > 0) {
+      try {
+        sessionStorage.setItem('premium_state', JSON.stringify({ slides, caption, status }))
+      } catch {}
+    }
+  }, [slides, caption, status])
+
   useState(() => {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? ''
@@ -95,6 +116,9 @@ export function PremiumPage() {
     setSlides([])
     setCurrentStep(0)
     setError('')
+    setCaption(null)
+    setReview(null)
+    try { sessionStorage.removeItem('premium_state') } catch {}
 
     try {
       const { data } = await supabase.auth.getUser()
@@ -162,6 +186,7 @@ export function PremiumPage() {
       saveToLibrary(generated)
       // Gera legenda automaticamente
       setGeneratingCaption(true)
+      console.log('[premium] gerando legenda para prompt:', prompt.slice(0, 50))
       try {
         const cap = await generatePremiumCaption(prompt, brand ? {
           businessName: brand.business_name || brand.brand_name,
@@ -169,6 +194,7 @@ export function PremiumPage() {
           tone: brand.tone,
           brandDescription: brand.brand_description ?? undefined,
         } : undefined)
+        console.log('[premium] legenda gerada:', cap)
         setCaption(cap)
       } finally {
         setGeneratingCaption(false)
