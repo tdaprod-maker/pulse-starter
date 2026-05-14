@@ -209,8 +209,6 @@ export function PremiumPage() {
       }
 
       setStatus('done')
-      // Salva na biblioteca de fotos
-      saveToLibrary(generated, email, mode)
       // Gera legenda automaticamente
       setGeneratingCaption(true)
       console.log('[premium] gerando legenda para prompt:', prompt.slice(0, 50))
@@ -223,6 +221,8 @@ export function PremiumPage() {
         } : undefined)
         console.log('[premium] legenda gerada:', cap)
         setCaption(cap)
+        // Salva na biblioteca com legenda
+        saveToLibrary(generated, email, mode, cap)
       } finally {
         setGeneratingCaption(false)
       }
@@ -413,7 +413,7 @@ export function PremiumPage() {
     })
   }
 
-  async function saveToLibrary(images: Slide[], userEmail: string, currentMode: 'single' | 'carousel') {
+  async function saveToLibrary(images: Slide[], userEmail: string, currentMode: 'single' | 'carousel', cap?: { instagram: string; linkedin: string; hashtags: string } | null) {
     if (!userEmail) return
     try {
       // Usa a primeira imagem como thumbnail
@@ -424,7 +424,7 @@ export function PremiumPage() {
         template_id: currentMode === 'single' ? 'premium-single' : 'premium-carousel',
         texts: {},
         accent_color: '',
-        image_prompt: prompt,
+        image_prompt: JSON.stringify({ prompt, caption: cap ?? null }),
       })
 
       if (postId && firstImage) {
