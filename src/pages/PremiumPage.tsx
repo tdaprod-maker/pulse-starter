@@ -100,9 +100,27 @@ export function PremiumPage() {
       const { data } = await supabase.auth.getUser()
       const email = data.user?.email ?? ''
       const brand = email ? await loadBrandConfig(email) : null
-      const visualReferences = referencePhoto
-        ? [referencePhoto]
-        : brand?.visual_references ?? []
+      // Se a foto de referência é base64, faz upload para o Supabase primeiro
+      let visualReferences: string[] = brand?.visual_references ?? []
+      if (referencePhoto) {
+        if (referencePhoto.startsWith('data:')) {
+          try {
+            const base64 = referencePhoto.replace(/^data:image\/\w+;base64,/, '')
+            const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+            const blob = new Blob([byteArray], { type: 'image/jpeg' })
+            const fileName = `references/${email}/ref-${Date.now()}.jpg`
+            const { error: upErr } = await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+            if (!upErr) {
+              const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+              visualReferences = [urlData.publicUrl]
+            }
+          } catch (e) {
+            console.error('[ref upload]', e)
+          }
+        } else {
+          visualReferences = [referencePhoto]
+        }
+      }
 
       const styleContext = [
         brand?.segment ? `Segment: ${brand.segment}` : '',
