@@ -531,3 +531,52 @@ Responda SOMENTE com JSON válido, sem markdown.`
   }
   throw new Error('Falha na análise')
 }
+
+export async function generatePremiumCaption(prompt: string, brand?: BrandContext): Promise<{ instagram: string; linkedin: string; hashtags: string }> {
+  const brandCtx = brand ? `
+Marca: ${brand.businessName || ''}
+Segmento: ${brand.segment || ''}
+Tom: ${brand.tone || ''}
+Descricao: ${brand.brandDescription || ''}` : ''
+
+  const text = `Você é um especialista em marketing digital brasileiro. Crie legendas para um post gerado com IA.
+
+Contexto do post: ${prompt}
+${brandCtx}
+
+Retorne APENAS JSON válido sem markdown:
+{
+  "instagram": "legenda curta e impactante para Instagram, máximo 80 palavras, tom humano e direto, sem hashtags",
+  "linkedin": "legenda profissional para LinkedIn entre 150 e 250 palavras, começa com dado ou observação relevante, termina com pergunta para engajamento, sem hashtags",
+  "hashtags": "6 a 8 hashtags relevantes separadas por espaço em português e inglês"
+}`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const url = attempt < 2
+        ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent'
+        : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+      const res = await fetch(`${url}?key=${import.meta.env.VITE_GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }],
+          generationConfig: { response_mime_type: 'application/json', temperature: 0.7 },
+        }),
+      })
+      const data = await res.json()
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
+      const clean = raw.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
+      return {
+        instagram: parsed.instagram ?? '',
+        linkedin: parsed.linkedin ?? '',
+        hashtags: parsed.hashtags ?? '',
+      }
+    } catch {
+      if (attempt === 2) return { instagram: '', linkedin: '', hashtags: '' }
+      await new Promise(r => setTimeout(r, 2000))
+    }
+  }
+  return { instagram: '', linkedin: '', hashtags: '' }
+}
