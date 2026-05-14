@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { generatePremiumCaption } from '../services/gemini'
 import { loadBrandConfig } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
 
@@ -27,6 +28,16 @@ export function PremiumPage() {
   const [totalSteps, setTotalSteps] = useState(0)
   const [error, setError] = useState('')
   const [turbining, setTurbining] = useState(false)
+  const [caption, setCaption] = useState<{ instagram: string; linkedin: string; hashtags: string } | null>(null)
+  const [captionTab, setCaptionTab] = useState<'instagram' | 'linkedin'>('instagram')
+  const [generatingCaption, setGeneratingCaption] = useState(false)
+  const [linkedinToken, setLinkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
+  const [linkedinSub, setLinkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
+  const [linkedinName, setLinkedinName] = useState(localStorage.getItem('linkedin_name') ?? '')
+  const [publishingIG, setPublishingIG] = useState(false)
+  const [publishingLI, setPublishingLI] = useState(false)
+  const [igStatus, setIgStatus] = useState<'idle'|'success'|'error'>('idle')
+  const [liStatus, setLiStatus] = useState<'idle'|'success'|'error'>('idle')
   const [referencePhoto, setReferencePhoto] = useState<string | null>(null)
   const [brandPhotos, setBrandPhotos] = useState<string[]>([])
   const [showPhotoLibrary, setShowPhotoLibrary] = useState(false)
@@ -127,6 +138,19 @@ export function PremiumPage() {
       }
 
       setStatus('done')
+      // Gera legenda automaticamente
+      setGeneratingCaption(true)
+      try {
+        const cap = await generatePremiumCaption(prompt, brandCtx ? {
+          businessName: brandCtx.business_name || brandCtx.brand_name,
+          segment: brandCtx.segment,
+          tone: brandCtx.tone,
+          brandDescription: brandCtx.brand_description ?? undefined,
+        } : undefined)
+        setCaption(cap)
+      } finally {
+        setGeneratingCaption(false)
+      }
     } catch (e: any) {
       setError(e.message || 'Erro ao gerar')
       setStatus('error')
@@ -163,6 +187,98 @@ export function PremiumPage() {
       }
       img.src = imageUrl
     })
+  }
+
+  async function handlePublishInstagram() {
+    if (!caption || publishingIG || slides.length === 0) return
+    setPublishingIG(true)
+    setIgStatus('idle')
+    try {
+      const text = `${caption.instagram}\n\n${caption.hashtags}`
+      const igUserId = '17841479034844249'
+      if (mode === 'single') {
+        // Post único — usa a imagem 1:1
+        const mainImage = slides.find(s => s.label === '1:1')?.image ?? slides[0].image
+        const base64 = mainImage.replace(/^data:image\/\w+;base64,/, '')
+        const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        const blob = new Blob([byteArray], { type: 'image/jpeg' })
+        const fileName = `premium-ig-${Date.now()}.jpg`
+        await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+        const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+        const res = await fetch('/api/instagram-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: urlData.publicUrl, caption: text, igUserId }),
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error(data.error)
+        await supabase.storage.from('media').remove([fileName])
+      } else {
+        // Carrossel — faz upload de todos os slides
+        const imageUrls: string[] = []
+        for (const slide of slides) {
+          const base64 = slide.image.replace(/^data:image\/\w+;base64,/, '')
+          const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+          const blob = new Blob([byteArray], { type: 'image/jpeg' })
+          const fileName = `premium-ig-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+          await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+          const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+          imageUrls.push(urlData.publicUrl)
+        }
+        const res = await fetch('/api/instagram-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrls, caption: text, igUserId }),
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error(data.error)
+        await supabase.storage.from('media').remove(imageUrls.map(u => u.split('/media/')[1]))
+      }
+      setIgStatus('success')
+      setTimeout(() => setIgStatus('idle'), 3000)
+    } catch (e) {
+      console.error(e)
+      setIgStatus('error')
+      setTimeout(() => setIgStatus('idle'), 3000)
+    } finally {
+      setPublishingIG(false)
+    }
+  }
+
+  async function handlePublishLinkedIn() {
+    if (!caption || publishingLI || slides.length === 0 || !linkedinToken) return
+    setPublishingLI(true)
+    setLiStatus('idle')
+    try {
+      const text = `${caption.linkedin}\n\n${caption.hashtags}`
+      if (mode === 'single') {
+        const mainImage = slides.find(s => s.label === '1:1')?.image ?? slides[0].image
+        const res = await fetch('/api/linkedin-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken: linkedinToken, linkedinSub, text, imageBase64: mainImage }),
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error(data.error)
+      } else {
+        const images = slides.map(s => s.image)
+        const res = await fetch('/api/linkedin-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken: linkedinToken, linkedinSub, text, images }),
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error(data.error)
+      }
+      setLiStatus('success')
+      setTimeout(() => setLiStatus('idle'), 3000)
+    } catch (e) {
+      console.error(e)
+      setLiStatus('error')
+      setTimeout(() => setLiStatus('idle'), 3000)
+    } finally {
+      setPublishingLI(false)
+    }
   }
 
   function handleDownload(imageUrl: string, label: string) {
