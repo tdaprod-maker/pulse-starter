@@ -157,14 +157,25 @@ export function PremiumPage() {
       const generated: Slide[] = []
 
       if (mode === 'single') {
-        setTotalSteps(1)
+        setTotalSteps(2)
+
+        // Imagem 1 — 1:1 e 4:5
         setCurrentStep(1)
-        const mainPrompt = `Create a professional Instagram post. Content: ${prompt}. Design must work well when cropped to different aspect ratios. Place key visual elements and text in the center. Visually impactful with text integrated into the design.`
-        const mainImage = await generateImage(mainPrompt, 1, 1, styleContext, '1024x1024', visualReferences)
-        generated.push({ image: mainImage, label: '1:1', aspectRatio: '1/1' })
-        generated.push({ image: mainImage, label: '4:5', aspectRatio: '4/5' })
-        generated.push({ image: mainImage, label: '9:16', aspectRatio: '9/16' })
-        generated.push({ image: mainImage, label: '16:9', aspectRatio: '16/9' })
+        const squarePrompt = `Create a professional Instagram post. Content: ${prompt}. Square format, all content centered within 60% of the image area.`
+        const squareImage = await generateImage(squarePrompt, 1, 2, styleContext, '1024x1024', visualReferences)
+        generated.push({ image: squareImage, label: '1:1', aspectRatio: '1/1' })
+        generated.push({ image: squareImage, label: '4:5', aspectRatio: '4/5' })
+        setSlides([...generated])
+
+        // Imagem 2 — 9:16 e 16:9
+        setCurrentStep(2)
+        const verticalPrompt = `Create a professional Instagram Stories/Reels post. Content: ${prompt}. Vertical format 9:16, all content centered within 60% of the image area.`
+        const verticalImage = await generateImage(verticalPrompt, 2, 2, styleContext, '1024x1536', visualReferences)
+        generated.push({ image: verticalImage, label: '9:16', aspectRatio: '9/16' })
+        // 16:9 via crop da imagem horizontal
+        const horizontalPrompt = `Create a professional LinkedIn banner post. Content: ${prompt}. Horizontal format 16:9, all content centered within 60% of the image area.`
+        const horizontalImage = await generateImage(horizontalPrompt, 2, 2, styleContext, '1536x1024', visualReferences)
+        generated.push({ image: horizontalImage, label: '16:9', aspectRatio: '16/9' })
         setSlides([...generated])
       } else {
         setTotalSteps(slideCount)
