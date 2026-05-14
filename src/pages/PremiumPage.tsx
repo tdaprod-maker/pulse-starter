@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { generatePremiumCaption } from '../services/gemini'
+import { generatePremiumCaption, reviewPost, type PostReview } from '../services/gemini'
 import { loadBrandConfig } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
 
@@ -35,6 +35,8 @@ export function PremiumPage() {
   const [linkedinSub, setLinkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
   const [linkedinName, setLinkedinName] = useState(localStorage.getItem('linkedin_name') ?? '')
   const [publishingIG, setPublishingIG] = useState(false)
+  const [review, setReview] = useState<PostReview | null>(null)
+  const [reviewing, setReviewing] = useState(false)
   const [publishingLI, setPublishingLI] = useState(false)
   const [igStatus, setIgStatus] = useState<'idle'|'success'|'error'>('idle')
   const [liStatus, setLiStatus] = useState<'idle'|'success'|'error'>('idle')
@@ -283,6 +285,31 @@ export function PremiumPage() {
     }
   }
 
+  async function handleReview() {
+    if (!slides.length || !caption || reviewing) return
+    setReviewing(true)
+    setReview(null)
+    try {
+      const { data } = await supabase.auth.getUser()
+      const email = data.user?.email ?? ''
+      const brand = email ? await loadBrandConfig(email) : null
+      const mainImage = slides[0].image
+      const result = await reviewPost({
+        imageBase64: mainImage,
+        titulo: prompt,
+        legenda: caption[captionTab],
+        hashtags: caption.hashtags,
+        segmento: brand?.segment ?? undefined,
+        tone: brand?.tone ?? undefined,
+      })
+      setReview(result)
+    } catch (e) {
+      console.error('[review]', e)
+    } finally {
+      setReviewing(false)
+    }
+  }
+
   async function saveToLibrary(images: Slide[]) {
     try {
       const { data } = await supabase.auth.getUser()
@@ -428,6 +455,44 @@ export function PremiumPage() {
               <button onClick={() => navigator.clipboard.writeText(`${caption[captionTab]}\n\n${caption.hashtags}`)} style={{ flex: 1, fontSize: '11px', padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar legenda</button>
               <button onClick={() => navigator.clipboard.writeText(caption.hashtags)} style={{ fontSize: '11px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar hashtags</button>
             </div>
+            <button onClick={handleReview} disabled={reviewing} style={{ width: '100%', fontSize: '11px', padding: '7px', borderRadius: '6px', cursor: reviewing ? 'default' : 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit', opacity: reviewing ? 0.6 : 1 }}>
+              {reviewing ? 'Analisando...' : '✦ Analisar post · 1 pulse'}
+            </button>
+            {review && (
+              <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>Análise do Post</p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {[['Visual', review.score_visual], ['Legenda', review.score_legenda]].map(([label, score]) => {
+                    const s = Number(score)
+                    const color = s >= 8 ? '#22c55e' : s >= 6 ? '#FFCA1D' : '#ef4444'
+                    return (
+                      <div key={label as string} style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{label as string}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color }}>{s}/10</span>
+                        </div>
+                        <div style={{ height: '5px', borderRadius: '3px', background: 'var(--border)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${s * 10}%`, background: color, borderRadius: '3px' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--accent)', margin: 0, fontStyle: 'italic' }}>{review.resumo}</p>
+                {review.pontos_positivos?.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: '10px', fontWeight: 600, color: '#22c55e', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pontos positivos</p>
+                    {review.pontos_positivos.map((p, i) => <p key={i} style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '0 0 2px' }}>· {p}</p>)}
+                  </div>
+                )}
+                {review.sugestoes?.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sugestões</p>
+                    {review.sugestoes.map((s, i) => <p key={i} style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '0 0 2px' }}>· {s}</p>)}
+                  </div>
+                )}
+              </div>
+            )}
             <button onClick={handlePublishInstagram} disabled={publishingIG} style={{ width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px', cursor: publishingIG ? 'default' : 'pointer', fontFamily: 'inherit', fontWeight: 600, border: 'none', opacity: publishingIG ? 0.6 : 1, background: igStatus === 'success' ? 'rgba(34,197,94,0.8)' : igStatus === 'error' ? 'rgba(239,68,68,0.8)' : 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: 'white' }}>
               {publishingIG ? 'Publicando...' : igStatus === 'success' ? 'Publicado!' : igStatus === 'error' ? 'Erro ao publicar' : 'Publicar no Instagram'}
             </button>
