@@ -421,8 +421,16 @@ export function PremiumPage() {
         const brand = await loadBrandConfig(userEmail)
         const current = brand.photos ?? []
         const updated = [...current, ...newUrls]
-        await saveBrandConfig(userEmail, { photos: updated })
-        console.log('[saveToLibrary] salvou', newUrls.length, 'fotos. Total:', updated.length)
+        // Usa update direto para garantir compatibilidade com tipo ARRAY do PostgreSQL
+        const { error: saveErr } = await supabase
+          .from('brand_config')
+          .update({ photos: updated, updated_at: new Date().toISOString() })
+          .eq('user_email', userEmail)
+        if (saveErr) {
+          console.error('[saveToLibrary] erro ao salvar:', saveErr)
+        } else {
+          console.log('[saveToLibrary] salvou', newUrls.length, 'fotos. Total:', updated.length)
+        }
       }
     } catch (e) {
       console.error('[saveToLibrary] erro:', e)
