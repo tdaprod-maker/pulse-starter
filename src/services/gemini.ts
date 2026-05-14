@@ -556,7 +556,7 @@ Retorne APENAS JSON válido sem markdown:
       const url = attempt < 2
         ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent'
         : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
-      const res = await fetch(`${url}?key=${import.meta.env.VITE_GEMINI_API_KEY}`, {
+      const res = await fetch(`${url}?key=${API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
