@@ -141,11 +141,11 @@ export function PremiumPage() {
       // Gera legenda automaticamente
       setGeneratingCaption(true)
       try {
-        const cap = await generatePremiumCaption(prompt, brandCtx ? {
-          businessName: brandCtx.business_name || brandCtx.brand_name,
-          segment: brandCtx.segment,
-          tone: brandCtx.tone,
-          brandDescription: brandCtx.brand_description ?? undefined,
+        const cap = await generatePremiumCaption(prompt, brand ? {
+          businessName: brand.business_name || brand.brand_name,
+          segment: brand.segment,
+          tone: brand.tone,
+          brandDescription: brand.brand_description ?? undefined,
         } : undefined)
         setCaption(cap)
       } finally {
