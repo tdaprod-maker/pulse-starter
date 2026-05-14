@@ -10,6 +10,7 @@ export function PostLibraryPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const navigate = useNavigate()
+  const [selectedPost, setSelectedPost] = useState<PostRecord | null>(null)
 
   useEffect(() => { load() }, [])
 
@@ -55,11 +56,17 @@ export function PostLibraryPage() {
 
   function handleOpen(post: PostRecord) {
     if (post.template_id === 'premium-single' || post.template_id === 'premium-carousel') {
-      // Posts Premium — abre na aba Premium com a imagem salva
-      navigate('/premium')
+      setSelectedPost(selectedPost?.id === post.id ? null : post)
     } else {
-      // Posts do editor — abre no editor
       navigate('/')
+    }
+  }
+
+  function getParsedPrompt(post: PostRecord): { prompt: string; caption?: { instagram: string; linkedin: string; hashtags: string } } {
+    try {
+      return JSON.parse(post.image_prompt ?? '{}')
+    } catch {
+      return { prompt: post.image_prompt ?? '' }
     }
   }
 
@@ -165,6 +172,38 @@ export function PostLibraryPage() {
             ))}
           </div>
         )}
+        {/* Painel de legenda para post Premium selecionado */}
+        {selectedPost && isPremium(selectedPost) && (() => {
+          const parsed = getParsedPrompt(selectedPost)
+          const cap = parsed.caption
+          return cap ? (
+            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Legenda do Post</span>
+                <button onClick={() => setSelectedPost(null)} style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>Fechar ✕</button>
+              </div>
+              {selectedPost.thumbnail_url && (
+                <img src={selectedPost.thumbnail_url} alt="Post" style={{ width: '200px', borderRadius: '8px', alignSelf: 'center' }} />
+              )}
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Instagram</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{cap.instagram}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>LinkedIn</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{cap.linkedin}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Hashtags</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{cap.hashtags}</p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => navigator.clipboard.writeText(`${cap.instagram}\n\n${cap.hashtags}`)} style={{ flex: 1, fontSize: '11px', padding: '7px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar Instagram</button>
+                <button onClick={() => navigator.clipboard.writeText(`${cap.linkedin}\n\n${cap.hashtags}`)} style={{ flex: 1, fontSize: '11px', padding: '7px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar LinkedIn</button>
+              </div>
+            </div>
+          ) : null
+        })()}
       </main>
     </div>
   )
