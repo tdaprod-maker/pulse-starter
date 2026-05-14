@@ -556,7 +556,7 @@ Retorne APENAS JSON válido sem markdown:
       const url = attempt < 2
 ? API_URL
         : API_URL_FALLBACK
-      const res = await fetch(`${url}?key=${API_KEY}`, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
