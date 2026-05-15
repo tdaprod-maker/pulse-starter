@@ -214,15 +214,17 @@ export function CarouselLibraryPage() {
 
                   {/* Ações */}
                   <div style={{ padding: '0 12px 12px', display: 'flex', gap: '6px' }}>
-                    <button
-                      onClick={() => handleRestore(carousel)}
-                      style={{
-                        flex: 1, fontSize: '11px', padding: '6px', borderRadius: '6px', cursor: 'pointer',
-                        background: 'var(--accent)', border: 'none', color: 'white', fontFamily: 'inherit',
-                      }}
-                    >
-                      Recarregar
-                    </button>
+                    {carousel.template_id !== 'premium-carousel' && (
+                      <button
+                        onClick={() => handleRestore(carousel)}
+                        style={{
+                          flex: 1, fontSize: '11px', padding: '6px', borderRadius: '6px', cursor: 'pointer',
+                          background: 'var(--accent)', border: 'none', color: 'white', fontFamily: 'inherit',
+                        }}
+                      >
+                        Recarregar
+                      </button>
+                    )}
                     {linkedinToken ? (
                       <button
                         onClick={() => handlePublishLinkedIn(carousel)}
