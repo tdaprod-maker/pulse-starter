@@ -414,20 +414,22 @@ export async function turboPrompt(userPrompt: string, brand?: BrandContext): Pro
     brand?.visualStyle ? `Estilo visual: ${brand.visualStyle}` : '',
   ].filter(Boolean).join('\n')
 
-  const prompt = `Você é um especialista em criação de conteúdo para redes sociais.
+  const prompt = `Você é um diretor de arte e especialista em prompt engineering para geração de imagens com IA.
 
 Contexto da marca:
 ${systemContext}
 
-O usuário digitou esse prompt simples para gerar um post:
+O usuário quer criar um post para redes sociais com esse tema:
 "${userPrompt}"
 
-Reescreva esse prompt de forma mais rica e específica, incorporando o contexto da marca. O prompt turbinado deve:
-- Manter a intenção original do usuário
-- Incluir detalhes específicos do segmento e tom de voz da marca
-- Ser mais descritivo e direcionado
-- Ter no máximo 2 linhas
-- Estar em português do Brasil
+Reescreva como um prompt rico e preciso para geração de imagem com IA. O prompt deve incluir:
+- O tema e mensagem principal do post
+- Estilo visual e mood compatível com a marca (tom, segmento, personalidade)
+- Direção de composição: onde fica o sujeito, onde fica o texto, hierarquia visual
+- Iluminação e paleta de cores
+- Referência de qualidade (ex: campanha publicitária premium, editorial de revista)
+- Máximo de 4 linhas, direto e específico
+- Em português do Brasil
 
 Responda APENAS com o prompt turbinado, sem explicações, sem aspas, sem markdown.`
 
