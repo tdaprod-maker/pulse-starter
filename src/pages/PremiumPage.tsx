@@ -411,21 +411,41 @@ export function PremiumPage() {
   async function saveToLibrary(images: Slide[], userEmail: string, currentMode: 'single' | 'carousel', cap?: { instagram: string; linkedin: string; hashtags: string } | null) {
     if (!userEmail) return
     try {
-      // Usa a primeira imagem como thumbnail
       const firstImage = images[0]?.image
       if (!firstImage) return
 
-      const postId = await savePost(userEmail, {
-        template_id: currentMode === 'single' ? 'premium-single' : 'premium-carousel',
-        texts: {},
-        accent_color: '',
-        image_prompt: JSON.stringify({ prompt, caption: cap ?? null }),
-      })
+      if (currentMode === 'carousel') {
+        // Salva na tabela carousels
+        const slideImages = images.map(s => s.image)
+        const { error } = await supabase
+          .from('carousels')
+          .insert({
+            user_email: userEmail,
+            title: prompt.slice(0, 80),
+            prompt,
+            template_id: 'premium-carousel',
+            slides: JSON.stringify(images.map((s, i) => ({ id: i + 1, text: s.label }))),
+            slide_images: JSON.stringify(slideImages),
+            caption: cap ? `${cap.instagram}
 
-      if (postId && firstImage) {
-        const thumbUrl = await uploadThumbnail(postId, userEmail, firstImage)
-        if (thumbUrl) await updatePostThumbnail(postId, thumbUrl)
-        console.log('[saveToLibrary] post Premium salvo na biblioteca:', postId)
+${cap.hashtags}` : '',
+            settings: JSON.stringify({ mode: 'premium' }),
+          })
+        if (error) console.error('[saveToLibrary] erro carrossel:', error)
+        else console.log('[saveToLibrary] carrossel Premium salvo na biblioteca de carrosséis')
+      } else {
+        // Salva na tabela posts
+        const postId = await savePost(userEmail, {
+          template_id: 'premium-single',
+          texts: {},
+          accent_color: '',
+          image_prompt: JSON.stringify({ prompt, caption: cap ?? null }),
+        })
+        if (postId && firstImage) {
+          const thumbUrl = await uploadThumbnail(postId, userEmail, firstImage)
+          if (thumbUrl) await updatePostThumbnail(postId, thumbUrl)
+          console.log('[saveToLibrary] post Premium salvo na biblioteca:', postId)
+        }
       }
     } catch (e) {
       console.error('[saveToLibrary] erro:', e)
