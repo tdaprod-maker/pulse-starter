@@ -157,7 +157,7 @@ export function PremiumPage() {
       const generated: Slide[] = []
 
       if (mode === 'single') {
-        setTotalSteps(4)
+        setTotalSteps(3)
 
         // Imagem 1 — 1:1 e 4:5
         setCurrentStep(1)
@@ -167,16 +167,16 @@ export function PremiumPage() {
         generated.push({ image: squareImage, label: '4:5', aspectRatio: '4/5' })
         setSlides([...generated])
 
-        // Imagem 2 — 9:16 e 16:9
-        setCurrentStep(3)
+        // Imagem 2 — 9:16
+        setCurrentStep(2)
         const verticalPrompt = `Create a professional Instagram Stories/Reels post. Content: ${prompt}. Vertical format 9:16, all content centered within 60% of the image area.`
         const verticalImage = await generateImage(verticalPrompt, 2, 2, styleContext, '1024x1536', visualReferences)
         generated.push({ image: verticalImage, label: '9:16', aspectRatio: '9/16' })
-        // 16:9 via crop da imagem horizontal
-        setCurrentStep(4)
-        const horizontalPrompt = `Create a professional LinkedIn banner post. Content: ${prompt}. Horizontal format 16:9, all content centered within 60% of the image area.`
-        const horizontalImage = await generateImage(horizontalPrompt, 2, 2, styleContext, '1536x1024', visualReferences)
-        generated.push({ image: horizontalImage, label: '16:9', aspectRatio: '16/9' })
+        setSlides([...generated])
+
+        // 16:9 — crop da imagem quadrada (sem nova geração)
+        setCurrentStep(3)
+        generated.push({ image: squareImage, label: '16:9', aspectRatio: '16/9' })
         setSlides([...generated])
       } else {
         setTotalSteps(slideCount)
