@@ -159,14 +159,13 @@ export function PremiumPage() {
       if (mode === 'single') {
         setTotalSteps(1)
 
-        // Uma única geração — todos os formatos via crop
+        // Uma única geração vertical — 9:16, 4:5 e 1:1 via crop
         setCurrentStep(1)
-        const squarePrompt = `Create a professional social media post. Content: ${prompt}. CRITICAL LAYOUT RULES: All text and visual elements must fit within a centered square of 50% of total image size. Text must be compact enough to fit inside this zone even when the image is cropped to 9:16 vertical format — use smaller font sizes and tighter line spacing if needed. No text, borders, frames or elements outside this central zone. No decorative containers or rectangular outlines. Background only in outer areas.`
-        const squareImage = await generateImage(squarePrompt, 1, 1, styleContext, '1024x1024', visualReferences)
-        generated.push({ image: squareImage, label: '1:1', aspectRatio: '1/1' })
-        generated.push({ image: squareImage, label: '4:5', aspectRatio: '4/5' })
-        generated.push({ image: squareImage, label: '9:16', aspectRatio: '9/16' })
-        generated.push({ image: squareImage, label: '16:9', aspectRatio: '16/9' })
+        const verticalPrompt = `Create a professional social media post. Content: ${prompt}. Vertical format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. Use compact font sizes and tight line spacing. No text or elements near edges. No borders, frames or decorative containers. Background only in outer areas.`
+        const verticalImage = await generateImage(verticalPrompt, 1, 1, styleContext, '1024x1536', visualReferences)
+        generated.push({ image: verticalImage, label: '9:16', aspectRatio: '9/16' })
+        generated.push({ image: verticalImage, label: '4:5', aspectRatio: '4/5' })
+        generated.push({ image: verticalImage, label: '1:1', aspectRatio: '1/1' })
         setSlides([...generated])
       } else {
         setTotalSteps(slideCount)
