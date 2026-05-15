@@ -161,7 +161,7 @@ export function PremiumPage() {
 
         // Uma única geração — todos os formatos via crop
         setCurrentStep(1)
-        const squarePrompt = `Create a professional social media post. Content: ${prompt}. CRITICAL: All text must be strictly within the CENTER 50% of the image width and CENTER 50% of the image height. The outer 25% on every side must be completely empty background — no text, no borders, no frames, no decorative elements, no lines near edges. Do NOT add any border, frame, or rectangular outline around the content. Typography only, no decorative containers.`
+        const squarePrompt = `Create a professional social media post. Content: ${prompt}. CRITICAL LAYOUT RULES: All text and visual elements must fit within a centered square of 50% of total image size. Text must be compact enough to fit inside this zone even when the image is cropped to 9:16 vertical format — use smaller font sizes and tighter line spacing if needed. No text, borders, frames or elements outside this central zone. No decorative containers or rectangular outlines. Background only in outer areas.`
         const squareImage = await generateImage(squarePrompt, 1, 1, styleContext, '1024x1024', visualReferences)
         generated.push({ image: squareImage, label: '1:1', aspectRatio: '1/1' })
         generated.push({ image: squareImage, label: '4:5', aspectRatio: '4/5' })
