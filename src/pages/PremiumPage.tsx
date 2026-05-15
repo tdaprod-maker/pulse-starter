@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { generatePremiumCaption, reviewPost, type PostReview } from '../services/gemini'
+import { generatePremiumCaption, reviewPost, type PostReview, breakCarouselIntoSlides } from '../services/gemini'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
 
@@ -169,13 +169,21 @@ export function PremiumPage() {
         setSlides([...generated])
       } else {
         setTotalSteps(slideCount)
+        // Quebra o tema em pontos específicos por slide
+        const slidePoints = await breakCarouselIntoSlides(prompt, slideCount, brand ? {
+          businessName: brand.business_name || brand.brand_name,
+          segment: brand.segment,
+          tone: brand.tone,
+        } : undefined)
+
         for (let i = 1; i <= slideCount; i++) {
           setCurrentStep(i)
+          const slideContent = slidePoints[i - 1] || prompt
           const slidePromptText = i === 1
-            ? `CAROUSEL COVER SLIDE 1 of ${slideCount}. Topic: ${prompt}. Design: bold full-bleed editorial image, ultra-bold headline maximum 4 words centered, strong visual hook that stops the scroll. Consistent visual style: dark background, brand accent color on key word, cinematic directional lighting. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            ? `CAROUSEL COVER SLIDE 1 of ${slideCount}. Content: ${slideContent}. Design: bold full-bleed editorial image, ultra-bold headline maximum 4 words centered, strong visual hook that stops the scroll. Dark background, brand accent color on key word, cinematic directional lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : i === slideCount
-            ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. Topic: ${prompt}. Design: strong visual call-to-action slide — include a clearly visible CTA button or highlighted action phrase (ex: "Fale Conosco", "Saiba Mais", "Comece Agora"), one bold closing statement maximum 5 words, supporting line maximum 8 words. Same visual style as cover: dark background, brand accent color highlight on CTA element, cinematic mood. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
-            : `CAROUSEL SLIDE ${i} of ${slideCount}. Topic: ${prompt} — specific point ${i - 1} of ${slideCount - 2}. Design: ONE key idea per slide, strong supporting visual, headline maximum 4 words, supporting line maximum 8 words. Same consistent visual style as other slides: dark background, brand accent color, cinematic directional lighting. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. Content: ${slideContent}. Design: strong CTA slide — clearly visible action phrase like "Fale Conosco" or "Saiba Mais", one bold closing statement maximum 5 words. Dark background, brand accent color on CTA element, cinematic mood. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            : `CAROUSEL SLIDE ${i} of ${slideCount}. Content: ${slideContent}. Design: ONE specific idea per slide — different from all other slides, strong editorial visual supporting this specific point, headline maximum 4 words, supporting line maximum 8 words. Dark background, brand accent color, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
           generated.push({ image, label: `Slide ${i}`, aspectRatio: '4/5' })
           setSlides([...generated])

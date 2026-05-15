@@ -583,3 +583,50 @@ Retorne APENAS JSON válido sem markdown:
   }
   return { instagram: '', linkedin: '', hashtags: '' }
 }
+
+export async function breakCarouselIntoSlides(prompt: string, slideCount: number, brand?: BrandContext): Promise<string[]> {
+  const brandCtx = brand ? `Marca: ${brand.businessName || ''}, Segmento: ${brand.segment || ''}, Tom: ${brand.tone || ''}` : ''
+
+  const text = `Você é um especialista em marketing de conteúdo para redes sociais.
+
+Tema do carrossel: "${prompt}"
+${brandCtx}
+Número de slides: ${slideCount}
+
+Crie ${slideCount} descrições de slide para um carrossel, seguindo esta estrutura obrigatória:
+- Slide 1: gancho poderoso que chama atenção — frase de impacto, provocação ou dado surpreendente relacionado ao tema
+${Array.from({length: slideCount - 2}, (_, i) => `- Slide ${i + 2}: ponto específico ${i + 1} de desenvolvimento do tema — conteúdo único, diferente dos outros slides`).join('\n')}
+- Slide ${slideCount}: CTA claro — convite para ação, contato ou próximo passo
+
+Retorne APENAS um array JSON com ${slideCount} strings, cada uma descrevendo o conteúdo específico daquele slide em 1-2 frases. Sem markdown, sem explicações.
+Exemplo: ["Gancho aqui", "Ponto 1 aqui", "CTA aqui"]`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
+        }),
+      })
+      const data = await res.json()
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]'
+      const clean = raw.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
+      if (Array.isArray(parsed) && parsed.length === slideCount) return parsed
+    } catch {
+      if (attempt === 2) {
+        // Fallback: retorna slides genéricos
+        return Array.from({length: slideCount}, (_, i) =>
+          i === 0 ? `Gancho: ${prompt}` :
+          i === slideCount - 1 ? `CTA: Entre em contato` :
+          `Ponto ${i}: ${prompt}`
+        )
+      }
+      await new Promise(r => setTimeout(r, 2000))
+    }
+  }
+  return Array.from({length: slideCount}, (_, i) => `Slide ${i + 1}: ${prompt}`)
+}
