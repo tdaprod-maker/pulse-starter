@@ -54,19 +54,28 @@ export function Topbar() {
     }}>
 
       {/* Logo */}
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }} onClick={e => { if (pathname === '/') e.preventDefault() }}>
-        <img
-          src="/logo-pulse.svg"
-          alt="Pulse"
-          style={{
-            height: '120px',
-            marginTop: '-38px',
-            marginBottom: '-38px',
-            marginLeft: '-20px',
-            display: 'block',
-          }}
-        />
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }} onClick={e => { if (pathname === '/') e.preventDefault() }}>
+          <img
+            src="/logo-pulse.svg"
+            alt="Pulse"
+            style={{
+              height: '120px',
+              marginTop: '-38px',
+              marginBottom: '-38px',
+              marginLeft: '-20px',
+              display: 'block',
+            }}
+          />
+        </Link>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+          por{' '}
+          <a href="https://agente17.com.br" target="_blank" rel="noopener noreferrer"
+            style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontSize: '10px' }}>
+            Agente 17
+          </a>
+        </span>
+      </div>
 
       {/* Nav central */}
       <nav style={{
@@ -93,7 +102,7 @@ export function Topbar() {
               key={to}
               to={to}
               style={{
-                padding: '6px 20px',
+                padding: '6px 12px',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: active ? 600 : 400,
