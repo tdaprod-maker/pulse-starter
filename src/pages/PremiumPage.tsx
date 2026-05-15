@@ -161,7 +161,7 @@ export function PremiumPage() {
 
         // Imagem 1 — 1:1 e 4:5
         setCurrentStep(1)
-        const squarePrompt = `Create a professional Instagram post. Content: ${prompt}. Square format, all content centered within 60% of the image area.`
+        const squarePrompt = `Instagram post, square 1:1 format. Subject: ${prompt}. Composition: strong typographic hierarchy, person or key visual occupying one half of the frame, text on the opposite half. Mood: editorial, cinematic lighting, rich and intentional color palette. All elements strictly within center 60% of image width and 70% of image height.`
         const squareImage = await generateImage(squarePrompt, 1, 2, styleContext, '1024x1024', visualReferences)
         generated.push({ image: squareImage, label: '1:1', aspectRatio: '1/1' })
         generated.push({ image: squareImage, label: '4:5', aspectRatio: '4/5' })
@@ -169,11 +169,11 @@ export function PremiumPage() {
 
         // Imagem 2 — 9:16 e 16:9
         setCurrentStep(2)
-        const verticalPrompt = `Create a professional Instagram Stories/Reels post. Content: ${prompt}. Vertical format 9:16, all content centered within 60% of the image area.`
+        const verticalPrompt = `Instagram Stories vertical post, 9:16 format. Subject: ${prompt}. Composition: full-frame editorial portrait or environmental shot, dramatic top-to-bottom visual flow, headline at upper third, supporting line at lower third — both strictly within center 65% width. Mood: cinematic, high contrast, immersive.`
         const verticalImage = await generateImage(verticalPrompt, 2, 2, styleContext, '1024x1536', visualReferences)
         generated.push({ image: verticalImage, label: '9:16', aspectRatio: '9/16' })
         // 16:9 via crop da imagem horizontal
-        const horizontalPrompt = `Create a professional LinkedIn banner post. Content: ${prompt}. Horizontal format 16:9, all content centered within 60% of the image area.`
+        const horizontalPrompt = `LinkedIn banner post, 16:9 horizontal format. Subject: ${prompt}. Composition: wide cinematic frame, key visual or person on right third, bold headline on left third — clean and authoritative. Mood: professional, editorial, understated luxury. All text strictly within center 70% width and 60% height.`
         const horizontalImage = await generateImage(horizontalPrompt, 2, 2, styleContext, '1536x1024', visualReferences)
         generated.push({ image: horizontalImage, label: '16:9', aspectRatio: '16/9' })
         setSlides([...generated])
@@ -182,10 +182,10 @@ export function PremiumPage() {
         for (let i = 1; i <= slideCount; i++) {
           setCurrentStep(i)
           const slidePromptText = i === 1
-            ? `COVER slide of carousel: ${prompt}. Impactful opening slide with main title. Format 4:5 vertical.`
+            ? `COVER slide 1 of ${slideCount} carousel. Subject: ${prompt}. Composition: bold full-frame opening image, dominant headline in ultra-bold typeface occupying upper half, strong visual impact — this slide must stop the scroll. Mood: dramatic, high contrast, cinematic. Vertical 4:5 format.`
             : i === slideCount
-            ? `FINAL slide of carousel about: ${prompt}. Closing slide with call-to-action. Format 4:5 vertical.`
-            : `SLIDE ${i} of ${slideCount} of carousel about: ${prompt}. Point ${i - 1} of the topic. Format 4:5 vertical.`
+            ? `FINAL slide ${slideCount} of ${slideCount} carousel. Subject: ${prompt}. Composition: clear call-to-action centered in frame, supporting visual fading into background, closing message in bold with one action word highlighted in brand accent color. Mood: resolved, confident, direct. Vertical 4:5 format.`
+            : `SLIDE ${i} of ${slideCount} carousel. Subject: ${prompt} — point ${i - 1}. Composition: one key idea per slide, strong visual supporting the concept, headline maximum 4 words, supporting line maximum 7 words. Mood: consistent with cover slide, editorial and cinematic. Vertical 4:5 format.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
           generated.push({ image, label: `Slide ${i}` })
           setSlides([...generated])
