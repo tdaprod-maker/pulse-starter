@@ -64,7 +64,7 @@ export function PremiumPage() {
   useEffect(() => {
     if (slides.length > 0) {
       try {
-        sessionStorage.setItem('premium_state', JSON.stringify({ slides, caption, status }))
+        if (status === 'done') sessionStorage.setItem('premium_state', JSON.stringify({ slides, caption, status }))
       } catch {}
     }
   }, [slides, caption, status])
