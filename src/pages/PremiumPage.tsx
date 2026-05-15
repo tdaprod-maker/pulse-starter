@@ -172,12 +172,12 @@ export function PremiumPage() {
         for (let i = 1; i <= slideCount; i++) {
           setCurrentStep(i)
           const slidePromptText = i === 1
-            ? `COVER slide of carousel: ${prompt}. Impactful opening slide with main title. Format 4:5 vertical.`
+            ? `CAROUSEL COVER SLIDE 1 of ${slideCount}. Topic: ${prompt}. Design: bold full-bleed editorial image, ultra-bold headline maximum 4 words centered, strong visual hook that stops the scroll. Consistent visual style: dark background, brand accent color on key word, cinematic directional lighting. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : i === slideCount
-            ? `FINAL slide of carousel about: ${prompt}. Closing slide with call-to-action. Format 4:5 vertical.`
-            : `SLIDE ${i} of ${slideCount} of carousel about: ${prompt}. Point ${i - 1} of the topic. Format 4:5 vertical.`
+            ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. Topic: ${prompt}. Design: clear call-to-action, one bold action phrase maximum 5 words, supporting line maximum 8 words. Same visual style as cover: dark background, brand accent color, cinematic mood. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            : `CAROUSEL SLIDE ${i} of ${slideCount}. Topic: ${prompt} — specific point ${i - 1} of ${slideCount - 2}. Design: ONE key idea per slide, strong supporting visual, headline maximum 4 words, supporting line maximum 8 words. Same consistent visual style as other slides: dark background, brand accent color, cinematic directional lighting. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
-          generated.push({ image, label: `Slide ${i}` })
+          generated.push({ image, label: `Slide ${i}`, aspectRatio: '4/5' })
           setSlides([...generated])
         }
       }
