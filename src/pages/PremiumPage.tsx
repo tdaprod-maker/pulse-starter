@@ -174,7 +174,7 @@ export function PremiumPage() {
           const slidePromptText = i === 1
             ? `CAROUSEL COVER SLIDE 1 of ${slideCount}. Topic: ${prompt}. Design: bold full-bleed editorial image, ultra-bold headline maximum 4 words centered, strong visual hook that stops the scroll. Consistent visual style: dark background, brand accent color on key word, cinematic directional lighting. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : i === slideCount
-            ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. Topic: ${prompt}. Design: clear call-to-action, one bold action phrase maximum 5 words, supporting line maximum 8 words. Same visual style as cover: dark background, brand accent color, cinematic mood. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. Topic: ${prompt}. Design: strong visual call-to-action slide — include a clearly visible CTA button or highlighted action phrase (ex: "Fale Conosco", "Saiba Mais", "Comece Agora"), one bold closing statement maximum 5 words, supporting line maximum 8 words. Same visual style as cover: dark background, brand accent color highlight on CTA element, cinematic mood. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : `CAROUSEL SLIDE ${i} of ${slideCount}. Topic: ${prompt} — specific point ${i - 1} of ${slideCount - 2}. Design: ONE key idea per slide, strong supporting visual, headline maximum 4 words, supporting line maximum 8 words. Same consistent visual style as other slides: dark background, brand accent color, cinematic directional lighting. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
           generated.push({ image, label: `Slide ${i}`, aspectRatio: '4/5' })
@@ -442,7 +442,7 @@ export function PremiumPage() {
   async function handleDownloadAll() {
     for (let i = 0; i < slides.length; i++) {
       const slide = slides[i]
-      setTimeout(() => handleDownload(slide.image, slide.label), i * 300)
+      setTimeout(() => handleDownload(slide.image, slide.label), i * 800)
     }
   }
 
