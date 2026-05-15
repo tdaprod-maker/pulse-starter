@@ -157,24 +157,25 @@ export function PremiumPage() {
       const generated: Slide[] = []
 
       if (mode === 'single') {
-        setTotalSteps(2)
+        setTotalSteps(3)
 
-        // Imagem 1 — 1:1 e 4:5
+        // Imagem 1 — 1:1 e 4:5 (mesma imagem, crop diferente)
         setCurrentStep(1)
-        const squarePrompt = `Instagram post, square 1:1 format. Subject: ${prompt}. Composition: strong typographic hierarchy, person or key visual occupying one half of the frame, text on the opposite half. Mood: editorial, cinematic lighting, rich and intentional color palette. All elements strictly within center 60% of image width and 70% of image height.`
-        const squareImage = await generateImage(squarePrompt, 1, 2, styleContext, '1024x1024', visualReferences)
+        const basePrompt = `Social media post. Subject: ${prompt}. Composition: person or key visual occupying one half of the frame, bold headline on the opposite half, maximum 5 words, one supporting line maximum 8 words. Mood: editorial, cinematic directional lighting, rich and intentional color palette. All elements strictly within center 60% of image width and 70% of image height.`
+        const squareImage = await generateImage(basePrompt, 1, 3, styleContext, '1024x1024', visualReferences)
         generated.push({ image: squareImage, label: '1:1', aspectRatio: '1/1' })
         generated.push({ image: squareImage, label: '4:5', aspectRatio: '4/5' })
         setSlides([...generated])
 
-        // Imagem 2 — 9:16 e 16:9
+        // Imagem 2 — 9:16
         setCurrentStep(2)
-        const verticalPrompt = `Instagram Stories vertical post, 9:16 format. Subject: ${prompt}. Composition: full-frame editorial portrait or environmental shot, dramatic top-to-bottom visual flow, headline at upper third, supporting line at lower third — both strictly within center 65% width. Mood: cinematic, high contrast, immersive.`
-        const verticalImage = await generateImage(verticalPrompt, 2, 2, styleContext, '1024x1536', visualReferences)
+        const verticalImage = await generateImage(basePrompt, 2, 3, styleContext, '1024x1536', visualReferences)
         generated.push({ image: verticalImage, label: '9:16', aspectRatio: '9/16' })
-        // 16:9 via crop da imagem horizontal
-        const horizontalPrompt = `LinkedIn banner post, 16:9 horizontal format. Subject: ${prompt}. Composition: wide cinematic frame, key visual or person on right third, bold headline on left third — clean and authoritative. Mood: professional, editorial, understated luxury. All text strictly within center 70% width and 60% height.`
-        const horizontalImage = await generateImage(horizontalPrompt, 2, 2, styleContext, '1536x1024', visualReferences)
+        setSlides([...generated])
+
+        // Imagem 3 — 16:9
+        setCurrentStep(3)
+        const horizontalImage = await generateImage(basePrompt, 3, 3, styleContext, '1536x1024', visualReferences)
         generated.push({ image: horizontalImage, label: '16:9', aspectRatio: '16/9' })
         setSlides([...generated])
       } else {
