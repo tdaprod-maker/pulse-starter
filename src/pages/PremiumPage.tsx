@@ -485,6 +485,22 @@ export function PremiumPage() {
           </div>
         )}
 
+        {isLoading && slides.length > 0 && (
+          <div style={{ width: '100%', maxWidth: '720px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <p style={{ fontSize: '12px', margin: 0, color: 'var(--text-muted)' }}>
+                {mode === 'single' ? `Gerando formato ${currentStep} de ${totalSteps}...` : `Gerando slide ${currentStep} de ${totalSteps}...`}
+              </p>
+              <p style={{ fontSize: '12px', margin: 0, color: 'var(--accent)', fontWeight: 600 }}>
+                {Math.round((currentStep / totalSteps) * 100)}%
+              </p>
+            </div>
+            <div style={{ width: '100%', height: '3px', background: 'var(--bg-surface)', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${(currentStep / totalSteps) * 100}%`, background: 'var(--accent)', borderRadius: '2px', transition: 'width 0.6s ease' }} />
+            </div>
+          </div>
+        )}
+
         {/* Grid para post único, coluna para carrossel */}
         {slides.length > 0 && (
           <div style={{
