@@ -188,9 +188,14 @@ export function PremiumPage() {
       if (brandForLogo.logo_url) {
         for (let i = 0; i < generated.length; i++) {
           try {
+            // Primeiro cropa, depois aplica o logo
+            const cropped = generated[i].aspectRatio
+              ? await cropImageToRatio(generated[i].image, generated[i].aspectRatio)
+              : generated[i].image
             generated[i] = {
               ...generated[i],
-              image: await overlayLogo(generated[i].image, brandForLogo.logo_url)
+              image: await overlayLogo(cropped, brandForLogo.logo_url),
+              aspectRatio: undefined, // já cropado, não precisa cropar de novo
             }
           } catch (e) {
             console.error('[logo overlay]', e)
