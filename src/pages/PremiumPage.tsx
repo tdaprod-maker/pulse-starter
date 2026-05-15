@@ -485,18 +485,18 @@ export function PremiumPage() {
           </div>
         )}
 
-        {isLoading && slides.length > 0 && (
-          <div style={{ width: '100%', maxWidth: '720px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {isLoading && slides.length > 0 && totalSteps > 0 && (
+          <div style={{ width: '100%', maxWidth: '720px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={{ fontSize: '12px', margin: 0, color: 'var(--text-muted)' }}>
-                {mode === 'single' ? `Gerando formato ${currentStep} de ${totalSteps}...` : `Gerando slide ${currentStep} de ${totalSteps}...`}
+              <p style={{ fontSize: '11px', margin: 0, color: 'var(--text-muted)', letterSpacing: '0.03em' }}>
+                {mode === 'single' ? `Formato ${currentStep} de ${totalSteps}` : `Slide ${currentStep} de ${totalSteps}`}
               </p>
-              <p style={{ fontSize: '12px', margin: 0, color: 'var(--accent)', fontWeight: 600 }}>
+              <p style={{ fontSize: '11px', margin: 0, color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.05em' }}>
                 {Math.round((currentStep / totalSteps) * 100)}%
               </p>
             </div>
-            <div style={{ width: '100%', height: '3px', background: 'var(--bg-surface)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${(currentStep / totalSteps) * 100}%`, background: 'var(--accent)', borderRadius: '2px', transition: 'width 0.6s ease' }} />
+            <div style={{ width: '100%', height: '2px', background: 'var(--bg-surface)', borderRadius: '99px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${(currentStep / totalSteps) * 100}%`, background: 'linear-gradient(90deg, var(--accent), #7c9fff)', borderRadius: '99px', transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)' }} />
             </div>
           </div>
         )}
