@@ -157,25 +157,15 @@ export function PremiumPage() {
       const generated: Slide[] = []
 
       if (mode === 'single') {
-        setTotalSteps(3)
+        setTotalSteps(1)
 
-        // Imagem 1 — 1:1 e 4:5
+        // Uma única geração — todos os formatos via crop
         setCurrentStep(1)
-        const squarePrompt = `Create a professional Instagram post. Content: ${prompt}. Square format, all content centered within 60% of the image area.`
-        const squareImage = await generateImage(squarePrompt, 1, 2, styleContext, '1024x1024', visualReferences)
+        const squarePrompt = `Create a professional social media post. Content: ${prompt}. All text and key visual elements strictly centered within the middle 60% of the image width and 60% of the image height. Outer edges must be empty background only — no text, no faces near edges.`
+        const squareImage = await generateImage(squarePrompt, 1, 1, styleContext, '1024x1024', visualReferences)
         generated.push({ image: squareImage, label: '1:1', aspectRatio: '1/1' })
         generated.push({ image: squareImage, label: '4:5', aspectRatio: '4/5' })
-        setSlides([...generated])
-
-        // Imagem 2 — 9:16
-        setCurrentStep(2)
-        const verticalPrompt = `Create a professional Instagram Stories/Reels post. Content: ${prompt}. Vertical format 9:16, all content centered within 60% of the image area.`
-        const verticalImage = await generateImage(verticalPrompt, 2, 2, styleContext, '1024x1536', visualReferences)
-        generated.push({ image: verticalImage, label: '9:16', aspectRatio: '9/16' })
-        setSlides([...generated])
-
-        // 16:9 — crop da imagem quadrada (sem nova geração)
-        setCurrentStep(3)
+        generated.push({ image: squareImage, label: '9:16', aspectRatio: '9/16' })
         generated.push({ image: squareImage, label: '16:9', aspectRatio: '16/9' })
         setSlides([...generated])
       } else {
