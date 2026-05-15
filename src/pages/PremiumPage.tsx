@@ -179,11 +179,20 @@ export function PremiumPage() {
         for (let i = 1; i <= slideCount; i++) {
           setCurrentStep(i)
           const slideContent = slidePoints[i - 1] || prompt
+          const visualScenes = [
+            'close-up of confident professional person, dramatic side lighting, shallow depth of field',
+            'modern minimal workspace with soft ambient light, subtle environmental details',
+            'abstract architectural space, strong geometric lines, cinematic wide angle',
+            'person in motion, dynamic composition, editorial photography style',
+            'dramatic product or concept visualization, bold color accent, dark studio',
+          ]
+          const scene = visualScenes[(i - 2) % visualScenes.length]
+
           const slidePromptText = i === 1
             ? `CAROUSEL COVER SLIDE 1 of ${slideCount}. Content: ${slideContent}. Design: bold full-bleed editorial image, ultra-bold headline maximum 4 words centered, strong visual hook that stops the scroll. Dark background, brand accent color on key word, cinematic directional lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : i === slideCount
             ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. Content: ${slideContent}. Design: strong CTA slide — clearly visible action phrase like "Fale Conosco" or "Saiba Mais", one bold closing statement maximum 5 words. Dark background, brand accent color on CTA element, cinematic mood. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
-            : `CAROUSEL SLIDE ${i} of ${slideCount}. Content: ${slideContent}. Design: ONE specific idea per slide — different from all other slides, strong editorial visual supporting this specific point, headline maximum 4 words, supporting line maximum 8 words. Dark background, brand accent color, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            : `CAROUSEL SLIDE ${i} of ${slideCount}. Content: ${slideContent}. Visual scene for this slide: ${scene}. Design: ONE specific idea, completely different visual from other slides, headline maximum 4 words, supporting line maximum 8 words. Dark background, brand accent color, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
           generated.push({ image, label: `Slide ${i}`, aspectRatio: '4/5' })
           setSlides([...generated])
