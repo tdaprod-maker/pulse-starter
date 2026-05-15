@@ -223,37 +223,6 @@ export function Topbar() {
         >
           Sair
         </button>
-        <div style={{
-          fontSize: '10px',
-          fontWeight: 600,
-          letterSpacing: '0.1em',
-          color: '#5B8FD4',
-          background: 'rgba(58,90,255,0.1)',
-          border: '1px solid rgba(58,90,255,0.2)',
-          borderRadius: '6px',
-          padding: '4px 10px',
-        }}>
-          BETA
-        </div>
-        <span style={{
-          fontSize: '10px',
-          color: 'var(--text-muted)',
-        }}>
-          por{' '}
-          <a
-            href="https://agente17.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: 'var(--accent)',
-              textDecoration: 'none',
-              fontWeight: 600,
-              fontSize: '10px',
-            }}
-          >
-            Agente 17
-          </a>
-        </span>
       </div>
     </header>
   )
