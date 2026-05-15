@@ -442,10 +442,7 @@ export function PremiumPage() {
   async function handleDownloadAll() {
     for (let i = 0; i < slides.length; i++) {
       const slide = slides[i]
-      const imageUrl = slide.aspectRatio
-        ? await cropImageToRatio(slide.image, slide.aspectRatio)
-        : slide.image
-      setTimeout(() => handleDownload(imageUrl, slide.label), i * 300)
+      setTimeout(() => handleDownload(slide.image, slide.label), i * 300)
     }
   }
 
