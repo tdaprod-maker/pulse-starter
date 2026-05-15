@@ -190,7 +190,7 @@ export function PremiumPage() {
           try {
             // Primeiro cropa, depois aplica o logo
             const cropped = generated[i].aspectRatio
-              ? await cropImageToRatio(generated[i].image, generated[i].aspectRatio)
+              ? await cropImageToRatio(generated[i].image, generated[i].aspectRatio!)
               : generated[i].image
             generated[i] = {
               ...generated[i],
