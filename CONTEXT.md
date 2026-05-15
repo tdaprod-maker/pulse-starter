@@ -388,3 +388,25 @@ git push
 - Continuar processo Meta/Instagram (OAuth para múltiplos usuários)
 - Stripe — pagamento e renovação de pulses
 - Landing page de vendas
+
+## 18. Sessão 15/05/2026
+
+### Correções de segurança
+- RLS habilitado na tabela brand_config via Supabase Security Advisor
+- Política RLS corrigida para usar subquery em auth.users (resolve bloqueio de acesso)
+- Todas as 4 tabelas confirmadas com RLS ativo
+
+### Correções de bugs
+- Email Gemini recebido sobre desativação do gemini-3.1-flash-lite em 25/05 — não impacta o Pulse (usa gemini-2.5-flash)
+
+### Pendências para próxima sessão (em ordem de prioridade)
+1. Testar publicação Instagram e LinkedIn no Posts Premium
+2. Implementar débito real de pulses no Posts Premium
+3. Resolver perda de estado ao trocar de aba (sessionStorage não restaura)
+4. Melhorar MUITO a qualidade visual dos templates existentes no editor Konva
+5. Adicionar novos templates por segmento (Odontologia, Arquitetura, Pets, Educação, Móveis)
+6. Replicar os templates de posts para o carrossel
+7. Continuar processo Meta/Instagram (OAuth para múltiplos usuários)
+8. Stripe — pagamento e renovação de pulses
+9. Landing page de vendas
+10. Supabase separado do Pulse
