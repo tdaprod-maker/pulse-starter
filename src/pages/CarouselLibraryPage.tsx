@@ -349,7 +349,7 @@ export function CarouselLibraryPage() {
           </div>
         )
       })()}
+      </div>
     </main>
-    </div>
   )
 }
