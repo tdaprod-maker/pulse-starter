@@ -612,7 +612,8 @@ REGRAS:
 - Máximo 15 palavras por slide
 
 Retorne APENAS um array JSON com ${slideCount} strings. Sem markdown, sem explicações.
-Exemplo para 3 slides: ["Gancho impactante aqui", "Desenvolvimento específico aqui", "CTA claro aqui"]`
+IMPORTANTE: Não inclua prefixos como "CTA:", "Gancho:", "Slide X:" nas strings. Apenas o texto do conteúdo.
+Exemplo para 3 slides: ["Sua clínica ainda não usa IA?", "Diagnósticos 3x mais rápidos com IA", "Fale conosco hoje"]`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
