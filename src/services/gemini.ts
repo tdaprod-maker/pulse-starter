@@ -321,7 +321,6 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
         candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
       }
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      console.log('[generatePostContent] raw:', JSON.stringify(data).slice(0, 300))
       if (!text) throw new Error('A API retornou uma resposta vazia')
       return extractJSON(text) as unknown as AIResponse
     } catch (err) {
