@@ -179,7 +179,11 @@ export function PremiumPage() {
 
         for (let i = 1; i <= slideCount; i++) {
           setCurrentStep(i)
-          const slideContent = slidePoints[i - 1] || prompt
+          const rawContent = slidePoints[i - 1] || prompt
+        // Remove prefixos que o Gemini às vezes inclui
+        const slideContent = rawContent
+          .replace(/^(CTA|Gancho|Slide \d+|Desenvolvimento \d+):\s*/i, '')
+          .trim()
           const visualScenes = [
             'close-up of confident professional person, dramatic side lighting, shallow depth of field',
             'modern minimal workspace with soft ambient light, subtle environmental details',
@@ -193,7 +197,7 @@ export function PremiumPage() {
             ? `CAROUSEL COVER SLIDE 1 of ${slideCount}. MANDATORY TEXT TO DISPLAY: "${slideContent}". The headline shown in the image MUST be based strictly on this text — do not invent or replace it. Design: bold full-bleed editorial image, ultra-bold headline maximum 4 words centered, strong visual hook that stops the scroll. Dark background, brand accent color on key word, cinematic directional lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : i === slideCount
             ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. This is a CALL TO ACTION slide. The CTA phrase to display is: "${slideContent}". Show this as a bold visual CTA — large action words, a highlighted button or underline on the key phrase. Do NOT write the word "CTA" — just display the action phrase visually. One supporting line maximum 8 words. Dark background, brand accent color on CTA element, cinematic mood. NO robotic hands, NO AI cubes. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
-            : `CAROUSEL SLIDE ${i} of ${slideCount}. MANDATORY TEXT TO DISPLAY: "${slideContent}". The headline shown in the image MUST be based strictly on this specific text — this is DIFFERENT from all other slides, do not repeat previous slides. Visual scene: ${scene}. Design: ONE specific idea per slide, headline maximum 4 words extracted from the mandatory text, supporting line maximum 8 words. Dark background, brand accent color, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            : `CAROUSEL SLIDE ${i} of ${slideCount}. THE HEADLINE FOR THIS SLIDE IS EXACTLY: "${slideContent}". Use these words as the main headline — do not substitute, do not invent a different headline, do not use the carousel topic as the headline. Visual scene: ${scene}. Design: the headline IS the specific text provided above, supporting line maximum 8 words complementing it. Dark background, brand accent color on one key word of the headline, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
           generated.push({ image, label: `Slide ${i}`, aspectRatio: '4/5' })
           setSlides([...generated])
