@@ -302,6 +302,7 @@ export function EditorPage() {
                 })}
               </div>
             )}
+          <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
           <CaptionPanel stageRef={stageRef} template={activeTemplate} />
           <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
           </>
@@ -339,7 +340,6 @@ export function EditorPage() {
           <>
             <PropertiesPanel template={activeTemplate} />
             <ImagePanel template={activeTemplate} />
-            <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
           </>
         ) : (
           <p style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>

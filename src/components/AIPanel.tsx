@@ -153,8 +153,7 @@ export function AIPanel(_props: AIPanelProps) {
       const snap = useStore.getState().templates.find((t) => t.id === v.id) ?? v
 
       // Aplica textos
-      console.log('[applyResult] texts:', JSON.stringify(result.texts), 'template:', v.id)
-    Object.entries(result.texts).forEach(([fieldId, text]) => {
+      Object.entries(result.texts).forEach(([fieldId, text]) => {
         const el = snap.elements.find((e) => e.id === fieldId)
         if (el && el.type === 'text') {
           updateElement(v.id, fieldId, { props: { ...el.props, text: String(text) } })
