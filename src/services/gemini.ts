@@ -141,10 +141,16 @@ REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 OUTRAS REGRAS:
 - Escreva em português do Brasil com tom adequado ao contexto descrito
 - Para big-statement: as duas linhas devem ter peso visual equilibrado
-- imagePrompt: descreva em inglês (max 20 palavras) o tema principal do post como uma cena fotográfica detalhada e realista. Inclua estilo fotográfico, iluminação e detalhes visuais relevantes.
-  Ex: para comida → "traditional brazilian feijoada black bean stew with rice and orange slices, top view, professional food photography, warm lighting"
-  Ex: para IA/tech → "futuristic robot hand touching digital interface, dark background, blue neon lighting, cinematic"
-  Ex: para negócios → "confident business professional in modern office, natural light, shallow depth of field"
+- imagePrompt: escreva em inglês (max 50 palavras) um prompt fotográfico preciso para o modelo de IA FLUX gerar a imagem de fundo do post. Siga estas regras obrigatórias:
+  ESTRUTURA: [sujeito específico e etnia/gênero quando relevante] + [ação concreta] + [ambiente físico real] + [estilo fotográfico] + [iluminação nomeada] + [qualidade]
+  PROIBIDO: robotic hands, holograms, neon circuits, glowing orbs, sci-fi UI, abstract shapes, CGI, digital art, illustrations, floating text, watermarks, screens with text, dashboards with numbers, any readable text in the scene
+  OBRIGATÓRIO: pessoas reais em situações físicas concretas OU ambientes/produtos tangíveis. Sempre termine com: "hyperrealistic, award-winning photography, no text, no logos"
+  
+  Ex: saúde → "Brazilian female doctor in her 40s reviewing digital exam results with patient in modern clinic room, warm professional lighting, 85mm portrait lens f/1.8, shallow depth of field, hyperrealistic, award-winning photography, no text, no logos"
+  Ex: IA/negócios → "confident latin american entrepreneur in glass office reviewing analytics on laptop, city skyline background, dramatic natural side lighting, editorial business photography, hyperrealistic, award-winning photography, no text, no logos"
+  Ex: academia → "muscular mixed-race athlete performing deadlift in premium gym, dramatic rim lighting from behind, motion blur on weights, editorial sports photography style, hyperrealistic, award-winning photography, no text, no logos"
+  Ex: restaurante → "head chef carefully plating gourmet dish in stainless steel professional kitchen, warm ambient tungsten lighting, close-up macro shot, food editorial photography, hyperrealistic, award-winning photography, no text, no logos"
+  Ex: imobiliário → "luxury apartment living room with floor-to-ceiling windows overlooking city at golden hour, architectural interior photography, warm natural backlight, wide angle shot, hyperrealistic, award-winning photography, no text, no logos"
 
 LEGENDA (campo "caption"):
 Gere legendas distintas e otimizadas para cada rede social com base no conteúdo do post.
