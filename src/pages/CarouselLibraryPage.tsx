@@ -23,6 +23,7 @@ export function CarouselLibraryPage() {
   const [linkedinSub, setLinkedinSub] = useState<string>('')
   const [publishingId, setPublishingId] = useState<string | null>(null)
   const [publishStatus, setPublishStatus] = useState<Record<string, 'success' | 'error'>>({})
+  const [activeCarousel, setActiveCarousel] = useState<CarouselRecord | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
