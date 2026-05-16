@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { generatePremiumCaption, reviewPost, type PostReview, breakCarouselIntoSlides } from '../services/gemini'
+import { debitToken, notifyBalanceUpdate } from '../services/tokens'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
 
@@ -221,6 +222,14 @@ export function PremiumPage() {
       }
 
       setStatus('done')
+      // Debita pulses
+      try {
+        const cost = mode === 'single' ? PULSE_SINGLE : slideCount * PULSE_PER_SLIDE
+        await debitToken(email, cost)
+        notifyBalanceUpdate()
+      } catch (e) {
+        console.error('[premium] erro ao debitar pulses:', e)
+      }
       // Gera legenda automaticamente
       setGeneratingCaption(true)
       console.log('[premium] gerando legenda para prompt:', prompt.slice(0, 50))
