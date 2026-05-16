@@ -587,19 +587,32 @@ Retorne APENAS JSON válido sem markdown:
 export async function breakCarouselIntoSlides(prompt: string, slideCount: number, brand?: BrandContext): Promise<string[]> {
   const brandCtx = brand ? `Marca: ${brand.businessName || ''}, Segmento: ${brand.segment || ''}, Tom: ${brand.tone || ''}` : ''
 
+  const middleSlides = slideCount - 2
+  const middleStructure = Array.from({length: middleSlides}, (_, i) =>
+    `- Slide ${i + 2}: desenvolvimento ${i + 1} de ${middleSlides} — aborda um aspecto ÚNICO e DIFERENTE dos outros slides, com conteúdo específico e concreto sobre o tema`
+  ).join('\n')
+
   const text = `Você é um especialista em marketing de conteúdo para redes sociais.
 
 Tema do carrossel: "${prompt}"
 ${brandCtx}
 Número de slides: ${slideCount}
 
-Crie ${slideCount} descrições de slide para um carrossel, seguindo esta estrutura obrigatória:
-- Slide 1: gancho poderoso que chama atenção — frase de impacto, provocação ou dado surpreendente relacionado ao tema
-${Array.from({length: slideCount - 2}, (_, i) => `- Slide ${i + 2}: ponto específico ${i + 1} de desenvolvimento do tema — conteúdo único, diferente dos outros slides`).join('\n')}
-- Slide ${slideCount}: CTA claro — convite para ação, contato ou próximo passo
+Crie EXATAMENTE ${slideCount} descrições para um carrossel Instagram. Cada slide deve ter conteúdo COMPLETAMENTE DIFERENTE dos outros.
 
-Retorne APENAS um array JSON com ${slideCount} strings, cada uma descrevendo o conteúdo específico daquele slide em 1-2 frases. Sem markdown, sem explicações.
-Exemplo: ["Gancho aqui", "Ponto 1 aqui", "CTA aqui"]`
+Estrutura OBRIGATÓRIA:
+- Slide 1 (GANCHO): frase de impacto, dado surpreendente ou provocação direta sobre o tema — deve parar o scroll
+${middleStructure}
+- Slide ${slideCount} (CTA): convite claro para ação — ex: "Fale conosco", "Acesse agora", "Comece hoje"
+
+REGRAS:
+- Cada slide deve ter UMA ideia central diferente
+- Nunca repita palavras-chave entre slides
+- Seja específico e concreto, não genérico
+- Máximo 15 palavras por slide
+
+Retorne APENAS um array JSON com ${slideCount} strings. Sem markdown, sem explicações.
+Exemplo para 3 slides: ["Gancho impactante aqui", "Desenvolvimento específico aqui", "CTA claro aqui"]`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
