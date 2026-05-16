@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
-import { generatePostContent, turboPrompt } from '../services/gemini'
+import { generatePostContent, turboPromptEditor } from '../services/gemini'
 import type { AIResponse } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { useTheme } from '../contexts/ThemeContext'
@@ -320,7 +320,7 @@ export function AIPanel(_props: AIPanelProps) {
       const { data: authData } = await supabase.auth.getSession()
       const userEmail = authData.session?.user?.email ?? ''
       const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
-      const turboed = await turboPrompt(prompt.trim(), brandCtx ? {
+      const turboed = await turboPromptEditor(prompt.trim(), brandCtx ? {
         businessName: brandCtx.business_name || brandCtx.brand_name,
         segment: brandCtx.segment,
         tone: brandCtx.tone,

@@ -399,6 +399,67 @@ Responda SOMENTE com JSON válido, sem markdown:
   return '{}'
 }
 
+export async function turboPromptEditor(userPrompt: string, brand?: BrandContext): Promise<string> {
+  const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
+    : brand?.tone === 'casual' ? 'descontraído e próximo'
+    : brand?.tone === 'inspirational' ? 'inspiracional e motivador'
+    : brand?.tone === 'technical' ? 'técnico e especialista'
+    : null
+
+  const systemContext = [
+    brand?.businessName ? `Empresa: ${brand.businessName}` : '',
+    brand?.segment ? `Segmento: ${brand.segment}` : '',
+    toneLabel ? `Tom de voz: ${toneLabel}` : '',
+    brand?.brandDescription ? `Descrição da marca: ${brand.brandDescription}` : '',
+    brand?.visualStyle ? `Estilo visual: ${brand.visualStyle}` : '',
+  ].filter(Boolean).join('\n')
+
+  const prompt = `Você é um especialista em marketing de conteúdo e copywriting para redes sociais.
+
+Contexto da marca:
+${systemContext}
+
+O usuário quer criar um post com esse tema:
+"${userPrompt}"
+
+Reescreva como um briefing rico e específico para geração de post. O briefing deve:
+- Manter a intenção original do usuário
+- Incluir o ângulo mais impactante do tema para o segmento da marca
+- Especificar o tom emocional e o gatilho mental (urgência, curiosidade, prova social, autoridade)
+- Sugerir um dado, número ou frase de impacto se aplicável
+- Indicar o objetivo do post (engajar, informar, converter, inspirar)
+- Máximo de 3 linhas, direto e específico
+- Em português do Brasil
+
+Responda APENAS com o briefing turbinado, sem explicações, sem aspas, sem markdown.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 200,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      })
+      if (!res.ok) throw new Error(`Erro ${res.status}`)
+      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      if (!text) throw new Error('Resposta vazia')
+      return text.trim()
+    } catch (err) {
+      if (attempt === 2) throw err
+    }
+  }
+  return userPrompt
+}
+
 export async function turboPrompt(userPrompt: string, brand?: BrandContext): Promise<string> {
   const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
     : brand?.tone === 'casual' ? 'descontraído e próximo'
