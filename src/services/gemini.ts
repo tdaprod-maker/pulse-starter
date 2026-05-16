@@ -592,28 +592,28 @@ export async function breakCarouselIntoSlides(prompt: string, slideCount: number
     `- Slide ${i + 2}: desenvolvimento ${i + 1} de ${middleSlides} — aborda um aspecto ÚNICO e DIFERENTE dos outros slides, com conteúdo específico e concreto sobre o tema`
   ).join('\n')
 
-  const text = `Você é um especialista em marketing de conteúdo para redes sociais.
+  const text = `Você é um especialista em copywriting para redes sociais.
 
 Tema do carrossel: "${prompt}"
 ${brandCtx}
 Número de slides: ${slideCount}
 
-Crie EXATAMENTE ${slideCount} descrições para um carrossel Instagram. Cada slide deve ter conteúdo COMPLETAMENTE DIFERENTE dos outros.
+Crie EXATAMENTE ${slideCount} headlines ultra-curtos para um carrossel Instagram. Cada headline será renderizado como texto principal em uma imagem gerada por IA — por isso deve ter NO MÁXIMO 4 PALAVRAS.
 
 Estrutura OBRIGATÓRIA:
-- Slide 1 (GANCHO): frase de impacto, dado surpreendente ou provocação direta sobre o tema — deve parar o scroll
+- Slide 1 (GANCHO): headline de impacto, máximo 4 palavras, que para o scroll
 ${middleStructure}
-- Slide ${slideCount} (CTA): convite claro para ação — ex: "Fale conosco", "Acesse agora", "Comece hoje"
+- Slide ${slideCount} (CTA): ação direta, máximo 3 palavras, ex: "Fale Conosco", "Comece Agora", "Saiba Mais"
 
-REGRAS:
-- Cada slide deve ter UMA ideia central diferente
-- Nunca repita palavras-chave entre slides
-- Seja específico e concreto, não genérico
-- Máximo 15 palavras por slide
+REGRAS CRÍTICAS:
+- Máximo 4 palavras por headline — sem exceção
+- Cada headline completamente diferente dos outros — sem repetir palavras
+- Sem prefixos: não escreva "CTA:", "Gancho:", "Slide X:"
+- Seja direto e impactante
+- Em português do Brasil
 
-Retorne APENAS um array JSON com ${slideCount} strings. Sem markdown, sem explicações.
-IMPORTANTE: Não inclua prefixos como "CTA:", "Gancho:", "Slide X:" nas strings. Apenas o texto do conteúdo.
-Exemplo para 3 slides: ["Sua clínica ainda não usa IA?", "Diagnósticos 3x mais rápidos com IA", "Fale conosco hoje"]`
+Retorne APENAS um array JSON com ${slideCount} strings curtas. Sem markdown, sem explicações.
+Exemplo para 3 slides: ["IA já chegou aqui?", "3x mais rápido", "Fale conosco"]`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
