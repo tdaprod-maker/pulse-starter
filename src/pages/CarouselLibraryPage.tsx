@@ -177,6 +177,7 @@ export function CarouselLibraryPage() {
               return (
                 <div
                   key={carousel.id}
+                  onClick={() => { if (carousel.template_id === 'premium-carousel') setActiveCarousel(carousel) }}
                   style={{
                     background: 'var(--bg-panel)',
                     border: `1px solid ${isSelected ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`,
@@ -281,6 +282,74 @@ export function CarouselLibraryPage() {
           </div>
         )}
       </main>
+
+      {/* Modal de visualização do carrossel Premium */}
+      {activeCarousel && (() => {
+        const modalImages = JSON.parse(activeCarousel.slide_images) as string[]
+        const caption = activeCarousel.caption || ''
+        return (
+          <div
+            onClick={() => setActiveCarousel(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', maxWidth: '900px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{activeCarousel.title}</p>
+                <button onClick={() => setActiveCarousel(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+                {modalImages.map((img, i) => (
+                  <div key={i} style={{ flexShrink: 0, position: 'relative' }}>
+                    <img src={img} alt={`Slide ${i + 1}`} style={{ height: '320px', borderRadius: '8px', display: 'block' }} />
+                    <button
+                      onClick={() => {
+                        const a = document.createElement('a')
+                        a.href = img
+                        a.download = `slide-${i + 1}.png`
+                        a.click()
+                      }}
+                      style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.7)', border: 'none', color: 'white', fontSize: '11px', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit' }}
+                    >
+                      Baixar
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {caption && (
+                <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Legenda</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{caption}</p>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(caption)}
+                    style={{ alignSelf: 'flex-start', fontSize: '11px', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}
+                  >
+                    Copiar legenda
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={() => {
+                  modalImages.forEach((img, i) => {
+                    setTimeout(() => {
+                      const a = document.createElement('a')
+                      a.href = img
+                      a.download = `slide-${i + 1}.png`
+                      a.click()
+                    }, i * 800)
+                  })
+                }}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Baixar todos os slides
+              </button>
+            </div>
+          </div>
+        )
+      })()}
+    </main>
     </div>
   )
 }
