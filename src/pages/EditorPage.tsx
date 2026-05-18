@@ -25,6 +25,7 @@ interface EditingState {
 export function EditorPage() {
   const stageRef = useRef<Konva.Stage>(null)
   const [editingState, setEditingState] = useState<EditingState | null>(null)
+  const [agentGenerated, setAgentGenerated] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
   const [containerW, setContainerW] = useState(800)
   const [containerH, setContainerH] = useState(600)
@@ -202,7 +203,7 @@ export function EditorPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Agente conversacional — fixo no topo */}
         <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
-          <AgentChat />
+          <AgentChat onGenerated={() => setAgentGenerated(true)} onReset={() => setAgentGenerated(false)} />
         </div>
 
         {/* Área do canvas — scrollável */}
@@ -241,7 +242,7 @@ export function EditorPage() {
             </div>
 
             {/* Mini previews dos outros formatos */}
-            {allVariants.length > 1 && (
+            {allVariants.length > 1 && !agentGenerated && (
               <div style={{
                 display: 'flex',
                 gap: '12px',

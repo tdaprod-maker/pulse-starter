@@ -20,7 +20,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat() {
+export function AgentChat({ onGenerated, onReset }: { onGenerated?: () => void; onReset?: () => void } = {}) {
   const [messages, setMessages] = useState<AgentMessage[]>([
     { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
   ])
@@ -211,6 +211,7 @@ export function AgentChat() {
         console.error('Erro ao salvar:', e)
       }
 
+      onGenerated?.()
       setMessages(prev => [...prev, {
         role: 'agent',
         content: '✦ Post gerado! Clique nos elementos do canvas para editar texto, cores e fontes.'
@@ -275,6 +276,7 @@ export function AgentChat() {
   function handleReset() {
     setMessages([{ role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }])
     setInput('')
+    onReset?.()
   }
 
   const isDisabled = loading || generating
@@ -307,9 +309,10 @@ export function AgentChat() {
           </span>
         </div>
         <button onClick={handleReset}
-          style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 8px', borderRadius: '6px', fontFamily: 'inherit' }}
+          style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', padding: '3px 10px', borderRadius: '6px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '4px' }}
           title="Nova conversa">
-          Novo
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5A4.5 4.5 0 0 1 9.5 3M1 1v4h4M10 5.5A4.5 4.5 0 0 1 1.5 8M10 10V6H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Nova conversa
         </button>
       </div>
 
