@@ -6,7 +6,6 @@ import { agentChat, generatePostContent, type AgentMessage } from '../services/g
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
-import type Konva from 'konva'
 
 const ACCENT_ELEMENT: Record<string, string> = {
   'hero-title':     'accent-bar',
@@ -21,11 +20,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-interface AgentChatProps {
-  stageRef?: React.RefObject<Konva.Stage | null>
-}
-
-export function AgentChat({ stageRef }: AgentChatProps) {
+export function AgentChat() {
   const [messages, setMessages] = useState<AgentMessage[]>([
     { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
   ])
@@ -37,8 +32,7 @@ export function AgentChat({ stageRef }: AgentChatProps) {
   const { theme } = useTheme()
   const {
     addTemplate, setActiveTemplate, updateElement, setTemplateBackground,
-    setTemplateImagePrompt, setCaption, syncElementStyle, setTemplateLogo,
-    setTemplateLogoStyle,
+    setTemplateImagePrompt, setCaption, 
   } = useStore()
 
   useEffect(() => {
