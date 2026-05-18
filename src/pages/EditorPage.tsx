@@ -200,7 +200,7 @@ export function EditorPage() {
       <Sidebar />
 
       <div style={{ width: '100%', padding: '24px 24px 0', boxSizing: 'border-box' }}>
-        <AgentChat stageRef={stageRef} />
+        <AgentChat />
       </div>
       <main ref={mainRef} className="canvas-area" style={{
         flex: 1,
