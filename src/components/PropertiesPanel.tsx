@@ -122,7 +122,7 @@ function EmojiPicker({ onSelect }: { onSelect: (e: string) => void }) {
 // ─── TextField com card colapsável ────────────────────────────────────────────
 
 function TextField({ el, templateId }: { el: CanvasElement; templateId: string }) {
-  const { updateElement, syncElementStyle } = useStore()
+  const { syncElementStyle } = useStore()
   const ensureSiblings = useEnsureSiblings()
   const textRef = useRef<HTMLTextAreaElement>(null)
   const [expanded, setExpanded] = useState(false)
