@@ -247,14 +247,21 @@ function ShapeFieldPanel({ el, templateId }: { el: CanvasElement; templateId: st
   const height = el.height
 
   const SHAPE_LABELS: Record<string, string> = {
-    'accent-line': 'Linha de destaque',
-    'tag-line':    'Linha da tag',
-    'divider':     'Divisor',
-    'brand-line':  'Linha da marca',
-    'accent-bar':  'Barra de destaque',
-    'accent-strip':'Faixa de destaque',
+    'accent-line':  'Linha de destaque',
+    'tag-line':     'Linha da tag',
+    'divider':      'Divisor',
+    'brand-line':   'Linha da marca',
+    'accent-bar':   'Barra de destaque',
+    'accent-strip': 'Faixa de destaque',
+    'circle-bg':    'Círculo',
+    'top-block':    'Bloco superior',
+    'line-left':    'Linha lateral',
+    'line-left2':   'Linha lateral 2',
+    'highlight-line':'Linha de destaque',
+    'cta-line':     'Linha CTA',
+    'accent-dot':   'Ponto de destaque',
   }
-  const label = SHAPE_LABELS[el.id] ?? 'Forma'
+  const label = SHAPE_LABELS[el.id] ?? el.id
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
