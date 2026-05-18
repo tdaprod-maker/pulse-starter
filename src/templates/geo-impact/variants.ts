@@ -86,3 +86,4 @@ export function makeGeoImpactVariants(theme: Theme): Template[] {
 
   return [geo1x1, geo4x5, geo9x16]
 }
+// cache bust seg 18 mai 2026 16:02:12 -03
