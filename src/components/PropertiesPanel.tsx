@@ -435,6 +435,38 @@ function SolidBackgroundSection({ template }: { template: Template }) {
   )
 }
 
+// ─── Fundo genérico ──────────────────────────────────────────────────────────────
+
+function GenericBackgroundSection({ template }: { template: Template }) {
+  const { setTemplateSolidBackground, templates } = useStore()
+  const ensureSiblings = useEnsureSiblings()
+
+  const isTechMinimal = template.id.startsWith('tech-minimal')
+  const isBigNumber   = template.id.startsWith('big-number')
+  if (isTechMinimal || isBigNumber) return null
+
+  const color = template.background ?? '#ffffff'
+
+  function handleColor(hex: string) {
+    ensureSiblings(template.id)
+    const lastHyphen = template.id.lastIndexOf('-')
+    const prefix = lastHyphen >= 0 ? template.id.substring(0, lastHyphen) : template.id
+    templates
+      .filter((t) => t.id.startsWith(prefix))
+      .forEach((t) => setTemplateSolidBackground(t.id, hex))
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderTop: '1px solid var(--border)' }}>
+      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Cor de fundo</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{color.toUpperCase()}</span>
+        <ColorSwatch color={color} onChange={handleColor} title="Cor de fundo" />
+      </div>
+    </div>
+  )
+}
+
 // ─── Painel principal ─────────────────────────────────────────────────────────
 
 export function PropertiesPanel({ template, selectedElementId }: { template: Template; selectedElementId?: string | null }) {
@@ -448,7 +480,7 @@ export function PropertiesPanel({ template, selectedElementId }: { template: Tem
   const hasAccent = !!getAccentElementId(template.id)
   const hasShape = template.elements.some((e) => e.id === 'brand-line')
   const hasSolidBg = template.id.startsWith('tech-minimal') || template.id.startsWith('big-number')
-  const hasGlobalControls = hasAccent || hasShape || hasSolidBg
+  const hasGlobalControls = hasAccent || hasShape || hasSolidBg || true
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border)' }}>
@@ -469,6 +501,7 @@ export function PropertiesPanel({ template, selectedElementId }: { template: Tem
       {/* Controles globais do template — sempre visíveis */}
       {hasGlobalControls && (
         <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <GenericBackgroundSection template={template} />
           <AccentSection template={template} />
           <ShapeSection template={template} />
           <SolidBackgroundSection template={template} />
