@@ -199,9 +199,6 @@ export function EditorPage() {
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       <Sidebar />
 
-      <div style={{ width: '100%', padding: '24px 24px 0', boxSizing: 'border-box' }}>
-        <AgentChat />
-      </div>
       <main ref={mainRef} className="canvas-area" style={{
         flex: 1,
         display: 'flex',
@@ -214,6 +211,7 @@ export function EditorPage() {
         padding: '24px',
         paddingTop: '24px',
       }}>
+        <AgentChat />
         {activeTemplate ? (
           <>
             {/* Preview principal — formato ativo */}
