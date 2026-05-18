@@ -144,7 +144,7 @@ OUTRAS REGRAS:
 - imagePrompt: escreva em inglês (max 50 palavras) um prompt fotográfico preciso para o modelo de IA FLUX gerar a imagem de fundo do post. Siga estas regras obrigatórias:
   ESTRUTURA: [sujeito específico e etnia/gênero quando relevante] + [ação concreta] + [ambiente físico real] + [estilo fotográfico] + [iluminação nomeada] + [qualidade]
   PROIBIDO: robotic hands, holograms, neon circuits, glowing orbs, sci-fi UI, abstract shapes, CGI, digital art, illustrations, floating text, watermarks, screens with text, dashboards with numbers, any readable text in the scene
-  OBRIGATÓRIO: pessoas reais em situações físicas concretas OU ambientes/produtos tangíveis. Sempre termine com: "hyperrealistic, award-winning photography, no text, no logos"
+  OBRIGATÓRIO: pessoas reais em situações físicas concretas OU ambientes/produtos tangíveis. Sempre termine com: "hyperrealistic, award-winning photography, no text, no logos, no brand names, no company names, no watermarks, no fictional logos"
   
   Ex: saúde → "Brazilian female doctor in her 40s reviewing digital exam results with patient in modern clinic room, warm professional lighting, 85mm portrait lens f/1.8, shallow depth of field, hyperrealistic, award-winning photography, no text, no logos"
   Ex: IA/negócios → "confident latin american entrepreneur in glass office reviewing analytics on laptop, city skyline background, dramatic natural side lighting, editorial business photography, hyperrealistic, award-winning photography, no text, no logos"
@@ -153,13 +153,22 @@ OUTRAS REGRAS:
   Ex: imobiliário → "luxury apartment living room with floor-to-ceiling windows overlooking city at golden hour, architectural interior photography, warm natural backlight, wide angle shot, hyperrealistic, award-winning photography, no text, no logos"
 
 LEGENDA (campo "caption"):
-Gere legendas distintas e otimizadas para cada rede social com base no conteúdo do post.
+Gere legendas de alta qualidade, distintas e otimizadas para cada rede social. Use o contexto da marca para personalizar tom e estilo.
 
-- instagram: legenda curta e impactante. Comece com uma frase de impacto ou pergunta provocativa. Tom humano, direto e envolvente. Máximo 80 palavras. Use quebras de linha para facilitar a leitura. Sem hashtags no corpo — elas ficam no campo "hashtags".
+- instagram: legenda que para o scroll. Estrutura: 1ª linha impactante (dado surpreendente, pergunta provocativa ou afirmação ousada — esta linha aparece no preview antes do "ver mais", deve funcionar sozinha) + 2-3 linhas de desenvolvimento curtas + linha de conexão emocional com o leitor. Tom autêntico e humano. Máximo 80 palavras. Quebras de linha estratégicas. Sem hashtags.
 
-- linkedin: legenda mais longa e aprofundada. Comece com uma observação ou dado relevante que prenda a atenção. Desenvolva o tema com insights práticos ou reflexão profissional. Finalize com uma pergunta ou convite à discussão para gerar engajamento. Tom profissional mas acessível. Entre 150 e 250 palavras. Sem hashtags no corpo — elas ficam no campo "hashtags".
-- hashtags: string com 5 a 8 hashtags relevantes separadas por espaço, misturando português e inglês. Ex: "#IA #automação #AItools #produtividade #inovação"
-- Se a descrição do usuário contiver palavras como "call to action", "cta", "link na bio" ou "acesse", adicione um CTA natural ao final de cada legenda. Caso contrário, NÃO inclua CTA.
+- linkedin: legenda que gera autoridade. Estrutura: dado ou observação surpreendente na 1ª linha (para o scroll no feed) + linha em branco + desenvolvimento com insight prático em 2-3 parágrafos curtos separados por linha em branco + linha em branco + pergunta final que convida comentários. Tom profissional mas acessível. Entre 150 e 250 palavras. Sem hashtags.
+
+- hashtags: 6 a 8 hashtags — misture nichos específicos (menos concorrência) com hashtags amplas. Em português e inglês. Formato: "#hashtag1 #hashtag2"
+
+REGRAS CRÍTICAS DE QUALIDADE:
+- PROIBIDO começar com: "Você sabia que", "Descubra como", "No mundo atual", "Em um mundo onde", "Hoje vamos falar" — destroem o engajamento
+- Tom profissional → dados concretos, resultados mensuráveis, linguagem direta
+- Tom descontraído → primeira pessoa, proximidade, como conversa entre amigos
+- Tom inspiracional → emoção, verbos de ação, frases curtas e impactantes
+- Tom técnico → precisão, terminologia do setor, credibilidade
+- Use o nome da empresa naturalmente quando fizer sentido, nunca forçado
+- Se o usuário mencionou "cta", "link na bio" ou "acesse", adicione CTA natural. Caso contrário, NÃO inclua CTA.
 
 Descrição do usuário: "${userInput}"
 
