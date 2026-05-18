@@ -20,6 +20,8 @@ import { makeBusinessCardVariants }      from './business-card/variants'
 import { makeSportBrandVariants }    from './sport-brand/variants'
 import { makeSportArenaVariants }        from './sport-arena/variants'
 import { makeTechMinimalVariants }    from './tech-minimal/variants'
+import { makeGeoImpactVariants }       from './geo-impact/variants'
+import { makeSplitEditorialVariants }  from './split-editorial/variants'
 import type { Template } from '../state/useStore'
 import type { Theme } from '../themes'
 
@@ -103,6 +105,18 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Business Card',
     category: 'instagram-post',
     getVariants: makeBusinessCardVariants,
+  },
+  {
+    id: 'split-editorial',
+    name: 'Split Editorial',
+    category: 'instagram-post',
+    getVariants: makeSplitEditorialVariants,
+  },
+  {
+    id: 'geo-impact',
+    name: 'Geo Impact',
+    category: 'instagram-post',
+    getVariants: makeGeoImpactVariants,
   },
   {
     id: 'tech-statement',
