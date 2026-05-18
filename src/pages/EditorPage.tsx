@@ -199,6 +199,13 @@ export function EditorPage() {
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       <Sidebar />
 
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Agente conversacional — fixo no topo */}
+        <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+          <AgentChat />
+        </div>
+
+        {/* Área do canvas — scrollável */}
       <main ref={mainRef} className="canvas-area" style={{
         flex: 1,
         display: 'flex',
@@ -209,9 +216,8 @@ export function EditorPage() {
         position: 'relative',
         gap: '24px',
         padding: '24px',
-        paddingTop: '24px',
+        paddingTop: '16px',
       }}>
-        <AgentChat />
         {activeTemplate ? (
           <>
             {/* Preview principal — formato ativo */}
@@ -314,6 +320,7 @@ export function EditorPage() {
           </div>
         )}
       </main>
+      </div>
 
       {/* Textarea overlay — renderizado fora do canvas para não herdar a escala do Stage */}
       {editingState && (
