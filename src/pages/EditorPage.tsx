@@ -338,7 +338,7 @@ export function EditorPage() {
 
         {activeTemplate ? (
           <>
-            <PropertiesPanel template={activeTemplate} />
+            <PropertiesPanel template={activeTemplate} selectedElementId={selectedElementId} />
             <ImagePanel template={activeTemplate} />
           </>
         ) : (

@@ -121,11 +121,11 @@ function EmojiPicker({ onSelect }: { onSelect: (e: string) => void }) {
 
 // ─── TextField com card colapsável ────────────────────────────────────────────
 
-function TextField({ el, templateId }: { el: CanvasElement; templateId: string }) {
+function TextField({ el, templateId, defaultExpanded = false }: { el: CanvasElement; templateId: string; defaultExpanded?: boolean }) {
   const { syncElementStyle } = useStore()
   const ensureSiblings = useEnsureSiblings()
   const textRef = useRef<HTMLTextAreaElement>(null)
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(defaultExpanded)
 
   const text     = (el.props.text     as string) ?? ''
   const fontSize = (el.props.fontSize as number) ?? 40
@@ -423,18 +423,47 @@ function SolidBackgroundSection({ template }: { template: Template }) {
 
 // ─── Painel principal ─────────────────────────────────────────────────────────
 
-export function PropertiesPanel({ template }: { template: Template }) {
-  const textEls = template.elements.filter((el) => el.type === 'text')
-  if (textEls.length === 0) return null
+export function PropertiesPanel({ template, selectedElementId }: { template: Template; selectedElementId?: string | null }) {
+  const allTextEls = template.elements.filter((el) => el.type === 'text')
+  if (allTextEls.length === 0) return null
+
+  const selectedEl = selectedElementId
+    ? template.elements.find((el) => el.id === selectedElementId)
+    : null
+
+  const showAll = !selectedEl
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', borderBottom: '1px solid var(--border)' }}>
-      <h3 style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', margin: '0 0 4px' }}>
-        Textos
-      </h3>
-      {textEls.map((el) => (
-        <TextField key={`${template.id}-${el.id}`} el={el} templateId={template.id} />
-      ))}
+      {!selectedEl && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', padding: '16px 0', opacity: 0.5 }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/></svg>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, textAlign: 'center', lineHeight: 1.5 }}>
+            Clique em um elemento<br/>no canvas para editar
+          </p>
+        </div>
+      )}
+
+      {selectedEl && selectedEl.type === 'text' && (
+        <>
+          <h3 style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', margin: '0 0 4px' }}>
+            Editando elemento
+          </h3>
+          <TextField key={`${template.id}-${selectedEl.id}`} el={selectedEl} templateId={template.id} defaultExpanded />
+        </>
+      )}
+
+      {showAll && (
+        <>
+          <h3 style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', margin: '0 0 4px' }}>
+            Todos os textos
+          </h3>
+          {allTextEls.map((el) => (
+            <TextField key={`${template.id}-${el.id}`} el={el} templateId={template.id} />
+          ))}
+        </>
+      )}
+
       <AccentSection template={template} />
       <ShapeSection template={template} />
       <SolidBackgroundSection template={template} />
