@@ -26,6 +26,31 @@ export function AgentChat() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const recognitionRef = useRef<{ stop(): void } | null>(null)
+
+  function toggleMic() {
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+      return
+    }
+    const win = window as any
+    const SR = win.SpeechRecognition || win.webkitSpeechRecognition
+    if (!SR) return
+    const recognition = new SR()
+    recognition.lang = 'pt-BR'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript
+      setInput(prev => prev ? prev + ' ' + transcript : transcript)
+    }
+    recognition.onend = () => setIsListening(false)
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsListening(true)
+  }
   const [generating, setGenerating] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -353,6 +378,26 @@ export function AgentChat() {
             opacity: isDisabled ? 0.5 : 1,
           }}
         />
+        <button
+          onClick={toggleMic}
+          disabled={isDisabled}
+          title={isListening ? 'Parar gravação' : 'Falar mensagem'}
+          style={{
+            width: '36px', height: '36px', borderRadius: '10px', border: 'none',
+            background: isListening ? 'rgba(58,90,255,0.2)' : 'transparent',
+            color: isListening ? 'var(--accent)' : 'var(--text-muted)',
+            cursor: isDisabled ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, transition: 'all 0.15s',
+            outline: isListening ? '1px solid var(--accent)' : 'none',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="5" y="1" width="6" height="8" rx="3" fill="currentColor"/>
+            <path d="M2.5 8a5.5 5.5 0 0 0 11 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <line x1="8" y1="13.5" x2="8" y2="15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
         <button
           onClick={handleSend}
           disabled={isDisabled || !input.trim()}
