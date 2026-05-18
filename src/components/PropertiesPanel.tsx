@@ -236,6 +236,71 @@ function TextFieldPanel({ el, templateId }: { el: CanvasElement; templateId: str
   )
 }
 
+// ─── Painel de edição de shape ───────────────────────────────────────────────
+
+function ShapeFieldPanel({ el, templateId }: { el: CanvasElement; templateId: string }) {
+  const { syncElementStyle } = useStore()
+  const ensureSiblings = useEnsureSiblings()
+
+  const fill   = (el.props.fill as string) ?? '#3A5AFF'
+  const width  = el.width
+  const height = el.height
+
+  const SHAPE_LABELS: Record<string, string> = {
+    'accent-line': 'Linha de destaque',
+    'tag-line':    'Linha da tag',
+    'divider':     'Divisor',
+    'brand-line':  'Linha da marca',
+    'accent-bar':  'Barra de destaque',
+    'accent-strip':'Faixa de destaque',
+  }
+  const label = SHAPE_LABELS[el.id] ?? 'Forma'
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        {label}
+      </span>
+
+      {/* Cor */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Cor</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{fill.toUpperCase()}</span>
+          <ColorSwatch color={fill}
+            onChange={(hex) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { fill: hex }) }}
+            title="Cor do elemento"
+          />
+        </div>
+      </div>
+
+      {/* Largura */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Largura</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
+        </div>
+        <input type="range" min={10} max={500} step={5} value={width}
+          onChange={(e) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { width: Number(e.target.value) } as never) }}
+          style={{ width: '100%', accentColor: 'var(--accent)' }}
+        />
+      </div>
+
+      {/* Altura */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Espessura</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{height}px</span>
+        </div>
+        <input type="range" min={1} max={40} step={1} value={height}
+          onChange={(e) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { height: Number(e.target.value) } as never) }}
+          style={{ width: '100%', accentColor: 'var(--accent)' }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ─── Estado vazio ─────────────────────────────────────────────────────────────
 
 function EmptyState() {
@@ -385,6 +450,10 @@ export function PropertiesPanel({ template, selectedElementId }: { template: Tem
       {selectedEl && selectedEl.type === 'text' ? (
         <div style={{ padding: '16px', borderBottom: hasGlobalControls ? '1px solid var(--border)' : 'none' }}>
           <TextFieldPanel el={selectedEl} templateId={template.id} />
+        </div>
+      ) : selectedEl && selectedEl.type === 'shape' ? (
+        <div style={{ padding: '16px', borderBottom: hasGlobalControls ? '1px solid var(--border)' : 'none' }}>
+          <ShapeFieldPanel el={selectedEl} templateId={template.id} />
         </div>
       ) : (
         <EmptyState />

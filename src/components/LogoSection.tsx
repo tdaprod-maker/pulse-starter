@@ -51,98 +51,94 @@ export function LogoSection({ template }: LogoSectionProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 border-b border-gray-800">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
         Logotipo
-      </h3>
+      </span>
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="hidden"
-      />
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
 
-      {/* Brand Kit logos */}
-      {brandLogos.length > 0 ? (
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
+      {/* Logos do Brand Kit */}
+      {brandLogos.length > 0 && (
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
           {brandLogos.map((logo) => (
             <button
               key={logo.url}
               onClick={() => handleSelectBrandLogo(logo.url)}
               title={logo.label}
               style={{
-                flexShrink: 0,
-                width: '52px', height: '52px',
-                borderRadius: '6px',
-                border: '1px solid var(--border)',
+                flexShrink: 0, width: '48px', height: '48px', borderRadius: '8px',
+                border: `2px solid ${template.logoImage === logo.url ? 'var(--accent)' : 'var(--border)'}`,
                 background: 'repeating-conic-gradient(#374151 0% 25%, #1f2937 0% 50%) 0 0 / 10px 10px',
-                cursor: 'pointer',
-                padding: '4px',
+                cursor: 'pointer', padding: '4px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden',
+                overflow: 'hidden', transition: 'border-color 0.15s',
               }}
             >
               <img src={logo.url} alt={logo.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
             </button>
           ))}
         </div>
-      ) : (
+      )}
+
+      {!brandLogos.length && !template.logoImage && (
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
           Adicione logotipos no Brand Kit
         </p>
       )}
 
       {template.logoImage ? (
-        <div className="flex flex-col gap-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Preview */}
-          <div
-            className="rounded-md overflow-hidden flex items-center justify-center"
-            style={{
-              background: 'repeating-conic-gradient(#374151 0% 25%, #1f2937 0% 50%) 0 0 / 12px 12px',
-              minHeight: 64,
-            }}
-          >
-            <img
-              src={template.logoImage}
-              alt="Logotipo"
-              className="max-h-16 max-w-full object-contain"
+          <div style={{
+            borderRadius: '10px', overflow: 'hidden',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'repeating-conic-gradient(#374151 0% 25%, #1f2937 0% 50%) 0 0 / 12px 12px',
+            minHeight: '60px', border: '1px solid var(--border)',
+          }}>
+            <img src={template.logoImage} alt="Logotipo" style={{ maxHeight: '60px', maxWidth: '100%', objectFit: 'contain', padding: '8px' }} />
+          </div>
+
+          {/* Tamanho */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>TAMANHO</span>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{logoSize}px</span>
+            </div>
+            <input
+              type="range" min={60} max={1080} step={4} value={logoSize}
+              onChange={(e) => setTemplateLogoStyle(template.id, Number(e.target.value))}
+              style={{ width: '100%', accentColor: 'var(--accent)' }}
             />
           </div>
 
-          <p className="text-[10px] text-gray-600 leading-snug select-none">
+          <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
             Arraste o logotipo no canvas para reposicioná-lo.
           </p>
 
-          {/* Tamanho */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-500 select-none">Tamanho</span>
-              <span className="text-xs text-gray-400 font-mono">{logoSize}px</span>
-            </div>
-            <input
-              type="range"
-              min={60}
-              max={1080}
-              step={4}
-              value={logoSize}
-              onChange={(e) => setTemplateLogoStyle(template.id, Number(e.target.value))}
-              className="w-full accent-[#3A5AFF]"
-            />
-          </div>
-
           {/* Ações */}
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: '6px' }}>
             <button
               onClick={() => inputRef.current?.click()}
-              className="flex-1 text-xs px-2.5 py-1.5 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-colors"
+              style={{
+                flex: 1, fontSize: '12px', padding: '7px', borderRadius: '8px', cursor: 'pointer',
+                background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                color: 'var(--text-secondary)', fontFamily: 'inherit', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-active)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
             >
               Trocar
             </button>
             <button
               onClick={() => setTemplateLogo(template.id, null)}
-              className="text-xs px-2.5 py-1.5 rounded-md bg-gray-800 hover:bg-red-950 text-gray-500 hover:text-red-400 transition-colors"
+              style={{
+                fontSize: '12px', padding: '7px 12px', borderRadius: '8px', cursor: 'pointer',
+                background: 'transparent', border: '1px solid rgba(239,68,68,0.2)',
+                color: 'rgba(239,68,68,0.5)', fontFamily: 'inherit', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgb(239,68,68)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(239,68,68,0.5)' }}
             >
               Remover
             </button>
@@ -151,35 +147,25 @@ export function LogoSection({ template }: LogoSectionProps) {
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="
-            w-full flex flex-col items-center justify-center gap-2
-            border border-dashed border-gray-700
-            hover:border-[#3A5AFF] hover:bg-gray-800/40
-            rounded-md px-3 py-5
-            text-gray-600 hover:text-gray-300
-            transition-colors
-          "
+          style={{
+            width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', gap: '8px',
+            border: '1px dashed var(--border)', borderRadius: '10px',
+            padding: '20px', cursor: 'pointer',
+            background: 'transparent', color: 'var(--text-muted)',
+            fontFamily: 'inherit', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
         >
-          <LogoIcon />
-          <span className="text-xs">Carregar logotipo</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect x="1.5" y="4.5" width="17" height="11" rx="2" stroke="currentColor" strokeWidth="1.3"/>
+            <circle cx="6.5" cy="10" r="1.8" stroke="currentColor" strokeWidth="1.3"/>
+            <path d="M5 15l3.5-5 3 3.5 2.5-3 4 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ fontSize: '12px' }}>Carregar logotipo</span>
         </button>
       )}
     </div>
-  )
-}
-
-function LogoIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="1.5" y="4.5" width="15" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-      <circle cx="6" cy="9" r="1.5" stroke="currentColor" strokeWidth="1.3" />
-      <path
-        d="M4.5 13.5l3-4.5 2.5 3 2-2.5 3 4"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   )
 }
