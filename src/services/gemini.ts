@@ -756,10 +756,19 @@ ${history}
 
 AVALIE se você tem informação suficiente para gerar um bom post. Você precisa saber:
 1. O propósito/tema do post (obrigatório)
-2. Se deve ter imagem de fundo ou ser apenas tipográfico (importante)
-3. Formato preferido: 1:1, 4:5, 9:16 ou 16:9 (opcional — se não informado, use 1:1)
+2. Para qual rede social / onde será publicado (importante para definir formato)
+3. Se deve ter imagem de fundo ou ser apenas tipográfico (importante)
 
-REGRAS:
+REGRAS DE FORMATO — escolha automaticamente com base no contexto:
+- "stories", "reels", "story" → format: "9x16"
+- "linkedin" sem especificar → format: "1x1"
+- "feed instagram", "instagram feed", "post instagram" → format: "4x5"
+- "banner", "capa", "youtube", "linkedin banner" → format: "16x9"
+- Instagram sem especificar → format: "4x5" (melhor performance no feed)
+- Sem rede mencionada → pergunte para qual rede social é o post
+- Se já mencionou a rede em mensagem anterior, use o formato correspondente sem perguntar de novo
+
+REGRAS DE CONVERSA:
 - Se ainda não tem o suficiente, faça NO MÁXIMO 2 perguntas em uma única mensagem natural e amigável
 - Nunca faça mais de 2 rodadas de perguntas — na terceira interação, gere com o que tiver
 - Se já tem o suficiente, retorne ready: true com um prompt rico em português
@@ -775,7 +784,7 @@ OU
 {
   "ready": true,
   "prompt": "prompt rico e detalhado para gerar o post, incorporando tudo que foi discutido e o contexto da marca",
-  "format": "1x1"
+  "format": "4x5"
 }
 
 Formatos válidos: "1x1", "4x5", "9x16", "16x9"`
