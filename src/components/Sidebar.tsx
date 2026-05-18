@@ -34,7 +34,7 @@ export function Sidebar() {
   return (
     <aside style={{
       width: '220px',
-      background: 'rgba(10,14,20,0.95)',
+      background: 'var(--bg-panel)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
       borderRight: '1px solid rgba(255,255,255,0.05)',

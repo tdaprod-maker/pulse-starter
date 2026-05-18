@@ -203,7 +203,7 @@ export function EditorPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Agente conversacional — fixo no topo */}
         <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
-          <AgentChat onGenerated={() => setAgentGenerated(true)} onReset={() => setAgentGenerated(false)} />
+          <AgentChat onGenerating={() => setAgentGenerated(true)} onGenerated={() => setAgentGenerated(true)} onReset={() => setAgentGenerated(false)} />
         </div>
 
         {/* Área do canvas — scrollável */}
