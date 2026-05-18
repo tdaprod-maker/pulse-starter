@@ -14,6 +14,20 @@
   --text-muted: #4a5568;
 }
 
+[data-theme="light"] {
+  --bg-base: #f0f2f7;
+  --bg-panel: #ffffff;
+  --bg-surface: #e8ecf4;
+  --bg-hover: #dde3ef;
+  --border: rgba(0,0,0,0.08);
+  --border-active: rgba(58,90,255,0.4);
+  --accent: #3A5AFF;
+  --accent-glow: rgba(58,90,255,0.12);
+  --text-primary: #0c0f1a;
+  --text-secondary: #4a5568;
+  --text-muted: #8892a4;
+}
+
 * { box-sizing: border-box; }
 
 body {

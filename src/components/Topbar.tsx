@@ -7,6 +7,13 @@ export function Topbar() {
   const { pathname } = useLocation()
   const [pulseBalance, setPulseBalance] = useState<number | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isDark, setIsDark] = useState(true)
+
+  function toggleTheme() {
+    const next = !isDark
+    setIsDark(next)
+    document.documentElement.setAttribute('data-theme', next ? '' : 'light')
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -154,6 +161,36 @@ export function Topbar() {
             </span>
           </div>
         )}
+        <button
+          onClick={toggleTheme}
+          title={isDark ? 'Tema claro' : 'Tema escuro'}
+          style={{
+            width: '32px', height: '32px', borderRadius: '8px',
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--text-secondary)', transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.2)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
+        >
+          {isDark ? (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="3" stroke="currentColor" strokeWidth="1.3"/>
+              <line x1="7" y1="1" x2="7" y2="2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="7" y1="11.5" x2="7" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="1" y1="7" x2="2.5" y2="7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="11.5" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="2.93" y1="2.93" x2="4" y2="4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="10" y1="10" x2="11.07" y2="11.07" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="2.93" y1="11.07" x2="4" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="10" y1="4" x2="11.07" y2="2.93" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M12 7.5A5.5 5.5 0 0 1 6.5 2a5.5 5.5 0 1 0 5.5 5.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          )}
+        </button>
         {isAdmin && (
           <Link
             to="/admin"

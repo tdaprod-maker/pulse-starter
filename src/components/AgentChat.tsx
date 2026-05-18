@@ -306,7 +306,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset }: { onGenerating
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 6px var(--accent)' }} />
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
-            Agente de Design
+            Agente de Design Pulse
           </span>
         </div>
         <button onClick={handleReset}
