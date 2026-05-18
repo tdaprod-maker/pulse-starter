@@ -711,3 +711,89 @@ Exemplo para 3 slides: ["IA já chegou aqui?", "3x mais rápido", "Fale conosco"
   }
   return Array.from({length: slideCount}, (_, i) => `Slide ${i + 1}: ${prompt}`)
 }
+
+export interface AgentMessage {
+  role: 'user' | 'agent'
+  content: string
+}
+
+export interface AgentResponse {
+  ready: boolean
+  message?: string
+  prompt?: string
+  format?: string
+}
+
+export async function agentChat(
+  messages: AgentMessage[],
+  brand?: BrandContext
+): Promise<AgentResponse> {
+  const brandCtx = brand ? `
+Marca: ${brand.businessName || ''}
+Segmento: ${brand.segment || ''}
+Tom: ${brand.tone || ''}
+Descrição: ${brand.brandDescription || ''}
+Estilo visual: ${brand.visualStyle || ''}` : ''
+
+  const history = messages.map(m => `${m.role === 'user' ? 'Usuário' : 'Agente'}: ${m.content}`).join('\n')
+
+  const prompt = `Você é um agente de design de posts para redes sociais. Seu objetivo é coletar informações suficientes para gerar um post de alta qualidade para o usuário.
+
+CONTEXTO DA MARCA (já conhecido — não pergunte sobre isso):
+${brandCtx || 'Não disponível'}
+
+HISTÓRICO DA CONVERSA:
+${history}
+
+AVALIE se você tem informação suficiente para gerar um bom post. Você precisa saber:
+1. O propósito/tema do post (obrigatório)
+2. Se deve ter imagem de fundo ou ser apenas tipográfico (importante)
+3. Formato preferido: 1:1, 4:5, 9:16 ou 16:9 (opcional — se não informado, use 1:1)
+
+REGRAS:
+- Se ainda não tem o suficiente, faça NO MÁXIMO 2 perguntas em uma única mensagem natural e amigável
+- Nunca faça mais de 2 rodadas de perguntas — na terceira interação, gere com o que tiver
+- Se já tem o suficiente, retorne ready: true com um prompt rico em português
+- Seja conversacional e direto — não use listas ou bullet points nas perguntas
+- Conte as mensagens do usuário: se já tem 2 ou mais respostas, gere
+
+Responda APENAS com JSON válido sem markdown:
+{
+  "ready": false,
+  "message": "sua pergunta natural aqui"
+}
+OU
+{
+  "ready": true,
+  "prompt": "prompt rico e detalhado para gerar o post, incorporando tudo que foi discutido e o contexto da marca",
+  "format": "1x1"
+}
+
+Formatos válidos: "1x1", "4x5", "9x16", "16x9"`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 300,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      })
+      if (!res.ok) throw new Error(`Erro ${res.status}`)
+      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      const clean = raw.replace(/```json|```/g, '').trim()
+      return JSON.parse(clean) as AgentResponse
+    } catch (err) {
+      if (attempt === 2) return { ready: false, message: 'Descreva o que você quer comunicar no post e eu começo a criar.' }
+    }
+  }
+  return { ready: false, message: 'Descreva o que você quer comunicar no post e eu começo a criar.' }
+}

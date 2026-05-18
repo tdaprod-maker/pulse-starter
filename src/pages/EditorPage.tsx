@@ -11,6 +11,7 @@ import { ExportPanel } from '../components/ExportPanel'
 import { PropertiesPanel } from '../components/PropertiesPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { AIPanel } from '../components/AIPanel'
+import { AgentChat } from '../components/AgentChat'
 import { CaptionPanel } from '../components/CaptionPanel'
 import { PostReviewer } from '../components/PostReviewer'
 import { TextEditor } from '../components/TextEditor'
@@ -199,6 +200,9 @@ export function EditorPage() {
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       <Sidebar />
 
+      <div style={{ width: '100%', padding: '24px 24px 0', boxSizing: 'border-box' }}>
+        <AgentChat stageRef={stageRef} />
+      </div>
       <main ref={mainRef} className="canvas-area" style={{
         flex: 1,
         display: 'flex',
@@ -333,8 +337,7 @@ export function EditorPage() {
         flexDirection: 'column',
         overflowY: 'auto',
       }}>
-        {/* AIPanel sempre visível — gera e ativa o template automaticamente */}
-        <AIPanel stageRef={stageRef} />
+  
 
         {activeTemplate ? (
           <>
