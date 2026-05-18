@@ -20,7 +20,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerated, onReset }: { onGenerated?: () => void; onReset?: () => void } = {}) {
+export function AgentChat({ onGenerating, onGenerated, onReset }: { onGenerating?: () => void; onGenerated?: () => void; onReset?: () => void } = {}) {
   const [messages, setMessages] = useState<AgentMessage[]>([
     { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
   ])
@@ -252,6 +252,7 @@ export function AgentChat({ onGenerated, onReset }: { onGenerated?: () => void; 
 
       if (response.ready && response.prompt) {
         setMessages(prev => [...prev, { role: 'agent', content: 'Perfeito! Gerando seu post...' }])
+        onGenerating?.()
         await generate(response.prompt, response.format)
       } else {
         setMessages(prev => [...prev, {
