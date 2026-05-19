@@ -6,13 +6,15 @@ import type { Template } from '../state/useStore'
 
 const GROUPS = [
   { label: 'Sport', ids: ['sport-arena', 'sport-brand'] },
-  { label: 'Food', ids: ['food-editorial', 'food-promo'] },
-  { label: 'Business', ids: ['business-statement', 'business-card'] },
-  { label: 'Health', ids: ['health-content', 'health-stats'] },
+  { label: 'Food', ids: ['food-editorial', 'food-promo', 'food-vertical'] },
+  { label: 'Business', ids: ['business-statement', 'business-card', 'job-glass', 'hero-gradient', 'toggle-card', 'infographic-ring'] },
+  { label: 'Health', ids: ['health-content', 'health-stats', 'health-split'] },
   { label: 'Construction', ids: ['build-impact', 'build-editorial'] },
-  { label: 'Realty', ids: ['realty-premium', 'realty-launch'] },
+  { label: 'Realty', ids: ['realty-premium', 'realty-launch', 'realty-keys'] },
   { label: 'Fashion', ids: ['fashion-editorial', 'fashion-drop'] },
-  { label: 'Outros', ids: ['food-vertical', 'bold-circle', 'editorial-cover', 'split-editorial', 'geo-impact', 'tech-statement', 'tech-news', 'tech-product', 'tech-minimal', 'health-split', 'infographic-ring', 'realty-keys', 'toggle-card', 'home-split', 'product-arch', 'hero-gradient', 'job-glass', 'editorial-card'] },
+  { label: 'Tech', ids: ['tech-statement', 'tech-news', 'tech-product', 'tech-minimal'] },
+  { label: 'Home & Deco', ids: ['home-split', 'product-arch'] },
+  { label: 'Outros', ids: ['bold-circle', 'editorial-cover', 'split-editorial', 'geo-impact', 'editorial-card'] },
 ]
 
 export function Sidebar() {
