@@ -23,6 +23,7 @@ import { makeTechMinimalVariants }    from './tech-minimal/variants'
 import { makeGeoImpactVariants }       from './geo-impact/variants'
 import { makeSplitEditorialVariants }  from './split-editorial/variants'
 import { makeEditorialCoverVariants }  from './editorial-cover/variants'
+import { makeBoldCircleVariants }      from './bold-circle/variants'
 import type { Template } from '../state/useStore'
 import type { Theme } from '../themes'
 
@@ -106,6 +107,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Business Card',
     category: 'instagram-post',
     getVariants: makeBusinessCardVariants,
+  },
+  {
+    id: 'bold-circle',
+    name: 'Bold Circle',
+    category: 'instagram-post',
+    getVariants: makeBoldCircleVariants,
   },
   {
     id: 'editorial-cover',
