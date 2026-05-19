@@ -12,7 +12,7 @@ const GROUPS = [
   { label: 'Construction', ids: ['build-impact', 'build-editorial'] },
   { label: 'Realty', ids: ['realty-premium', 'realty-launch'] },
   { label: 'Fashion', ids: ['fashion-editorial', 'fashion-drop'] },
-  { label: 'Outros', ids: ['food-vertical', 'bold-circle', 'editorial-cover', 'split-editorial', 'geo-impact', 'tech-statement', 'tech-news', 'tech-product', 'tech-minimal', 'hero-title', 'big-statement', 'editorial-card', 'big-number'] },
+  { label: 'Outros', ids: ['food-vertical', 'bold-circle', 'editorial-cover', 'split-editorial', 'geo-impact', 'tech-statement', 'tech-news', 'tech-product', 'tech-minimal', 'editorial-card'] },
 ]
 
 export function Sidebar() {

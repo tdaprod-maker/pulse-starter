@@ -1,7 +1,4 @@
-import { makeHeroTitleVariants }      from './hero-title/variants'
-import { makeBigStatementVariants }   from './big-statement/variants'
 import { makeEditorialCardVariants }  from './editorial-card/variants'
-import { makeBigNumberVariants }      from './big-number/variants'
 import { makeFoodPromoVariants }      from './food-promo/variants'
 import { makeFoodEditorialVariants }  from './food-editorial/variants'
 import { makeTechNewsVariants }       from './tech-news/variants'
@@ -176,28 +173,10 @@ export const templateRegistry: TemplateDefinition[] = [
     getVariants: makeFoodPromoVariants,
   },
   {
-    id: 'hero-title',
-    name: 'Título Principal',
-    category: 'instagram-post',
-    getVariants: makeHeroTitleVariants,
-  },
-  {
-    id: 'big-statement',
-    name: 'Grande Declaração',
-    category: 'instagram-post',
-    getVariants: makeBigStatementVariants,
-  },
-  {
     id: 'editorial-card',
     name: 'Card Editorial',
     category: 'instagram-post',
     getVariants: makeEditorialCardVariants,
-  },
-  {
-    id: 'big-number',
-    name: 'Número em Destaque',
-    category: 'instagram-post',
-    getVariants: makeBigNumberVariants,
   },
 ]
 

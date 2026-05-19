@@ -48,10 +48,7 @@ const TEMPLATE_FIELDS: Record<string, string> = {
   'realty-launch':        'cat (tipo de empresa), tag (status, ex: LANCAMENTO), tag-text (texto da badge), title (nome do empreendimento em maiusculas), spec1-val (area), spec2-val (quartos), spec3-val (ano de entrega), price (preco inicial), cta (chamada)',
   'fashion-editorial':    'brand (nome da marca em maiusculas), num (numero da peca, ex: 001), title (nome da peca em portugues, pode ser em 2 linhas), cat (colecao e ano)',
   'fashion-drop':         'brand (nome da marca em maiusculas), tag (tipo de oferta, ex: SALE), label (descricao da oferta em maiusculas), line1 (primeira linha do destaque em maiusculas), line2 (segunda linha do destaque em maiusculas com %), cta (chamada)',
-  'hero-title':           'title (titulo principal 3-6 palavras), subtitle (subtitulo explicativo 8-14 palavras)',
-  'big-statement':        'line1 (1-3 palavras), line2 (1-3 palavras)',
   'editorial-card':       'label (1-2 palavras em maiusculas), title (4-7 palavras), body (15-25 palavras)',
-  'big-number':           'number (numero ou simbolo), caption (5-10 palavras)',
   'tech-statement':       'phrase (frase em maiusculas max 8 palavras com \\n), brand (nome da marca)',
   'tech-news':            'category (categoria em maiusculas), title (headline 2 linhas em maiusculas com \\n), brand (nome da marca)',
   'tech-product':         'tag (categoria em maiusculas), title (nome do produto em maiusculas), subtitle (descricao 8-15 palavras), cta (chamada curta)',
@@ -74,17 +71,14 @@ ${brand?.visualStyle ? `\nEstilo visual de referência: ${brand.visualStyle}` : 
 ${brand?.brandDescription ? `\nDescrição detalhada da marca: ${brand.brandDescription}` : ''}
 
 TEMPLATES DISPONÍVEIS:
-- "hero-title"     → título principal + subtítulo
   Campos: title (3-6 palavras, impactante), subtitle (8-14 palavras, explicativo)
 
-- "big-statement"  → duas linhas curtas de impacto visual máximo
   Campos: line1 (1-3 palavras), line2 (1-3 palavras)
   Juntas formam uma frase ou contraste. Ex: line1="NOVO", line2="PRODUTO"
 
 - "editorial-card" → layout editorial com rótulo, título e corpo
   Campos: label (1-2 palavras EM MAIÚSCULAS, ex: "DESIGN"), title (4-7 palavras), body (15-25 palavras)
 
-- "big-number"     → número em destaque + legenda, ideal para estatísticas ou conquistas
   Campos: number (1 número ou símbolo, ex: "42", "3×", "98%"), caption (5-10 palavras)
 
 - "food-promo"       → layout claro premium para restaurantes e delivery, com nome do prato bold e preço em destaque
@@ -119,10 +113,7 @@ IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario, use OBR
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
 REGRAS DE SELEÇÃO DE TEMPLATE:
-- "hero-title"      → quando há um título principal acompanhado de explicação ou subtítulo descritivo
-- "big-statement"   → para declarações ousadas, lançamentos ou afirmações de impacto máximo
 - "editorial-card"  → para conteúdo informativo, artigos, dicas ou textos com contexto e corpo
-- "big-number"      → obrigatório quando o conteúdo contém dados, estatísticas, porcentagens ou conquistas numéricas
 - "food-editorial"  → obrigatório quando o conteúdo mencionar restaurante premium, alta gastronomia, prato especial, menu degustação, chef ou experiência gastronômica sofisticada
 - "food-promo"      → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida (use food-editorial se o contexto for premium/sofisticado)
 - "tech-news"       → quando o prompt mencionar notícia, novidade, lançamento, evento, summit, atualização de tecnologia ou IA
@@ -146,7 +137,6 @@ REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 
 OUTRAS REGRAS:
 - Escreva em português do Brasil com tom adequado ao contexto descrito
-- Para big-statement: as duas linhas devem ter peso visual equilibrado
 - imagePrompt: escreva em inglês (max 50 palavras) um prompt fotográfico preciso para o modelo de IA FLUX gerar a imagem de fundo do post. Siga estas regras obrigatórias:
   ESTRUTURA: [sujeito específico e etnia/gênero quando relevante] + [ação concreta] + [ambiente físico real] + [estilo fotográfico] + [iluminação nomeada] + [qualidade]
   PROIBIDO: robotic hands, holograms, neon circuits, glowing orbs, sci-fi UI, abstract shapes, CGI, digital art, illustrations, floating text, watermarks, screens with text, dashboards with numbers, any readable text in the scene
