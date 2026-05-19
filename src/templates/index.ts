@@ -1,3 +1,4 @@
+import { makeHealthSplitVariants }     from './health-split/variants'
 import { makeInfographicRingVariants } from './infographic-ring/variants'
 import { makeRealtyKeysVariants }      from './realty-keys/variants'
 import { makeToggleCardVariants }      from './toggle-card/variants'
@@ -178,6 +179,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'health-split',
+    name: 'Saúde em Foco',
+    category: 'instagram-post',
+    getVariants: makeHealthSplitVariants,
   },
   {
     id: 'infographic-ring',
