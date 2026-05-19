@@ -28,6 +28,14 @@
   --text-muted: #8892a4;
 }
 
+[data-theme="light"] .canvas-area {
+  background: #e8eaf0;
+}
+
+[data-theme="light"] .canvas-area::before {
+  display: none;
+}
+
 * { box-sizing: border-box; }
 
 body {
