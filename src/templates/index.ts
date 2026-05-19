@@ -1,3 +1,4 @@
+import { makeHomeSplitVariants }       from './home-split/variants'
 import { makeProductArchVariants }     from './product-arch/variants'
 import { makeHeroGradientVariants }    from './hero-gradient/variants'
 import { makeJobGlassVariants }       from './job-glass/variants'
@@ -174,6 +175,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'home-split',
+    name: 'Painel Duplo',
+    category: 'instagram-post',
+    getVariants: makeHomeSplitVariants,
   },
   {
     id: 'product-arch',

@@ -48,6 +48,7 @@ const TEMPLATE_FIELDS: Record<string, string> = {
   'realty-launch':        'cat (tipo de empresa), tag (status, ex: LANCAMENTO), tag-text (texto da badge), title (nome do empreendimento em maiusculas), spec1-val (area), spec2-val (quartos), spec3-val (ano de entrega), price (preco inicial), cta (chamada)',
   'fashion-editorial':    'brand (nome da marca em maiusculas), num (numero da peca, ex: 001), title (nome da peca em portugues, pode ser em 2 linhas), cat (colecao e ano)',
   'fashion-drop':         'brand (nome da marca em maiusculas), tag (tipo de oferta, ex: SALE), label (descricao da oferta em maiusculas), line1 (primeira linha do destaque em maiusculas), line2 (segunda linha do destaque em maiusculas com %), cta (chamada)',
+  'home-split':          'headline (frase emocional 5-9 palavras), desc-label (descricao do produto/servico 8-14 palavras), cta-label (instrucao de contato ex: Solicite o seu orcamento), cta-phone (telefone ou whatsapp), handle (perfil da marca ex: @suamarca)',
   'product-arch':        'headline (titulo em maiusculas 2-4 palavras), sub1 (frase descritiva 8-14 palavras), sub2 (frase complementar 8-14 palavras), btn-text (CTA curto 3-5 palavras)',
   'hero-gradient':       'logo-text (nome da marca em maiusculas), headline (titulo emocional 3-6 palavras), subtitle (frase de apoio 6-10 palavras)',
   'job-glass':            'company (nome da empresa), headline1 (1 palavra de impacto ex: ESTAMOS), headline2 (1 palavra ex: CONTRATANDO), role (cargo da vaga), cta-email (email de contato), deadline (data limite ex: 31 de Dezembro de 2025)',
@@ -79,6 +80,7 @@ TEMPLATES DISPONÍVEIS:
   Campos: line1 (1-3 palavras), line2 (1-3 palavras)
   Juntas formam uma frase ou contraste. Ex: line1="NOVO", line2="PRODUTO"
 
+- "home-split"     → split vertical painel escuro/foto, headline emocional grande, telefone e handle na base
 - "product-arch"   → fundo neutro com semicírculo decorativo, produto centralizado, texto e CTA acima
 - "hero-gradient"  → foto de fundo com gradiente na base, logo no topo, headline emocional centralizado
 - "job-glass"      → vaga de emprego com card glassmorphism, cargo, email e prazo
@@ -119,6 +121,7 @@ IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario, use OBR
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
 REGRAS DE SELEÇÃO DE TEMPLATE:
+- "home-split"      → para móveis planejados, decoração, arquitetura ou qualquer serviço de ambiente/lar
 - "product-arch"    → para posts de produto físico, lançamento ou destaque de item com fundo limpo
 - "hero-gradient"   → para posts emocionais, datas comemorativas, homenagens ou celebrações com foto de fundo
 - "job-glass"       → obrigatório quando o conteúdo é sobre vaga de emprego, recrutamento ou contratação
