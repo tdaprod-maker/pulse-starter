@@ -1,3 +1,4 @@
+import { makeRealtyKeysVariants }      from './realty-keys/variants'
 import { makeToggleCardVariants }      from './toggle-card/variants'
 import { makeHomeSplitVariants }       from './home-split/variants'
 import { makeProductArchVariants }     from './product-arch/variants'
@@ -176,6 +177,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'realty-keys',
+    name: 'Chave na Mão',
+    category: 'instagram-post',
+    getVariants: makeRealtyKeysVariants,
   },
   {
     id: 'toggle-card',
