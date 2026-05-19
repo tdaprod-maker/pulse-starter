@@ -1,3 +1,4 @@
+import { makeHeroGradientVariants }    from './hero-gradient/variants'
 import { makeJobGlassVariants }       from './job-glass/variants'
 import { makeEditorialCardVariants }  from './editorial-card/variants'
 import { makeFoodPromoVariants }      from './food-promo/variants'
@@ -172,6 +173,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'hero-gradient',
+    name: 'Hero com Gradiente',
+    category: 'instagram-post',
+    getVariants: makeHeroGradientVariants,
   },
   {
     id: 'job-glass',
