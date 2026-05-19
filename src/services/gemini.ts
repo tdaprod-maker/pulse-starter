@@ -131,6 +131,7 @@ REGRAS DE SELEÇÃO DE TEMPLATE:
 - "business-card"      → quando o prompt mencionar apresentação de empresa, serviço, produto, solução ou proposta de valor profissional
 - "tech-statement"  → quando o prompt for uma frase, reflexão, provocação ou pensamento sobre negócios, IA ou automação
 - "tech-product"    → quando o prompt mencionar produto, serviço, agente, solução, ferramenta de IA ou automação
+- "editorial-cover"  → foto de fundo com overlays escuros, tipografia grande + palavra em itálico colorido, estilo magazine/editorial. Ideal para posts autorais, reflexões, lifestyle e conteúdo inspiracional
 - "split-editorial" → layout split metade escura/metade clara com badge, número decorativo, título bold e corpo. Ideal para listas, dicas, tutoriais e conteúdo educativo
 - "geo-impact"      → layout geométrico com círculo grande + título bold + linha de destaque. Ideal para posts de impacto, listas, dicas ou conteúdo inspiracional de qualquer segmento
 - "geo-impact"      → layout geométrico com círculo grande + título bold. Use para posts de listas, dicas, hábitos, conquistas ou qualquer conteúdo inspiracional
