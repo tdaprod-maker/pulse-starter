@@ -1,3 +1,4 @@
+import { makeJobGlassVariants }       from './job-glass/variants'
 import { makeEditorialCardVariants }  from './editorial-card/variants'
 import { makeFoodPromoVariants }      from './food-promo/variants'
 import { makeFoodEditorialVariants }  from './food-editorial/variants'
@@ -171,6 +172,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'job-glass',
+    name: 'Vaga em Destaque',
+    category: 'instagram-post',
+    getVariants: makeJobGlassVariants,
   },
   {
     id: 'editorial-card',

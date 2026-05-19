@@ -48,6 +48,7 @@ const TEMPLATE_FIELDS: Record<string, string> = {
   'realty-launch':        'cat (tipo de empresa), tag (status, ex: LANCAMENTO), tag-text (texto da badge), title (nome do empreendimento em maiusculas), spec1-val (area), spec2-val (quartos), spec3-val (ano de entrega), price (preco inicial), cta (chamada)',
   'fashion-editorial':    'brand (nome da marca em maiusculas), num (numero da peca, ex: 001), title (nome da peca em portugues, pode ser em 2 linhas), cat (colecao e ano)',
   'fashion-drop':         'brand (nome da marca em maiusculas), tag (tipo de oferta, ex: SALE), label (descricao da oferta em maiusculas), line1 (primeira linha do destaque em maiusculas), line2 (segunda linha do destaque em maiusculas com %), cta (chamada)',
+  'job-glass':            'company (nome da empresa), headline1 (1 palavra de impacto ex: ESTAMOS), headline2 (1 palavra ex: CONTRATANDO), role (cargo da vaga), cta-email (email de contato), deadline (data limite ex: 31 de Dezembro de 2025)',
   'editorial-card':       'label (1-2 palavras em maiusculas), title (4-7 palavras), body (15-25 palavras)',
   'tech-statement':       'phrase (frase em maiusculas max 8 palavras com \\n), brand (nome da marca)',
   'tech-news':            'category (categoria em maiusculas), title (headline 2 linhas em maiusculas com \\n), brand (nome da marca)',
@@ -76,6 +77,7 @@ TEMPLATES DISPONÍVEIS:
   Campos: line1 (1-3 palavras), line2 (1-3 palavras)
   Juntas formam uma frase ou contraste. Ex: line1="NOVO", line2="PRODUTO"
 
+- "job-glass"      → vaga de emprego com card glassmorphism, cargo, email e prazo
 - "editorial-card" → layout editorial com rótulo, título e corpo
   Campos: label (1-2 palavras EM MAIÚSCULAS, ex: "DESIGN"), title (4-7 palavras), body (15-25 palavras)
 
@@ -113,6 +115,7 @@ IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario, use OBR
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
 REGRAS DE SELEÇÃO DE TEMPLATE:
+- "job-glass"       → obrigatório quando o conteúdo é sobre vaga de emprego, recrutamento ou contratação
 - "editorial-card"  → para conteúdo informativo, artigos, dicas ou textos com contexto e corpo
 - "food-editorial"  → obrigatório quando o conteúdo mencionar restaurante premium, alta gastronomia, prato especial, menu degustação, chef ou experiência gastronômica sofisticada
 - "food-promo"      → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida (use food-editorial se o contexto for premium/sofisticado)
