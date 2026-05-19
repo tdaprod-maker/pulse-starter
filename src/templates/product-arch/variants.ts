@@ -12,7 +12,7 @@ export function makeProductArchVariants(theme: Theme): Template[] {
 
   const pa4x5: Template = {
     id: 'product-arch-4x5',
-    name: 'Produto com Arco — 4:5',
+    name: 'Vitrine Minimalista — 4:5',
     category: 'instagram-post',
     width: 1080,
     height: 1350,
@@ -40,7 +40,7 @@ export function makeProductArchVariants(theme: Theme): Template[] {
 
   const pa1x1: Template = {
     id: 'product-arch-1x1',
-    name: 'Produto com Arco — 1:1',
+    name: 'Vitrine Minimalista — 1:1',
     category: 'instagram-post',
     width: 1080,
     height: 1080,
@@ -61,7 +61,7 @@ export function makeProductArchVariants(theme: Theme): Template[] {
 
   const pa9x16: Template = {
     id: 'product-arch-9x16',
-    name: 'Produto com Arco — 9:16',
+    name: 'Vitrine Minimalista — 9:16',
     category: 'instagram-story',
     width: 1080,
     height: 1920,

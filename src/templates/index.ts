@@ -177,19 +177,19 @@ export const templateRegistry: TemplateDefinition[] = [
   },
   {
     id: 'product-arch',
-    name: 'Produto com Arco',
+    name: 'Vitrine Minimalista',
     category: 'instagram-post',
     getVariants: makeProductArchVariants,
   },
   {
     id: 'hero-gradient',
-    name: 'Hero com Gradiente',
+    name: 'Palco de Marca',
     category: 'instagram-post',
     getVariants: makeHeroGradientVariants,
   },
   {
     id: 'job-glass',
-    name: 'Vaga em Destaque',
+    name: 'Vitrine de Vaga',
     category: 'instagram-post',
     getVariants: makeJobGlassVariants,
   },

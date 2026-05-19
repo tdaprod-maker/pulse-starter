@@ -9,7 +9,7 @@ export function makeHeroGradientVariants(theme: Theme): Template[] {
 
   const hg4x5: Template = {
     id: 'hero-gradient-4x5',
-    name: 'Hero com Gradiente — 4:5',
+    name: 'Palco de Marca — 4:5',
     category: 'instagram-post',
     width: 1080,
     height: 1350,
@@ -40,7 +40,7 @@ export function makeHeroGradientVariants(theme: Theme): Template[] {
 
   const hg1x1: Template = {
     id: 'hero-gradient-1x1',
-    name: 'Hero com Gradiente — 1:1',
+    name: 'Palco de Marca — 1:1',
     category: 'instagram-post',
     width: 1080,
     height: 1080,
@@ -65,7 +65,7 @@ export function makeHeroGradientVariants(theme: Theme): Template[] {
 
   const hg9x16: Template = {
     id: 'hero-gradient-9x16',
-    name: 'Hero com Gradiente — 9:16',
+    name: 'Palco de Marca — 9:16',
     category: 'instagram-story',
     width: 1080,
     height: 1920,

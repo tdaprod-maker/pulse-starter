@@ -11,7 +11,7 @@ export function makeJobGlassVariants(theme: Theme): Template[] {
 
   const jg4x5: Template = {
     id: 'job-glass-4x5',
-    name: 'Vaga em Destaque — 4:5',
+    name: 'Vitrine de Vaga — 4:5',
     category: 'instagram-post',
     width: 1080,
     height: 1350,
@@ -59,7 +59,7 @@ export function makeJobGlassVariants(theme: Theme): Template[] {
 
   const jg1x1: Template = {
     id: 'job-glass-1x1',
-    name: 'Vaga em Destaque — 1:1',
+    name: 'Vitrine de Vaga — 1:1',
     category: 'instagram-post',
     width: 1080,
     height: 1080,
@@ -98,7 +98,7 @@ export function makeJobGlassVariants(theme: Theme): Template[] {
 
   const jg9x16: Template = {
     id: 'job-glass-9x16',
-    name: 'Vaga em Destaque — 9:16',
+    name: 'Vitrine de Vaga — 9:16',
     category: 'instagram-story',
     width: 1080,
     height: 1920,
