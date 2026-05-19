@@ -131,6 +131,7 @@ REGRAS DE SELEÇÃO DE TEMPLATE:
 - "business-card"      → quando o prompt mencionar apresentação de empresa, serviço, produto, solução ou proposta de valor profissional
 - "tech-statement"  → quando o prompt for uma frase, reflexão, provocação ou pensamento sobre negócios, IA ou automação
 - "tech-product"    → quando o prompt mencionar produto, serviço, agente, solução, ferramenta de IA ou automação
+- "food-vertical"    → faixa vertical escura à esquerda com texto rotacionado + bloco escuro à direita com título, tag e contato. Ideal para restaurantes, promoções food, delivery e lançamentos de produtos
 - "bold-circle"      → fundo colorido vibrante com círculo escuro no topo + texto bold dentro do círculo + palavra com highlight box. Ideal para posts de impacto, lançamentos, promoções e conteúdo motivacional
 - "editorial-cover"  → foto de fundo com overlays escuros, tipografia grande + palavra em itálico colorido, estilo magazine/editorial. Ideal para posts autorais, reflexões, lifestyle e conteúdo inspiracional
 - "split-editorial" → layout split metade escura/metade clara com badge, número decorativo, título bold e corpo. Ideal para listas, dicas, tutoriais e conteúdo educativo
