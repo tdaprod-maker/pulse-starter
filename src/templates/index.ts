@@ -1,3 +1,4 @@
+import { makeProductArchVariants }     from './product-arch/variants'
 import { makeHeroGradientVariants }    from './hero-gradient/variants'
 import { makeJobGlassVariants }       from './job-glass/variants'
 import { makeEditorialCardVariants }  from './editorial-card/variants'
@@ -173,6 +174,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'product-arch',
+    name: 'Produto com Arco',
+    category: 'instagram-post',
+    getVariants: makeProductArchVariants,
   },
   {
     id: 'hero-gradient',
