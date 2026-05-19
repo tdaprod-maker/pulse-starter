@@ -1,3 +1,4 @@
+import { makeInfographicRingVariants } from './infographic-ring/variants'
 import { makeRealtyKeysVariants }      from './realty-keys/variants'
 import { makeToggleCardVariants }      from './toggle-card/variants'
 import { makeHomeSplitVariants }       from './home-split/variants'
@@ -177,6 +178,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'infographic-ring',
+    name: 'Infográfico Anel',
+    category: 'instagram-post',
+    getVariants: makeInfographicRingVariants,
   },
   {
     id: 'realty-keys',

@@ -48,6 +48,7 @@ const TEMPLATE_FIELDS: Record<string, string> = {
   'realty-launch':        'cat (tipo de empresa), tag (status, ex: LANCAMENTO), tag-text (texto da badge), title (nome do empreendimento em maiusculas), spec1-val (area), spec2-val (quartos), spec3-val (ano de entrega), price (preco inicial), cta (chamada)',
   'fashion-editorial':    'brand (nome da marca em maiusculas), num (numero da peca, ex: 001), title (nome da peca em portugues, pode ser em 2 linhas), cat (colecao e ano)',
   'fashion-drop':         'brand (nome da marca em maiusculas), tag (tipo de oferta, ex: SALE), label (descricao da oferta em maiusculas), line1 (primeira linha do destaque em maiusculas), line2 (segunda linha do destaque em maiusculas com %), cta (chamada)',
+  'infographic-ring':    'ring-title1 (palavra ou tema em maiusculas), ring-title2 (palavra de destaque em maiusculas), num1 (01 + titulo do item), desc1 (descricao do item 1, 6-10 palavras), num2 (02 + titulo), desc2 (descricao item 2), num3 (03 + titulo), desc3 (descricao item 3), num4 (04 + titulo), desc4 (descricao item 4)',
   'realty-keys':         'headline (frase em italico 5-9 palavras sobre imovel), cta-label (instrucao de contato ex: Entre em contato!), btn-phone (telefone ou whatsapp), handle (perfil da marca ex: @suamarca)',
   'toggle-card':         'hashtag (hashtag da campanha ex: #suamarca), title (titulo de lista ou pergunta 5-9 palavras com numero), handle (perfil da marca ex: @suamarca)',
   'home-split':          'headline (frase emocional 5-9 palavras), desc-label (descricao do produto/servico 8-14 palavras), cta-label (instrucao de contato ex: Solicite o seu orcamento), cta-phone (telefone ou whatsapp), handle (perfil da marca ex: @suamarca)',
@@ -82,6 +83,7 @@ TEMPLATES DISPONÍVEIS:
   Campos: line1 (1-3 palavras), line2 (1-3 palavras)
   Juntas formam uma frase ou contraste. Ex: line1="NOVO", line2="PRODUTO"
 
+- "infographic-ring" → fundo escuro, anel decorativo colorido, título central, 4 cards de item com número e descrição
 - "realty-keys"    → foto de fundo, headline itálico grande, botão oval com telefone e handle
 - "toggle-card"    → overlay com card dark centralizado, toggle decorativo, hashtag e título de lista numerada
 - "home-split"     → split vertical painel escuro/foto, headline emocional grande, telefone e handle na base
@@ -125,6 +127,7 @@ IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario, use OBR
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
 REGRAS DE SELEÇÃO DE TEMPLATE:
+- "infographic-ring" → para infográficos, listas de 4 itens, comparativos, dados ou apresentação de benefícios
 - "realty-keys"     → para imobiliárias, corretores, aluguel, venda de imóveis ou captação de leads
 - "toggle-card"     → para listas numeradas, motivos, razões, dicas ou conteúdo do tipo carrossel de capa
 - "home-split"      → para móveis planejados, decoração, arquitetura ou qualquer serviço de ambiente/lar
