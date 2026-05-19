@@ -1,3 +1,4 @@
+import { makeToggleCardVariants }      from './toggle-card/variants'
 import { makeHomeSplitVariants }       from './home-split/variants'
 import { makeProductArchVariants }     from './product-arch/variants'
 import { makeHeroGradientVariants }    from './hero-gradient/variants'
@@ -175,6 +176,12 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Food Promo',
     category: 'instagram-post',
     getVariants: makeFoodPromoVariants,
+  },
+  {
+    id: 'toggle-card',
+    name: 'Card Reveal',
+    category: 'instagram-post',
+    getVariants: makeToggleCardVariants,
   },
   {
     id: 'home-split',
