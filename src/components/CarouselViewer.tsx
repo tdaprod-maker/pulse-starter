@@ -7,6 +7,8 @@ import { CanvasEngine } from '../engine/CanvasEngine'
 import { calcAutoScale } from '../engine/CanvasEngine'
 import { exportToPng, buildFileName } from '../export/exportUtils'
 import type { CarouselSlide } from '../services/gemini'
+import { supabase } from '../lib/supabase'
+import { loadBrandConfig } from '../services/brandKit'
 
 type SlideWithImage = CarouselSlide & { imageUrl: string }
 
@@ -36,7 +38,7 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
   const [ready, setReady] = useState(false)
   const stageRefs = useRef<Record<number, Konva.Stage | null>>({})
   const { theme } = useTheme()
-  const { addTemplate, updateElement, setTemplateBackground } = useStore()
+  const { addTemplate, updateElement, setTemplateBackground, setTemplateLogo, setTemplateLogoStyle } = useStore()
   const slide = slides[current]
 
   // Cria templates Konva para cada slide
@@ -80,7 +82,30 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
       }
     })
 
-    setReady(true)
+    // Carrega logo do brand kit
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? ''
+      if (!email) { setReady(true); return }
+      loadBrandConfig(email).then(brand => {
+        if (brand.logo_url) {
+          fetch(brand.logo_url)
+            .then(r => r.blob())
+            .then(blob => {
+              const reader = new FileReader()
+              reader.onload = () => {
+                const base64 = reader.result as string
+                slides.forEach((_, i) => {
+                  setTemplateLogo(`carousel-slide-${i}`, base64)
+                  setTemplateLogoStyle(`carousel-slide-${i}`, 400)
+                })
+              }
+              reader.readAsDataURL(blob)
+            })
+            .catch(() => {})
+        }
+        setReady(true)
+      })
+    })
   }, [templateId])
 
   function handleCopyCaption() {
