@@ -32,6 +32,8 @@ export function EditorPage() {
   const [carouselSlides, setCarouselSlides] = useState<(import('../services/gemini').CarouselSlide & { imageUrl: string })[] | null>(null)
   const [carouselCaption, setCarouselCaption] = useState('')
   const [carouselTemplateId, setCarouselTemplateId] = useState<string | undefined>(undefined)
+  const [carouselCurrentSlide, setCarouselCurrentSlide] = useState(0)
+  const [carouselSelectedElement, setCarouselSelectedElement] = useState<string | null>(null)
   const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
 
   const {
@@ -232,7 +234,14 @@ export function EditorPage() {
         paddingTop: '16px',
       }}>
         {carouselSlides ? (
-          <CarouselViewer slides={carouselSlides} caption={carouselCaption} templateId={carouselTemplateId} onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined) }} />
+          <CarouselViewer
+            slides={carouselSlides}
+            caption={carouselCaption}
+            templateId={carouselTemplateId}
+            onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselCurrentSlide(0); setCarouselSelectedElement(null) }}
+            onSlideChange={(i) => { setCarouselCurrentSlide(i); setCarouselSelectedElement(null) }}
+            onSelectElement={setCarouselSelectedElement}
+          />
         ) : activeTemplate ? (
           <>
             {/* Preview principal — formato ativo */}
@@ -291,7 +300,15 @@ export function EditorPage() {
       }}>
   
 
-        {activeTemplate ? (
+        {carouselSlides ? (() => {
+          const carouselTemplate = templates.find(t => t.id === `carousel-slide-${carouselCurrentSlide}`)
+          return carouselTemplate ? (
+            <>
+              <PropertiesPanel template={carouselTemplate} selectedElementId={carouselSelectedElement} />
+              <ImagePanel template={carouselTemplate} />
+            </>
+          ) : null
+        })() : activeTemplate ? (
           <>
             <PropertiesPanel template={activeTemplate} selectedElementId={selectedElementId} />
             <ImagePanel template={activeTemplate} />

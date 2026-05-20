@@ -18,6 +18,8 @@ interface CarouselViewerProps {
   caption: string
   templateId?: string
   onClose: () => void
+  onSlideChange?: (index: number) => void
+  onSelectElement?: (id: string | null) => void
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -32,7 +34,7 @@ const TYPE_COLOR: Record<string, string> = {
   cta: '#FF6F5E',
 }
 
-export function CarouselViewer({ slides, caption, templateId, onClose }: CarouselViewerProps) {
+export function CarouselViewer({ slides, caption, templateId, onClose, onSlideChange, onSelectElement }: CarouselViewerProps) {
   const [current, setCurrent] = useState(0)
   const [copiedCaption, setCopiedCaption] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -288,7 +290,7 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
             template={slideTemplate}
             scale={canvasScale}
             selectedElementId={null}
-            onSelectElement={() => {}}
+            onSelectElement={(id) => onSelectElement?.(id)}
             editingElementId={null}
             onEditStart={() => {}}
           />
@@ -317,7 +319,7 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
 
         {/* Navegação */}
         {current > 0 && (
-          <button onClick={() => setCurrent(c => c - 1)} style={{
+          <button onClick={() => { const i = current - 1; setCurrent(i); onSlideChange?.(i) }} style={{
             position: 'absolute', left: '12px',
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
             color: '#fff', width: '40px', height: '40px', borderRadius: '50%',
@@ -325,7 +327,7 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
           }}>‹</button>
         )}
         {current < slides.length - 1 && (
-          <button onClick={() => setCurrent(c => c + 1)} style={{
+          <button onClick={() => { const i = current + 1; setCurrent(i); onSlideChange?.(i) }} style={{
             position: 'absolute', right: '12px',
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
             color: '#fff', width: '40px', height: '40px', borderRadius: '50%',
@@ -340,7 +342,7 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
         overflowX: 'auto', flexShrink: 0, justifyContent: 'center',
       }}>
         {slides.map((s, i) => (
-          <div key={i} onClick={() => setCurrent(i)} style={{
+          <div key={i} onClick={() => { setCurrent(i); onSlideChange?.(i) }} style={{
             width: '56px', height: '70px', borderRadius: '6px', overflow: 'hidden',
             cursor: 'pointer', flexShrink: 0, position: 'relative',
             border: i === current ? '2px solid var(--accent)' : '2px solid transparent',
