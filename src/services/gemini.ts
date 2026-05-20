@@ -755,7 +755,8 @@ export interface AgentResponse {
 
 export async function agentChat(
   messages: AgentMessage[],
-  brand?: BrandContext
+  brand?: BrandContext,
+  lockedTemplateId?: string
 ): Promise<AgentResponse> {
   const brandCtx = brand ? `
 Marca: ${brand.businessName || ''}
@@ -764,12 +765,16 @@ Tom: ${brand.tone || ''}
 Descrição: ${brand.brandDescription || ''}
 Estilo visual: ${brand.visualStyle || ''}` : ''
 
+  const lockedCtx = lockedTemplateId
+    ? `\nTEMPLATE FIXADO PELO USUÁRIO: "${lockedTemplateId}" — o usuário já escolheu este template. Use-o obrigatoriamente no campo "templateId" da resposta. Não sugira nem use outro template.`
+    : ''
+
   const history = messages.map(m => `${m.role === 'user' ? 'Usuário' : 'Agente'}: ${m.content}`).join('\n')
 
   const prompt = `Você é um agente de design de posts para redes sociais. Seu objetivo é coletar informações suficientes para gerar um post de alta qualidade para o usuário.
 
 CONTEXTO DA MARCA (já conhecido — não pergunte sobre isso):
-${brandCtx || 'Não disponível'}
+${brandCtx || 'Não disponível'}${lockedCtx}
 
 HISTÓRICO DA CONVERSA:
 ${history}

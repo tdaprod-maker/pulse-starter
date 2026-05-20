@@ -239,6 +239,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset }: { onGenerating
       const userEmail = authData.user?.email ?? ''
       const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
 
+      const currentActiveId = useStore.getState().activeTemplateId
+      const lockedBase = currentActiveId
+        ? currentActiveId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+        : undefined
+
       const response = await agentChat(
         newMessages.filter(m => m.role !== 'agent' || newMessages.indexOf(m) > 0),
         brandCtx ? {
@@ -247,7 +252,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset }: { onGenerating
           tone: brandCtx.tone,
           brandDescription: brandCtx.brand_description ?? undefined,
           visualStyle: brandCtx.visual_style ?? undefined,
-        } : undefined
+        } : undefined,
+        lockedBase ?? undefined
       )
 
       if (response.ready && response.prompt) {
