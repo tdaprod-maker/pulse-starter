@@ -13,7 +13,6 @@ import { PostLibraryPage } from './pages/PostLibraryPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { AdminPage } from './pages/AdminPage'
 import { AccountPage } from './pages/AccountPage'
-import { VideoPage } from './pages/VideoPage'
 import { PremiumPage } from './pages/PremiumPage'
 import { IntroPage } from './pages/IntroPage'
 import { PrivacyPage } from './pages/PrivacyPage'
@@ -115,7 +114,6 @@ export default function App() {
             <Route path="/onboarding" element={<OnboardingPage onComplete={() => setAppState('app')} />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/account" element={<AccountPage />} />
-            <Route path="/video" element={<VideoPage />} />
             <Route path="/premium" element={<PremiumPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
           </Routes>
