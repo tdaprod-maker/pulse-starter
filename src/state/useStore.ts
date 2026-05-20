@@ -249,7 +249,7 @@ export const useStore = create<PulseStore>()(
       version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        activeTemplateId: state.activeTemplateId,
+        // activeTemplateId não persiste — sempre começa sem template selecionado
         caption: state.caption,
         pendingPost: state.pendingPost,
         templates: state.templates.map(({ backgroundImage: _bg, logoImage: _logo, ...rest }) => rest),
