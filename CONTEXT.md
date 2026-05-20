@@ -20,49 +20,38 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Microfone (Web Speech API) integrado
 - Botão "Nova conversa" com ícone de reset
 - Função `agentChat` no `gemini.ts` — máximo 2 rodadas de perguntas antes de gerar
-- Brand kit lido automaticamente (não pergunta o que já sabe)
+- Brand kit lido automaticamente
 - Formatos por rede social: Stories→9x16, LinkedIn→1x1, feed Instagram→4x5, banner→16x9
-- Callbacks `onGenerating` e `onGenerated` ocultam miniaturas desde o início da geração
-- AIPanel antigo removido
+- Se usuário selecionar um template no Sidebar antes de conversar, o agente respeita e usa esse template obrigatoriamente
+- Mini previews removidos — canvas mostra apenas o formato ativo
 
 ### Editor Konva — Templates
-Templates registrados no `templateRegistry` e no Sidebar:
+Templates registrados no `templateRegistry`, `Sidebar.tsx` e `gemini.ts` (3 lugares obrigatórios).
+
+**Regra para novos templates — sempre registrar em 3 lugares no gemini.ts:**
+1. `TEMPLATE_FIELDS` — objeto no topo com os campos
+2. Seção "TEMPLATES DISPONÍVEIS" no `buildPrompt` — descrição + `Campos:`
+3. Regras de seleção no `buildPrompt` — quando usar
 
 **Sport:** sport-arena, sport-brand
-**Food:** food-editorial, food-promo, food-vertical (novo — faixa vertical + texto rotacionado)
-**Business:** business-statement, business-card
-**Health:** health-content, health-stats
+**Food:** food-editorial, food-promo, food-vertical
+**Business:** business-statement, business-card, job-glass (Vitrine de Vaga), hero-gradient (Palco de Marca), toggle-card (Card Reveal), infographic-ring (Infográfico Anel)
+**Health:** health-content, health-stats, health-split (Saúde em Foco)
 **Construction:** build-impact, build-editorial
-**Realty:** realty-premium, realty-launch
+**Realty:** realty-premium, realty-launch, realty-keys (Chave na Mão)
 **Fashion:** fashion-editorial, fashion-drop
-**Outros:** geo-impact (círculo geométrico), split-editorial (split escuro/claro), editorial-cover (estilo magazine), bold-circle (fundo vibrante + círculo), tech-statement, tech-news, tech-product, tech-minimal, hero-title, big-statement, editorial-card, big-number
+**Tech:** tech-statement, tech-news, tech-product, tech-minimal
+**Home & Deco:** home-split (Painel Duplo), product-arch (Vitrine Minimalista)
+**Outros:** bold-circle, editorial-cover, split-editorial, geo-impact, editorial-card
 
-### Editor Konva — PropertiesPanel
-- Edição inline ao clicar no elemento (texto e shapes)
-- Estado vazio: "Clique em um elemento no canvas para editar"
-- ShapeFieldPanel: cor + largura + espessura para qualquer shape
-- GenericBackgroundSection: cor de fundo para qualquer template
-- ColorSwatch com picker posicionado próximo ao botão
-- LogoSection redesenhada mas ainda no fundo do ImagePanel — pendente reposicionamento
-
-### imagePrompt FAL.ai FLUX
-- Estrutura: [sujeito específico] + [ação] + [ambiente] + [estilo fotográfico] + [iluminação] + qualidade
-- Proibições: robotic hands, holograms, neon circuits, screens with text, dashboards, brand names, logos
-- Suffix obrigatório: "hyperrealistic, award-winning photography, no text, no logos, no brand names, no company names, no watermarks, no fictional logos"
-
-### Legendas
-- Estrutura por rede: Instagram (1ª linha funciona sozinha como preview) + LinkedIn (parágrafos com linha em branco)
-- Tom por categoria: profissional/descontraído/inspiracional/técnico
-- Proibições: "Você sabia que", "Descubra como", "No mundo atual", "Em um mundo onde"
-
-### turboPromptEditor
-- Função separada para Editor Konva — foco em briefing de conteúdo
-- `turboPrompt` original mantido para Posts Premium
+### ExportPanel
+- Botão único azul "Baixar" — exporta PNG 2×
+- Botão secundário removido
 
 ### Tema Claro/Escuro
-- Variáveis CSS `[data-theme="light"]` no `index.css`
 - Toggle na Topbar (ícone sol/lua)
 - Topbar sempre escura
+- Canvas-area no tema claro usa fundo #e8eaf0 (sem estrelas)
 
 ### Posts Premium
 - Post único: 1 imagem 1024x1536 cropada para 3 formatos: 9:16, 4:5, 1:1
@@ -81,21 +70,23 @@ Templates registrados no `templateRegistry` e no Sidebar:
 
 ## Arquivos Principais
 - `src/components/AgentChat.tsx` — agente conversacional principal
-- `src/services/gemini.ts` — agentChat, turboPromptEditor, generatePostContent, breakCarouselIntoSlides
+- `src/services/gemini.ts` — agentChat, turboPromptEditor, generatePostContent, buildPrompt, TEMPLATE_FIELDS
 - `src/components/PropertiesPanel.tsx` — edição inline de elementos
-- `src/components/LogoSection.tsx` — gestão do logotipo
+- `src/components/ExportPanel.tsx` — botão Baixar simplificado
+- `src/components/Sidebar.tsx` — categorias: Sport, Food, Business, Health, Construction, Realty, Fashion, Tech, Home & Deco, Outros
+- `src/components/LogoSection.tsx` — gestão do logotipo (pendente reposicionamento)
 - `src/pages/EditorPage.tsx` — layout principal com AgentChat + canvas
 - `src/templates/index.ts` — registry de todos os templates
 - `api/generate-premium.js` — geração GPT Image 2
 - `src/pages/PremiumPage.tsx` — Posts Premium
 
 ## Roadmap — Próximas Sessões
-1. Testar carrossel Premium com headlines curtos (requer crédito OpenAI)
-2. Aceitar convite Testador Instagram
-3. Verificar e implementar débito de pulses no Editor Konva
-4. Diferenciar Bold Circle do Geo Impact visualmente
-5. Reposicionar LogoSection para área mais acessível
-6. Evoluir agente para ser mais consultivo
+1. PRIORIDADE — Padronizar experiência dos módulos: Editor e Premium com mesmo conceito de AgentChat (post ou carrossel)
+2. Carrossel do Editor usando todos os templates disponíveis (não só os 4 atuais)
+3. Recarregar saldo OpenAI para testar carrossel Premium
+4. Verificar e implementar débito de pulses no Editor Konva
+5. Reposicionar LogoSection para área mais acessível no painel direito
+6. Aceitar convite Testador Instagram para `agente17ia` e `tdaprod`
 
 ## Modelo de Negócio
 White-label para clientes: ~R$2.500–4.000 setup + retainer mensal. Pulses como camada de monetização.
