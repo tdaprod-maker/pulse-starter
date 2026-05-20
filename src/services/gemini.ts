@@ -882,7 +882,7 @@ slideCount válidos para carrossel: 3, 4, 5, 7, 10`
       return JSON.parse(clean) as AgentResponse
     } catch (err) {
       console.error('[agentChat] erro attempt', attempt, err)
-      if (attempt === 2) return { ready: false, message: 'Descreva o que você quer comunicar no post e eu começo a criar.' }
+      if (attempt === 2) return { ready: false, message: 'Estou com instabilidade no momento. Tente enviar sua mensagem novamente em alguns segundos.' }
     }
   }
   return { ready: false, message: 'Descreva o que você quer comunicar no post e eu começo a criar.' }
