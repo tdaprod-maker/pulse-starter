@@ -419,15 +419,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             Agente de Design Pulse
           </span>
         </div>
-        {/* TEMP: remover após validar recolhimento */}
-        <button
-          onClick={() => { onGenerated?.(); setCollapsed(true) }}
-          style={{ fontSize: '11px', color: '#fff', background: '#e67e00', border: 'none', cursor: 'pointer', padding: '3px 10px', borderRadius: '6px', fontFamily: 'inherit', fontWeight: 600 }}
-          title="Teste visual — simula geração concluída"
-        >
-          ▶ Simular geração
-        </button>
-        <button onClick={handleReset}
+<button onClick={handleReset}
           style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', padding: '3px 10px', borderRadius: '6px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '4px' }}
           title="Nova conversa">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5A4.5 4.5 0 0 1 9.5 3M1 1v4h4M10 5.5A4.5 4.5 0 0 1 1.5 8M10 10V6H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
