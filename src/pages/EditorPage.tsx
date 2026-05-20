@@ -25,8 +25,7 @@ interface EditingState {
 export function EditorPage() {
   const stageRef = useRef<Konva.Stage>(null)
   const [editingState, setEditingState] = useState<EditingState | null>(null)
-  const [agentGenerated, setAgentGenerated] = useState(false)
-  const mainRef = useRef<HTMLElement>(null)
+    const mainRef = useRef<HTMLElement>(null)
   const [containerW, setContainerW] = useState(800)
   const [containerH, setContainerH] = useState(600)
   const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
@@ -155,8 +154,8 @@ export function EditorPage() {
 
   // Scale dinâmico: o canvas ocupa a maior área possível mantendo proporção
   // Reserva ~160px na altura para os mini previews
-  const CANVAS_PADDING = 48
-  const MINI_ROW_H = 200
+  const CANVAS_PADDING = 24
+  const MINI_ROW_H = 160
   const canvasScale = activeTemplate
     ? Math.min(
         (containerW - CANVAS_PADDING) / activeTemplate.width,
@@ -203,7 +202,7 @@ export function EditorPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Agente conversacional — fixo no topo */}
         <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
-          <AgentChat onGenerating={() => setAgentGenerated(true)} onGenerated={() => setAgentGenerated(true)} onReset={() => setAgentGenerated(false)} />
+          <AgentChat onGenerating={() => {}} onGenerated={() => {}} onReset={() => {}} />
         </div>
 
         {/* Área do canvas — scrollável */}
@@ -241,75 +240,7 @@ export function EditorPage() {
               />
             </div>
 
-            {/* Mini previews dos outros formatos */}
-            {allVariants.length > 1 && !agentGenerated && (
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'flex-end',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-              }}>
-                {allVariants.map((v) => {
-                  const miniScale = Math.min(160 / v.width, 160 / v.height)
-                  const isActive = v.id === activeTemplate.id
-                  const storedVariant = templates.find((t) => t.id === v.id) ?? v
-                  return (
-                    <div
-                      key={v.id}
-                      onClick={() => {
-                        if (!templates.find((t) => t.id === v.id)) addTemplate(v)
-                        setActiveTemplate(v.id)
-                      }}
-                      style={{
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        border: isActive
-                          ? '2px solid var(--accent)'
-                          : '2px solid rgba(255,255,255,0.08)',
-                        boxShadow: isActive
-                          ? '0 0 12px rgba(58,90,255,0.4)'
-                          : 'none',
-                        transition: 'all 0.15s ease',
-                        flexShrink: 0,
-                        position: 'relative',
-                      }}
-                      title={v.id.split('-').pop()?.toUpperCase()}
-                    >
-                      <CanvasEngine
-                        key={v.id}
-                        ref={(el) => { variantRefs.current[v.id] = el }}
-                        template={storedVariant}
-                        scale={miniScale}
-                        selectedElementId={null}
-                        onSelectElement={() => {}}
-                        editingElementId={null}
-                        onEditStart={() => {}}
-                      />
-                      {/* Label do formato */}
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '4px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        fontSize: '9px',
-                        fontWeight: 600,
-                        color: 'white',
-                        background: 'rgba(0,0,0,0.7)',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        letterSpacing: '0.05em',
-                        pointerEvents: 'none',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {v.id.split('-').pop()?.toUpperCase()}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+
           <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
           <CaptionPanel stageRef={stageRef} template={activeTemplate} />
           <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
