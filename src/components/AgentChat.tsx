@@ -52,6 +52,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setIsListening(true)
   }
   const [generating, setGenerating] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const { theme } = useTheme()
@@ -216,6 +217,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         role: 'agent',
         content: '✦ Post gerado! Clique nos elementos do canvas para editar texto, cores e fontes.'
       }])
+      setCollapsed(true)
     } catch (e) {
       setMessages(prev => [...prev, {
         role: 'agent',
@@ -277,6 +279,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         role: 'agent',
         content: `✦ Carrossel com ${slideCount} slides gerado! Use as setas para navegar entre os slides.`
       }])
+      setCollapsed(true)
     } catch (e) {
       setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao gerar o carrossel. Tente novamente.' }])
     } finally {
@@ -345,10 +348,49 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   function handleReset() {
     setMessages([{ role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }])
     setInput('')
+    setCollapsed(false)
     onReset?.()
   }
 
   const isDisabled = loading || generating
+
+  if (collapsed) {
+    return (
+      <div
+        onClick={() => setCollapsed(false)}
+        style={{
+          width: '100%', maxWidth: '680px', margin: '0 auto',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 16px',
+          background: 'var(--bg-panel)',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+          cursor: 'pointer',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 6px var(--accent)' }} />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
+            Agente de Design Pulse
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>· clique para continuar</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleReset() }}
+            style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', padding: '3px 10px', borderRadius: '6px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5A4.5 4.5 0 0 1 9.5 3M1 1v4h4M10 5.5A4.5 4.5 0 0 1 1.5 8M10 10V6H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Nova conversa
+          </button>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
+            <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{
