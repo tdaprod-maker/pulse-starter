@@ -246,7 +246,7 @@ export const useStore = create<PulseStore>()(
     }),
     {
       name: 'pulse-store',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) state.activeTemplateId = null
