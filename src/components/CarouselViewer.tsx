@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { CanvasEngine } from '../engine/CanvasEngine'
 import { calcAutoScale } from '../engine/CanvasEngine'
 import { exportToPng, buildFileName } from '../export/exportUtils'
+import JSZip from 'jszip'
 import type { CarouselSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
@@ -116,22 +117,36 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
 
   async function handleDownloadAll() {
     setExporting(true)
-    // Aguarda todos os stages estarem prontos
-    await new Promise(r => setTimeout(r, 800))
-    for (let i = 0; i < slides.length; i++) {
-      const stage = stageRefs.current[i]
-      if (!stage) {
-        console.warn(`[carousel] stage ${i} não encontrado`)
-        continue
+    try {
+      await new Promise(r => setTimeout(r, 800))
+      const zip = new JSZip()
+      for (let i = 0; i < slides.length; i++) {
+        const stage = stageRefs.current[i]
+        if (!stage) continue
+        const templateStore = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
+        if (!templateStore) continue
+        const autoScale = calcAutoScale(templateStore)
+        const pixelRatio = 2 / autoScale
+        const dataUrl: string = await new Promise((resolve) => {
+          const url = stage.toDataURL({ pixelRatio, mimeType: 'image/png' })
+          resolve(url)
+        })
+        const base64 = dataUrl.split(',')[1]
+        zip.file(`slide-${i + 1}.png`, base64, { base64: true })
+        await new Promise(r => setTimeout(r, 300))
       }
-      const templateStore = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
-      if (!templateStore) continue
-      const autoScale = calcAutoScale(templateStore)
-      const pixelRatio = 2 / autoScale
-      exportToPng(stage, `${buildFileName(`slide-${i + 1}`, '2x')}.png`, { pixelRatio })
-      await new Promise(r => setTimeout(r, 600))
+      const blob = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'carrossel.zip'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('Erro ao exportar ZIP:', e)
+    } finally {
+      setExporting(false)
     }
-    setExporting(false)
   }
 
   async function handleDownloadCurrent() {
