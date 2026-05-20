@@ -32,20 +32,28 @@ export function CarouselViewer({ slides, caption, onClose }: CarouselViewerProps
     setTimeout(() => setCopiedCaption(false), 2000)
   }
 
-  function handleDownloadAll() {
-    slides.forEach((_, i) => {
-      setTimeout(() => {
-        setCurrent(i)
-        setTimeout(() => {
-          const canvas = document.getElementById('carousel-canvas') as HTMLCanvasElement
-          if (!canvas) return
-          const a = document.createElement('a')
-          a.href = canvas.toDataURL('image/png')
-          a.download = `slide-${i + 1}.png`
-          a.click()
-        }, 300)
-      }, i * 800)
-    })
+  async function handleDownloadAll() {
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i]
+      if (!slide.imageUrl) continue
+      try {
+        const res = await fetch(slide.imageUrl)
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `slide-${i + 1}.png`
+        a.click()
+        URL.revokeObjectURL(url)
+        await new Promise(r => setTimeout(r, 400))
+      } catch {
+        const a = document.createElement('a')
+        a.href = slide.imageUrl
+        a.download = `slide-${i + 1}.png`
+        a.target = '_blank'
+        a.click()
+      }
+    }
   }
 
   return (
@@ -189,16 +197,24 @@ export function CarouselViewer({ slides, caption, onClose }: CarouselViewerProps
         display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0,
       }}>
         {caption && (
-          <button
-            onClick={handleCopyCaption}
-            style={{
-              width: '100%', padding: '9px', borderRadius: '8px', cursor: 'pointer',
-              background: 'var(--bg-surface)', border: '1px solid var(--border)',
-              color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit',
-            }}
-          >
-            {copiedCaption ? 'Legenda copiada!' : 'Copiar legenda'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <p style={{
+              fontSize: '12px', color: 'var(--text-secondary)', margin: 0,
+              lineHeight: 1.5, maxHeight: '80px', overflowY: 'auto',
+              background: 'var(--bg-surface)', borderRadius: '8px',
+              padding: '8px 12px', border: '1px solid var(--border)',
+            }}>{caption}</p>
+            <button
+              onClick={handleCopyCaption}
+              style={{
+                width: '100%', padding: '9px', borderRadius: '8px', cursor: 'pointer',
+                background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit',
+              }}
+            >
+              {copiedCaption ? 'Legenda copiada!' : 'Copiar legenda'}
+            </button>
+          </div>
         )}
         <button
           onClick={handleDownloadAll}
