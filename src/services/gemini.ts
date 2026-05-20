@@ -869,7 +869,7 @@ slideCount válidos para carrossel: 3, 4, 5, 7, 10`
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 300,
+            maxOutputTokens: 800,
             thinkingConfig: { thinkingBudget: 0 },
           },
         }),
