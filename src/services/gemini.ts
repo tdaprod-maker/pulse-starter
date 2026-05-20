@@ -247,6 +247,7 @@ export interface CarouselSlide {
   body?: string
   imagePrompt: string
   type: 'cover' | 'content' | 'cta'
+  texts?: Record<string, string>
 }
 
 export interface CarouselResponse {
@@ -254,15 +255,21 @@ export interface CarouselResponse {
   caption: string
 }
 
-function buildCarouselPrompt(userInput: string, slideCount: number, brand?: BrandContext): string {
+function buildCarouselPrompt(userInput: string, slideCount: number, brand?: BrandContext, templateId?: string): string {
   const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
     : brand?.tone === 'casual' ? 'descontraído e próximo'
     : brand?.tone === 'inspirational' ? 'inspiracional e motivador'
     : brand?.tone === 'technical' ? 'técnico e especialista'
     : null
-  const contentSlides = Array.from({ length: slideCount - 2 }, () =>
-    `    { "title": "...", "body": "...", "imagePrompt": "...", "type": "content" }`
-  ).join(',\n')
+
+  const templateFields = templateId ? (TEMPLATE_FIELDS[templateId] ?? '') : ''
+  const templateInstruction = templateId && templateFields
+    ? `\nTEMPLATE ATIVO: "${templateId}"\nCAMPOS DO TEMPLATE: ${templateFields}\nPara cada slide, preencha o campo "texts" com os IDs exatos dos campos listados acima.`
+    : ''
+
+  const exampleTexts = templateId && templateFields
+    ? `"texts": { ${templateFields.split(',').map(f => `"${f.trim().split(' ')[0]}": "..."`).join(', ')} }`
+    : `"texts": { "title": "...", "body": "..." }`
 
   return `Você é um especialista em criação de carrosséis para Instagram.
 ${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
@@ -270,33 +277,38 @@ ${brand?.segment ? `Segmento: ${brand.segment}` : ''}
 ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
 ${brand?.visualStyle ? `\nEstilo visual de referência: ${brand.visualStyle}` : ''}
 ${brand?.brandDescription ? `\nDescrição detalhada da marca: ${brand.brandDescription}` : ''}
+${templateInstruction}
 Crie um carrossel com EXATAMENTE ${slideCount} slides sobre o tema descrito. NÃO crie mais nem menos que ${slideCount} slides.
 REGRAS OBRIGATÓRIAS:
-- Slide 1: type "cover" — título curto e impactante (máximo 5 palavras), SEM body
-- Slides 2 a ${slideCount - 1}: type "content" — título direto (máximo 6 palavras) + body explicativo (máximo 2 linhas, 20 palavras)
-- Slide ${slideCount}: type "cta" — título de call to action (ex: "Siga para mais conteúdo", "Salve este post"), body com instrução ou contato
+- Slide 1: type "cover" — conteúdo de capa impactante
+- Slides 2 a ${slideCount - 1}: type "content" — conteúdo educativo/informativo
+- Slide ${slideCount}: type "cta" — call to action claro
+- Cada slide deve ter conteúdo diferente mas tematicamente coerente com o anterior
+- Os textos de cada slide devem ser mapeados nos campos corretos do template
 REGRAS DE imagePrompt:
-- Descreva em inglês (máximo 8 palavras) uma cena fotográfica real e relacionada ao slide
+- Descreva em inglês (máximo 12 palavras) uma cena fotográfica real relacionada ao slide
 - Cada slide deve ter uma cena visualmente diferente mas tematicamente coerente
-- Sem adjetivos de estilo, sem "cinematic", sem "dark"
+- Não use texto, logos, marcas, hologramas ou mãos robóticas nas imagens
+- Termine sempre com: "hyperrealistic, award-winning photography, no text, no logos"
 REGRAS DE TEXTO:
 - Escrever em português do Brasil
-- Tom direto, profissional e envolvente
+- Tom direto e alinhado com a marca
 - Títulos sem ponto final
+- Cada slide deve avançar a narrativa do anterior
 caption: legenda completa para Instagram com tom humano, máximo 150 palavras, incluindo 5 hashtags relevantes no final.
 Tema: "${userInput}"
 Responda SOMENTE com JSON válido, sem markdown, com EXATAMENTE ${slideCount} slides:
 {
   "slides": [
-    { "title": "...", "imagePrompt": "...", "type": "cover" },
-${contentSlides},
-    { "title": "...", "body": "...", "imagePrompt": "...", "type": "cta" }
+    { ${exampleTexts}, "imagePrompt": "...", "type": "cover" },
+    { ${exampleTexts}, "imagePrompt": "...", "type": "content" },
+    { ${exampleTexts}, "imagePrompt": "...", "type": "cta" }
   ],
   "caption": "..."
 }`
 }
 
-export async function generateCarouselContent(userInput: string, slideCount: number, brand?: BrandContext): Promise<CarouselResponse> {
+export async function generateCarouselContent(userInput: string, slideCount: number, brand?: BrandContext, templateId?: string): Promise<CarouselResponse> {
   let lastError: Error | null = null
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -308,7 +320,7 @@ export async function generateCarouselContent(userInput: string, slideCount: num
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildCarouselPrompt(userInput, slideCount, brand) }] }],
+          contents: [{ parts: [{ text: buildCarouselPrompt(userInput, slideCount, brand, templateId) }] }],
           generationConfig: {
             response_mime_type: 'application/json',
             temperature: 0.8,
@@ -768,6 +780,7 @@ export interface AgentResponse {
   format?: string
   mode?: 'post' | 'carousel'
   slideCount?: number
+  templateId?: string
 }
 
 export async function agentChat(

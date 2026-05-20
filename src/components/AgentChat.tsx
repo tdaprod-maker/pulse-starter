@@ -20,7 +20,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated }: { onGenerating?: () => void; onGenerated?: () => void; onReset?: () => void; onCarouselGenerated?: (slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string) => void } = {}) {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated }: { onGenerating?: () => void; onGenerated?: () => void; onReset?: () => void; onCarouselGenerated?: (slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string) => void } = {}) {
   const [messages, setMessages] = useState<AgentMessage[]>([
     { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
   ])
@@ -226,7 +226,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
-  async function generateCarousel(prompt: string, slideCount: number) {
+  async function generateCarousel(prompt: string, slideCount: number, templateId?: string) {
     setGenerating(true)
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -243,26 +243,35 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       setMessages(prev => [...prev, { role: 'agent', content: `Gerando ${slideCount} slides...` }])
 
-      const carouselData = await generateCarouselContent(prompt, slideCount, brandContext)
+      // Determina templateId — usa o selecionado pelo usuário ou o retornado pelo agente
+      const currentActiveId = useStore.getState().activeTemplateId
+      const lockedBase = currentActiveId
+        ? currentActiveId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+        : undefined
+      const resolvedTemplateId = lockedBase ?? templateId
 
-      // Gera imagem para cada slide via FAL.ai
+      const carouselData = await generateCarouselContent(prompt, slideCount, brandContext, resolvedTemplateId)
+
+      // Gera imagens em paralelo via FAL.ai
       const slidesWithImages: (CarouselSlide & { imageUrl: string })[] = []
+      setMessages(prev => {
+        const msgs = [...prev]
+        msgs[msgs.length - 1] = { role: 'agent', content: `Gerando imagens dos ${carouselData.slides.length} slides...` }
+        return msgs
+      })
+
+      const imageResults = await Promise.allSettled(
+        carouselData.slides.map(slide => generateImage(slide.imagePrompt))
+      )
+
       for (let i = 0; i < carouselData.slides.length; i++) {
         const slide = carouselData.slides[i]
-        setMessages(prev => {
-          const msgs = [...prev]
-          msgs[msgs.length - 1] = { role: 'agent', content: `Gerando slide ${i + 1} de ${carouselData.slides.length}...` }
-          return msgs
-        })
-        try {
-          const url = await generateImage(slide.imagePrompt)
-          slidesWithImages.push({ ...slide, imageUrl: url })
-        } catch {
-          slidesWithImages.push({ ...slide, imageUrl: '' })
-        }
+        const imgResult = imageResults[i]
+        const imageUrl = imgResult.status === 'fulfilled' ? imgResult.value : ''
+        slidesWithImages.push({ ...slide, imageUrl })
       }
 
-      onCarouselGenerated?.(slidesWithImages, carouselData.caption)
+      onCarouselGenerated?.(slidesWithImages, carouselData.caption, resolvedTemplateId)
       onGenerated?.()
       setMessages(prev => [...prev, {
         role: 'agent',
@@ -308,7 +317,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (response.ready && response.prompt) {
         onGenerating?.()
         if (response.mode === 'carousel') {
-          await generateCarousel(response.prompt, response.slideCount ?? 5)
+          await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
         } else {
           setMessages(prev => [...prev, { role: 'agent', content: 'Perfeito! Gerando seu post...' }])
           await generate(response.prompt, response.format)

@@ -31,6 +31,7 @@ export function EditorPage() {
   const [containerH, setContainerH] = useState(600)
   const [carouselSlides, setCarouselSlides] = useState<(import('../services/gemini').CarouselSlide & { imageUrl: string })[] | null>(null)
   const [carouselCaption, setCarouselCaption] = useState('')
+  const [carouselTemplateId, setCarouselTemplateId] = useState<string | undefined>(undefined)
   const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
 
   const {
@@ -208,8 +209,12 @@ export function EditorPage() {
           <AgentChat
             onGenerating={() => {}}
             onGenerated={() => {}}
-            onReset={() => { setCarouselSlides(null); setCarouselCaption('') }}
-            onCarouselGenerated={(slides, caption) => { setCarouselSlides(slides); setCarouselCaption(caption) }}
+            onReset={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined) }}
+            onCarouselGenerated={(slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string) => {
+              setCarouselSlides(slides)
+              setCarouselCaption(caption)
+              setCarouselTemplateId(templateId)
+            }}
           />
         </div>
 
@@ -227,7 +232,7 @@ export function EditorPage() {
         paddingTop: '16px',
       }}>
         {carouselSlides ? (
-          <CarouselViewer slides={carouselSlides} caption={carouselCaption} onClose={() => { setCarouselSlides(null); setCarouselCaption('') }} />
+          <CarouselViewer slides={carouselSlides} caption={carouselCaption} templateId={carouselTemplateId} onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined) }} />
         ) : activeTemplate ? (
           <>
             {/* Preview principal — formato ativo */}
