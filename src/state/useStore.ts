@@ -248,6 +248,9 @@ export const useStore = create<PulseStore>()(
       name: 'pulse-store',
       version: 2,
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.activeTemplateId = null
+      },
       partialize: (state) => ({
         // activeTemplateId não persiste — sempre começa sem template selecionado
         caption: state.caption,
