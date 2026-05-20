@@ -24,6 +24,18 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Formatos por rede social: Stories→9x16, LinkedIn→1x1, feed Instagram→4x5, banner→16x9
 - Se usuário selecionar um template no Sidebar antes de conversar, o agente respeita e usa esse template obrigatoriamente
 - Mini previews removidos — canvas mostra apenas o formato ativo
+- Editor começa sem template selecionado — clique fora deseleciona template ativo
+- Agente detecta intenção de carrossel e pergunta slideCount (opções: 3, 4, 5, 7, 10)
+
+### Editor Konva — Carrossel
+- Geração via `generateCarouselContent` com textos mapeados para o template ativo
+- Imagens geradas em paralelo via FAL.ai
+- Slides renderizados com `CanvasEngine` (editáveis via PropertiesPanel)
+- Logo do brand kit aplicado em todos os slides
+- Navegação entre slides com setas e miniaturas
+- Download ZIP de todos os slides
+- Botões de publicação LinkedIn e Instagram
+- Componente: `CarouselViewer.tsx`
 
 ### Editor Konva — Templates
 Templates registrados no `templateRegistry`, `Sidebar.tsx` e `gemini.ts` (3 lugares obrigatórios).
@@ -45,8 +57,7 @@ Templates registrados no `templateRegistry`, `Sidebar.tsx` e `gemini.ts` (3 luga
 **Outros:** bold-circle, editorial-cover, split-editorial, geo-impact, editorial-card
 
 ### ExportPanel
-- Botão único azul "Baixar" — exporta PNG 2×
-- Botão secundário removido
+- Botão único azul "Baixar" — exporta PNG 2x
 
 ### Tema Claro/Escuro
 - Toggle na Topbar (ícone sol/lua)
@@ -70,23 +81,36 @@ Templates registrados no `templateRegistry`, `Sidebar.tsx` e `gemini.ts` (3 luga
 
 ## Arquivos Principais
 - `src/components/AgentChat.tsx` — agente conversacional principal
-- `src/services/gemini.ts` — agentChat, turboPromptEditor, generatePostContent, buildPrompt, TEMPLATE_FIELDS
+- `src/components/CarouselViewer.tsx` — visualizador e editor de carrossel
+- `src/services/gemini.ts` — agentChat, generateCarouselContent, buildPrompt, TEMPLATE_FIELDS
 - `src/components/PropertiesPanel.tsx` — edição inline de elementos
 - `src/components/ExportPanel.tsx` — botão Baixar simplificado
-- `src/components/Sidebar.tsx` — categorias: Sport, Food, Business, Health, Construction, Realty, Fashion, Tech, Home & Deco, Outros
+- `src/components/Sidebar.tsx` — categorias de templates
 - `src/components/LogoSection.tsx` — gestão do logotipo (pendente reposicionamento)
-- `src/pages/EditorPage.tsx` — layout principal com AgentChat + canvas
+- `src/pages/EditorPage.tsx` — layout principal com AgentChat + canvas + CarouselViewer
 - `src/templates/index.ts` — registry de todos os templates
 - `api/generate-premium.js` — geração GPT Image 2
 - `src/pages/PremiumPage.tsx` — Posts Premium
 
 ## Roadmap — Próximas Sessões
-1. PRIORIDADE — Padronizar experiência dos módulos: Editor e Premium com mesmo conceito de AgentChat (post ou carrossel)
-2. Carrossel do Editor usando todos os templates disponíveis (não só os 4 atuais)
-3. Recarregar saldo OpenAI para testar carrossel Premium
-4. Verificar e implementar débito de pulses no Editor Konva
-5. Reposicionar LogoSection para área mais acessível no painel direito
-6. Aceitar convite Testador Instagram para `agente17ia` e `tdaprod`
+
+### Curto prazo
+1. Remover log de debug do agentChat (`console.log('[agentChat] raw response'`)
+2. Aumentar área de visualização e edição no Editor — há elementos que ficam fora da área visível
+3. Agente mais inteligente — especialista em design e redes sociais, que direciona às melhores práticas além de gerar
+4. Edição de elementos do carrossel via PropertiesPanel — testar e corrigir se necessário
+5. LogoSection — reposicionar para área mais acessível no painel direito
+6. Débito de pulses no Editor Konva — verificar se está implementado
+
+### Médio prazo
+7. Recarregar saldo OpenAI e testar carrossel Premium
+8. Aceitar convite Testador Instagram para `agente17ia` e `tdaprod`
+9. Publicação no Instagram do carrossel — testar quando Instagram estiver ativo
+10. Diferenciar visualmente Bold Circle do Geo Impact
+
+### Visão futura
+11. Pagamento de pulses
+12. Mais templates por segmento
 
 ## Modelo de Negócio
 White-label para clientes: ~R$2.500–4.000 setup + retainer mensal. Pulses como camada de monetização.
