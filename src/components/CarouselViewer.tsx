@@ -187,11 +187,8 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '24px', overflow: 'hidden', position: 'relative',
       }}>
-        <div style={{
-          borderRadius: '12px', overflow: 'hidden',
-          boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)',
-          flexShrink: 0,
-        }}>
+        {/* Slide atual visível */}
+        <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', flexShrink: 0 }}>
           <CanvasEngine
             key={slideTemplateId}
             ref={(el) => { stageRefs.current[current] = el }}
@@ -202,6 +199,27 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
             editingElementId={null}
             onEditStart={() => {}}
           />
+        </div>
+        {/* Slides ocultos renderizados fora da tela para export */}
+        <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
+          {slides.map((_, i) => {
+            if (i === current) return null
+            const tid = `carousel-slide-${i}`
+            const tmpl = useStore.getState().templates.find(t => t.id === tid)
+            if (!tmpl) return null
+            return (
+              <CanvasEngine
+                key={tid}
+                ref={(el) => { stageRefs.current[i] = el }}
+                template={tmpl}
+                scale={1}
+                selectedElementId={null}
+                onSelectElement={() => {}}
+                editingElementId={null}
+                onEditStart={() => {}}
+              />
+            )
+          })}
         </div>
 
         {/* Navegação */}
