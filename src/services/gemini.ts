@@ -85,13 +85,28 @@ TEMPLATES DISPONÍVEIS:
   Juntas formam uma frase ou contraste. Ex: line1="NOVO", line2="PRODUTO"
 
 - "health-split"   → fundo claro split, objeto à esquerda, headline em 3 linhas à direita, badge com telefone
+  Campos: badge-text (nome da marca), headline1 (2-3 palavras linha 1), headline2 (1-2 palavras linha 2), headline3 (1-2 palavras linha 3), subtitle (frase entre aspas 8-14 palavras), phone-label (servico ou beneficio), phone-number (telefone)
+
 - "infographic-ring" → fundo escuro, anel decorativo colorido, título central, 4 cards de item com número e descrição
+  Campos: ring-title1 (palavra ou tema em maiusculas), ring-title2 (palavra de destaque em maiusculas), num1 (01 + titulo), desc1 (descricao 6-10 palavras), num2 (02 + titulo), desc2 (descricao), num3 (03 + titulo), desc3 (descricao), num4 (04 + titulo), desc4 (descricao)
+
 - "realty-keys"    → foto de fundo, headline itálico grande, botão oval com telefone e handle
+  Campos: headline (frase em italico 5-9 palavras), cta-label (instrucao de contato), btn-phone (telefone), handle (perfil da marca ex: @suamarca)
+
 - "toggle-card"    → overlay com card dark centralizado, toggle decorativo, hashtag e título de lista numerada
+  Campos: hashtag (hashtag da campanha), title (titulo de lista com numero 5-9 palavras), handle (perfil da marca)
+
 - "home-split"     → split vertical painel escuro/foto, headline emocional grande, telefone e handle na base
+  Campos: headline (frase emocional 5-9 palavras), desc-label (descricao 8-14 palavras), cta-label (instrucao de contato), cta-phone (telefone), handle (perfil da marca)
+
 - "product-arch"   → fundo neutro com semicírculo decorativo, produto centralizado, texto e CTA acima
+  Campos: headline (titulo em maiusculas 2-4 palavras), sub1 (frase descritiva 8-14 palavras), sub2 (frase complementar 8-14 palavras), btn-text (CTA curto 3-5 palavras)
+
 - "hero-gradient"  → foto de fundo com gradiente na base, logo no topo, headline emocional centralizado
+  Campos: logo-text (nome da marca em maiusculas), headline (titulo emocional 3-6 palavras), subtitle (frase de apoio 6-10 palavras)
+
 - "job-glass"      → vaga de emprego com card glassmorphism, cargo, email e prazo
+  Campos: company (nome da empresa), headline1 (1 palavra de impacto ex: ESTAMOS), headline2 (1 palavra ex: CONTRATANDO), role (cargo da vaga), cta-email (email de contato), deadline (data limite)
 - "editorial-card" → layout editorial com rótulo, título e corpo
   Campos: label (1-2 palavras EM MAIÚSCULAS, ex: "DESIGN"), title (4-7 palavras), body (15-25 palavras)
 
