@@ -4,12 +4,12 @@ import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
 import { CanvasEngine } from '../engine/CanvasEngine'
-import { calcAutoScale } from '../engine/CanvasEngine'
 import { exportToPng, buildFileName } from '../export/exportUtils'
 import JSZip from 'jszip'
 import type { CarouselSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
+import { calcAutoScale } from '../engine/CanvasEngine'
 
 type SlideWithImage = CarouselSlide & { imageUrl: string }
 
@@ -36,6 +36,12 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
   const [current, setCurrent] = useState(0)
   const [copiedCaption, setCopiedCaption] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [publishingLI, setPublishingLI] = useState(false)
+  const [publishingIG, setPublishingIG] = useState(false)
+  const [liStatus, setLiStatus] = useState<'idle'|'success'|'error'>('idle')
+  const [igStatus, setIgStatus] = useState<'idle'|'success'|'error'>('idle')
+  const [linkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
+  const [linkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
   const [ready, setReady] = useState(false)
   const stageRefs = useRef<Record<number, Konva.Stage | null>>({})
   const { theme } = useTheme()
@@ -108,6 +114,73 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
       })
     })
   }, [templateId])
+
+  async function getSlideImages(): Promise<string[]> {
+    await new Promise(r => setTimeout(r, 800))
+    const images: string[] = []
+    for (let i = 0; i < slides.length; i++) {
+      const stage = stageRefs.current[i]
+      if (!stage) continue
+      const tmpl = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
+      if (!tmpl) continue
+      const autoScale = calcAutoScale(tmpl)
+      const pixelRatio = 2 / autoScale
+      const dataUrl = stage.toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality: 0.92 })
+      images.push(dataUrl)
+      await new Promise(r => setTimeout(r, 200))
+    }
+    return images
+  }
+
+  async function handlePublishLinkedIn() {
+    if (!linkedinToken || !linkedinSub || publishingLI) return
+    setPublishingLI(true)
+    setLiStatus('idle')
+    try {
+      const images = await getSlideImages()
+      const text = caption || ''
+      const res = await fetch('/api/linkedin-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: linkedinToken, linkedinSub, text, images }),
+      })
+      const data = await res.json()
+      if (data.success) { setLiStatus('success'); setTimeout(() => setLiStatus('idle'), 3000) }
+      else throw new Error(data.error)
+    } catch { setLiStatus('error'); setTimeout(() => setLiStatus('idle'), 3000) }
+    finally { setPublishingLI(false) }
+  }
+
+  async function handlePublishInstagram() {
+    if (publishingIG) return
+    setPublishingIG(true)
+    setIgStatus('idle')
+    try {
+      const images = await getSlideImages()
+      const imageUrls: string[] = []
+      for (let i = 0; i < images.length; i++) {
+        const base64 = images[i].replace(/^data:image\/\w+;base64,/, '')
+        const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        const blob = new Blob([byteArray], { type: 'image/jpeg' })
+        const fileName = `carousel-${Date.now()}-${i}.jpg`
+        const { error } = await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+        if (error) throw new Error('Erro no upload')
+        const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+        imageUrls.push(urlData.publicUrl)
+      }
+      const igUserId = '17841479034844249'
+      const text = caption || ''
+      const res = await fetch('/api/instagram-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrls, caption: text, igUserId }),
+      })
+      const data = await res.json()
+      if (data.success) { setIgStatus('success'); setTimeout(() => setIgStatus('idle'), 3000) }
+      else throw new Error(data.error)
+    } catch { setIgStatus('error'); setTimeout(() => setIgStatus('idle'), 3000) }
+    finally { setPublishingIG(false) }
+  }
 
   function handleCopyCaption() {
     navigator.clipboard.writeText(caption)
@@ -322,6 +395,36 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
             opacity: exporting ? 0.7 : 1,
           }}>
             {exporting ? 'Exportando...' : 'Baixar todos'}
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={handlePublishLinkedIn}
+            disabled={publishingLI || !linkedinToken}
+            style={{
+              flex: 1, padding: '10px', borderRadius: '8px',
+              cursor: publishingLI || !linkedinToken ? 'default' : 'pointer',
+              background: linkedinToken ? '#0A66C2' : 'var(--bg-surface)',
+              border: '1px solid var(--border)', color: linkedinToken ? '#fff' : 'var(--text-muted)',
+              fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+              opacity: publishingLI ? 0.7 : 1,
+            }}
+          >
+            {publishingLI ? 'Publicando...' : liStatus === 'success' ? 'Publicado!' : liStatus === 'error' ? 'Erro' : 'LinkedIn'}
+          </button>
+          <button
+            onClick={handlePublishInstagram}
+            disabled={publishingIG}
+            style={{
+              flex: 1, padding: '10px', borderRadius: '8px',
+              cursor: publishingIG ? 'default' : 'pointer',
+              background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+              border: 'none', color: '#fff',
+              fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+              opacity: publishingIG ? 0.7 : 1,
+            }}
+          >
+            {publishingIG ? 'Publicando...' : igStatus === 'success' ? 'Publicado!' : igStatus === 'error' ? 'Erro' : 'Instagram'}
           </button>
         </div>
       </div>
