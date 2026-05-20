@@ -116,15 +116,20 @@ export function CarouselViewer({ slides, caption, templateId, onClose }: Carouse
 
   async function handleDownloadAll() {
     setExporting(true)
+    // Aguarda todos os stages estarem prontos
+    await new Promise(r => setTimeout(r, 800))
     for (let i = 0; i < slides.length; i++) {
       const stage = stageRefs.current[i]
-      if (!stage) continue
+      if (!stage) {
+        console.warn(`[carousel] stage ${i} não encontrado`)
+        continue
+      }
       const templateStore = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
       if (!templateStore) continue
       const autoScale = calcAutoScale(templateStore)
       const pixelRatio = 2 / autoScale
       exportToPng(stage, `${buildFileName(`slide-${i + 1}`, '2x')}.png`, { pixelRatio })
-      await new Promise(r => setTimeout(r, 400))
+      await new Promise(r => setTimeout(r, 600))
     }
     setExporting(false)
   }
