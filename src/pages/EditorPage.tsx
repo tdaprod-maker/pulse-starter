@@ -11,6 +11,7 @@ import { ExportPanel } from '../components/ExportPanel'
 import { PropertiesPanel } from '../components/PropertiesPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { AgentChat } from '../components/AgentChat'
+import { CarouselViewer } from '../components/CarouselViewer'
 import { CaptionPanel } from '../components/CaptionPanel'
 import { PostReviewer } from '../components/PostReviewer'
 import { TextEditor } from '../components/TextEditor'
@@ -28,6 +29,8 @@ export function EditorPage() {
     const mainRef = useRef<HTMLElement>(null)
   const [containerW, setContainerW] = useState(800)
   const [containerH, setContainerH] = useState(600)
+  const [carouselSlides, setCarouselSlides] = useState<(import('../services/gemini').CarouselSlide & { imageUrl: string })[] | null>(null)
+  const [carouselCaption, setCarouselCaption] = useState('')
   const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
 
   const {
@@ -202,7 +205,12 @@ export function EditorPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Agente conversacional — fixo no topo */}
         <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
-          <AgentChat onGenerating={() => {}} onGenerated={() => {}} onReset={() => {}} />
+          <AgentChat
+            onGenerating={() => {}}
+            onGenerated={() => {}}
+            onReset={() => { setCarouselSlides(null); setCarouselCaption('') }}
+            onCarouselGenerated={(slides, caption) => { setCarouselSlides(slides); setCarouselCaption(caption) }}
+          />
         </div>
 
         {/* Área do canvas — scrollável */}
@@ -218,7 +226,9 @@ export function EditorPage() {
         padding: '24px',
         paddingTop: '16px',
       }}>
-        {activeTemplate ? (
+        {carouselSlides ? (
+          <CarouselViewer slides={carouselSlides} caption={carouselCaption} onClose={() => { setCarouselSlides(null); setCarouselCaption('') }} />
+        ) : activeTemplate ? (
           <>
             {/* Preview principal — formato ativo */}
             <div style={{
@@ -251,6 +261,7 @@ export function EditorPage() {
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Selecione um template na barra lateral para começar.</p>
           </div>
         )}
+
       </main>
       </div>
 

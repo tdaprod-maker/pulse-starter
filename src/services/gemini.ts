@@ -766,6 +766,8 @@ export interface AgentResponse {
   message?: string
   prompt?: string
   format?: string
+  mode?: 'post' | 'carousel'
+  slideCount?: number
 }
 
 export async function agentChat(
@@ -808,26 +810,41 @@ REGRAS DE FORMATO — escolha automaticamente com base no contexto:
 - Sem rede mencionada → pergunte para qual rede social é o post
 - Se já mencionou a rede em mensagem anterior, use o formato correspondente sem perguntar de novo
 
+DETECÇÃO DE MODO:
+- Se o usuário mencionar "carrossel", "carrosseis", "slides", "sequência de posts", "série" → modo carrossel
+- Caso contrário → modo post único
+
 REGRAS DE CONVERSA:
 - Se ainda não tem o suficiente, faça NO MÁXIMO 2 perguntas em uma única mensagem natural e amigável
 - Nunca faça mais de 2 rodadas de perguntas — na terceira interação, gere com o que tiver
 - Se já tem o suficiente, retorne ready: true com um prompt rico em português
 - Seja conversacional e direto — não use listas ou bullet points nas perguntas
 - Conte as mensagens do usuário: se já tem 2 ou mais respostas, gere
+- Para carrossel: se o usuário não informou quantos slides, pergunte (opções: 3, 4, 5, 7, 10)
+- Para carrossel: não pergunte sobre rede social ou formato — carrossel é sempre 4x5
 
 Responda APENAS com JSON válido sem markdown:
 {
   "ready": false,
   "message": "sua pergunta natural aqui"
 }
-OU
+OU (post único):
 {
   "ready": true,
+  "mode": "post",
   "prompt": "prompt rico e detalhado para gerar o post, incorporando tudo que foi discutido e o contexto da marca",
   "format": "4x5"
 }
+OU (carrossel):
+{
+  "ready": true,
+  "mode": "carousel",
+  "slideCount": 5,
+  "prompt": "prompt rico e detalhado sobre o tema do carrossel"
+}
 
-Formatos válidos: "1x1", "4x5", "9x16", "16x9"`
+Formatos válidos para post: "1x1", "4x5", "9x16", "16x9"
+slideCount válidos para carrossel: 3, 4, 5, 7, 10`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {

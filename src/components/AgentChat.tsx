@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
-import { agentChat, generatePostContent, type AgentMessage } from '../services/gemini'
+import { agentChat, generatePostContent, generateCarouselContent, type AgentMessage, type CarouselSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
@@ -20,7 +20,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset }: { onGenerating?: () => void; onGenerated?: () => void; onReset?: () => void } = {}) {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated }: { onGenerating?: () => void; onGenerated?: () => void; onReset?: () => void; onCarouselGenerated?: (slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string) => void } = {}) {
   const [messages, setMessages] = useState<AgentMessage[]>([
     { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
   ])
@@ -226,6 +226,55 @@ export function AgentChat({ onGenerating, onGenerated, onReset }: { onGenerating
     }
   }
 
+  async function generateCarousel(prompt: string, slideCount: number) {
+    setGenerating(true)
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const userEmail = authData.user?.email ?? ''
+      const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+
+      const brandContext = brandCtx ? {
+        businessName: brandCtx.business_name || brandCtx.brand_name,
+        segment: brandCtx.segment,
+        tone: brandCtx.tone,
+        visualStyle: brandCtx.visual_style ?? undefined,
+        brandDescription: brandCtx.brand_description ?? undefined,
+      } : undefined
+
+      setMessages(prev => [...prev, { role: 'agent', content: `Gerando ${slideCount} slides...` }])
+
+      const carouselData = await generateCarouselContent(prompt, slideCount, brandContext)
+
+      // Gera imagem para cada slide via FAL.ai
+      const slidesWithImages: (CarouselSlide & { imageUrl: string })[] = []
+      for (let i = 0; i < carouselData.slides.length; i++) {
+        const slide = carouselData.slides[i]
+        setMessages(prev => {
+          const msgs = [...prev]
+          msgs[msgs.length - 1] = { role: 'agent', content: `Gerando slide ${i + 1} de ${carouselData.slides.length}...` }
+          return msgs
+        })
+        try {
+          const url = await generateImage(slide.imagePrompt)
+          slidesWithImages.push({ ...slide, imageUrl: url })
+        } catch {
+          slidesWithImages.push({ ...slide, imageUrl: '' })
+        }
+      }
+
+      onCarouselGenerated?.(slidesWithImages, carouselData.caption)
+      onGenerated?.()
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: `✦ Carrossel com ${slideCount} slides gerado! Use as setas para navegar entre os slides.`
+      }])
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao gerar o carrossel. Tente novamente.' }])
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   async function handleSend() {
     if (!input.trim() || loading || generating) return
     const userMsg: AgentMessage = { role: 'user', content: input.trim() }
@@ -257,9 +306,13 @@ export function AgentChat({ onGenerating, onGenerated, onReset }: { onGenerating
       )
 
       if (response.ready && response.prompt) {
-        setMessages(prev => [...prev, { role: 'agent', content: 'Perfeito! Gerando seu post...' }])
         onGenerating?.()
-        await generate(response.prompt, response.format)
+        if (response.mode === 'carousel') {
+          await generateCarousel(response.prompt, response.slideCount ?? 5)
+        } else {
+          setMessages(prev => [...prev, { role: 'agent', content: 'Perfeito! Gerando seu post...' }])
+          await generate(response.prompt, response.format)
+        }
       } else {
         setMessages(prev => [...prev, {
           role: 'agent',
