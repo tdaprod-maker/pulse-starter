@@ -52,9 +52,9 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
 
   // Cria templates Konva para cada slide
   useEffect(() => {
-    if (!templateId) return
+    if (!templateId) { setReady(true); return }
     const def = templateRegistry.find(d => d.id === templateId)
-    if (!def) return
+    if (!def) { setReady(true); return }
     const variants = def.getVariants(theme)
     const base = variants.find(v => v.id.endsWith('-4x5')) ?? variants[0]
 

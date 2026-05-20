@@ -248,7 +248,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const lockedBase = currentActiveId
         ? currentActiveId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
         : undefined
-      const resolvedTemplateId = lockedBase ?? templateId
+      const resolvedTemplateId = lockedBase ?? templateId ?? 'editorial-card'
 
       const carouselData = await generateCarouselContent(prompt, slideCount, brandContext, resolvedTemplateId)
 
