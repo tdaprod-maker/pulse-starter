@@ -837,6 +837,15 @@ REGRAS DE CONVERSA:
 - Para carrossel: não pergunte sobre rede social ou formato — carrossel é sempre 4x5
 - Para carrossel: o campo "prompt" deve ser CURTO — máximo 3 frases descrevendo tema, tom e estilo. NÃO descreva slides individuais nem estrutura de conteúdo — isso é responsabilidade de outra função.
 
+REGRA CRÍTICA PARA O CAMPO "prompt":
+O campo "prompt" deve conter APENAS: tema, rede social, tom e objetivo — máximo 2 frases curtas.
+NÃO inclua: cores, fontes, elementos visuais, slogans, descrição de layout, estrutura de slides ou qualquer detalhamento criativo.
+O detalhamento visual é feito internamente por outra função — o "prompt" aqui é só um briefing mínimo.
+Exemplos corretos:
+  post → "Post para Instagram feed sobre lançamento de produto de skincare. Tom sofisticado, objetivo: gerar desejo e levar ao link na bio."
+  post → "Post LinkedIn anunciando vaga de engenheiro sênior na startup. Tom profissional, objetivo: atrair candidatos qualificados."
+  carousel → "Carrossel Instagram sobre os 5 erros mais comuns em gestão financeira para MEIs. Tom didático, objetivo: educar e gerar seguidores."
+
 Responda APENAS com JSON válido sem markdown:
 {
   "ready": false,
@@ -846,7 +855,7 @@ OU (post único):
 {
   "ready": true,
   "mode": "post",
-  "prompt": "prompt rico e detalhado para gerar o post, incorporando tudo que foi discutido e o contexto da marca",
+  "prompt": "tema e rede social em 1-2 frases — sem detalhes visuais",
   "format": "4x5"
 }
 OU (carrossel):
@@ -854,7 +863,7 @@ OU (carrossel):
   "ready": true,
   "mode": "carousel",
   "slideCount": 5,
-  "prompt": "tema e objetivo em até 3 frases — sem descrever slides individuais"
+  "prompt": "tema e objetivo em 1-2 frases — sem descrever slides individuais"
 }
 
 Formatos válidos para post: "1x1", "4x5", "9x16", "16x9"
@@ -871,7 +880,7 @@ slideCount válidos para carrossel: 3, 4, 5, 7, 10`
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 600,
+            maxOutputTokens: 700,
             thinkingConfig: { thinkingBudget: 512 },
           },
         }),
