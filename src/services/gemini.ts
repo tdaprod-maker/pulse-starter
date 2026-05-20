@@ -862,15 +862,16 @@ slideCount válidos para carrossel: 3, 4, 5, 7, 10`
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
-      const res = await fetch(API_URL, {
+      const url = attempt < 2 ? API_URL : API_URL_FALLBACK
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 800,
-            thinkingConfig: { thinkingBudget: 0 },
+            maxOutputTokens: 300,
+            thinkingConfig: { thinkingBudget: 512 },
           },
         }),
       })
