@@ -835,6 +835,7 @@ REGRAS DE CONVERSA:
 - Conte as mensagens do usuário: se já tem 2 ou mais respostas, gere
 - Para carrossel: se o usuário não informou quantos slides, pergunte (opções: 3, 4, 5, 7, 10)
 - Para carrossel: não pergunte sobre rede social ou formato — carrossel é sempre 4x5
+- Para carrossel: o campo "prompt" deve ser CURTO — máximo 3 frases descrevendo tema, tom e estilo. NÃO descreva slides individuais nem estrutura de conteúdo — isso é responsabilidade de outra função.
 
 Responda APENAS com JSON válido sem markdown:
 {
@@ -853,7 +854,7 @@ OU (carrossel):
   "ready": true,
   "mode": "carousel",
   "slideCount": 5,
-  "prompt": "prompt rico e detalhado sobre o tema do carrossel"
+  "prompt": "tema e objetivo em até 3 frases — sem descrever slides individuais"
 }
 
 Formatos válidos para post: "1x1", "4x5", "9x16", "16x9"
@@ -870,7 +871,7 @@ slideCount válidos para carrossel: 3, 4, 5, 7, 10`
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 500,
+            maxOutputTokens: 600,
             thinkingConfig: { thinkingBudget: 512 },
           },
         }),
