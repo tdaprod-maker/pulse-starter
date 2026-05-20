@@ -824,8 +824,9 @@ REGRAS DE FORMATO — escolha automaticamente com base no contexto:
 - Se já mencionou a rede em mensagem anterior, use o formato correspondente sem perguntar de novo
 
 DETECÇÃO DE MODO:
-- Se o usuário mencionar "carrossel", "carrosseis", "slides", "sequência de posts", "série" → modo carrossel
-- Caso contrário → modo post único
+- Modo padrão é SEMPRE "post" — use carrossel SOMENTE se o usuário usar explicitamente uma dessas palavras: "carrossel", "carrosseis", "slides", "sequência de posts", "série de posts"
+- Qualquer outra descrição de conteúdo (lista, dicas, tópicos, etc.) que não use essas palavras → modo post único
+- Em caso de dúvida → modo post único
 
 REGRAS DE CONVERSA:
 - Se ainda não tem o suficiente, faça NO MÁXIMO 2 perguntas em uma única mensagem natural e amigável
