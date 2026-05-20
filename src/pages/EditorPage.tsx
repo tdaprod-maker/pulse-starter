@@ -210,7 +210,7 @@ export function EditorPage() {
         </div>
 
         {/* Área do canvas — scrollável */}
-      <main ref={mainRef} className="canvas-area" style={{
+      <main ref={mainRef} className="canvas-area" onClick={(e) => { if (e.target === mainRef.current) { useStore.getState().setActiveTemplate('') } }} style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -261,7 +261,7 @@ export function EditorPage() {
         ) : (
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Bem-vindo ao Pulse</p>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Selecione um template na barra lateral para começar.</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Diga o que precisa fazer ou selecione um template na barra lateral para começar.</p>
           </div>
         )}
 
