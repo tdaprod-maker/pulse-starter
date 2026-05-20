@@ -3,142 +3,112 @@
 ## Visão Geral
 Pulse é uma ferramenta web de design de posts para redes sociais com assistência de IA, desenvolvida pela Agente 17. Uso interno e white-label para clientes. Repositório: `github.com/tdaprod-maker/pulse-starter`, auto-deploy no Vercel via push para `main`.
 
+## Modelo de Negócio
+- White-label: ~R$2.500–4.000 setup + retainer mensal
+- SaaS: R$47/mês com 50-100 pulses incluídos + compra de pulses adicionais
+- Pulses: post FAL.ai = 4 pulses, slide carrossel = 2 pulses, post Premium = custo maior
+- Margem de API é saudável — custo real por geração é centavos
+
+## Visão do Produto
+**O agente é o produto.** O Pulse não é uma ferramenta de design — é um designer de bolso com IA. O usuário conversa com o agente, que instrui, orienta e executa. O agente:
+- Conhece boas práticas de design e redes sociais
+- Orienta antes de gerar ("posts educativos performam 3x mais no LinkedIn")
+- Decide a engine internamente (FAL.ai ou GPT Image 2)
+- Gera post, legenda e publica — tudo no mesmo lugar
+- FAL.ai → resultado editável (template Konva)
+- GPT Image 2 → resultado premium não editável, mais pulses
+
+## Arquitetura Alvo (MVP)
+- **Uma única tela** — sem abas separadas de Editor, Carrossel, Posts Premium
+- **Uma única entrada** — o agente
+- **Biblioteca unificada** — posts e carrossel em um só histórico, com opção de reeditar e repostar
+- **PWA obrigatório** — experiência mobile é pré-requisito, não opcional
+- No mobile: agente gera, usuário edita textos e cores via painel simplificado (sem arrastar elementos no canvas)
+
 ## Stack
 - Frontend: React + TypeScript + Vite
 - Backend: Vercel API Routes (Node.js)
 - Banco: Supabase (auth + storage + postgres)
-- IA Imagem: GPT Image 2 (OpenAI) para Posts Premium, FAL.ai FLUX para Editor Konva
-- IA Texto: Gemini 2.5 Flash (legendas, turbo prompt, análise, agente conversacional)
+- IA Imagem: FAL.ai FLUX (posts editáveis) + GPT Image 2 (posts premium)
+- IA Texto: Claude Haiku 4.5 — migrar do Gemini (mais estável, mesma ordem de custo)
 - Deploy: Vercel (plano free — limite de 10s por função serverless)
-- Problema conhecido: Vercel usa cache de build — usar "Redeploy sem cache" quando templates novos não aparecerem
 
-## Visão de Arquitetura (MVP atual → produto maduro)
+## Roadmap por Semanas
 
-### Hoje
-Três módulos separados: Editor (FAL.ai + Konva), Posts Premium (GPT Image 2), Carrossel (engine antiga — sobrando).
+### Semana 1 — Fundação
+1. **Trocar Gemini por Claude Haiku 4.5** — backbone do agente, mais estável
+2. **Unificar telas** — remover abas Carrossel e Posts Premium como módulos separados, tudo dentro do Editor
+3. **Estrutura PWA básica** — manifest.json, service worker, ícones
 
-### Visão futura
-Uma única entrada: o agente. O usuário conversa, o agente decide internamente:
-- Posts rápidos e editáveis → FAL.ai + Konva (Editor atual)
-- Imagens de alta qualidade fotorrealista → GPT Image 2 (não editável, mais pulses)
-- Carrossel → múltiplos slides Konva via CarouselViewer
+### Semana 2 — O Agente Designer
+4. **Agente mais inteligente** — orienta boas práticas antes de gerar, não só executa
+5. **Agente decide a engine** — FAL.ai vs GPT Image 2 baseado no briefing, usuário só vê o custo em pulses
+6. **Fluxo completo** — post → legenda → publicação sem trocar de tela
 
-O usuário nunca escolhe a engine. O agente escolhe e avisa sobre custo em pulses quando necessário. A diferença de engine vira diferença de pulses, não de módulo.
+### Semana 3 — Mobile e Polimento
+7. **Layout responsivo** — Editor adaptado para mobile
+8. **Touch no canvas Konva** — suporte a gestos touch
+9. **Painel simplificado mobile** — edição de texto e cores sem arrastar elementos
+10. **Onboarding** — primeiro acesso força configuração do brand kit antes de gerar
 
-**Por que as duas engines existem:**
-- FAL.ai FLUX: fundo da imagem apenas — os elementos editáveis (textos, shapes, logo) são o template Konva renderizado em cima. Resultado rápido e editável.
-- GPT Image 2: imagem rasterizada completa — sem camadas, sem edição posterior. Mais fotorrealista mas não editável.
+### Semana 4 — Validação
+11. **Biblioteca unificada** — posts e carrossel em histórico único com reedição
+12. **Teste end-to-end com usuário real** — observar onde trava
+13. **Primeiro cliente pago**
 
-**CarouselPage (aba Carrossel):** sobrando — o carrossel agora vive dentro do Editor via CarouselViewer. Remover em próxima sessão de reestruturação.
+## Estado Atual dos Módulos
 
-## Módulos Atuais
+### O que está funcionando
+- Editor com agente conversacional (AgentChat recolhível após geração)
+- Geração de posts via FAL.ai com templates Konva editáveis
+- Carrossel via CarouselViewer (dentro do Editor)
+- Brand kit automático (logo, cores, tom de voz)
+- Publicação LinkedIn (OAuth conectado)
+- Download PNG e ZIP
+- Sistema de pulses (débito implementado no Premium)
+- Templates organizados por categoria no Sidebar
 
-### Editor Konva — Agente Conversacional
-- Componente `AgentChat.tsx` — recolhe automaticamente após gerar
-- Nome: "Agente de Design Pulse"
-- Microfone (Web Speech API) integrado
-- Botão "Nova conversa" reseta e expande o chat
-- Função `agentChat` no `gemini.ts` — máximo 2 rodadas de perguntas antes de gerar
-- Brand kit lido automaticamente
-- Formatos: Stories→9x16, LinkedIn→1x1, feed Instagram→4x5, banner→16x9
-- Se usuário selecionar template no Sidebar, agente respeita e usa esse template
-- Editor começa sem template selecionado — clique fora deseleciona
-- Agente detecta intenção de carrossel por palavras explícitas ("carrossel", "slides")
-- agentChat: maxOutputTokens 600, thinkingBudget 512, fallback flash-lite na 3ª tentativa
+### O que está pendente
+- Instabilidade Gemini → migrar para Claude Haiku
+- Agente confundindo post/carrossel ocasionalmente
+- Instagram pendente (aceitar convite Testador para agente17ia e tdaprod)
+- Débito de pulses no Editor Konva (verificar)
+- Log de debug do agentChat para remover
+- CarouselPage (aba antiga) para remover
+- Posts Premium sem saldo OpenAI para testar
 
-### Editor Konva — Carrossel
-- Geração via `generateCarouselContent` com textos mapeados para o template ativo
-- Fallback para `editorial-card` quando nenhum template selecionado
-- Imagens geradas em paralelo via FAL.ai
-- Slides renderizados com `CanvasEngine` (editáveis)
-- Logo do brand kit aplicado em todos os slides
-- Navegação entre slides com setas e miniaturas
-- Download ZIP de todos os slides
-- Botões de publicação LinkedIn e Instagram
-- Componente: `CarouselViewer.tsx`
+## Templates
+Mantém os existentes para o MVP. Não investir em novos agora — energia melhor gasta no agente. Com GPT Image 2, templates se tornam menos relevantes no longo prazo.
 
-### Editor Konva — Templates
-**Regra para novos templates — sempre registrar em 3 lugares no gemini.ts:**
-1. `TEMPLATE_FIELDS` — objeto no topo com os campos
-2. Seção "TEMPLATES DISPONÍVEIS" no `buildPrompt` — descrição + `Campos:`
-3. Regras de seleção no `buildPrompt` — quando usar
+**Regra para novos templates — sempre registrar em 3 lugares no gemini.ts (futuro: claude):**
+1. `TEMPLATE_FIELDS` — campos mapeados
+2. `buildPrompt` seção TEMPLATES DISPONÍVEIS — descrição + Campos
+3. `buildPrompt` regras de seleção — quando usar
 
-**Sport:** sport-arena, sport-brand
-**Food:** food-editorial, food-promo, food-vertical
-**Business:** business-statement, business-card, job-glass (Vitrine de Vaga), hero-gradient (Palco de Marca), toggle-card (Card Reveal), infographic-ring (Infográfico Anel)
-**Health:** health-content, health-stats, health-split (Saúde em Foco)
-**Construction:** build-impact, build-editorial
-**Realty:** realty-premium, realty-launch, realty-keys (Chave na Mão)
-**Fashion:** fashion-editorial, fashion-drop
-**Tech:** tech-statement, tech-news, tech-product, tech-minimal
-**Home & Deco:** home-split (Painel Duplo), product-arch (Vitrine Minimalista)
-**Outros:** bold-circle, editorial-cover, split-editorial, geo-impact, editorial-card
-
-### ExportPanel
-- Botão único azul "Baixar" — exporta PNG 2x
-
-### Tema Claro/Escuro
-- Toggle na Topbar (ícone sol/lua)
-- Topbar sempre escura
-- Canvas-area no tema claro usa fundo #e8eaf0
-
-### Posts Premium
-- Post único: 1 imagem 1024x1536 cropada para 3 formatos: 9:16, 4:5, 1:1
-- Carrossel: 3-7 slides 4:5
-- Débito real de pulses implementado
-- Pendente: testar (requer crédito OpenAI — saldo zerado)
-
-### Publicação
-- LinkedIn: OAuth conectado
-- Instagram: pendente — aceitar convite Testador no app para `agente17ia` e `tdaprod`
-
-### Sistema de Pulses
-- Tabela `user_tokens` no Supabase
-- Débito implementado no Posts Premium
-- Pendente: verificar débito no Editor Konva
+**Categorias atuais:** Sport, Food, Business, Health, Construction, Realty, Fashion, Tech, Home & Deco, Outros
 
 ## Arquivos Principais
 - `src/components/AgentChat.tsx` — agente conversacional, recolhível após geração
-- `src/components/CarouselViewer.tsx` — visualizador e editor de carrossel
-- `src/services/gemini.ts` — agentChat, generateCarouselContent, buildPrompt, TEMPLATE_FIELDS
+- `src/components/CarouselViewer.tsx` — carrossel integrado ao Editor
+- `src/services/gemini.ts` — migrar para claude.ts
 - `src/components/PropertiesPanel.tsx` — edição inline de elementos
-- `src/components/ExportPanel.tsx` — botão Baixar simplificado
-- `src/components/Sidebar.tsx` — categorias de templates
-- `src/components/LogoSection.tsx` — gestão do logotipo (pendente reposicionamento)
-- `src/pages/EditorPage.tsx` — layout principal
-- `src/pages/CarouselPage.tsx` — módulo antigo, a remover
-- `src/templates/index.ts` — registry de todos os templates
-- `api/generate-premium.js` — geração GPT Image 2
-- `src/pages/PremiumPage.tsx` — Posts Premium
+- `src/components/ExportPanel.tsx` — botão Baixar
+- `src/pages/EditorPage.tsx` — tela principal
+- `src/pages/CarouselPage.tsx` — remover
+- `src/pages/PremiumPage.tsx` — integrar ao Editor
+- `src/templates/index.ts` — registry de templates
 
-## Roadmap MVP
+## Custos de API (referência)
+- Claude Haiku 4.5: $1/$5 por milhão de tokens input/output
+- FAL.ai FLUX: ~$0.003 por imagem
+- GPT Image 2: ~$0.04 por imagem
+- Custo total por geração FAL.ai: ~R$0,03
+- Custo total por geração Premium: ~R$0,23
+- Margem no plano R$47/100 pulses: saudável em ambos os casos
 
-### Crítico para vender
-1. Agente estável — sem 503, sem confundir post/carrossel
-2. Canvas maior e editável com clareza — AgentChat recolhível já implementado
-3. Agente mais inteligente — especialista em design e redes sociais, orienta boas práticas
-4. LinkedIn publicando corretamente — testar end-to-end
-5. Onboarding mínimo — usuário entender o que fazer sem explicação
-
-### Importante
-6. Remover CarouselPage (aba Carrossel sobrando)
-7. Reposicionar LogoSection no painel direito
-8. Verificar débito de pulses no Editor Konva
-9. Aceitar convite Testador Instagram
-10. Recarregar saldo OpenAI e testar Posts Premium
-11. Remover log de debug do agentChat
-
-### Visão futura
-12. Unificar Editor e Posts Premium em uma única entrada via agente
-13. Agente decide engine (FAL.ai vs GPT Image 2) baseado no briefing
-14. Pagamento de pulses
-15. Calendário editorial e histórico de posts
-16. Mais templates por segmento
-
-## Modelo de Negócio
-White-label para clientes: ~R$2.500–4.000 setup + retainer mensal. Pulses como camada de monetização.
-
-## Créditos e Limites
-- OpenAI GPT Image 2: saldo zerado — recarregar antes de testar Premium
-- Vercel free: 10s por função serverless
-- GitHub token: renovado sem expiração
+## PWA — Requisitos
+- manifest.json com nome, ícone, cores da marca
+- Service Worker para cache básico
+- Layout responsivo (mobile-first no Editor)
+- Touch support no canvas Konva
+- Painel de edição simplificado para mobile
