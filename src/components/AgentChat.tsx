@@ -6,6 +6,7 @@ import { agentChat, generatePostContent, generateCarouselContent, type AgentMess
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
+import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
 
 const ACCENT_ELEMENT: Record<string, string> = {
   'hero-title':     'accent-bar',
@@ -53,6 +54,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   }
   const [generating, setGenerating] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const [pendingPremium, setPendingPremium] = useState<{ prompt: string; format?: string } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const { theme } = useTheme()
@@ -229,6 +231,137 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
+  async function generatePremium(prompt: string, format?: string) {
+    setGenerating(true)
+    setMessages(prev => [...prev, {
+      role: 'agent',
+      content: '⏳ Aviso: a geração premium pode levar até 20 segundos. Gerando com GPT Image 2...',
+    }])
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const userEmail = authData.user?.email ?? ''
+      const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+
+      const balance = await getTokenBalance(userEmail)
+      if (balance < PULSE_COSTS.PREMIUM_POST) {
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: `Saldo insuficiente. Você tem ${balance} pulses e precisa de ${PULSE_COSTS.PREMIUM_POST} para geração premium.`,
+        }])
+        return
+      }
+
+      const activeTemplateBase = format
+        ? null
+        : useStore.getState().activeTemplateId?.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '') ?? null
+
+      const result = await generatePostContent(prompt, brandCtx ? {
+        businessName: brandCtx.business_name || brandCtx.brand_name,
+        segment: brandCtx.segment,
+        tone: brandCtx.tone,
+        visualStyle: brandCtx.visual_style ?? undefined,
+        brandDescription: brandCtx.brand_description ?? undefined,
+      } : undefined, activeTemplateBase ?? undefined)
+
+      if (brandCtx?.color_primary && result.accentColor) {
+        result.accentColor = brandCtx.color_primary
+      }
+
+      await applyResult(result, activeTemplateBase ?? undefined)
+
+      if (format) {
+        const formatMap: Record<string, string> = { '1x1': '1x1', '4x5': '4x5', '9x16': '9x16', '16x9': '16x9' }
+        const suffix = formatMap[format] ?? '1x1'
+        const currentId = useStore.getState().activeTemplateId
+        if (currentId) {
+          const base = currentId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+          const def = templateRegistry.find(d => d.id === base)
+          if (def) {
+            const target = def.getVariants(theme).find(v => v.id.endsWith('-' + suffix))
+            if (target) setActiveTemplate(target.id)
+          }
+        }
+      }
+
+      if (result.imagePrompt) {
+        try {
+          const premRes = await fetch('/api/generate-premium', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: result.imagePrompt,
+              slideIndex: 1,
+              totalSlides: 1,
+              styleContext: brandCtx?.visual_style ?? 'clean, minimal, professional',
+              size: '1024x1024',
+            }),
+          })
+          if (premRes.ok) {
+            const { image } = await premRes.json() as { image?: string }
+            if (image) {
+              const activeId = useStore.getState().activeTemplateId
+              if (activeId) {
+                setTemplateBackground(activeId, image)
+                setTemplateImagePrompt(activeId, result.imagePrompt)
+                const def = templateRegistry.find(d => activeId.startsWith(d.id))
+                def?.getVariants(theme).forEach(v => {
+                  if (v.id !== activeId) {
+                    setTemplateBackground(v.id, image)
+                    setTemplateImagePrompt(v.id, result.imagePrompt!)
+                  }
+                })
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao gerar imagem premium:', e)
+        }
+      }
+
+      const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_POST)
+      if (debit.success) notifyBalanceUpdate()
+
+      if (result.caption) setCaption(result.caption)
+
+      try {
+        if (userEmail) {
+          const postId = await savePost(userEmail, {
+            template_id: result.template,
+            texts: result.texts as Record<string, string>,
+            accent_color: result.accentColor ?? '',
+            image_prompt: result.imagePrompt ?? '',
+          })
+          if (postId) {
+            const activeId = useStore.getState().activeTemplateId
+            const activeTemplate = useStore.getState().templates.find(t => t.id === activeId)
+            const bgImage = activeTemplate?.backgroundImage
+            if (bgImage?.startsWith('data:')) {
+              const thumbUrl = await uploadThumbnail(postId, userEmail, bgImage)
+              if (thumbUrl) await updatePostThumbnail(postId, thumbUrl)
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao salvar:', e)
+      }
+
+      onGenerated?.()
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: '✦ Post premium gerado! Clique nos elementos do canvas para editar.',
+      }])
+      setCollapsed(true)
+    } catch (e) {
+      console.error('[generatePremium] erro:', e)
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: 'Erro ao gerar imagem premium. Tente novamente.',
+      }])
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   async function generateCarousel(prompt: string, slideCount: number, templateId?: string) {
     setGenerating(true)
     try {
@@ -320,10 +453,17 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       )
 
       if (response.ready && response.prompt) {
-        onGenerating?.()
         if (response.mode === 'carousel') {
+          onGenerating?.()
           await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
+        } else if (response.engine === 'premium') {
+          setPendingPremium({ prompt: response.prompt, format: response.format })
+          setMessages(prev => [...prev, {
+            role: 'agent',
+            content: 'Esse post usa GPT Image 2 — imagem fotorrealista de alta qualidade. Custa 8 pulses (padrão custa 4). Confirmar?',
+          }])
         } else {
+          onGenerating?.()
           setMessages(prev => [...prev, { role: 'agent', content: 'Perfeito! Gerando seu post...' }])
           await generate(response.prompt, response.format)
         }
@@ -352,6 +492,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setMessages([{ role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }])
     setInput('')
     setCollapsed(false)
+    setPendingPremium(null)
     onReset?.()
   }
 
@@ -454,6 +595,43 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             </div>
           </div>
         ))}
+        {pendingPremium && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <button
+              onClick={() => {
+                const pending = pendingPremium
+                setPendingPremium(null)
+                onGenerating?.()
+                generatePremium(pending.prompt, pending.format)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Confirmar premium · 8 pulses
+            </button>
+            <button
+              onClick={() => {
+                const pending = pendingPremium
+                setPendingPremium(null)
+                onGenerating?.()
+                setMessages(prev => [...prev, { role: 'agent', content: 'Gerando com FAL.ai...' }])
+                generate(pending.prompt, pending.format)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Usar padrão · 4 pulses
+            </button>
+          </div>
+        )}
         {(loading || generating) && (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{

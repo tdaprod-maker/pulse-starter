@@ -469,6 +469,7 @@ export interface AgentResponse {
   mode?: 'post' | 'carousel'
   slideCount?: number
   templateId?: string
+  engine?: 'standard' | 'premium'
 }
 
 export async function agentChat(

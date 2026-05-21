@@ -2,8 +2,9 @@ import { supabase } from '../lib/supabase'
 
 // Custo em pulses por ação
 export const PULSE_COSTS = {
-  POST: 2,           // Gerar post com imagem
-  CAROUSEL_SLIDE: 1, // Por slide do carrossel (mínimo 3 = 3 pulses, máximo 10 = 10 pulses... aguarda ajuste)
+  POST: 4,           // Gerar post com imagem FAL.ai
+  PREMIUM_POST: 8,   // Gerar post com GPT Image 2 (fotorrealista)
+  CAROUSEL_SLIDE: 2, // Por slide do carrossel
   EDIT_IMAGE: 3,     // Editar imagem com IA
   REVIEW_POST: 1,    // Revisar post com agente
 } as const

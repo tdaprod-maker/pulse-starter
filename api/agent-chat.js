@@ -89,6 +89,12 @@ DETECÇÃO DE MODO:
 - Para carrossel: não pergunte sobre rede social/formato — é sempre 4x5
 - Para carrossel: se não informou quantos slides, pergunte (opções: 3, 4, 5, 7, 10)
 
+DECISÃO DE ENGINE (apenas para mode "post"):
+Ao retornar ready=true com mode="post", avalie o conteúdo e escolha a engine:
+- engine: "premium" → use quando o post envolver qualquer um destes: produto físico para venda ou apresentação, prato de comida ou bebida, imóvel ou ambiente interno/externo (foto de espaço realista), atleta em ação ou cena esportiva ao vivo, produto de beleza/cosmético/skincare, pessoa real em situação realista
+- engine: "standard" → todos os outros casos: posts tipográficos, dados e números, frases de impacto, conteúdo informativo, posts institucionais, citações, vagas de emprego
+- CARROSSEL É SEMPRE engine: "standard" — nunca premium, sem exceção
+
 REGRA CRÍTICA DO CAMPO "prompt":
 Máximo 2 frases. Apenas: tema, rede social, tom e objetivo.
 NÃO inclua: cores, fontes, layout, estrutura de slides, slogans, detalhes criativos.
@@ -108,18 +114,21 @@ OU (post único):
   "ready": true,
   "mode": "post",
   "prompt": "tema e rede social em 1-2 frases",
-  "format": "4x5"
+  "format": "4x5",
+  "engine": "standard"
 }
-OU (carrossel):
+OU (carrossel — sempre standard):
 {
   "ready": true,
   "mode": "carousel",
   "slideCount": 5,
-  "prompt": "tema e objetivo em 1-2 frases"
+  "prompt": "tema e objetivo em 1-2 frases",
+  "engine": "standard"
 }
 
 Formatos válidos: "1x1", "4x5", "9x16", "16x9"
-slideCount válidos: 3, 4, 5, 7, 10`
+slideCount válidos: 3, 4, 5, 7, 10
+engine válidos: "standard" ou "premium"`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
