@@ -788,114 +788,16 @@ export async function agentChat(
   brand?: BrandContext,
   lockedTemplateId?: string
 ): Promise<AgentResponse> {
-  const brandCtx = brand ? `
-Marca: ${brand.businessName || ''}
-Segmento: ${brand.segment || ''}
-Tom: ${brand.tone || ''}
-Descrição: ${brand.brandDescription || ''}
-Estilo visual: ${brand.visualStyle || ''}` : ''
-
-  const lockedCtx = lockedTemplateId
-    ? `\nTEMPLATE FIXADO PELO USUÁRIO: "${lockedTemplateId}" — o usuário já escolheu este template. Use-o obrigatoriamente no campo "templateId" da resposta. Não sugira nem use outro template.`
-    : ''
-
-  const history = messages.map(m => `${m.role === 'user' ? 'Usuário' : 'Agente'}: ${m.content}`).join('\n')
-
-  const prompt = `Você é um agente de design de posts para redes sociais. Seu objetivo é coletar informações suficientes para gerar um post de alta qualidade para o usuário.
-
-CONTEXTO DA MARCA (já conhecido — não pergunte sobre isso):
-${brandCtx || 'Não disponível'}${lockedCtx}
-
-HISTÓRICO DA CONVERSA:
-${history}
-
-AVALIE se você tem informação suficiente para gerar um bom post. Você precisa saber:
-1. O propósito/tema do post (obrigatório)
-2. Para qual rede social / onde será publicado (importante para definir formato)
-3. Se deve ter imagem de fundo ou ser apenas tipográfico (importante)
-
-REGRAS DE FORMATO — escolha automaticamente com base no contexto:
-- "stories", "reels", "story" → format: "9x16"
-- "linkedin" sem especificar → format: "1x1"
-- "feed instagram", "instagram feed", "post instagram" → format: "4x5"
-- "banner", "capa", "youtube", "linkedin banner" → format: "16x9"
-- Instagram sem especificar → format: "4x5" (melhor performance no feed)
-- Sem rede mencionada → pergunte para qual rede social é o post
-- Se já mencionou a rede em mensagem anterior, use o formato correspondente sem perguntar de novo
-
-DETECÇÃO DE MODO:
-- Modo padrão é SEMPRE "post" — use carrossel SOMENTE se o usuário usar explicitamente uma dessas palavras: "carrossel", "carrosseis", "slides", "sequência de posts", "série de posts"
-- Qualquer outra descrição de conteúdo (lista, dicas, tópicos, etc.) que não use essas palavras → modo post único
-- Em caso de dúvida → modo post único
-
-REGRAS DE CONVERSA:
-- Se ainda não tem o suficiente, faça NO MÁXIMO 2 perguntas em uma única mensagem natural e amigável
-- Nunca faça mais de 2 rodadas de perguntas — na terceira interação, gere com o que tiver
-- Se já tem o suficiente, retorne ready: true com um prompt rico em português
-- Seja conversacional e direto — não use listas ou bullet points nas perguntas
-- Conte as mensagens do usuário: se já tem 2 ou mais respostas, gere
-- Para carrossel: se o usuário não informou quantos slides, pergunte (opções: 3, 4, 5, 7, 10)
-- Para carrossel: não pergunte sobre rede social ou formato — carrossel é sempre 4x5
-- Para carrossel: o campo "prompt" deve ser CURTO — máximo 3 frases descrevendo tema, tom e estilo. NÃO descreva slides individuais nem estrutura de conteúdo — isso é responsabilidade de outra função.
-
-REGRA CRÍTICA PARA O CAMPO "prompt":
-O campo "prompt" deve conter APENAS: tema, rede social, tom e objetivo — máximo 2 frases curtas.
-NÃO inclua: cores, fontes, elementos visuais, slogans, descrição de layout, estrutura de slides ou qualquer detalhamento criativo.
-O detalhamento visual é feito internamente por outra função — o "prompt" aqui é só um briefing mínimo.
-Exemplos corretos:
-  post → "Post para Instagram feed sobre lançamento de produto de skincare. Tom sofisticado, objetivo: gerar desejo e levar ao link na bio."
-  post → "Post LinkedIn anunciando vaga de engenheiro sênior na startup. Tom profissional, objetivo: atrair candidatos qualificados."
-  carousel → "Carrossel Instagram sobre os 5 erros mais comuns em gestão financeira para MEIs. Tom didático, objetivo: educar e gerar seguidores."
-
-Responda APENAS com JSON válido sem markdown:
-{
-  "ready": false,
-  "message": "sua pergunta natural aqui"
-}
-OU (post único):
-{
-  "ready": true,
-  "mode": "post",
-  "prompt": "tema e rede social em 1-2 frases — sem detalhes visuais",
-  "format": "4x5"
-}
-OU (carrossel):
-{
-  "ready": true,
-  "mode": "carousel",
-  "slideCount": 5,
-  "prompt": "tema e objetivo em 1-2 frases — sem descrever slides individuais"
-}
-
-Formatos válidos para post: "1x1", "4x5", "9x16", "16x9"
-slideCount válidos para carrossel: 3, 4, 5, 7, 10`
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
-      const url = attempt < 2 ? API_URL : API_URL_FALLBACK
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 700,
-            thinkingConfig: { thinkingBudget: 512 },
-          },
-        }),
-      })
-      if (!res.ok) throw new Error(`Erro ${res.status}`)
-      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      const clean = raw.replace(/```json|```/g, '').trim()
-      console.log('[agentChat] raw response:', clean)
-      return JSON.parse(clean) as AgentResponse
-    } catch (err) {
-      console.error('[agentChat] erro attempt', attempt, err)
-      if (attempt === 2) return { ready: false, message: 'Estou com instabilidade no momento. Tente enviar sua mensagem novamente em alguns segundos.' }
-    }
+  try {
+    const res = await fetch('/api/agent-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, brand, lockedTemplateId }),
+    })
+    if (!res.ok) throw new Error(`Erro ${res.status}`)
+    return await res.json() as AgentResponse
+  } catch (err) {
+    console.error('[agentChat] erro:', err)
+    return { ready: false, message: 'Estou com instabilidade no momento. Tente enviar sua mensagem novamente em alguns segundos.' }
   }
-  return { ready: false, message: 'Descreva o que você quer comunicar no post e eu começo a criar.' }
 }
