@@ -219,6 +219,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }])
       setCollapsed(true)
     } catch (e) {
+      console.error('[generate] erro ao gerar post:', e)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: 'Algo deu errado ao gerar. Tente novamente.'
@@ -281,6 +282,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }])
       setCollapsed(true)
     } catch (e) {
+      console.error('[generateCarousel] erro:', e)
       setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao gerar o carrossel. Tente novamente.' }])
     } finally {
       setGenerating(false)
@@ -332,6 +334,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         }])
       }
     } catch (e) {
+      console.error('[handleSend] erro:', e)
       setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao processar. Tente novamente.' }])
     } finally {
       setLoading(false)

@@ -380,6 +380,7 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
       if (!text) throw new Error('A API retornou uma resposta vazia')
       return extractJSON(text) as unknown as AIResponse
     } catch (err) {
+      console.error(`[generatePostContent] attempt ${attempt} erro:`, err)
       lastError = err as Error
     }
   }
