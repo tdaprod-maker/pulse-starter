@@ -68,22 +68,39 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Sistema de pulses (débito implementado no Premium)
 - Templates organizados por categoria no Sidebar
 
+### Migração Gemini → Claude Haiku 4.5 (em andamento)
+| Função | Rota Vercel | Status |
+|---|---|---|
+| `agentChat` | `/api/agent-chat.js` | ✅ Migrado |
+| `generatePostContent` | `/api/generate-post.js` | ✅ Migrado |
+| `generateCarouselContent` | `/api/generate-carousel.js` | ⏳ Próxima sessão |
+| `turboPrompt` / `turboPromptEditor` | — | 🔜 Pendente |
+| `generatePremiumCaption` | — | 🔜 Pendente |
+| `breakCarouselIntoSlides` | — | 🔜 Pendente |
+| `analyzeVisualReferences` | — | 🔜 Pendente (multimodal) |
+
+**Padrão adotado:** cada função vira uma Vercel API Route em `/api/`. A chave `ANTHROPIC_API_KEY` fica exclusivamente no servidor. O frontend chama `fetch('/api/...')`. O gemini.ts vira wrapper de thin clients.
+
+**Próxima sessão:**
+1. Criar `/api/generate-carousel.js` com `buildCarouselPrompt` portado + Claude Haiku
+2. Atualizar `generateCarouselContent` em gemini.ts para thin wrapper
+3. Testar fluxo completo: agentChat → generatePostContent → generateCarouselContent
+
 ### O que está pendente
-- Instabilidade Gemini → migrar para Claude Haiku
 - Agente confundindo post/carrossel ocasionalmente
 - Instagram pendente (aceitar convite Testador para agente17ia e tdaprod)
 - Débito de pulses no Editor Konva (verificar)
-- Log de debug do agentChat para remover
+- Logs de debug do agentChat para remover após estabilização
 - CarouselPage (aba antiga) para remover
 - Posts Premium sem saldo OpenAI para testar
 
 ## Templates
 Mantém os existentes para o MVP. Não investir em novos agora — energia melhor gasta no agente. Com GPT Image 2, templates se tornam menos relevantes no longo prazo.
 
-**Regra para novos templates — sempre registrar em 3 lugares no gemini.ts (futuro: claude):**
-1. `TEMPLATE_FIELDS` — campos mapeados
-2. `buildPrompt` seção TEMPLATES DISPONÍVEIS — descrição + Campos
-3. `buildPrompt` regras de seleção — quando usar
+**Regra para novos templates — sempre registrar em 3 lugares:**
+1. `TEMPLATE_FIELDS` em `api/generate-post.js` e `api/generate-carousel.js`
+2. Seção TEMPLATES DISPONÍVEIS no prompt (descrição + Campos)
+3. Regras de seleção no prompt (quando usar)
 
 **Categorias atuais:** Sport, Food, Business, Health, Construction, Realty, Fashion, Tech, Home & Deco, Outros
 
