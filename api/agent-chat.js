@@ -109,13 +109,21 @@ Responda APENAS com JSON válido sem markdown:
   "ready": false,
   "message": "sua mensagem direta aqui — pode incluir orientação + pergunta"
 }
-OU (post único):
+OU (post único — conteúdo informativo, tipográfico, dados, institucional):
 {
   "ready": true,
   "mode": "post",
   "prompt": "tema e rede social em 1-2 frases",
   "format": "4x5",
   "engine": "standard"
+}
+OU (post único — produto físico, prato de comida, imóvel, atleta, produto de beleza, pessoa real):
+{
+  "ready": true,
+  "mode": "post",
+  "prompt": "tema e rede social em 1-2 frases",
+  "format": "4x5",
+  "engine": "premium"
 }
 OU (carrossel — sempre standard):
 {

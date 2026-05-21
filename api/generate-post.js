@@ -44,10 +44,6 @@ ${brand?.visualStyle ? `\nEstilo visual de referência: ${brand.visualStyle}` : 
 ${brand?.brandDescription ? `\nDescrição detalhada da marca: ${brand.brandDescription}` : ''}
 
 TEMPLATES DISPONÍVEIS:
-  Campos: title (3-6 palavras, impactante), subtitle (8-14 palavras, explicativo)
-
-  Campos: line1 (1-3 palavras), line2 (1-3 palavras)
-  Juntas formam uma frase ou contraste. Ex: line1="NOVO", line2="PRODUTO"
 
 - "health-split"   → fundo claro split, objeto à esquerda, headline em 3 linhas à direita, badge com telefone
   Campos: badge-text (nome da marca), headline1 (2-3 palavras linha 1), headline2 (1-2 palavras linha 2), headline3 (1-2 palavras linha 3), subtitle (frase entre aspas 8-14 palavras), phone-label (servico ou beneficio), phone-number (telefone)
@@ -110,24 +106,32 @@ IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario, use OBR
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
 
 REGRAS DE SELEÇÃO DE TEMPLATE:
-- "health-split"    → para clínicas, farmácias, saúde, bem-estar ou qualquer serviço com produto em destaque
-- "infographic-ring" → para infográficos, listas de 4 itens, comparativos, dados ou apresentação de benefícios
-- "realty-keys"     → para imobiliárias, corretores, aluguel, venda de imóveis ou captação de leads
-- "toggle-card"     → para listas numeradas, motivos, razões, dicas ou conteúdo do tipo carrossel de capa
-- "home-split"      → para móveis planejados, decoração, arquitetura ou qualquer serviço de ambiente/lar
-- "product-arch"    → para posts de produto físico, lançamento ou destaque de item com fundo limpo
-- "hero-gradient"   → para posts emocionais, datas comemorativas, homenagens ou celebrações com foto de fundo
-- "job-glass"       → obrigatório quando o conteúdo é sobre vaga de emprego, recrutamento ou contratação
-- "editorial-card"  → para conteúdo informativo, artigos, dicas ou textos com contexto e corpo
-- "food-editorial"  → obrigatório quando o conteúdo mencionar restaurante premium, alta gastronomia, prato especial, menu degustação, chef ou experiência gastronômica sofisticada
-- "food-promo"      → obrigatório quando o conteúdo mencionar pratos, restaurante, delivery, cardápio, promoção de comida ou bebida (use food-editorial se o contexto for premium/sofisticado)
-- "tech-news"       → quando o prompt mencionar notícia, novidade, lançamento, evento, summit, atualização de tecnologia ou IA
-- "sport-arena"     → obrigatório quando o conteúdo mencionar esporte, time, jogo, partida, campeonato, treino, academia, competição ou resultado esportivo
-- "business-statement" → obrigatório quando o prompt contiver números, porcentagens, estatísticas, metas, resultados ou conquistas de negócios
-- "business-card"   → quando o prompt mencionar apresentação de empresa, serviço, produto, solução ou proposta de valor profissional
-- "tech-statement"  → quando o prompt for uma frase, reflexão, provocação ou pensamento sobre negócios, IA ou automação
-- "tech-product"    → quando o prompt mencionar produto, serviço, agente, solução, ferramenta de IA ou automação
-- "tech-minimal"    → fundo sólido sem imagem, frase única e impactante de até 8 palavras. Use quando o usuário pedir algo minimalista, clean, fundo preto, ou quando a mensagem for uma frase curta e poderosa sem necessidade de imagem de fundo.
+
+REGRA PRIORITÁRIA — verifique nesta ordem antes de qualquer outra:
+1. Conteúdo de COMIDA/RESTAURANTE → sempre "food-editorial" ou "food-promo". NUNCA use tech-news, tech-product ou tech-statement para restaurante, prato, cardápio, delivery, gastronomia, bebida ou chef.
+2. Conteúdo de ESPORTE → sempre "sport-arena". NUNCA use tech para esporte.
+3. Conteúdo de EMPREGO/VAGA → sempre "job-glass".
+4. Conteúdo de IMÓVEL → sempre "realty-keys" ou "realty-premium" ou "realty-launch".
+
+SELEÇÃO POR SEGMENTO:
+- "food-editorial"  → OBRIGATÓRIO para restaurante premium, alta gastronomia, prato especial, menu degustação, chef, experiência gastronômica sofisticada, vinho, harmonização
+- "food-promo"      → OBRIGATÓRIO para qualquer post sobre prato, restaurante, delivery, cardápio, lanchonete, promoção de comida ou bebida, hambúrguer, pizza, sushi, açaí, sobremesa (use food-editorial se o contexto for sofisticado)
+- "sport-arena"     → OBRIGATÓRIO para esporte, time, jogo, partida, campeonato, treino, academia, competição, resultado esportivo, futebol, basquete, corrida, natação
+- "job-glass"       → OBRIGATÓRIO para vaga de emprego, recrutamento, contratação, oportunidade de carreira
+- "health-split"    → clínicas, farmácias, saúde, bem-estar, produto de saúde em destaque
+- "infographic-ring" → infográficos, listas de 4 itens, comparativos, benefícios em lista
+- "realty-keys"     → imobiliárias, corretores, aluguel, venda de imóveis, captação de leads imobiliários
+- "toggle-card"     → listas numeradas, motivos, razões, dicas em formato de lista
+- "home-split"      → móveis planejados, decoração, arquitetura, serviços de ambiente/lar
+- "product-arch"    → produto físico de qualquer segmento (exceto comida) em destaque com fundo limpo
+- "hero-gradient"   → posts emocionais, datas comemorativas, homenagens, celebrações com foto de fundo
+- "editorial-card"  → conteúdo informativo, artigos, dicas, textos com contexto e corpo de texto
+- "business-statement" → OBRIGATÓRIO quando o prompt contiver números, porcentagens, estatísticas, metas, resultados ou conquistas de negócios
+- "business-card"   → apresentação de empresa, serviço profissional ou proposta de valor (não-tech)
+- "tech-news"       → EXCLUSIVO para notícias, novidades e lançamentos do setor de TECNOLOGIA, INTELIGÊNCIA ARTIFICIAL, startups tech, software, apps ou inovação digital. NUNCA use para food, saúde, esporte ou serviços gerais
+- "tech-statement"  → EXCLUSIVO para frases de impacto sobre TECNOLOGIA, IA, automação, inovação digital ou transformação digital
+- "tech-product"    → EXCLUSIVO para apresentação de produto ou serviço de TECNOLOGIA: apps, ferramentas de IA, software, agentes, plataformas digitais
+- "tech-minimal"    → fundo sólido sem imagem, frase única impactante de até 8 palavras. Use quando pedir minimalista, clean, fundo preto, ou frase curta sem necessidade de imagem
 
 REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 - #3A5AFF (azul)   → tech, negócios, profissional, inovação, produtividade
