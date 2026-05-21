@@ -313,9 +313,9 @@ export async function generateCarouselContent(userInput: string, slideCount: num
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       if (attempt > 0) {
-        await new Promise(resolve => setTimeout(resolve, 2000 * attempt))
+        await new Promise(resolve => setTimeout(resolve, 3000 * attempt))
       }
-      const url = attempt < 2 ? API_URL : API_URL_FALLBACK
+      const url = attempt === 0 ? API_URL : API_URL_FALLBACK
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -353,9 +353,9 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       if (attempt > 0) {
-        await new Promise(resolve => setTimeout(resolve, 2000 * attempt))
+        await new Promise(resolve => setTimeout(resolve, 3000 * attempt))
       }
-      const url = attempt < 2 ? API_URL : API_URL_FALLBACK
+      const url = attempt === 0 ? API_URL : API_URL_FALLBACK
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
