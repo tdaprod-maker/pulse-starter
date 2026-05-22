@@ -293,6 +293,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   }
 
   async function generatePremium(prompt: string) {
+    console.log('[generatePremium] iniciando, prompt:', prompt.slice(0, 60))
+    console.log('[generatePremium] onPremiumGenerated disponível?', typeof onPremiumGenerated)
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
@@ -407,6 +409,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         console.error('Erro ao salvar:', e)
       }
 
+      console.log('[generatePremium] chamando onPremiumGenerated com', slides.length, 'slides')
       onPremiumGenerated?.(slides, generatedCaption)
       onGenerated?.()
       setMessages(prev => [...prev, {
@@ -515,17 +518,21 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         lockedBase ?? undefined
       )
 
+      console.log('[handleSend] agentChat response:', JSON.stringify(response))
+
       if (response.ready && response.prompt) {
         if (response.mode === 'carousel') {
           onGenerating?.()
           await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
         } else if (response.engine === 'premium') {
+          console.log('[handleSend] engine=premium → mostrando confirmação')
           setPendingPremium({ prompt: response.prompt, format: response.format })
           setMessages(prev => [...prev, {
             role: 'agent',
             content: 'Esse post usa GPT Image 2 — imagem fotorrealista de alta qualidade. Custa 8 pulses (padrão custa 4). Confirmar?',
           }])
         } else {
+          console.log('[handleSend] engine=standard (ou ausente):', response.engine, '→ generate() FAL.ai')
           onGenerating?.()
           setMessages(prev => [...prev, { role: 'agent', content: 'Perfeito! Gerando seu post...' }])
           await generate(response.prompt, response.format)

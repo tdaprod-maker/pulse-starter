@@ -211,6 +211,7 @@ export function EditorPage() {
               setCarouselTemplateId(templateId)
             }}
             onPremiumGenerated={(slides, caption) => {
+              console.log('[EditorPage] onPremiumGenerated chamado, slides:', slides.length)
               setPremiumSlides(slides)
               setPremiumCaption(caption)
             }}
