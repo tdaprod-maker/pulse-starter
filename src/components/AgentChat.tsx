@@ -323,7 +323,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       ].filter(Boolean).join('. ')
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 25000)
+      const timeoutId = setTimeout(() => controller.abort(), 55000)
 
       let rawImage: string
       try {
@@ -345,7 +345,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       } catch (e: any) {
         clearTimeout(timeoutId)
         if (e.name === 'AbortError') {
-          throw new Error('Tempo limite atingido (25s). GPT Image 2 pode demorar mais do que o plano atual permite — tente novamente ou acesse Posts Premium.')
+          throw new Error('Tempo limite atingido (55s). GPT Image 2 pode demorar mais do que o plano atual permite — tente novamente ou acesse Posts Premium.')
         }
         throw e
       }
