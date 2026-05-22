@@ -6,7 +6,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 ## Modelo de Negócio
 - White-label: ~R$2.500–4.000 setup + retainer mensal
 - SaaS: R$47/mês com 50-100 pulses incluídos + compra de pulses adicionais
-- Pulses: post FAL.ai = 4 pulses, slide carrossel = 2 pulses, post Premium = custo maior
+- Pulses: post FAL.ai = 4 pulses, slide carrossel = 2 pulses, post Premium = 8 pulses
 - Margem de API é saudável — custo real por geração é centavos
 
 ## Visão do Produto
@@ -27,25 +27,25 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 
 ## Stack
 - Frontend: React + TypeScript + Vite
-- Backend: Vercel API Routes (Node.js)
+- Backend: Vercel API Routes (Node.js) — `maxDuration: 60` em rotas de geração de imagem
 - Banco: Supabase (auth + storage + postgres)
 - IA Imagem: FAL.ai FLUX (posts editáveis) + GPT Image 2 (posts premium)
-- IA Texto: Claude Haiku 4.5 — migrar do Gemini (mais estável, mesma ordem de custo)
-- Deploy: Vercel (plano free — limite de 10s por função serverless)
+- IA Texto: Claude Haiku 4.5 via Vercel API Routes — migração do Gemini concluída para as funções principais
+- Deploy: Vercel (plano free — `maxDuration: 60` adicionado em `/api/generate-premium.js`)
 
 ## Roadmap por Semanas
 
-### Semana 1 — Fundação
-1. **Trocar Gemini por Claude Haiku 4.5** — backbone do agente, mais estável
-2. **Unificar telas** — remover abas Carrossel e Posts Premium como módulos separados, tudo dentro do Editor
-3. **Estrutura PWA básica** — manifest.json, service worker, ícones
+### Semana 1 — Fundação ✅ Concluída
+1. **Trocar Gemini por Claude Haiku 4.5** — agentChat, generatePostContent, generateCarouselContent migrados
+2. **Unificar telas** — abas Carrossel e Posts Premium removidas do menu; tudo dentro do Editor
+3. **Estrutura PWA básica** — manifest.webmanifest, service worker (vite-plugin-pwa), ícones
 
-### Semana 2 — O Agente Designer
-4. **Agente mais inteligente** — orienta boas práticas antes de gerar, não só executa
-5. **Agente decide a engine** — FAL.ai vs GPT Image 2 baseado no briefing, usuário só vê o custo em pulses
-6. **Fluxo completo** — post → legenda → publicação sem trocar de tela
+### Semana 2 — O Agente Designer ✅ Concluída
+4. **Agente mais inteligente** — orienta boas práticas antes de gerar (LinkedIn promocional, Stories com texto, carrossel grande)
+5. **Agente decide a engine** — FAL.ai vs GPT Image 2 baseado no briefing; usuário vê custo e confirma antes de gerar
+6. **PremiumResultViewer** — resultado premium exibido diretamente como imagem (não via Konva); download, legenda editável, publicação LinkedIn/Instagram
 
-### Semana 3 — Mobile e Polimento
+### Semana 3 — Mobile e Polimento 🔜 Próxima
 7. **Layout responsivo** — Editor adaptado para mobile
 8. **Touch no canvas Konva** — suporte a gestos touch
 9. **Painel simplificado mobile** — edição de texto e cores sem arrastar elementos
@@ -65,34 +65,51 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Brand kit automático (logo, cores, tom de voz)
 - Publicação LinkedIn (OAuth conectado)
 - Download PNG e ZIP
-- Sistema de pulses (débito implementado no Premium)
+- Sistema de pulses (débito implementado no fluxo Premium — 8 pulses)
 - Templates organizados por categoria no Sidebar
+- PWA básico instalável (manifest + service worker + ícones)
+- Agente decide engine (standard FAL.ai vs premium GPT Image 2)
+- PremiumResultViewer: imagem fotorrealista em formato único (formato definido pelo agente), download, legenda editável, publicação
 
-### Migração Gemini → Claude Haiku 4.5 (em andamento)
+### Migração Gemini → Claude Haiku 4.5
 | Função | Rota Vercel | Status |
 |---|---|---|
 | `agentChat` | `/api/agent-chat.js` | ✅ Migrado |
 | `generatePostContent` | `/api/generate-post.js` | ✅ Migrado |
-| `generateCarouselContent` | `/api/generate-carousel.js` | ⏳ Próxima sessão |
+| `generateCarouselContent` | `/api/generate-carousel.js` | ✅ Migrado |
 | `turboPrompt` / `turboPromptEditor` | — | 🔜 Pendente |
-| `generatePremiumCaption` | — | 🔜 Pendente |
+| `generatePremiumCaption` | — | 🔜 Pendente (ainda usa Gemini direto do frontend) |
 | `breakCarouselIntoSlides` | — | 🔜 Pendente |
 | `analyzeVisualReferences` | — | 🔜 Pendente (multimodal) |
 
-**Padrão adotado:** cada função vira uma Vercel API Route em `/api/`. A chave `ANTHROPIC_API_KEY` fica exclusivamente no servidor. O frontend chama `fetch('/api/...')`. O gemini.ts vira wrapper de thin clients.
+**Padrão adotado:** cada função vira uma Vercel API Route em `/api/`. A chave `ANTHROPIC_API_KEY` fica exclusivamente no servidor — nunca no bundle do frontend. O `gemini.ts` vira thin wrapper de clientes HTTP.
 
-**Próxima sessão:**
-1. Criar `/api/generate-carousel.js` com `buildCarouselPrompt` portado + Claude Haiku
-2. Atualizar `generateCarouselContent` em gemini.ts para thin wrapper
-3. Testar fluxo completo: agentChat → generatePostContent → generateCarouselContent
+**Segurança:** `ANTHROPIC_API_KEY` configurada como variável de ambiente no Vercel (sem prefixo `VITE_`). `OPENAI_API_KEY` idem.
+
+### Decisão de Engine (agent-chat.js)
+O agente retorna `engine: "standard" | "premium"` no JSON:
+- `"premium"` → produto físico, prato de comida, imóvel/ambiente, atleta em ação, produto de beleza, pessoa real em situação realista
+- `"standard"` → todo o resto: tipográfico, dados, institucional, citações, vagas
+- Carrossel → SEMPRE `"standard"`
+
+Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses vs 4 padrão) e dois botões: "Confirmar premium" e "Usar padrão".
+
+### Fluxo Premium (GPT Image 2)
+1. Agente retorna `engine: "premium"` com `prompt` contendo descrição visual completa (`SUJEITO: [aparência, ambiente, ação]. OBJETIVO: [tema e rede].`)
+2. Usuário confirma (8 pulses)
+3. `generatePremium()` → `/api/generate-premium.js` com `maxDuration: 60`; AbortController no cliente com timeout de 55s
+4. Formato determinado pelo agente (`format: "9x16"` | `"4x5"` | `"1x1"` | `"16x9"`) — API usa o size correto do GPT Image 2, crop para o ratio exato
+5. Logo do brand kit sobreposto via canvas
+6. `PremiumResultViewer` exibe o slide único com card maior, legenda editável, botões de download e publicação
 
 ### O que está pendente
-- Agente confundindo post/carrossel ocasionalmente
+- **Logo posicionável no PremiumResultViewer** — usuário pode mover/redimensionar o logo overlay
+- **Débito de pulses no fluxo FAL.ai do Editor** — verificar se o debitToken está sendo chamado corretamente no fluxo standard (AgentChat → generate())
+- **Layout mobile (Semana 3)** — Editor responsivo, touch no canvas, painel simplificado
 - Instagram pendente (aceitar convite Testador para agente17ia e tdaprod)
-- Débito de pulses no Editor Konva (verificar)
-- Logs de debug do agentChat para remover após estabilização
-- CarouselPage (aba antiga) para remover
-- Posts Premium sem saldo OpenAI para testar
+- Logs de debug temporários no AgentChat para remover após estabilização
+- `generatePremiumCaption` ainda chama Gemini direto do frontend — migrar para API Route
+- `CarouselPage.tsx` e `PremiumPage.tsx` antigas — remover do projeto
 
 ## Templates
 Mantém os existentes para o MVP. Não investir em novos agora — energia melhor gasta no agente. Com GPT Image 2, templates se tornam menos relevantes no longo prazo.
@@ -105,27 +122,29 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 **Categorias atuais:** Sport, Food, Business, Health, Construction, Realty, Fashion, Tech, Home & Deco, Outros
 
 ## Arquivos Principais
-- `src/components/AgentChat.tsx` — agente conversacional, recolhível após geração
+- `src/components/AgentChat.tsx` — agente conversacional; decide engine; fluxo premium e standard
+- `src/components/PremiumResultViewer.tsx` — exibe resultado do GPT Image 2 (fora do Konva)
 - `src/components/CarouselViewer.tsx` — carrossel integrado ao Editor
-- `src/services/gemini.ts` — migrar para claude.ts
-- `src/components/PropertiesPanel.tsx` — edição inline de elementos
-- `src/components/ExportPanel.tsx` — botão Baixar
-- `src/pages/EditorPage.tsx` — tela principal
-- `src/pages/CarouselPage.tsx` — remover
-- `src/pages/PremiumPage.tsx` — integrar ao Editor
+- `src/services/gemini.ts` — thin wrappers HTTP para as API Routes (renomear para claude.ts futuramente)
+- `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas
+- `api/agent-chat.js` — prompt do agente + Claude Haiku; decide engine e formato
+- `api/generate-post.js` — seleção de template + geração de campos; Claude Haiku
+- `api/generate-carousel.js` — geração de slides de carrossel; Claude Haiku
+- `api/generate-premium.js` — chama GPT Image 2; `maxDuration: 60`
 - `src/templates/index.ts` — registry de templates
 
 ## Custos de API (referência)
 - Claude Haiku 4.5: $1/$5 por milhão de tokens input/output
 - FAL.ai FLUX: ~$0.003 por imagem
-- GPT Image 2: ~$0.04 por imagem
+- GPT Image 2: ~$0.04 por imagem (medium quality)
 - Custo total por geração FAL.ai: ~R$0,03
 - Custo total por geração Premium: ~R$0,23
 - Margem no plano R$47/100 pulses: saudável em ambos os casos
 
-## PWA — Requisitos
-- manifest.json com nome, ícone, cores da marca
-- Service Worker para cache básico
-- Layout responsivo (mobile-first no Editor)
-- Touch support no canvas Konva
-- Painel de edição simplificado para mobile
+## PWA — Estado Atual
+- ✅ manifest.webmanifest com nome, ícone, cores da marca
+- ✅ Service Worker (vite-plugin-pwa v1.3.0, generateSW mode)
+- ✅ Ícones: pwa-512x512.png, pwa-192x192.png, apple-touch-icon.png, favicon-32x32.png
+- 🔜 Layout responsivo (mobile-first no Editor) — Semana 3
+- 🔜 Touch support no canvas Konva — Semana 3
+- 🔜 Painel de edição simplificado para mobile — Semana 3
