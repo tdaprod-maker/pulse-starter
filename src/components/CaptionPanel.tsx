@@ -29,27 +29,18 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
     setLinkedinName(localStorage.getItem('linkedin_name') ?? '')
   }, [])
 
-  // Captura token do LinkedIn após callback OAuth (parâmetros na URL)
+  // Recebe token do popup OAuth via postMessage
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get('linkedin_token')
-    const sub = params.get('linkedin_sub')
-    const name = params.get('linkedin_name')
-    const error = params.get('linkedin_error')
-
-    if (token && sub) {
-      localStorage.setItem('linkedin_token', token)
-      localStorage.setItem('linkedin_sub', sub)
-      localStorage.setItem('linkedin_name', name ?? '')
-      setLinkedinToken(token)
-      setLinkedinSub(sub)
-      setLinkedinName(name ?? '')
-      // Limpa os parâmetros da URL
-      window.history.replaceState({}, '', window.location.pathname)
+    function handleMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.type === 'linkedin_auth') {
+        setLinkedinToken(e.data.linkedin_token)
+        setLinkedinSub(e.data.linkedin_sub)
+        setLinkedinName(e.data.linkedin_name ?? '')
+      }
     }
-    if (error) {
-      window.history.replaceState({}, '', window.location.pathname)
-    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
   }, [])
 
   function handleConnectLinkedIn() {

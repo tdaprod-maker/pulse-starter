@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   const { code, error } = req.query
 
   if (error || !code) {
-    return res.redirect('https://pulse-ashy-eight.vercel.app?linkedin_error=true')
+    return res.redirect('https://pulse-ashy-eight.vercel.app/auth/linkedin/done?linkedin_error=true')
   }
 
   const clientId = process.env.LINKEDIN_CLIENT_ID
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     const tokenData = await tokenRes.json()
 
     if (!tokenData.access_token) {
-      return res.redirect('https://pulse-ashy-eight.vercel.app?linkedin_error=true')
+      return res.redirect('https://pulse-ashy-eight.vercel.app/auth/linkedin/done?linkedin_error=true')
     }
 
     // Busca o ID do usuário no LinkedIn
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       linkedin_name: profile.name ?? '',
     })
 
-    res.redirect(`https://pulse-ashy-eight.vercel.app?${params.toString()}`)
+    res.redirect(`https://pulse-ashy-eight.vercel.app/auth/linkedin/done?${params.toString()}`)
 
   } catch (err) {
     console.error('[linkedin-callback] erro:', err)

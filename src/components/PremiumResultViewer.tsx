@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { PremiumSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 
@@ -17,9 +17,22 @@ const ASPECT_STYLES: Record<string, React.CSSProperties> = {
 export function PremiumResultViewer({ slides, caption: initialCaption, onClose }: Props) {
   const [caption, setCaption] = useState(initialCaption)
   const [captionTab, setCaptionTab] = useState<'instagram' | 'linkedin'>('instagram')
-  const [linkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
-  const [linkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
-  const [linkedinName] = useState(localStorage.getItem('linkedin_name') ?? '')
+  const [linkedinToken, setLinkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
+  const [linkedinSub, setLinkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
+  const [linkedinName, setLinkedinName] = useState(localStorage.getItem('linkedin_name') ?? '')
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.type === 'linkedin_auth') {
+        setLinkedinToken(e.data.linkedin_token)
+        setLinkedinSub(e.data.linkedin_sub)
+        setLinkedinName(e.data.linkedin_name ?? '')
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
   const [publishingLI, setPublishingLI] = useState(false)
   const [liStatus, setLiStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [publishingIG, setPublishingIG] = useState(false)

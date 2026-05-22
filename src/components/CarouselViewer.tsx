@@ -42,8 +42,20 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
   const [publishingIG, setPublishingIG] = useState(false)
   const [liStatus, setLiStatus] = useState<'idle'|'success'|'error'>('idle')
   const [igStatus, setIgStatus] = useState<'idle'|'success'|'error'>('idle')
-  const [linkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
-  const [linkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
+  const [linkedinToken, setLinkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
+  const [linkedinSub, setLinkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.type === 'linkedin_auth') {
+        setLinkedinToken(e.data.linkedin_token)
+        setLinkedinSub(e.data.linkedin_sub)
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
   const [ready, setReady] = useState(false)
   const stageRefs = useRef<Record<number, Konva.Stage | null>>({})
   const { theme } = useTheme()
