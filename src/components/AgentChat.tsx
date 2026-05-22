@@ -335,11 +335,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       let rawImage: string
       try {
-        const fullPrompt = `Create a professional social media post. Content: ${prompt}. ${fmt.orientation} format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. No text or elements near edges. No borders or frames. Background only in outer areas.`
         const premRes = await fetch('/api/generate-premium', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: fullPrompt, slideIndex: 1, totalSlides: 1, styleContext, size: fmt.size }),
+          body: JSON.stringify({ prompt, slideIndex: 1, totalSlides: 1, styleContext, size: fmt.size }),
           signal: controller.signal,
         })
         clearTimeout(timeoutId)

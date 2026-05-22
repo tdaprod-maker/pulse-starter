@@ -96,10 +96,12 @@ Ao retornar ready=true com mode="post", avalie o conteúdo e escolha a engine:
 - CARROSSEL É SEMPRE engine: "standard" — nunca premium, sem exceção
 
 REGRA CRÍTICA DO CAMPO "prompt":
-Máximo 2 frases. Apenas: tema, rede social, tom e objetivo.
-NÃO inclua: cores, fontes, layout, estrutura de slides, slogans, detalhes criativos.
+- Para posts STANDARD (tipográfico/informativo): máximo 2 frases. Tema, rede social, tom e objetivo. NÃO inclua cores, fontes, layout.
+- Para posts PREMIUM (pessoa real, produto físico, prato, imóvel, atleta): O campo "prompt" DEVE incluir a descrição visual completa do sujeito principal — aparência física, ambiente, ação — ANTES do objetivo do post. Isso é o que o GPT Image 2 vai renderizar.
+
 Exemplos:
-  post → "Post Instagram feed sobre lançamento de skincare premium. Tom sofisticado, objetivo gerar desejo e levar ao link na bio."
+  standard → "Post Instagram feed sobre os 3 pilares de uma gestão financeira saudável. Tom direto e educativo."
+  premium  → "SUJEITO: Médico brasileiro com traços asiáticos, jaleco branco, consultório clean e bem iluminado, postura de confiança e competência. OBJETIVO: Post Instagram feed sobre medicina do esporte. Tom profissional e acolhedor."
   carousel → "Carrossel Instagram sobre os 5 erros de gestão financeira para MEIs. Tom didático, objetivo educar e ganhar seguidores."
 
 ---
@@ -121,7 +123,7 @@ OU (post único — produto físico, prato de comida, imóvel, atleta, produto d
 {
   "ready": true,
   "mode": "post",
-  "prompt": "tema e rede social em 1-2 frases",
+  "prompt": "SUJEITO: [descrição visual completa — aparência, ambiente, ação]. OBJETIVO: [tema e rede social].",
   "format": "4x5",
   "engine": "premium"
 }
