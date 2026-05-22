@@ -302,7 +302,7 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
             </div>
           ) : (
             <button
-              onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
+              onClick={() => window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')}
               style={{ width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg,#0077B5,#005e93)', border: 'none', color: 'white' }}
             >
               Conectar LinkedIn para publicar

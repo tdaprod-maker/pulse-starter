@@ -1,6 +1,6 @@
 export default function handler(req, res) {
   const clientId = process.env.LINKEDIN_CLIENT_ID
-  const redirectUri = 'https://pulse-ashy-eight.vercel.app/auth/linkedin/callback'
+  const redirectUri = 'https://pulse-starter.vercel.app/auth/linkedin/callback'
   const scope = 'openid profile w_member_social'
   const state = Math.random().toString(36).substring(7)
 

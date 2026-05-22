@@ -450,6 +450,24 @@ export function CarouselPage() {
   }, [])
 
   useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.type !== 'linkedin_auth') return
+      const { linkedin_token, linkedin_sub, linkedin_name } = e.data
+      if (linkedin_token && linkedin_sub) {
+        localStorage.setItem('linkedin_token', linkedin_token)
+        localStorage.setItem('linkedin_sub', linkedin_sub)
+        localStorage.setItem('linkedin_name', linkedin_name ?? '')
+        setLinkedinToken(linkedin_token)
+        setLinkedinSub(linkedin_sub)
+        setLinkedinName(linkedin_name ?? '')
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  useEffect(() => {
     const restore = searchParams.get('restore')
     if (!restore) return
     try {
@@ -966,7 +984,7 @@ export function CarouselPage() {
               </button>
             ) : (
               <button
-                onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
+                onClick={() => window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')}
                 style={{
                   fontSize: '12px', padding: '5px 14px', borderRadius: '7px',
                   cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
@@ -1405,7 +1423,7 @@ export function CarouselPage() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
+                      onClick={() => window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')}
                       style={{
                         width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px',
                         cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,

@@ -35,6 +35,22 @@ export function CarouselLibraryPage() {
     setLinkedinSub(localStorage.getItem('linkedin_sub') ?? '')
   }, [])
 
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.type !== 'linkedin_auth') return
+      const { linkedin_token, linkedin_sub } = e.data
+      if (linkedin_token && linkedin_sub) {
+        localStorage.setItem('linkedin_token', linkedin_token)
+        localStorage.setItem('linkedin_sub', linkedin_sub)
+        setLinkedinToken(linkedin_token)
+        setLinkedinSub(linkedin_sub)
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
   async function loadCarousels() {
     setLoading(true)
     try {
@@ -243,7 +259,7 @@ export function CarouselLibraryPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')}
+                        onClick={() => window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')}
                         style={{
                           fontSize: '11px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer',
                           fontFamily: 'inherit', fontWeight: 600,

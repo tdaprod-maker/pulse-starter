@@ -36,6 +36,24 @@ export function PremiumPage() {
   const [linkedinSub, setLinkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
   const [linkedinName, setLinkedinName] = useState(localStorage.getItem('linkedin_name') ?? '')
   const [publishingIG, setPublishingIG] = useState(false)
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.type !== 'linkedin_auth') return
+      const { linkedin_token, linkedin_sub, linkedin_name } = e.data
+      if (linkedin_token && linkedin_sub) {
+        localStorage.setItem('linkedin_token', linkedin_token)
+        localStorage.setItem('linkedin_sub', linkedin_sub)
+        localStorage.setItem('linkedin_name', linkedin_name ?? '')
+        setLinkedinToken(linkedin_token)
+        setLinkedinSub(linkedin_sub)
+        setLinkedinName(linkedin_name ?? '')
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
   const [review, setReview] = useState<PostReview | null>(null)
   const [reviewing, setReviewing] = useState(false)
   const [publishingLI, setPublishingLI] = useState(false)
@@ -675,7 +693,7 @@ ${cap.hashtags}` : '',
                 </button>
               </div>
             ) : (
-              <button onClick={() => window.open('/api/linkedin-auth', '_blank', 'width=600,height=700')} style={{ width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg,#0077B5,#005e93)', border: 'none', color: 'white' }}>
+              <button onClick={() => window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')} style={{ width: '100%', fontSize: '12px', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg,#0077B5,#005e93)', border: 'none', color: 'white' }}>
                 Conectar LinkedIn
               </button>
             )}
