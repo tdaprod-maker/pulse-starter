@@ -120,7 +120,7 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
         </button>
       </div>
 
-      {/* Image grid — 3 formats side by side */}
+      {/* Image grid — single format or multiple side by side */}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
         {slides.map((slide, i) => (
           <div
@@ -128,7 +128,9 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
             style={{
               position: 'relative', borderRadius: '10px', overflow: 'hidden',
               border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-              flex: '1 1 140px', minWidth: '120px', maxWidth: '260px',
+              flex: slides.length === 1 ? '0 0 auto' : '1 1 140px',
+              minWidth: slides.length === 1 ? 'min(320px, 100%)' : '120px',
+              maxWidth: slides.length === 1 ? '380px' : '260px',
             }}
           >
             <div style={{
@@ -163,17 +165,19 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
         ))}
       </div>
 
-      {/* Download all */}
-      <button
-        onClick={handleDownloadAll}
-        style={{
-          alignSelf: 'flex-start', padding: '8px 16px', borderRadius: '8px',
-          border: '1px solid var(--border)', background: 'var(--bg-surface)',
-          color: 'var(--text-secondary)', fontSize: '12px', fontFamily: 'inherit', cursor: 'pointer',
-        }}
-      >
-        Baixar tudo ({slides.length} formatos)
-      </button>
+      {/* Download — só mostra "Baixar tudo" se houver mais de 1 formato */}
+      {slides.length > 1 && (
+        <button
+          onClick={handleDownloadAll}
+          style={{
+            alignSelf: 'flex-start', padding: '8px 16px', borderRadius: '8px',
+            border: '1px solid var(--border)', background: 'var(--bg-surface)',
+            color: 'var(--text-secondary)', fontSize: '12px', fontFamily: 'inherit', cursor: 'pointer',
+          }}
+        >
+          Baixar tudo ({slides.length} formatos)
+        </button>
+      )}
 
       {/* Caption panel */}
       {caption && (

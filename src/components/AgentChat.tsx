@@ -292,9 +292,17 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     })
   }
 
-  async function generatePremium(prompt: string) {
+  async function generatePremium(prompt: string, format?: string) {
     console.log('[generatePremium] iniciando, prompt:', prompt.slice(0, 60))
     console.log('[generatePremium] onPremiumGenerated disponível?', typeof onPremiumGenerated)
+
+    const FORMAT_MAP: Record<string, { size: string; ratio: string; label: string; orientation: string }> = {
+      '9x16': { size: '1024x1536', ratio: '9/16', label: '9:16', orientation: 'vertical (9:16, Stories/Reels)' },
+      '4x5':  { size: '1024x1536', ratio: '4/5',  label: '4:5',  orientation: 'portrait (4:5, Feed)' },
+      '1x1':  { size: '1024x1024', ratio: '1/1',  label: '1:1',  orientation: 'square (1:1, Feed)' },
+      '16x9': { size: '1536x1024', ratio: '16/9', label: '16:9', orientation: 'horizontal (16:9)' },
+    }
+    const fmt = FORMAT_MAP[format ?? ''] ?? FORMAT_MAP['9x16']
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
@@ -327,11 +335,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       let rawImage: string
       try {
-        const fullPrompt = `Create a professional social media post. Content: ${prompt}. Vertical format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. No text or elements near edges. No borders or frames. Background only in outer areas.`
+        const fullPrompt = `Create a professional social media post. Content: ${prompt}. ${fmt.orientation} format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. No text or elements near edges. No borders or frames. Background only in outer areas.`
         const premRes = await fetch('/api/generate-premium', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: fullPrompt, slideIndex: 1, totalSlides: 1, styleContext, size: '1024x1536' }),
+          body: JSON.stringify({ prompt: fullPrompt, slideIndex: 1, totalSlides: 1, styleContext, size: fmt.size }),
           signal: controller.signal,
         })
         clearTimeout(timeoutId)
@@ -350,17 +358,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         throw e
       }
 
-      // Gera 3 variantes por crop do 9:16 original
-      const [img916, img45, img11] = await Promise.all([
-        cropImageToRatio(rawImage, '9/16'),
-        cropImageToRatio(rawImage, '4/5'),
-        cropImageToRatio(rawImage, '1/1'),
-      ])
+      // Crop para o formato especificado pelo agente
+      const croppedImage = await cropImageToRatio(rawImage, fmt.ratio)
 
       let slides: PremiumSlide[] = [
-        { image: img916, label: '9:16' },
-        { image: img45, label: '4:5' },
-        { image: img11, label: '1:1' },
+        { image: croppedImage, label: fmt.label },
       ]
 
       // Aplica logo do brand kit
@@ -672,7 +674,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 const pending = pendingPremium
                 setPendingPremium(null)
                 onGenerating?.()
-                generatePremium(pending.prompt)
+                generatePremium(pending.prompt, pending.format)
               }}
               style={{
                 padding: '7px 14px', borderRadius: '8px', border: 'none',
