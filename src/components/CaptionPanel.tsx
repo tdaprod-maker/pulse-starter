@@ -44,7 +44,9 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
   }, [])
 
   function handleConnectLinkedIn() {
-    window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')
+    console.log('[LinkedIn] abrindo popup linkedin')
+    const popup = window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')
+    console.log('[LinkedIn] resultado window.open:', popup, 'closed:', popup?.closed, 'opener defined:', !!popup?.opener)
   }
 
   function handleDisconnectLinkedIn() {
