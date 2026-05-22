@@ -461,6 +461,11 @@ export interface AgentMessage {
   content: string
 }
 
+export interface PremiumSlide {
+  image: string
+  label: string
+}
+
 export interface AgentResponse {
   ready: boolean
   message?: string

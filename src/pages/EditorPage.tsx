@@ -11,6 +11,8 @@ import { PropertiesPanel } from '../components/PropertiesPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { AgentChat } from '../components/AgentChat'
 import { CarouselViewer } from '../components/CarouselViewer'
+import { PremiumResultViewer } from '../components/PremiumResultViewer'
+import type { PremiumSlide } from '../services/gemini'
 import { CaptionPanel } from '../components/CaptionPanel'
 import { PostReviewer } from '../components/PostReviewer'
 import { TextEditor } from '../components/TextEditor'
@@ -33,6 +35,8 @@ export function EditorPage() {
   const [carouselTemplateId, setCarouselTemplateId] = useState<string | undefined>(undefined)
   const [carouselCurrentSlide, setCarouselCurrentSlide] = useState(0)
   const [carouselSelectedElement, setCarouselSelectedElement] = useState<string | null>(null)
+  const [premiumSlides, setPremiumSlides] = useState<PremiumSlide[] | null>(null)
+  const [premiumCaption, setPremiumCaption] = useState<{ instagram: string; linkedin: string; hashtags: string } | null>(null)
   const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
 
   const {
@@ -200,11 +204,15 @@ export function EditorPage() {
           <AgentChat
             onGenerating={() => {}}
             onGenerated={() => {}}
-            onReset={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined) }}
+            onReset={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setPremiumSlides(null); setPremiumCaption(null) }}
             onCarouselGenerated={(slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string) => {
               setCarouselSlides(slides)
               setCarouselCaption(caption)
               setCarouselTemplateId(templateId)
+            }}
+            onPremiumGenerated={(slides, caption) => {
+              setPremiumSlides(slides)
+              setPremiumCaption(caption)
             }}
           />
         </div>
@@ -222,7 +230,13 @@ export function EditorPage() {
         padding: '24px',
         paddingTop: '16px',
       }}>
-        {carouselSlides ? (
+        {premiumSlides ? (
+          <PremiumResultViewer
+            slides={premiumSlides}
+            caption={premiumCaption}
+            onClose={() => { setPremiumSlides(null); setPremiumCaption(null) }}
+          />
+        ) : carouselSlides ? (
           <CarouselViewer
             slides={carouselSlides}
             caption={carouselCaption}

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
-import { agentChat, generatePostContent, generateCarouselContent, type AgentMessage, type CarouselSlide } from '../services/gemini'
+import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type CarouselSlide, type PremiumSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
@@ -21,7 +21,13 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated }: { onGenerating?: () => void; onGenerated?: () => void; onReset?: () => void; onCarouselGenerated?: (slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string) => void } = {}) {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated }: {
+  onGenerating?: () => void
+  onGenerated?: () => void
+  onReset?: () => void
+  onCarouselGenerated?: (slides: (CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string) => void
+  onPremiumGenerated?: (slides: PremiumSlide[], caption: { instagram: string; linkedin: string; hashtags: string } | null) => void
+} = {}) {
   const [messages, setMessages] = useState<AgentMessage[]>([
     { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
   ])
@@ -231,7 +237,62 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
-  async function generatePremium(prompt: string, format?: string) {
+  function cropImageToRatio(imageUrl: string, ratio: string): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image()
+      img.onload = () => {
+        const [rw, rh] = ratio.split('/').map(Number)
+        const targetRatio = rw / rh
+        const srcRatio = img.width / img.height
+        let sx = 0, sy = 0, sw = img.width, sh = img.height
+        if (srcRatio > targetRatio) {
+          sw = Math.round(img.height * targetRatio)
+          sx = Math.round((img.width - sw) / 2)
+        } else {
+          sh = Math.round(img.width / targetRatio)
+          sy = Math.round((img.height - sh) / 2)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = rw * 512
+        canvas.height = rh * 512
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/png'))
+      }
+      img.src = imageUrl
+    })
+  }
+
+  function overlayLogoOnImage(imageBase64: string, logoUrl: string): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        const logo = new Image()
+        logo.crossOrigin = 'anonymous'
+        logo.onload = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')!
+          ctx.drawImage(img, 0, 0)
+          const margin = img.width * 0.04
+          const maxLogoW = img.width * 0.20
+          const ratio = logo.naturalWidth / logo.naturalHeight
+          const logoW = Math.min(maxLogoW, logo.naturalWidth)
+          const logoH = logoW / ratio
+          ctx.drawImage(logo, img.width - logoW - margin, img.height - logoH - margin, logoW, logoH)
+          resolve(canvas.toDataURL('image/png'))
+        }
+        logo.onerror = () => resolve(imageBase64)
+        logo.src = logoUrl
+      }
+      img.onerror = () => resolve(imageBase64)
+      img.src = imageBase64
+    })
+  }
+
+  async function generatePremium(prompt: string) {
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
@@ -251,111 +312,113 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         return
       }
 
-      const activeTemplateBase = format
-        ? null
-        : useStore.getState().activeTemplateId?.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '') ?? null
+      const styleContext = [
+        brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
+        brandCtx?.tone ? `Tone: ${brandCtx.tone}` : '',
+        brandCtx?.visual_style ? `Visual style: ${brandCtx.visual_style}` : '',
+        brandCtx?.brand_description ? `Brand: ${brandCtx.brand_description}` : '',
+        brandCtx?.color_primary ? `Primary color: ${brandCtx.color_primary}` : '',
+      ].filter(Boolean).join('. ')
 
-      const result = await generatePostContent(prompt, brandCtx ? {
-        businessName: brandCtx.business_name || brandCtx.brand_name,
-        segment: brandCtx.segment,
-        tone: brandCtx.tone,
-        visualStyle: brandCtx.visual_style ?? undefined,
-        brandDescription: brandCtx.brand_description ?? undefined,
-      } : undefined, activeTemplateBase ?? undefined)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 25000)
 
-      if (brandCtx?.color_primary && result.accentColor) {
-        result.accentColor = brandCtx.color_primary
-      }
-
-      await applyResult(result, activeTemplateBase ?? undefined)
-
-      if (format) {
-        const formatMap: Record<string, string> = { '1x1': '1x1', '4x5': '4x5', '9x16': '9x16', '16x9': '16x9' }
-        const suffix = formatMap[format] ?? '1x1'
-        const currentId = useStore.getState().activeTemplateId
-        if (currentId) {
-          const base = currentId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
-          const def = templateRegistry.find(d => d.id === base)
-          if (def) {
-            const target = def.getVariants(theme).find(v => v.id.endsWith('-' + suffix))
-            if (target) setActiveTemplate(target.id)
-          }
+      let rawImage: string
+      try {
+        const fullPrompt = `Create a professional social media post. Content: ${prompt}. Vertical format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. No text or elements near edges. No borders or frames. Background only in outer areas.`
+        const premRes = await fetch('/api/generate-premium', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: fullPrompt, slideIndex: 1, totalSlides: 1, styleContext, size: '1024x1536' }),
+          signal: controller.signal,
+        })
+        clearTimeout(timeoutId)
+        if (!premRes.ok) {
+          const err = await premRes.json().catch(() => ({})) as { error?: string }
+          throw new Error(err.error ?? `Erro ${premRes.status} ao gerar imagem premium`)
         }
+        const data = await premRes.json() as { image?: string }
+        if (!data.image) throw new Error('Nenhuma imagem retornada pela API')
+        rawImage = data.image
+      } catch (e: any) {
+        clearTimeout(timeoutId)
+        if (e.name === 'AbortError') {
+          throw new Error('Tempo limite atingido (25s). GPT Image 2 pode demorar mais do que o plano atual permite — tente novamente ou acesse Posts Premium.')
+        }
+        throw e
       }
 
-      if (result.imagePrompt) {
+      // Gera 3 variantes por crop do 9:16 original
+      const [img916, img45, img11] = await Promise.all([
+        cropImageToRatio(rawImage, '9/16'),
+        cropImageToRatio(rawImage, '4/5'),
+        cropImageToRatio(rawImage, '1/1'),
+      ])
+
+      let slides: PremiumSlide[] = [
+        { image: img916, label: '9:16' },
+        { image: img45, label: '4:5' },
+        { image: img11, label: '1:1' },
+      ]
+
+      // Aplica logo do brand kit
+      if (brandCtx?.logo_url) {
         try {
-          const premRes = await fetch('/api/generate-premium', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: result.imagePrompt,
-              slideIndex: 1,
-              totalSlides: 1,
-              styleContext: brandCtx?.visual_style ?? 'clean, minimal, professional',
-              size: '1024x1024',
-            }),
-          })
-          if (premRes.ok) {
-            const { image } = await premRes.json() as { image?: string }
-            if (image) {
-              const activeId = useStore.getState().activeTemplateId
-              if (activeId) {
-                setTemplateBackground(activeId, image)
-                setTemplateImagePrompt(activeId, result.imagePrompt)
-                const def = templateRegistry.find(d => activeId.startsWith(d.id))
-                def?.getVariants(theme).forEach(v => {
-                  if (v.id !== activeId) {
-                    setTemplateBackground(v.id, image)
-                    setTemplateImagePrompt(v.id, result.imagePrompt!)
-                  }
-                })
-              }
-            }
-          }
+          slides = await Promise.all(
+            slides.map(async s => ({ ...s, image: await overlayLogoOnImage(s.image, brandCtx.logo_url!) }))
+          )
         } catch (e) {
-          console.error('Erro ao gerar imagem premium:', e)
+          console.error('Erro ao aplicar logo:', e)
         }
       }
 
+      // Debita pulses
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_POST)
       if (debit.success) notifyBalanceUpdate()
 
-      if (result.caption) setCaption(result.caption)
+      // Gera legenda
+      let generatedCaption: { instagram: string; linkedin: string; hashtags: string } | null = null
+      try {
+        generatedCaption = await generatePremiumCaption(prompt, brandCtx ? {
+          businessName: brandCtx.business_name || brandCtx.brand_name,
+          segment: brandCtx.segment,
+          tone: brandCtx.tone,
+          brandDescription: brandCtx.brand_description ?? undefined,
+        } : undefined)
+      } catch (e) {
+        console.error('Erro ao gerar legenda:', e)
+      }
 
+      // Salva na biblioteca
       try {
         if (userEmail) {
           const postId = await savePost(userEmail, {
-            template_id: result.template,
-            texts: result.texts as Record<string, string>,
-            accent_color: result.accentColor ?? '',
-            image_prompt: result.imagePrompt ?? '',
+            template_id: 'premium-single',
+            texts: {},
+            accent_color: '',
+            image_prompt: JSON.stringify({ prompt, caption: generatedCaption }),
           })
-          if (postId) {
-            const activeId = useStore.getState().activeTemplateId
-            const activeTemplate = useStore.getState().templates.find(t => t.id === activeId)
-            const bgImage = activeTemplate?.backgroundImage
-            if (bgImage?.startsWith('data:')) {
-              const thumbUrl = await uploadThumbnail(postId, userEmail, bgImage)
-              if (thumbUrl) await updatePostThumbnail(postId, thumbUrl)
-            }
+          if (postId && slides[0]) {
+            const thumbUrl = await uploadThumbnail(postId, userEmail, slides[0].image)
+            if (thumbUrl) await updatePostThumbnail(postId, thumbUrl)
           }
         }
       } catch (e) {
         console.error('Erro ao salvar:', e)
       }
 
+      onPremiumGenerated?.(slides, generatedCaption)
       onGenerated?.()
       setMessages(prev => [...prev, {
         role: 'agent',
-        content: '✦ Post premium gerado! Clique nos elementos do canvas para editar.',
+        content: '✦ Post premium gerado! Faça o download ou publique diretamente.',
       }])
       setCollapsed(true)
-    } catch (e) {
+    } catch (e: any) {
       console.error('[generatePremium] erro:', e)
       setMessages(prev => [...prev, {
         role: 'agent',
-        content: 'Erro ao gerar imagem premium. Tente novamente.',
+        content: e.message || 'Erro ao gerar imagem premium. Tente novamente.',
       }])
     } finally {
       setGenerating(false)
@@ -602,7 +665,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 const pending = pendingPremium
                 setPendingPremium(null)
                 onGenerating?.()
-                generatePremium(pending.prompt, pending.format)
+                generatePremium(pending.prompt)
               }}
               style={{
                 padding: '7px 14px', borderRadius: '8px', border: 'none',
