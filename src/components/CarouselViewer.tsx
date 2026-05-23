@@ -151,17 +151,24 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
     setPublishingLI(true)
     setLiStatus('idle')
     try {
+      console.log('[LinkedIn] token:', linkedinToken.slice(0, 20) + '...', '| sub:', linkedinSub)
       const images = await getSlideImages()
       const text = caption || ''
+      console.log('[LinkedIn] payload:', { sub: linkedinSub, textLen: text.length, imageCount: images.length, imgPrefix: images[0]?.slice(0, 50) })
       const res = await fetch('/api/linkedin-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accessToken: linkedinToken, linkedinSub, text, images }),
       })
       const data = await res.json()
+      console.log('[LinkedIn] resposta:', res.status, data)
       if (data.success) { setLiStatus('success'); setTimeout(() => setLiStatus('idle'), 3000) }
       else throw new Error(data.error)
-    } catch { setLiStatus('error'); setTimeout(() => setLiStatus('idle'), 3000) }
+    } catch (err) {
+      console.error('[LinkedIn] erro completo:', err)
+      setLiStatus('error')
+      setTimeout(() => setLiStatus('idle'), 3000)
+    }
     finally { setPublishingLI(false) }
   }
 
