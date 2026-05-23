@@ -98,10 +98,9 @@ export function Topbar() {
       }}>
         {[
           { label: 'Editor', to: '/' },
-          { label: 'Biblioteca de Carrossel', to: '/carousel-library' },
-          { label: 'Biblioteca de Posts', to: '/post-library' },
+          { label: 'Biblioteca', to: '/library' },
         ].map(({ label, to }) => {
-          const active = pathname === to || (to === '/' && pathname === '/editor')
+          const active = pathname === to || (to === '/' && pathname === '/editor') || (to === '/library' && (pathname === '/post-library' || pathname === '/carousel-library'))
           return (
             <Link
               key={to}

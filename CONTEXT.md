@@ -144,17 +144,22 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - Painel de edição simplificado para mobile ausente
 - **Semana 3**
 
-### 4. Biblioteca unificada
-- Posts e carrosséis em listas separadas
-- Não há como reeditar um post salvo de volta no editor com todas as propriedades
-- **Semana 4**
+### 4. Biblioteca unificada ✅ Concluído
+- `LibraryPage.tsx` criada — posts e carrosséis ordenados cronologicamente em grid único
+- Topbar atualizado: duas abas substituídas por uma única "Biblioteca" → `/library`
+- Rotas legadas `/post-library` e `/carousel-library` preservadas para compatibilidade
 
 ### 5. Carrossel com GPT Image 2
 - Carrossel hoje usa sempre FAL.ai (engine: "standard")
 - Roadmap: permitir carrossel premium com imagens fotorrealistas por slide
 
-### 6. Melhoria visual UX desktop e mobile
-- Painel lateral direito sobrecarregado de opções
+### 6. Redesign do painel de edição direito 🔜 Pendente (sessão futura)
+- O painel direito (`PropertiesPanel`) tem UX de "anos 90": lista de campos plana, sem hierarquia visual, sem contexto, sem affordances modernas
+- Precisa de redesign completo — inspiração em ferramentas como Figma, Framer, Canva: grupos colapsáveis, controles inline, feedback visual imediato
+- Não bloqueia vendas mas impacta fortemente a percepção de qualidade do produto
+- **Escopo sugerido:** componente inteiramente reescrito em sessão dedicada
+
+### 7. Melhoria visual UX desktop e mobile
 - AgentChat ocupa muito espaço quando recolhido
 - Microinterações e feedback visual de loading poderiam ser mais polidos
 

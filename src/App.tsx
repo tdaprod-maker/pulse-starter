@@ -10,6 +10,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { CarouselPage } from './pages/CarouselPage'
 import { CarouselLibraryPage } from './pages/CarouselLibraryPage'
 import { PostLibraryPage } from './pages/PostLibraryPage'
+import { LibraryPage } from './pages/LibraryPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { AdminPage } from './pages/AdminPage'
 import { AccountPage } from './pages/AccountPage'
@@ -118,6 +119,7 @@ export default function App() {
             <Route path="/carousel" element={<CarouselPage />} />
             <Route path="/carousel-library" element={<CarouselLibraryPage />} />
             <Route path="/post-library" element={<PostLibraryPage />} />
+            <Route path="/library" element={<LibraryPage />} />
             <Route path="/brand" element={<BrandPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/onboarding" element={<OnboardingPage onComplete={() => setAppState('app')} />} />
