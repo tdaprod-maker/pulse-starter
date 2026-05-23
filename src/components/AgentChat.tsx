@@ -201,7 +201,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       try {
         if (userEmail) {
           const postId = await savePost(userEmail, {
-            template_id: result.template,
+            template_id: normalizeTemplateId(result.template),
             texts: result.texts as Record<string, string>,
             accent_color: result.accentColor ?? '',
             image_prompt: result.imagePrompt ?? '',

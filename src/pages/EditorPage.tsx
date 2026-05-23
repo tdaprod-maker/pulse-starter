@@ -81,7 +81,12 @@ export function EditorPage() {
   useEffect(() => {
     if (!pendingPost) return
 
-    const def = templateRegistry.find((d) => pendingPost.template_id === d.id || pendingPost.template_id.startsWith(d.id))
+    const rawId = pendingPost.template_id ?? ''
+    const normalizedId = rawId.toLowerCase().trim().replace(/\s+/g, '-')
+    const def = templateRegistry.find((d) =>
+      rawId === d.id || rawId.startsWith(d.id) ||
+      normalizedId === d.id || normalizedId.startsWith(d.id)
+    )
     if (!def) { setPendingPost(null); return }
 
     const variants = def.getVariants(theme)
@@ -219,7 +224,7 @@ export function EditorPage() {
         </div>
 
         {/* Área do canvas — scrollável */}
-      <main ref={mainRef} className="canvas-area" onClick={(e) => { if (e.target === mainRef.current && !activeTemplateId && !carouselSlides && !premiumSlides) { setActiveTemplate('') } }} style={{
+      <main ref={mainRef} className="canvas-area" onClick={(e) => { if (e.target === mainRef.current) setSelectedElement(null) }} style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
