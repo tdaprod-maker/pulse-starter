@@ -38,10 +38,15 @@ function buildPrompt(userInput, brand, forcedTemplate) {
   return `Você é um assistente de design de posts para redes sociais.
 Escolha o template mais adequado para a descrição e gere os textos.
 ${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
-${brand?.segment ? `Segmento: ${brand.segment}` : ''}
+${brand?.segment ? `Segmento da marca: ${brand.segment}` : ''}
 ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
 ${brand?.visualStyle ? `\nEstilo visual de referência: ${brand.visualStyle}` : ''}
 ${brand?.brandDescription ? `\nDescrição detalhada da marca: ${brand.brandDescription}` : ''}
+
+REGRA CRÍTICA — SEGMENTO DA MARCA vs TEMA DO POST:
+O segmento da marca define APENAS o tom, estilo de escrita e contexto do negócio. O template é escolhido pelo TEMA DO CONTEÚDO do post — não pelo segmento da empresa.
+Exemplos: marca tech postando sobre frango grelhado → "food-editorial". Marca tech abrindo vaga → "job-glass". Marca tech com dado de negócio → "business-statement".
+Templates tech-statement, tech-news, tech-product, tech-minimal são EXCLUSIVOS para posts cujo ASSUNTO seja tecnologia, IA, software ou inovação digital — NUNCA porque o segmento da empresa é tech.
 
 TEMPLATES DISPONÍVEIS:
 
@@ -113,7 +118,7 @@ REGRA PRIORITÁRIA — verifique nesta ordem antes de qualquer outra:
 3. Conteúdo de EMPREGO/VAGA → sempre "job-glass".
 4. Conteúdo de IMÓVEL → sempre "realty-keys" ou "realty-premium" ou "realty-launch".
 
-SELEÇÃO POR SEGMENTO:
+SELEÇÃO POR TEMA DO CONTEÚDO (ignore o segmento da marca nesta seção):
 - "food-editorial"  → OBRIGATÓRIO para restaurante premium, alta gastronomia, prato especial, menu degustação, chef, experiência gastronômica sofisticada, vinho, harmonização
 - "food-promo"      → OBRIGATÓRIO para qualquer post sobre prato, restaurante, delivery, cardápio, lanchonete, promoção de comida ou bebida, hambúrguer, pizza, sushi, açaí, sobremesa (use food-editorial se o contexto for sofisticado)
 - "sport-arena"     → OBRIGATÓRIO para esporte, time, jogo, partida, campeonato, treino, academia, competição, resultado esportivo, futebol, basquete, corrida, natação
