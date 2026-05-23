@@ -81,12 +81,15 @@ export function EditorPage() {
   useEffect(() => {
     if (!pendingPost) return
 
+    console.log('[pendingPost] objeto completo:', JSON.stringify(pendingPost, null, 2))
+
     const rawId = pendingPost.template_id ?? ''
     const normalizedId = rawId.toLowerCase().trim().replace(/\s+/g, '-')
     const def = templateRegistry.find((d) =>
       rawId === d.id || rawId.startsWith(d.id) ||
       normalizedId === d.id || normalizedId.startsWith(d.id)
     )
+    console.log('[pendingPost] template_id raw:', rawId, '| normalized:', normalizedId, '| def found:', def?.id ?? 'NENHUM')
     if (!def) { setPendingPost(null); return }
 
     const variants = def.getVariants(theme)
