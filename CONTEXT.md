@@ -74,8 +74,10 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Agente conciso: máximo 2 frases por resposta, max_tokens=400, uma pergunta por vez
 - Template respeitado quando selecionado pelo usuário (lockedTemplateId com guard server-side)
 - Seleção de template por tema do conteúdo, não pelo segmento da marca
-- Clicar fora do canvas não reinicia post gerado (corrigido)
-- Biblioteca de posts carrega o post ao clicar (corrigido via pendingPost)
+- Clicar fora do canvas não reinicia post gerado (corrigido: onClick usa `setSelectedElement(null)`)
+- Biblioteca de posts carrega o post ao clicar (corrigido via pendingPost + normalização do template_id)
+- Restauração de post da biblioteca usa `thumbnail_url` salva — sem chamar FAL.ai (sem custo de pulse)
+- Proporção restaurada corretamente da biblioteca: AgentChat salva o `activeTemplateId` completo (com sufixo, ex: `tech-statement-9x16`); EditorPage faz match exato antes de cair em `variants[0]`
 
 ### Migração Gemini → Claude Haiku 4.5
 | Função | Rota Vercel | Status |
@@ -108,6 +110,18 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 5. Logo do brand kit sobreposto via canvas
 6. `PremiumResultViewer` exibe o slide único com legenda editável, download e publicação
 
+### Fluxo de Restauração da Biblioteca (pendingPost)
+1. `PostLibraryPage.handleOpen` → `useStore.getState().setPendingPost(post)` → `navigate('/')`
+2. EditorPage monta → `pendingPost` useEffect dispara
+3. `template_id` do post é normalizado (lowercase + trim + hífens) para match no `templateRegistry`
+4. `variants = def.getVariants(theme)` — todas as variantes do template
+5. `target = variants.find(v => v.id === pendingPost.template_id) ?? variants[0]` — tenta match exato com sufixo antes de cair em 1x1
+6. Textos e accent_color aplicados em todas as variantes
+7. `thumbnail_url` salva é usada como background (sem chamar FAL.ai). Só gera nova imagem se `thumbnail_url` for nulo e `image_prompt` existir
+
+**Campos do PostRecord:** `{ id, template_id, texts, accent_color, image_prompt, thumbnail_url, created_at }`  
+**template_id salvo:** `activeTemplateId` completo com sufixo (ex: `tech-statement-9x16`)
+
 ---
 
 ## Pendentes Críticos (bloqueia vendas)
@@ -116,7 +130,7 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - Quando o usuário não seleciona um template no Sidebar antes de conversar, o agente tende a escolher sempre o mesmo template (ex: `tech-statement`) independente do tema
 - Causa: o modelo recebe o segmento da marca e ignora a regra de seleção por tema
 - Regra adicionada em `generate-post.js` (segmento ≠ tema) mas o problema persiste quando não há `lockedTemplateId`
-- **Próximo passo:** revisar as regras de seleção automática no `generate-post.js`; considerar passar o histório da conversa para que o `generate-post.js` tenha mais contexto
+- **Próximo passo:** revisar as regras de seleção automática no `generate-post.js`; considerar passar o histórico da conversa para que o `generate-post.js` tenha mais contexto
 
 ### 2. Publicação multi-tenant (LinkedIn e Instagram)
 - **Problema:** token LinkedIn salvo no `localStorage` (por browser, não por usuário) — em white-label ou multi-usuário, tokens se misturam
@@ -149,7 +163,7 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 ## Pendentes Não-Críticos (Semana 3+)
 
 - **Onboarding obrigatório** — primeiro acesso força configuração do brand kit antes de qualquer geração
-- **Logs de debug temporários** — remover `console.log` do AgentChat e agent-chat.js após estabilização
+- **Logs de debug temporários** — remover `console.log` do AgentChat, agent-chat.js e EditorPage após estabilização (logs de diagnóstico adicionados na sessão 2025-05-23 ainda estão ativos)
 - **`generatePremiumCaption`** — ainda chama Gemini direto do frontend; migrar para API Route
 - **`CarouselPage.tsx` e `PremiumPage.tsx` antigas** — remover do projeto (rotas `/carousel` e `/premium` ainda existem no App.tsx)
 - Instagram: aceitar convite Testador para agente17ia e tdaprod (acesso à API)
@@ -169,8 +183,10 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 
 **Regra de seleção:** template é escolhido pelo TEMA DO CONTEÚDO do post, não pelo segmento da empresa. Templates `tech-*` são exclusivos para posts cujo assunto seja tecnologia, IA ou digital.
 
+**Templates no registry (`src/templates/index.ts`):** tech-statement, editorial-card, tech-product, tech-minimal, food-promo, tech-news, sport-arena, business-statement, business-card, e outros. NÃO existem neste repo: hero-title, big-statement, big-number (são templates do app Pulse principal, não do pulse-starter).
+
 ## Arquivos Principais
-- `src/components/AgentChat.tsx` — agente conversacional; decide engine; fluxo premium e standard; débito de pulses nos três fluxos
+- `src/components/AgentChat.tsx` — agente conversacional; decide engine; fluxo premium e standard; débito de pulses nos três fluxos; salva `activeTemplateId` completo (com sufixo) ao persistir post
 - `src/components/PremiumResultViewer.tsx` — exibe resultado do GPT Image 2 (fora do Konva)
 - `src/components/CarouselViewer.tsx` — carrossel integrado ao Editor; publicação LinkedIn com imagens comprimidas
 - `src/components/CaptionPanel.tsx` — legenda + publicação LinkedIn/Instagram para posts Konva
@@ -179,7 +195,7 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 - `src/pages/PostLibraryPage.tsx` — biblioteca de posts; restore via setPendingPost ao clicar
 - `src/services/gemini.ts` — thin wrappers HTTP para as API Routes (renomear para claude.ts futuramente)
 - `src/services/tokens.ts` — PULSE_COSTS, debitToken, notifyBalanceUpdate
-- `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas; pendingPost restore
+- `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas; pendingPost restore com match exato de variante
 - `api/agent-chat.js` — prompt do agente + Claude Haiku; decide engine e formato; guard server-side do lockedTemplateId
 - `api/generate-post.js` — seleção de template por tema (não segmento) + geração de campos; Claude Haiku
 - `api/generate-carousel.js` — geração de slides de carrossel; Claude Haiku
@@ -189,6 +205,7 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 - `api/linkedin-post.js` — publica no LinkedIn; suporta imagem única e carrossel; usa `urn:li:person:${linkedinSub}`
 - `vercel.json` — rewrites: `/api/*`, `/auth/linkedin/callback` → servidor, `/auth/linkedin/done` → index.html, `/*` → index.html
 - `src/templates/index.ts` — registry de templates
+- `src/state/useStore.ts` — Zustand v5 + persist; `activeTemplateId` NÃO é persistido (sempre inicia null); `pendingPost` É persistido; versão 3
 
 ## Custos de API (referência)
 - Claude Haiku 4.5: $1/$5 por milhão de tokens input/output
@@ -206,3 +223,9 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 - 🔜 Layout responsivo (mobile-first no Editor) — Semana 3
 - 🔜 Touch support no canvas Konva — Semana 3
 - 🔜 Painel de edição simplificado para mobile — Semana 3
+
+## Sessão 2025-05-23 — Bugs corrigidos
+1. **Clicar fora do canvas reiniciava o post** → `onClick` no `canvas-area` trocado de `setActiveTemplate('')` para `setSelectedElement(null)`. A lógica anterior tinha condição defeituosa (`!activeTemplateId`) que deixava o bug passar.
+2. **Post da biblioteca não carregava no canvas** → `template_id` salvo raw (sem normalizar) não batia com o `templateRegistry`. Corrigido com normalização no lookup (EditorPage) e na gravação (AgentChat).
+3. **Restauração gerava nova imagem consumindo pulses** → `pendingPost` useEffect agora usa `thumbnail_url` salva; só chama `generateImage()` se `thumbnail_url` for nulo.
+4. **Proporção sempre voltava como 1x1** → AgentChat passou a salvar `activeTemplateId` completo (ex: `tech-statement-9x16`) em vez do ID base. EditorPage usa `variants.find(v => v.id === pendingPost.template_id)` antes de cair em `variants[0]`.
