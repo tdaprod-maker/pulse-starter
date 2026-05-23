@@ -96,7 +96,7 @@ export function EditorPage() {
     const variants = def.getVariants(theme)
     variants.forEach((v) => addTemplate(v))
 
-    const target = variants[0]
+    const target = variants.find(v => v.id === pendingPost.template_id) ?? variants[0]
     setActiveTemplate(target.id)
 
     // Aplica textos em todas as variantes
