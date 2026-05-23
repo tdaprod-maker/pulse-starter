@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { loadPosts } from '../services/brandKit'
 import type { PostRecord } from '../services/brandKit'
+import { useStore } from '../state/useStore'
 
 export function PostLibraryPage() {
   const [posts, setPosts] = useState<PostRecord[]>([])
@@ -58,6 +59,7 @@ export function PostLibraryPage() {
     if (post.template_id === 'premium-single' || post.template_id === 'premium-carousel') {
       setSelectedPost(selectedPost?.id === post.id ? null : post)
     } else {
+      useStore.getState().setPendingPost(post)
       navigate('/')
     }
   }

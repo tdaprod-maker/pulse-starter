@@ -219,7 +219,7 @@ export function EditorPage() {
         </div>
 
         {/* Área do canvas — scrollável */}
-      <main ref={mainRef} className="canvas-area" onClick={(e) => { if (e.target === mainRef.current) { useStore.getState().setActiveTemplate('') } }} style={{
+      <main ref={mainRef} className="canvas-area" onClick={(e) => { if (e.target === mainRef.current && !activeTemplateId && !carouselSlides && !premiumSlides) { setActiveTemplate('') } }} style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
