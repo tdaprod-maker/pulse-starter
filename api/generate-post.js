@@ -112,13 +112,19 @@ IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prom
 
 REGRAS DE SELEÇÃO DE TEMPLATE:
 
-REGRA PRIORITÁRIA — verifique nesta ordem antes de qualquer outra:
-1. Conteúdo de COMIDA/RESTAURANTE → sempre "food-editorial" ou "food-promo". NUNCA use tech-news, tech-product ou tech-statement para restaurante, prato, cardápio, delivery, gastronomia, bebida ou chef.
-2. Conteúdo de ESPORTE → sempre "sport-arena". NUNCA use tech para esporte.
-3. Conteúdo de EMPREGO/VAGA → sempre "job-glass".
-4. Conteúdo de IMÓVEL → sempre "realty-keys" ou "realty-premium" ou "realty-launch".
+REGRA PRIORITÁRIA — verifique NESTA ORDEM antes de qualquer outra regra:
+1. Conteúdo com NÚMERO/ESTATÍSTICA/META/RESULTADO → sempre "business-statement". NUNCA use tech ou editorial para dado numérico de negócio.
+2. Conteúdo de COMIDA/RESTAURANTE → sempre "food-editorial" ou "food-promo". NUNCA use tech-news, tech-product ou tech-statement para restaurante, prato, cardápio, delivery, gastronomia, bebida ou chef.
+3. Conteúdo de ESPORTE → sempre "sport-arena". NUNCA use tech para esporte.
+4. Conteúdo de EMPREGO/VAGA → sempre "job-glass".
+5. Conteúdo de IMÓVEL → sempre "realty-keys" ou "realty-premium" ou "realty-launch".
+6. Conteúdo sobre PRODUTO ou SERVIÇO de TECNOLOGIA (app, software, agente, plataforma digital) → "tech-product".
+7. Conteúdo de NOTÍCIA ou LANÇAMENTO do setor de TECNOLOGIA/IA → "tech-news".
+8. Frase filosófico-opinativa EXCLUSIVAMENTE sobre IA ou tecnologia, sem produto, sem narrativa, sem contexto de negócio → "tech-statement".
+9. Conteúdo INFORMATIVO com dicas, tutoriais, explicações, artigos ou listas → "editorial-card".
+10. Qualquer outro conteúdo sem regra específica → "hero-title" como padrão.
 
-SELEÇÃO POR TEMA DO CONTEÚDO (ignore o segmento da marca nesta seção):
+SELEÇÃO DETALHADA POR TEMA (para desempate dentro da mesma categoria):
 - "food-editorial"  → OBRIGATÓRIO para restaurante premium, alta gastronomia, prato especial, menu degustação, chef, experiência gastronômica sofisticada, vinho, harmonização
 - "food-promo"      → OBRIGATÓRIO para qualquer post sobre prato, restaurante, delivery, cardápio, lanchonete, promoção de comida ou bebida, hambúrguer, pizza, sushi, açaí, sobremesa (use food-editorial se o contexto for sofisticado)
 - "sport-arena"     → OBRIGATÓRIO para esporte, time, jogo, partida, campeonato, treino, academia, competição, resultado esportivo, futebol, basquete, corrida, natação
@@ -130,13 +136,15 @@ SELEÇÃO POR TEMA DO CONTEÚDO (ignore o segmento da marca nesta seção):
 - "home-split"      → móveis planejados, decoração, arquitetura, serviços de ambiente/lar
 - "product-arch"    → produto físico de qualquer segmento (exceto comida) em destaque com fundo limpo
 - "hero-gradient"   → posts emocionais, datas comemorativas, homenagens, celebrações com foto de fundo
-- "editorial-card"  → conteúdo informativo, artigos, dicas, textos com contexto e corpo de texto
+- "editorial-card"  → conteúdo informativo, artigos, dicas, tutoriais, textos com contexto e corpo explicativo
 - "business-statement" → OBRIGATÓRIO quando o prompt contiver números, porcentagens, estatísticas, metas, resultados ou conquistas de negócios
 - "business-card"   → apresentação de empresa, serviço profissional ou proposta de valor (não-tech)
 - "tech-news"       → EXCLUSIVO para notícias, novidades e lançamentos do setor de TECNOLOGIA, INTELIGÊNCIA ARTIFICIAL, startups tech, software, apps ou inovação digital. NUNCA use para food, saúde, esporte ou serviços gerais
-- "tech-statement"  → EXCLUSIVO para frases de impacto sobre TECNOLOGIA, IA, automação, inovação digital ou transformação digital
+- "tech-statement"  → EXCLUSIVO para opiniões filosóficas e declarações puramente sobre IA, automação ou tecnologia digital — sem produto, sem narrativa, sem contexto de negócio. Exemplos válidos: "IA vai substituir empregos", "automação é inevitável". NUNCA use para posts sobre produtividade, liderança, motivação ou negócios em geral.
 - "tech-product"    → EXCLUSIVO para apresentação de produto ou serviço de TECNOLOGIA: apps, ferramentas de IA, software, agentes, plataformas digitais
-- "tech-minimal"    → fundo sólido sem imagem, frase única impactante de até 8 palavras. Use quando pedir minimalista, clean, fundo preto, ou frase curta sem necessidade de imagem
+- "tech-minimal"    → EXCLUSIVO para: (a) pedido explícito do usuário por estilo minimalista, clean ou fundo preto/sólido, OU (b) prompt com menos de 5 palavras sem nenhum contexto adicional. NUNCA use tech-minimal como substituto de tech-statement para qualquer outro caso.
+
+REGRA DE FALLBACK: Quando nenhuma regra acima se aplicar com clareza, use "hero-title" para posts gerais e "editorial-card" para posts com desenvolvimento textual. NUNCA escolha tech-statement ou tech-minimal por eliminação ou por falta de outra opção.
 
 REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 - #3A5AFF (azul)   → tech, negócios, profissional, inovação, produtividade
