@@ -220,6 +220,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         console.error('Erro ao salvar:', e)
       }
 
+      const debit = await debitToken(userEmail, PULSE_COSTS.POST)
+      if (debit.success) notifyBalanceUpdate()
+
       onGenerated?.()
       setMessages(prev => [...prev, {
         role: 'agent',
@@ -473,6 +476,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         const imageUrl = imgResult.status === 'fulfilled' ? imgResult.value : ''
         slidesWithImages.push({ ...slide, imageUrl })
       }
+
+      const debit = await debitToken(userEmail, PULSE_COSTS.CAROUSEL_SLIDE * slideCount)
+      if (debit.success) notifyBalanceUpdate()
 
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, resolvedTemplateId)
       onGenerated?.()
