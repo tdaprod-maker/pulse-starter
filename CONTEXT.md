@@ -154,6 +154,12 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - Roadmap: permitir carrossel premium com imagens fotorrealistas por slide
 
 ### 6. Redesign do painel de edição direito 🔜 Pendente (sessão futura)
+
+### 8. Agente editor de posts existentes 🔜 Visão futura
+- Usuário abre um post da biblioteca e pede ajustes via chat (ex: "muda proporção para 9x16", "troca a cor de destaque para verde", "reescreve o headline")
+- O agente faz os ajustes sem gerar um novo post do zero — edita o post existente no canvas
+- Similar ao Magic Resize do Canva, mas conversacional
+- Requer: contexto do post carregado no prompt do agente, ações de edição mapeadas (resize, recolor, rewrite field), e integração com o Zustand store para aplicar as mudanças ao `activeTemplate`
 - O painel direito (`PropertiesPanel`) tem UX de "anos 90": lista de campos plana, sem hierarquia visual, sem contexto, sem affordances modernas
 - Precisa de redesign completo — inspiração em ferramentas como Figma, Framer, Canva: grupos colapsáveis, controles inline, feedback visual imediato
 - Não bloqueia vendas mas impacta fortemente a percepção de qualidade do produto
