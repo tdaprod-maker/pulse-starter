@@ -122,9 +122,17 @@ export function EditorPage() {
 
     setPendingPost(null)
 
-    // Rebusca imagem de fundo via image_prompt se disponível
+    // Restaura imagem de fundo: usa thumbnail_url salva (sem custo) ou, como último
+    // recurso, gera nova imagem via FAL.ai (consome pulse)
     const imagePrompt = (pendingPost as typeof pendingPost & { image_prompt?: string }).image_prompt
-    if (imagePrompt) {
+    const savedImageUrl = pendingPost.thumbnail_url
+
+    if (savedImageUrl) {
+      variants.forEach((v) => {
+        setTemplateBackground(v.id, savedImageUrl)
+        if (imagePrompt) setTemplateImagePrompt(v.id, imagePrompt)
+      })
+    } else if (imagePrompt) {
       generateImage(imagePrompt).then((url) => {
         variants.forEach((v) => {
           setTemplateBackground(v.id, url)
