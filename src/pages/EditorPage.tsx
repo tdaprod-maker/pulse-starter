@@ -216,6 +216,14 @@ export function EditorPage() {
       <Sidebar />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Boas-vindas — visível antes do primeiro post */}
+        {!activeTemplate && !premiumSlides && !carouselSlides && (
+          <div style={{ textAlign: 'center', padding: '32px 24px 0', flexShrink: 0 }}>
+            <p style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px', margin: '0 0 10px' }}>Bem-vindo ao Pulse</p>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 24px' }}>Diga o que precisa fazer ou selecione um template na barra lateral para começar.</p>
+          </div>
+        )}
+
         {/* Agente conversacional — fixo no topo */}
         <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
           <AgentChat
@@ -290,12 +298,7 @@ export function EditorPage() {
           <CaptionPanel stageRef={stageRef} template={activeTemplate} />
           <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
           </>
-        ) : (
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Bem-vindo ao Pulse</p>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Diga o que precisa fazer ou selecione um template na barra lateral para começar.</p>
-          </div>
-        )}
+        ) : null}
 
       </main>
       </div>

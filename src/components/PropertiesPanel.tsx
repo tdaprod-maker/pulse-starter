@@ -177,7 +177,7 @@ function TextFieldPanel({ el, templateId }: { el: CanvasElement; templateId: str
 
       {/* Fonte */}
       <div>
-        <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', letterSpacing: '0.06em' }}>FONTE</label>
+        <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', letterSpacing: '0.06em' }}>FONTE</label>
         <select value={fontFamily}
           onChange={(e) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { fontFamily: e.target.value }) }}
           style={{
@@ -192,7 +192,7 @@ function TextFieldPanel({ el, templateId }: { el: CanvasElement; templateId: str
       {/* Tamanho + Cor */}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <div style={{ flex: 1 }}>
-          <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', letterSpacing: '0.06em' }}>TAMANHO</label>
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', letterSpacing: '0.06em' }}>TAMANHO</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <button onClick={() => handleFontSize(fontSize - 4)}
               style={{ width: '28px', height: '28px', borderRadius: '7px', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '11px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -209,7 +209,7 @@ function TextFieldPanel({ el, templateId }: { el: CanvasElement; templateId: str
           </div>
         </div>
         <div>
-          <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', letterSpacing: '0.06em' }}>COR</label>
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', letterSpacing: '0.06em' }}>COR</label>
           <ColorSwatch color={fill}
             onChange={(hex) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { fill: hex }) }}
             title="Cor do texto"
@@ -273,7 +273,7 @@ function ShapeFieldPanel({ el, templateId }: { el: CanvasElement; templateId: st
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Cor</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{fill.toUpperCase()}</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{fill.toUpperCase()}</span>
           <ColorSwatch color={fill}
             onChange={(hex) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { fill: hex }) }}
             title="Cor do elemento"
@@ -285,7 +285,7 @@ function ShapeFieldPanel({ el, templateId }: { el: CanvasElement; templateId: st
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Largura</span>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
         </div>
         <input type="range" min={10} max={500} step={5} value={width}
           onChange={(e) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { width: Number(e.target.value) } as never) }}
@@ -348,7 +348,7 @@ function AccentSection({ template }: { template: Template }) {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0' }}>
       <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Cor de destaque</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{fill.toUpperCase()}</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{fill.toUpperCase()}</span>
         <ColorSwatch color={fill} onChange={handleColor} title="Cor de destaque" />
       </div>
     </div>
@@ -364,11 +364,11 @@ function ShapeSection({ template }: { template: Template }) {
   const rotation = (el.props.rotation as number) ?? 0
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
-      <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Elemento decorativo</span>
+      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Elemento decorativo</span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Largura</span>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
         </div>
         <input type="range" min={40} max={300} step={10} value={width}
           onChange={(e) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { width: Number(e.target.value) } as never) }}
@@ -377,7 +377,7 @@ function ShapeSection({ template }: { template: Template }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Rotação</span>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{rotation}°</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{rotation}°</span>
         </div>
         <input type="range" min={-45} max={45} step={1} value={rotation}
           onChange={(e) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { rotation: Number(e.target.value) }) }}
@@ -428,7 +428,7 @@ function SolidBackgroundSection({ template }: { template: Template }) {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
       <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Cor de fundo</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{color.toUpperCase()}</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{color.toUpperCase()}</span>
         <ColorSwatch color={color} onChange={handleColor} title="Cor de fundo" />
       </div>
     </div>
@@ -460,7 +460,7 @@ function GenericBackgroundSection({ template }: { template: Template }) {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderTop: '1px solid var(--border)' }}>
       <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Cor de fundo</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{color.toUpperCase()}</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{color.toUpperCase()}</span>
         <ColorSwatch color={color} onChange={handleColor} title="Cor de fundo" />
       </div>
     </div>

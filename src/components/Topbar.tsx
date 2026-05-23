@@ -107,9 +107,9 @@ export function Topbar() {
               key={to}
               to={to}
               style={{
-                padding: '6px 12px',
+                padding: '6px 14px',
                 borderRadius: '8px',
-                fontSize: '13px',
+                fontSize: '14px',
                 fontWeight: active ? 600 : 400,
                 color: active ? '#ffffff' : 'var(--text-secondary)',
                 background: active
@@ -193,7 +193,7 @@ export function Topbar() {
           <Link
             to="/admin"
             style={{
-              padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
+              padding: '6px 14px', borderRadius: '8px', fontSize: '14px',
               fontWeight: 600, color: 'white', background: 'rgba(239,68,68,0.8)',
               border: 'none', textDecoration: 'none', transition: 'all 0.2s ease',
             }}
@@ -204,7 +204,7 @@ export function Topbar() {
         <Link
           to="/account"
           style={{
-            padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
+            padding: '6px 14px', borderRadius: '8px', fontSize: '14px',
             fontWeight: 500, color: 'var(--text-secondary)',
             background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
             textDecoration: 'none', transition: 'all 0.2s ease',
@@ -238,7 +238,7 @@ export function Topbar() {
           style={{
             padding: '6px 14px',
             borderRadius: '8px',
-            fontSize: '13px',
+            fontSize: '14px',
             fontWeight: 500,
             color: 'var(--text-secondary)',
             background: 'transparent',

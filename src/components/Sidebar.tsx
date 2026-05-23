@@ -47,7 +47,7 @@ export function Sidebar() {
       gap: '4px',
       boxShadow: 'inset -1px 0 0 rgba(91,143,212,0.08)',
     }}>
-      <p style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', marginBottom: '8px', paddingLeft: '4px', textTransform: 'uppercase' }}>ESTILOS</p>
+      <p style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '10px', paddingLeft: '4px', textTransform: 'uppercase' }}>ESTILOS</p>
 
       {GROUPS.map(({ label, ids }) => {
         const isOpen = openGroups.includes(label)
@@ -61,7 +61,7 @@ export function Sidebar() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '8px 10px',
+                padding: '10px 12px',
                 borderRadius: '8px',
                 border: '1px solid transparent',
                 background: hasActive ? 'var(--accent-glow)' : 'transparent',
@@ -78,7 +78,7 @@ export function Sidebar() {
             </button>
 
             {isOpen && (
-              <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '4px' }}>
+              <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
                 {ids.flatMap(id => {
                   const def = templateRegistry.find(d => d.id === id)
                   if (!def) return []
@@ -93,7 +93,7 @@ export function Sidebar() {
                         background: isActive ? 'var(--accent-glow)' : 'transparent',
                         border: isActive ? '1px solid var(--border-active)' : '1px solid transparent',
                         borderRadius: '6px',
-                        padding: '6px 10px',
+                        padding: '8px 12px',
                         display: 'flex',
                         alignItems: 'center',
                         cursor: 'pointer',

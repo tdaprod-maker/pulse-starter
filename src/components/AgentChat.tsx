@@ -650,8 +650,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       {/* Mensagens */}
       <div style={{
-        display: 'flex', flexDirection: 'column', gap: '10px',
-        padding: '16px', maxHeight: '200px', overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', gap: '14px',
+        padding: '18px 16px', maxHeight: '220px', overflowY: 'auto',
       }}>
         {messages.map((msg, i) => (
           <div key={i} style={{
@@ -660,12 +660,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           }}>
             <div style={{
               maxWidth: '80%',
-              padding: '8px 12px',
+              padding: '10px 14px',
               borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
               background: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-surface)',
               color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
-              fontSize: '13px',
-              lineHeight: 1.5,
+              fontSize: '14px',
+              lineHeight: 1.55,
               border: msg.role === 'agent' ? '1px solid var(--border)' : 'none',
             }}>
               {msg.content}
@@ -712,9 +712,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         {(loading || generating) && (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{
-              padding: '8px 14px', borderRadius: '12px 12px 12px 2px',
+              padding: '10px 14px', borderRadius: '12px 12px 12px 2px',
               background: 'var(--bg-surface)', border: '1px solid var(--border)',
-              fontSize: '13px', color: 'var(--text-muted)',
+              fontSize: '14px', color: 'var(--text-muted)',
             }}>
               {generating ? '✦ Gerando...' : '...'}
             </div>
@@ -744,7 +744,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           rows={1}
           style={{
             flex: 1, background: 'transparent', border: 'none',
-            color: 'var(--text-primary)', fontSize: '13px',
+            color: 'var(--text-primary)', fontSize: '14px',
             fontFamily: 'inherit', resize: 'none', outline: 'none',
             lineHeight: 1.5, maxHeight: '100px', overflowY: 'auto',
             opacity: isDisabled ? 0.5 : 1,
