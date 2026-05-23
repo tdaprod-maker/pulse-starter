@@ -79,6 +79,7 @@ export function EditorPage() {
   }
 
   useEffect(() => {
+    console.log('[EditorPage] pendingPost useEffect disparado. valor:', pendingPost)
     if (!pendingPost) return
 
     console.log('[pendingPost] objeto completo:', JSON.stringify(pendingPost, null, 2))

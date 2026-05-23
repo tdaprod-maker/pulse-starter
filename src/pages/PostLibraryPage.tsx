@@ -59,7 +59,9 @@ export function PostLibraryPage() {
     if (post.template_id === 'premium-single' || post.template_id === 'premium-carousel') {
       setSelectedPost(selectedPost?.id === post.id ? null : post)
     } else {
+      console.log('[PostLibrary] handleOpen — post:', JSON.stringify(post, null, 2))
       useStore.getState().setPendingPost(post)
+      console.log('[PostLibrary] setPendingPost chamado. pendingPost no store:', JSON.stringify(useStore.getState().pendingPost, null, 2))
       navigate('/')
     }
   }
