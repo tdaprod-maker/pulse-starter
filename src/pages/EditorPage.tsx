@@ -219,7 +219,7 @@ export function EditorPage() {
         {/* Boas-vindas — visível antes do primeiro post */}
         {!activeTemplate && !premiumSlides && !carouselSlides && (
           <div style={{ textAlign: 'center', padding: '32px 24px 0', flexShrink: 0 }}>
-            <p style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px', margin: '0 0 10px' }}>Bem-vindo ao Pulse</p>
+            <p className="display-title" style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '10px', margin: '0 0 10px' }}>Bem-vindo ao Pulse</p>
             <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 24px' }}>Diga o que precisa fazer ou selecione um template na barra lateral para começar.</p>
           </div>
         )}

@@ -39,10 +39,16 @@
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'Sora', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: var(--bg-base);
   color: var(--text-primary);
   margin: 0;
+}
+
+.display-title {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
 }
 
 /* Scrollbar customizada */
