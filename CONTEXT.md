@@ -45,7 +45,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 5. **Agente decide a engine** — FAL.ai vs GPT Image 2 baseado no briefing; usuário vê custo e confirma antes de gerar
 6. **PremiumResultViewer** — resultado premium exibido diretamente como imagem (não via Konva); formato único definido pelo agente; download, legenda editável, publicação LinkedIn/Instagram
 
-### Semana 3 — Mobile e Polimento 🔜 Próxima
+### Semana 3 — Mobile e Polimento 🔜 Em andamento
 7. **Layout responsivo** — Editor adaptado para mobile
 8. **Touch no canvas Konva** — suporte a gestos touch
 9. **Painel simplificado mobile** — edição de texto e cores sem arrastar elementos
@@ -61,15 +61,21 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 ### O que está funcionando
 - Editor com agente conversacional (AgentChat recolhível após geração)
 - Geração de posts via FAL.ai com templates Konva editáveis
-- Carrossel via CarouselViewer (dentro do Editor) — ver pendentes
+- Carrossel via CarouselViewer (dentro do Editor)
 - Brand kit automático (logo, cores, tom de voz)
-- Publicação LinkedIn (OAuth implementado — ver pendentes críticos abaixo)
+- Publicação LinkedIn (OAuth funcionando — postMessage implementado em todos os componentes)
+- Publicação carrossel no LinkedIn (imagens comprimidas pixelRatio=1, quality=0.7 para evitar 413)
 - Download PNG e ZIP
-- Sistema de pulses (débito implementado no fluxo Premium — 8 pulses)
+- Sistema de pulses — débito implementado nos três fluxos: FAL.ai padrão (4), carrossel (2×slides), premium (8)
 - Templates organizados por categoria no Sidebar
 - PWA básico instalável (manifest + service worker + ícones do Pulse)
 - Agente decide engine (standard FAL.ai vs premium GPT Image 2)
-- PremiumResultViewer: imagem fotorrealista em formato único (formato definido pelo agente), download, legenda editável, publicação
+- PremiumResultViewer: imagem fotorrealista em formato único, download, legenda editável, publicação
+- Agente conciso: máximo 2 frases por resposta, max_tokens=400, uma pergunta por vez
+- Template respeitado quando selecionado pelo usuário (lockedTemplateId com guard server-side)
+- Seleção de template por tema do conteúdo, não pelo segmento da marca
+- Clicar fora do canvas não reinicia post gerado (corrigido)
+- Biblioteca de posts carrega o post ao clicar (corrigido via pendingPost)
 
 ### Migração Gemini → Claude Haiku 4.5
 | Função | Rota Vercel | Status |
@@ -106,14 +112,11 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 
 ## Pendentes Críticos (bloqueia vendas)
 
-### 1. LinkedIn OAuth quebrado
-- **Sintoma:** popup do OAuth redireciona para a tela de login do Pulse em vez de fechar e autorizar
-- **Causa raiz investigada:** três problemas identificados e parcialmente corrigidos:
-  - `CaptionPanel` (único leitor do token da URL) só renderiza quando há template ativo → token nunca salvo no popup
-  - Nenhum `postMessage` do popup para a janela pai
-  - Auth check (`checkAndRoute`) rodando no popup antes de ler o token
-- **O que foi implementado:** `LinkedInCallbackPage` em `/auth/linkedin/done`, early return no `App.tsx`, redirect corrigido em `linkedin-callback.js`, `postMessage` + `message` listener nos componentes — mas **ainda não confirmado funcionando em produção**
-- **Próximo passo:** testar em produção após deploy; se ainda falhar, investigar se o Supabase session no popup está bloqueando
+### 1. Template repetitivo no FAL.ai sem template selecionado
+- Quando o usuário não seleciona um template no Sidebar antes de conversar, o agente tende a escolher sempre o mesmo template (ex: `tech-statement`) independente do tema
+- Causa: o modelo recebe o segmento da marca e ignora a regra de seleção por tema
+- Regra adicionada em `generate-post.js` (segmento ≠ tema) mas o problema persiste quando não há `lockedTemplateId`
+- **Próximo passo:** revisar as regras de seleção automática no `generate-post.js`; considerar passar o histório da conversa para que o `generate-post.js` tenha mais contexto
 
 ### 2. Publicação multi-tenant (LinkedIn e Instagram)
 - **Problema:** token LinkedIn salvo no `localStorage` (por browser, não por usuário) — em white-label ou multi-usuário, tokens se misturam
@@ -121,32 +124,36 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - **Solução necessária:** salvar tokens OAuth no Supabase por `user_id`; buscar token do usuário logado na hora da publicação
 - **Impacto:** bloqueia qualquer cliente diferente da agente17ia de publicar
 
-### 3. Logo sobrepõe texto no PremiumResultViewer
-- Logo aplicado via canvas no canto inferior direito — posição fixa, sem possibilidade de mover
-- Em alguns posts o logo fica sobre texto ou elemento importante da imagem
-- **Solução necessária:** logo posicionável pelo usuário (drag ou seletor de posição: 4 cantos)
+### 3. Layout mobile responsivo
+- Editor não adaptado para mobile
+- Touch no canvas Konva não implementado
+- Painel de edição simplificado para mobile ausente
+- **Semana 3**
 
-### 4. Carrossel FAL.ai não mostra todos os slides
-- Alguns slides do carrossel não renderizam corretamente no CarouselViewer
-- Investigação pendente — pode ser problema de timing no carregamento dos templates Konva
+### 4. Biblioteca unificada
+- Posts e carrosséis em listas separadas
+- Não há como reeditar um post salvo de volta no editor com todas as propriedades
+- **Semana 4**
 
-### 5. Débito de pulses no fluxo FAL.ai (Editor standard)
-- O `debitToken` não está sendo chamado no fluxo `generate()` standard do AgentChat
-- Premium debita corretamente (8 pulses), mas posts FAL.ai e carrosséis não debitam
-- **Localização:** `AgentChat.tsx` → função `generate()` e `generateCarousel()`
+### 5. Carrossel com GPT Image 2
+- Carrossel hoje usa sempre FAL.ai (engine: "standard")
+- Roadmap: permitir carrossel premium com imagens fotorrealistas por slide
+
+### 6. Melhoria visual UX desktop e mobile
+- Painel lateral direito sobrecarregado de opções
+- AgentChat ocupa muito espaço quando recolhido
+- Microinterações e feedback visual de loading poderiam ser mais polidos
 
 ---
 
 ## Pendentes Não-Críticos (Semana 3+)
 
-- **Layout mobile responsivo** — Editor adaptado para mobile, touch no canvas Konva, painel simplificado
-- **Biblioteca unificada** — posts e carrossel em histórico único com reedição (hoje são listas separadas)
-- **Reabrir post da biblioteca no editor** — clicar em post salvo reabre no Editor com todos os campos
 - **Onboarding obrigatório** — primeiro acesso força configuração do brand kit antes de qualquer geração
-- **Logs de debug temporários** — remover `console.log` do AgentChat após estabilização
+- **Logs de debug temporários** — remover `console.log` do AgentChat e agent-chat.js após estabilização
 - **`generatePremiumCaption`** — ainda chama Gemini direto do frontend; migrar para API Route
 - **`CarouselPage.tsx` e `PremiumPage.tsx` antigas** — remover do projeto (rotas `/carousel` e `/premium` ainda existem no App.tsx)
 - Instagram: aceitar convite Testador para agente17ia e tdaprod (acesso à API)
+- Logo sobrepõe texto no PremiumResultViewer — posição fixa, sem drag
 
 ---
 
@@ -160,20 +167,26 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 
 **Categorias atuais:** Sport, Food, Business, Health, Construction, Realty, Fashion, Tech, Home & Deco, Outros
 
+**Regra de seleção:** template é escolhido pelo TEMA DO CONTEÚDO do post, não pelo segmento da empresa. Templates `tech-*` são exclusivos para posts cujo assunto seja tecnologia, IA ou digital.
+
 ## Arquivos Principais
-- `src/components/AgentChat.tsx` — agente conversacional; decide engine; fluxo premium e standard
+- `src/components/AgentChat.tsx` — agente conversacional; decide engine; fluxo premium e standard; débito de pulses nos três fluxos
 - `src/components/PremiumResultViewer.tsx` — exibe resultado do GPT Image 2 (fora do Konva)
-- `src/components/CarouselViewer.tsx` — carrossel integrado ao Editor
+- `src/components/CarouselViewer.tsx` — carrossel integrado ao Editor; publicação LinkedIn com imagens comprimidas
 - `src/components/CaptionPanel.tsx` — legenda + publicação LinkedIn/Instagram para posts Konva
 - `src/pages/LinkedInCallbackPage.tsx` — callback OAuth do LinkedIn (popup); postMessage + fecha
+- `src/pages/CarouselLibraryPage.tsx` — biblioteca de carrosséis; postMessage listener para LinkedIn OAuth
+- `src/pages/PostLibraryPage.tsx` — biblioteca de posts; restore via setPendingPost ao clicar
 - `src/services/gemini.ts` — thin wrappers HTTP para as API Routes (renomear para claude.ts futuramente)
-- `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas
-- `api/agent-chat.js` — prompt do agente + Claude Haiku; decide engine e formato
-- `api/generate-post.js` — seleção de template + geração de campos; Claude Haiku
+- `src/services/tokens.ts` — PULSE_COSTS, debitToken, notifyBalanceUpdate
+- `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas; pendingPost restore
+- `api/agent-chat.js` — prompt do agente + Claude Haiku; decide engine e formato; guard server-side do lockedTemplateId
+- `api/generate-post.js` — seleção de template por tema (não segmento) + geração de campos; Claude Haiku
 - `api/generate-carousel.js` — geração de slides de carrossel; Claude Haiku
 - `api/generate-premium.js` — chama GPT Image 2; `maxDuration: 60`
-- `api/linkedin-auth.js` — inicia OAuth LinkedIn (redirect_uri: pulse-ashy-eight.vercel.app)
+- `api/linkedin-auth.js` — inicia OAuth LinkedIn
 - `api/linkedin-callback.js` — troca código por token; redireciona para `/auth/linkedin/done`
+- `api/linkedin-post.js` — publica no LinkedIn; suporta imagem única e carrossel; usa `urn:li:person:${linkedinSub}`
 - `vercel.json` — rewrites: `/api/*`, `/auth/linkedin/callback` → servidor, `/auth/linkedin/done` → index.html, `/*` → index.html
 - `src/templates/index.ts` — registry de templates
 
@@ -189,6 +202,7 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 - ✅ manifest.webmanifest com nome, ícone, cores da marca
 - ✅ Service Worker (vite-plugin-pwa v1.3.0, generateSW mode)
 - ✅ Ícones gerados a partir do logo-pulse.svg: pwa-512x512.png, pwa-192x192.png, apple-touch-icon.png, favicon-32x32.png
+- ✅ Service worker configurado para excluir rotas `/api/*` e `/auth/*` do NavigationRoute
 - 🔜 Layout responsivo (mobile-first no Editor) — Semana 3
 - 🔜 Touch support no canvas Konva — Semana 3
 - 🔜 Painel de edição simplificado para mobile — Semana 3
