@@ -137,9 +137,7 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
       if (!stage) continue
       const tmpl = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
       if (!tmpl) continue
-      const autoScale = calcAutoScale(tmpl)
-      const pixelRatio = 2 / autoScale
-      const dataUrl = stage.toDataURL({ pixelRatio, mimeType: 'image/jpeg', quality: 0.92 })
+      const dataUrl = stage.toDataURL({ pixelRatio: 1, mimeType: 'image/jpeg', quality: 0.7 })
       images.push(dataUrl)
       await new Promise(r => setTimeout(r, 200))
     }
