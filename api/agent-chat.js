@@ -5,6 +5,8 @@ export default async function handler(req, res) {
 
   const { messages, brand, lockedTemplateId } = req.body
 
+  console.log('[agent-chat] lockedTemplateId:', lockedTemplateId ?? '(none)')
+
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages array is required' })
   }
@@ -22,7 +24,7 @@ Descrição: ${brand.brandDescription || ''}
 Estilo visual: ${brand.visualStyle || ''}` : ''
 
   const lockedCtx = lockedTemplateId
-    ? `\nTEMPLATE FIXADO PELO USUÁRIO: "${lockedTemplateId}" — o usuário já escolheu este template. Use-o obrigatoriamente no campo "templateId" da resposta. Não sugira nem use outro template.`
+    ? `\nTEMPLATE FIXADO PELO USUÁRIO: "${lockedTemplateId}" — o usuário já escolheu este template. Quando retornar ready:true, inclua OBRIGATORIAMENTE "templateId": "${lockedTemplateId}" no JSON. Não sugira nem use outro template.`
     : ''
 
   const history = messages
@@ -106,7 +108,8 @@ OU (post único — conteúdo informativo, tipográfico, dados, institucional):
   "mode": "post",
   "prompt": "tema e rede social em 1-2 frases",
   "format": "4x5",
-  "engine": "standard"
+  "engine": "standard",
+  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
 OU (post único — produto físico, prato de comida, imóvel, atleta, produto de beleza, pessoa real):
 {
@@ -114,7 +117,8 @@ OU (post único — produto físico, prato de comida, imóvel, atleta, produto d
   "mode": "post",
   "prompt": "SUJEITO: [descrição visual completa — aparência, ambiente, ação]. OBJETIVO: [tema e rede social].",
   "format": "4x5",
-  "engine": "premium"
+  "engine": "premium",
+  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
 OU (carrossel — sempre standard):
 {
@@ -122,7 +126,8 @@ OU (carrossel — sempre standard):
   "mode": "carousel",
   "slideCount": 5,
   "prompt": "tema e objetivo em 1-2 frases",
-  "engine": "standard"
+  "engine": "standard",
+  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
 
 Formatos válidos: "1x1", "4x5", "9x16", "16x9"
@@ -159,6 +164,8 @@ engine válidos: "standard" ou "premium"`
 
       const clean = raw.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
+      if (lockedTemplateId && parsed.ready) parsed.templateId = lockedTemplateId
+      console.log('[agent-chat] response templateId:', parsed.templateId ?? '(none)')
       return res.status(200).json(parsed)
 
     } catch (err) {
