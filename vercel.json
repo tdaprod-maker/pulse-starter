@@ -1,8 +1,28 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/auth/linkedin/callback", "destination": "/api/linkedin-callback" },
-    { "source": "/auth/linkedin/done", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/auth/linkedin/callback",
+      "destination": "/api/linkedin-callback"
+    },
+    {
+      "source": "/auth/linkedin/done",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/auth/instagram/callback",
+      "destination": "/api/instagram-callback"
+    },
+    {
+      "source": "/auth/instagram/done",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
