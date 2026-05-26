@@ -290,3 +290,17 @@ body {
     max-width: 100vw !important;
   }
 }
+
+/* ═══ SAFARI iOS FIX ══════════════════════════════════════════════════════ */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .editor-layout {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}
