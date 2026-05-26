@@ -18,6 +18,7 @@ import { PremiumPage } from './pages/PremiumPage'
 import { IntroPage } from './pages/IntroPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { LinkedInCallbackPage } from './pages/LinkedInCallbackPage'
+import { InstagramCallbackPage } from './pages/InstagramCallbackPage'
 import { supabase } from './lib/supabase'
 import { loadBrandConfig } from './services/brandKit'
 import { defaultTheme } from './themes'
@@ -84,6 +85,14 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/auth/linkedin/done" element={<LinkedInCallbackPage />} />
+      </Routes>
+    </BrowserRouter>
+  )
+
+  if (window.location.pathname === '/auth/instagram/done') return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/auth/instagram/done" element={<InstagramCallbackPage />} />
       </Routes>
     </BrowserRouter>
   )

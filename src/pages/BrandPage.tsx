@@ -4,6 +4,13 @@ import { supabase } from '../lib/supabase'
 import { loadBrandConfig, saveBrandConfig, uploadMedia, uploadPhoto, uploadLogo, DEFAULT_BRAND } from '../services/brandKit'
 import { analyzeVisualReferences } from '../services/gemini'
 import type { BrandConfig, BrandLogo } from '../services/brandKit'
+import {
+  getConnection,
+  getInstagramConnection,
+  saveConnection,
+  removeConnection,
+} from '../services/socialConnections'
+
 export function BrandPage() {
   const navigate = useNavigate()
   const [config, setConfig] = useState<BrandConfig>(DEFAULT_BRAND)
@@ -18,16 +25,64 @@ export function BrandPage() {
   const photoInputRef = useRef<HTMLInputElement>(null)
   const logoLibInputRef = useRef<HTMLInputElement>(null)
 
+  // Redes Sociais
+  const [linkedinToken, setLinkedinToken] = useState('')
+  const [linkedinName, setLinkedinName] = useState('')
+  const [instagramToken, setInstagramToken] = useState('')
+  const [instagramUserId, setInstagramUserId] = useState('')
+  const [instagramUsername, setInstagramUsername] = useState('')
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       const email = data.session?.user?.email ?? ''
       setUserEmail(email)
       loadBrandConfig(email).then(c => {
         setConfig(c)
         setLoading(false)
       })
+      if (!email) return
+      const [li, ig] = await Promise.all([
+        getConnection(email, 'linkedin'),
+        getInstagramConnection(email),
+      ])
+      if (li) {
+        setLinkedinToken(li.access_token)
+        setLinkedinName(li.platform_username ?? '')
+      }
+      if (ig) {
+        setInstagramToken(ig.access_token)
+        setInstagramUserId(ig.ig_user_id)
+        setInstagramUsername(ig.username)
+      }
     })
   }, [])
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return
+
+      if (event.data?.type === 'linkedin_auth') {
+        const { linkedin_token, linkedin_sub, linkedin_name } = event.data
+        if (linkedin_token && linkedin_sub && userEmail) {
+          saveConnection(userEmail, 'linkedin', linkedin_token, linkedin_sub, linkedin_name ?? null, null)
+          setLinkedinToken(linkedin_token)
+          setLinkedinName(linkedin_name ?? '')
+        }
+      }
+
+      if (event.data?.type === 'instagram_oauth') {
+        const { access_token, ig_user_id, username, expires_at } = event.data
+        if (access_token && ig_user_id && userEmail) {
+          saveConnection(userEmail, 'instagram', access_token, ig_user_id, username ?? null, expires_at || null)
+          setInstagramToken(access_token)
+          setInstagramUserId(ig_user_id)
+          setInstagramUsername(username ?? '')
+        }
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [userEmail])
 
   async function handleSave() {
     setSaving(true)
@@ -360,6 +415,97 @@ export function BrandPage() {
                   </select>
                 </div>
               ))}
+            </div>
+          </Section>
+
+          {/* Redes Sociais */}
+          <Section title="Redes Sociais">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+              {/* LinkedIn */}
+              {linkedinToken ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'linear-gradient(135deg, #0077B5, #005e93)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ color: 'white', fontSize: '14px', fontWeight: 700 }}>in</span>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {linkedinName || 'LinkedIn'}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Conectado</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { removeConnection(userEmail, 'linkedin'); setLinkedinToken(''); setLinkedinName('') }}
+                    style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', background: 'transparent', border: '1px solid rgba(239,68,68,0.35)', color: 'rgba(239,68,68,0.7)', fontFamily: 'inherit', flexShrink: 0 }}
+                  >
+                    Desconectar
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(0,119,181,0.15)', border: '1px solid rgba(0,119,181,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ color: '#0077B5', fontSize: '14px', fontWeight: 700 }}>in</span>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>LinkedIn</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Não conectado</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')}
+                    style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg, #0077B5, #005e93)', border: 'none', color: 'white', flexShrink: 0 }}
+                  >
+                    Conectar
+                  </button>
+                </div>
+              )}
+
+              <div style={{ height: '1px', background: 'var(--border)' }} />
+
+              {/* Instagram */}
+              {instagramToken ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ color: 'white', fontSize: '15px' }}>◎</span>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {instagramUsername ? `@${instagramUsername}` : 'Instagram'}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Conectado · ID {instagramUserId}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { removeConnection(userEmail, 'instagram'); setInstagramToken(''); setInstagramUserId(''); setInstagramUsername('') }}
+                    style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', background: 'transparent', border: '1px solid rgba(239,68,68,0.35)', color: 'rgba(239,68,68,0.7)', fontFamily: 'inherit', flexShrink: 0 }}
+                  >
+                    Desconectar
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(220,39,67,0.12)', border: '1px solid rgba(220,39,67,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ color: '#dc2743', fontSize: '15px' }}>◎</span>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Instagram</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Não conectado</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { const p = userEmail ? `?email=${encodeURIComponent(userEmail)}` : ''; window.open(`/api/instagram-auth${p}`, 'instagram_popup', 'width=600,height=700') }}
+                    style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', border: 'none', color: 'white', flexShrink: 0 }}
+                  >
+                    Conectar
+                  </button>
+                </div>
+              )}
+
             </div>
           </Section>
 

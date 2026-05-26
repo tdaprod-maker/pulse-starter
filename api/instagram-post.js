@@ -3,16 +3,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { imageUrl, imageUrls, caption, igUserId } = req.body
+  const { imageUrl, imageUrls, caption, igUserId, accessToken } = req.body
 
-  if ((!imageUrl && !imageUrls) || !caption || !igUserId) {
-    return res.status(400).json({ error: 'imageUrl ou imageUrls, caption e igUserId são obrigatórios' })
-  }
-
-  const accessToken = process.env.INSTAGRAM_TOKEN_AGENTE17
-
-  if (!accessToken) {
-    return res.status(500).json({ error: 'Token do Instagram não configurado' })
+  if ((!imageUrl && !imageUrls) || !caption || !igUserId || !accessToken) {
+    return res.status(400).json({ error: 'imageUrl/imageUrls, caption, igUserId e accessToken são obrigatórios' })
   }
 
   try {
