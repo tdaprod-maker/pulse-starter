@@ -59,7 +59,7 @@ export async function getInstagramConnection(
     const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     if (expiresAt < sevenDaysFromNow) {
       try {
-        const res = await fetch('/api/instagram-refresh', {
+        const res = await fetch('/api/instagram-callback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ accessToken: conn.access_token }),
