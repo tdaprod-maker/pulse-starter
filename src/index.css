@@ -273,5 +273,20 @@ body {
   .canvas-area {
     padding: 10px !important;
     padding-bottom: 64px !important;
+    /* Clip overflow antes do ResizeObserver medir o container */
+    overflow-x: hidden !important;
+  }
+
+  /* ── Editor layout: clipa overflow só no editor, não afeta login ── */
+  .editor-layout {
+    overflow-x: hidden;
+  }
+
+  /* ── Right panel: garante que não ultrapasse a viewport ─────────── */
+  .right-panel {
+    /* left:0 + right:0 é mais confiável que width:100% para fixed */
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100vw !important;
   }
 }

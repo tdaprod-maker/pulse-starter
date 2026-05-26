@@ -220,7 +220,7 @@ export function EditorPage() {
   }, [selectedElementId, carouselSelectedElement])
 
   return (
-    <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+    <div className="editor-layout" style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
       {/* Sidebar backdrop (mobile) */}
       {sidebarOpen && (
         <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
