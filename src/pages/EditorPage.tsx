@@ -211,9 +211,22 @@ export function EditorPage() {
     setEditingState(null)
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [rightPanelOpen, setRightPanelOpen] = useState(false)
+
+  // Auto-expand properties panel when element is selected on mobile
+  useEffect(() => {
+    if (selectedElementId || carouselSelectedElement) setRightPanelOpen(true)
+  }, [selectedElementId, carouselSelectedElement])
+
   return (
-    <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      <Sidebar />
+    <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+      {/* Sidebar backdrop (mobile) */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Boas-vindas — visível antes do primeiro post */}
@@ -225,7 +238,7 @@ export function EditorPage() {
         )}
 
         {/* Agente conversacional — fixo no topo */}
-        <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+        <div className="agent-chat-wrapper" style={{ padding: '16px 24px 0', flexShrink: 0 }}>
           <AgentChat
             onGenerating={() => {}}
             onGenerated={() => {}}
@@ -244,63 +257,95 @@ export function EditorPage() {
         </div>
 
         {/* Área do canvas — scrollável */}
-      <main ref={mainRef} className="canvas-area" onClick={(e) => { if (e.target === mainRef.current) setSelectedElement(null) }} style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        overflow: 'auto',
-        position: 'relative',
-        gap: '24px',
-        padding: '24px',
-        paddingTop: '16px',
-      }}>
-        {premiumSlides ? (
-          <PremiumResultViewer
-            slides={premiumSlides}
-            caption={premiumCaption}
-            onClose={() => { setPremiumSlides(null); setPremiumCaption(null) }}
-          />
-        ) : carouselSlides ? (
-          <CarouselViewer
-            slides={carouselSlides}
-            caption={carouselCaption}
-            templateId={carouselTemplateId}
-            onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselCurrentSlide(0); setCarouselSelectedElement(null) }}
-            onSlideChange={(i) => { setCarouselCurrentSlide(i); setCarouselSelectedElement(null) }}
-            onSelectElement={setCarouselSelectedElement}
-          />
-        ) : activeTemplate ? (
-          <>
-            {/* Preview principal — formato ativo */}
-            <div style={{
+        <main ref={mainRef} className="canvas-area" onClick={(e) => { if (e.target === mainRef.current) setSelectedElement(null) }} style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          overflow: 'auto',
+          position: 'relative',
+          gap: '24px',
+          padding: '24px',
+          paddingTop: '16px',
+        }}>
+          {/* Mobile FAB: open templates sidebar */}
+          <button
+            className="mobile-only"
+            onClick={() => setSidebarOpen(true)}
+            title="Templates"
+            style={{
+              position: 'fixed',
+              bottom: '64px',
+              left: '16px',
+              zIndex: 350,
+              background: 'rgba(13,17,23,0.95)',
+              border: '1px solid rgba(91,143,212,0.3)',
               borderRadius: '12px',
-              boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)',
-              overflow: 'hidden',
-              position: 'relative',
-              flexShrink: 0,
-            }}>
-              <CanvasEngine
-                key={activeTemplate.id}
-                ref={stageRef}
-                template={activeTemplate}
-                scale={canvasScale}
-                selectedElementId={selectedElementId}
-                onSelectElement={setSelectedElement}
-                editingElementId={editingState?.el.id ?? null}
-                onEditStart={handleEditStart}
-              />
-            </div>
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              padding: '10px 14px',
+              fontSize: '12px',
+              fontWeight: 600,
+              fontFamily: 'inherit',
+              gap: '6px',
+              alignItems: 'center',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+              <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.8"/>
+              <rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.5"/>
+              <rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.5"/>
+              <rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.3"/>
+            </svg>
+            Templates
+          </button>
 
+          {premiumSlides ? (
+            <PremiumResultViewer
+              slides={premiumSlides}
+              caption={premiumCaption}
+              onClose={() => { setPremiumSlides(null); setPremiumCaption(null) }}
+            />
+          ) : carouselSlides ? (
+            <CarouselViewer
+              slides={carouselSlides}
+              caption={carouselCaption}
+              templateId={carouselTemplateId}
+              onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselCurrentSlide(0); setCarouselSelectedElement(null) }}
+              onSlideChange={(i) => { setCarouselCurrentSlide(i); setCarouselSelectedElement(null) }}
+              onSelectElement={setCarouselSelectedElement}
+            />
+          ) : activeTemplate ? (
+            <>
+              {/* Preview principal — formato ativo */}
+              <div style={{
+                borderRadius: '12px',
+                boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)',
+                overflow: 'hidden',
+                position: 'relative',
+                flexShrink: 0,
+              }}>
+                <CanvasEngine
+                  key={activeTemplate.id}
+                  ref={stageRef}
+                  template={activeTemplate}
+                  scale={canvasScale}
+                  selectedElementId={selectedElementId}
+                  onSelectElement={setSelectedElement}
+                  editingElementId={editingState?.el.id ?? null}
+                  onEditStart={handleEditStart}
+                />
+              </div>
 
-          <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
-          <CaptionPanel stageRef={stageRef} template={activeTemplate} />
-          <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
-          </>
-        ) : null}
-
-      </main>
+              <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
+              <CaptionPanel stageRef={stageRef} template={activeTemplate} />
+              <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
+            </>
+          ) : null}
+        </main>
       </div>
 
       {/* Textarea overlay — renderizado fora do canvas para não herdar a escala do Stage */}
@@ -314,15 +359,36 @@ export function EditorPage() {
         />
       )}
 
-      <aside style={{
-        width: '380px',
-        background: 'var(--bg-panel)',
-        borderLeft: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflowY: 'auto',
-      }}>
-  
+      <aside
+        className={`right-panel${rightPanelOpen ? ' panel-open' : ''}`}
+        style={{
+          width: '380px',
+          background: 'var(--bg-panel)',
+          borderLeft: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowY: 'auto',
+        }}
+      >
+        {/* Drag handle — mobile only */}
+        <div
+          className="panel-drag-handle"
+          onClick={() => setRightPanelOpen((v) => !v)}
+          style={{ display: 'none' }}
+        >
+          <div className="panel-drag-handle-bar" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Propriedades
+            </span>
+            <svg
+              width="16" height="16" viewBox="0 0 16 16" fill="none"
+              style={{ transform: rightPanelOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--text-muted)' }}
+            >
+              <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </div>
 
         {carouselSlides ? (() => {
           const carouselTemplate = templates.find(t => t.id === `carousel-slide-${carouselCurrentSlide}`)

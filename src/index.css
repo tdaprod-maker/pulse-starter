@@ -154,3 +154,124 @@ body {
   border-color: var(--border-active) !important;
   color: var(--text-primary) !important;
 }
+
+/* ═══ VISIBILITY HELPERS ═══════════════════════════════════════════════════ */
+
+.mobile-only {
+  display: none !important;
+}
+
+/* ═══ MOBILE RESPONSIVE ════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  /* Show mobile-only elements */
+  .mobile-only {
+    display: flex !important;
+  }
+
+  /* Hide desktop-only elements */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* ── Topbar ─────────────────────────────────────────────────── */
+  .topbar-nav {
+    display: none !important;
+  }
+  .topbar-right {
+    display: none !important;
+  }
+
+  /* Mobile nav menu: full-screen overlay */
+  .mobile-nav-menu {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(7, 9, 15, 0.98);
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    gap: 4px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-active);
+  }
+
+  /* ── Sidebar: drawer from left ──────────────────────────────── */
+  .sidebar-container {
+    position: fixed !important;
+    top: 56px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 260px !important;
+    z-index: 400;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
+  }
+  .sidebar-container.sidebar-open {
+    transform: translateX(0);
+  }
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 399;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  /* ── AgentChat: compact no mobile ──────────────────────────── */
+  .agent-chat-wrapper {
+    padding: 8px 12px 0 !important;
+  }
+
+  /* ── Right panel: bottom sheet (properties) ─────────────────── */
+  .right-panel {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 80vh;
+    z-index: 400;
+    border-radius: 16px 16px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(91, 143, 212, 0.3) !important;
+    transform: translateY(calc(100% - 48px));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .right-panel.panel-open {
+    transform: translateY(0);
+  }
+
+  /* Panel drag handle */
+  .panel-drag-handle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 16px 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+    border-radius: 16px 16px 0 0;
+    user-select: none;
+  }
+  .panel-drag-handle-bar {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    margin-bottom: 6px;
+  }
+
+  /* ── Canvas area: full width with bottom padding ────────────── */
+  .canvas-area {
+    padding: 10px !important;
+    padding-bottom: 64px !important;
+  }
+}

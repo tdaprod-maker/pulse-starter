@@ -17,7 +17,12 @@ const GROUPS = [
   { label: 'Outros', ids: ['bold-circle', 'editorial-cover', 'split-editorial', 'geo-impact', 'editorial-card'] },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { addTemplate, setActiveTemplate, activeTemplateId } = useStore()
   const { theme } = useTheme()
   const [openGroups, setOpenGroups] = useState<string[]>(['Sport'])
@@ -31,26 +36,56 @@ export function Sidebar() {
   function handleSelectTemplate(variant: Template) {
     addTemplate(variant)
     setActiveTemplate(variant.id)
+    onClose?.()
   }
 
   return (
-    <aside style={{
-      width: '220px',
-      background: 'var(--bg-panel)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      borderRight: '1px solid rgba(255,255,255,0.05)',
-      padding: '20px 10px',
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '4px',
-      boxShadow: 'inset -1px 0 0 rgba(91,143,212,0.08)',
-    }}>
-      <p style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '10px', paddingLeft: '4px', textTransform: 'uppercase' }}>ESTILOS</p>
+    <aside
+      className={`sidebar-container${isOpen ? ' sidebar-open' : ''}`}
+      style={{
+        width: '220px',
+        background: 'var(--bg-panel)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderRight: '1px solid rgba(255,255,255,0.05)',
+        padding: '20px 10px',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        boxShadow: 'inset -1px 0 0 rgba(91,143,212,0.08)',
+        flexShrink: 0,
+      }}
+    >
+      {/* Mobile header with close button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', margin: 0, paddingLeft: '4px', textTransform: 'uppercase' }}>
+          ESTILOS
+        </p>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="mobile-only"
+            style={{
+              background: 'none',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '6px',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
+      </div>
 
       {GROUPS.map(({ label, ids }) => {
-        const isOpen = openGroups.includes(label)
+        const isGroupOpen = openGroups.includes(label)
         const hasActive = ids.some(id => activeTemplateId?.startsWith(id))
         return (
           <div key={label}>
@@ -74,10 +109,10 @@ export function Sidebar() {
               }}
             >
               <span>{label}</span>
-              <span style={{ fontSize: '10px', opacity: 0.5, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+              <span style={{ fontSize: '10px', opacity: 0.5, transform: isGroupOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
             </button>
 
-            {isOpen && (
+            {isGroupOpen && (
               <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
                 {ids.flatMap(id => {
                   const def = templateRegistry.find(d => d.id === id)
