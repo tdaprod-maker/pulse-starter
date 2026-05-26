@@ -132,11 +132,15 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - Regra adicionada em `generate-post.js` (segmento ≠ tema) mas o problema persiste quando não há `lockedTemplateId`
 - **Próximo passo:** revisar as regras de seleção automática no `generate-post.js`; considerar passar o histórico da conversa para que o `generate-post.js` tenha mais contexto
 
-### 2. Publicação multi-tenant (LinkedIn e Instagram)
-- **Problema:** token LinkedIn salvo no `localStorage` (por browser, não por usuário) — em white-label ou multi-usuário, tokens se misturam
-- **Problema:** Instagram com `igUserId` hardcoded `'17841479034844249'` (ID da agente17ia) — publica sempre na mesma conta
-- **Solução necessária:** salvar tokens OAuth no Supabase por `user_id`; buscar token do usuário logado na hora da publicação
-- **Impacto:** bloqueia qualquer cliente diferente da agente17ia de publicar
+### 2. Publicação multi-tenant (LinkedIn e Instagram) ✅ Concluído
+- `social_connections` table criada no Supabase com RLS (`user_email = auth.email()`)
+- `src/services/socialConnections.ts` — get/save/remove/getInstagramConnection (refresh lazy incorporado)
+- LinkedIn migrado de `localStorage` → Supabase em todos os componentes
+- `linkedin-post.js` corrigido: publica como `urn:li:person:{sub}` (antes usava org ID hardcoded `111151250`)
+- Instagram OAuth completo: `instagram-auth.js` → `instagram-callback.js` (dual-purpose: OAuth GET + refresh POST) → `InstagramCallbackPage.tsx`
+- `instagram-post.js` lê `accessToken` do body (não mais `INSTAGRAM_TOKEN_AGENTE17` do env)
+- Botão "Conectar Instagram/LinkedIn" na seção "Redes Sociais" do BrandPage — ponto central de onboarding
+- **Pendente:** App Review do Meta para usar além de 25 contas de teste (ver item 9 abaixo)
 
 ### 3. Layout mobile responsivo
 - Editor não adaptado para mobile
@@ -169,6 +173,13 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - AgentChat ocupa muito espaço quando recolhido
 - Microinterações e feedback visual de loading poderiam ser mais polidos
 
+### 9. App Review do Meta para Instagram (novo) 🔜 Necessário para produção
+- Sem review: Instagram OAuth funciona apenas com até **25 contas de teste** adicionadas manualmente no App Dashboard
+- Permissões necessárias: `instagram_business_basic` + `instagram_business_content_publish` (Advanced Access)
+- O que preparar: screencast em inglês mostrando o fluxo completo (Conectar → Publicar), política de privacidade pública, descrição de uso
+- Tempo estimado: 2–4 semanas (1–5 dias úteis de revisão + possíveis rejeições)
+- Enquanto isso: adicionar contas dos primeiros clientes como Testadores no Meta Developer Portal
+
 ---
 
 ## Pendentes Não-Críticos (Semana 3+)
@@ -177,8 +188,8 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - **Logs de debug temporários** — remover `console.log` do AgentChat, agent-chat.js e EditorPage após estabilização (logs de diagnóstico adicionados na sessão 2025-05-23 ainda estão ativos)
 - **`generatePremiumCaption`** — ainda chama Gemini direto do frontend; migrar para API Route
 - **`CarouselPage.tsx` e `PremiumPage.tsx` antigas** — remover do projeto (rotas `/carousel` e `/premium` ainda existem no App.tsx)
-- Instagram: aceitar convite Testador para agente17ia e tdaprod (acesso à API)
 - Logo sobrepõe texto no PremiumResultViewer — posição fixa, sem drag
+- **Variáveis de ambiente a configurar no Vercel:** `INSTAGRAM_CLIENT_ID`, `INSTAGRAM_CLIENT_SECRET` (criados no Meta Developer Portal)
 
 ---
 
@@ -200,10 +211,13 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 - `src/components/AgentChat.tsx` — agente conversacional; decide engine; fluxo premium e standard; débito de pulses nos três fluxos; salva `activeTemplateId` completo (com sufixo) ao persistir post
 - `src/components/PremiumResultViewer.tsx` — exibe resultado do GPT Image 2 (fora do Konva)
 - `src/components/CarouselViewer.tsx` — carrossel integrado ao Editor; publicação LinkedIn com imagens comprimidas
-- `src/components/CaptionPanel.tsx` — legenda + publicação LinkedIn/Instagram para posts Konva
-- `src/pages/LinkedInCallbackPage.tsx` — callback OAuth do LinkedIn (popup); postMessage + fecha
-- `src/pages/CarouselLibraryPage.tsx` — biblioteca de carrosséis; postMessage listener para LinkedIn OAuth
+- `src/components/CaptionPanel.tsx` — legenda + publicação LinkedIn/Instagram para posts Konva; lê token do Supabase via `socialConnections.ts`
+- `src/pages/LinkedInCallbackPage.tsx` — callback OAuth do LinkedIn (popup); postMessage `linkedin_auth` + fecha
+- `src/pages/InstagramCallbackPage.tsx` — callback OAuth do Instagram (popup); postMessage `instagram_oauth` + fecha
+- `src/pages/BrandPage.tsx` — brand kit + seção "Redes Sociais" (conectar/desconectar LinkedIn e Instagram)
+- `src/pages/CarouselLibraryPage.tsx` — biblioteca de carrosséis; LinkedIn via Supabase
 - `src/pages/PostLibraryPage.tsx` — biblioteca de posts; restore via setPendingPost ao clicar
+- `src/services/socialConnections.ts` — get/save/remove por `user_email` na tabela `social_connections`; `getInstagramConnection` faz refresh lazy (POST `/api/instagram-callback`) se expira em < 7 dias
 - `src/services/gemini.ts` — thin wrappers HTTP para as API Routes (renomear para claude.ts futuramente)
 - `src/services/tokens.ts` — PULSE_COSTS, debitToken, notifyBalanceUpdate
 - `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas; pendingPost restore com match exato de variante
@@ -214,9 +228,30 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 - `api/linkedin-auth.js` — inicia OAuth LinkedIn
 - `api/linkedin-callback.js` — troca código por token; redireciona para `/auth/linkedin/done`
 - `api/linkedin-post.js` — publica no LinkedIn; suporta imagem única e carrossel; usa `urn:li:person:${linkedinSub}`
-- `vercel.json` — rewrites: `/api/*`, `/auth/linkedin/callback` → servidor, `/auth/linkedin/done` → index.html, `/*` → index.html
+- `api/instagram-auth.js` — inicia OAuth Instagram; encoda `user_email` no `state` (base64)
+- `api/instagram-callback.js` — dual-purpose: GET com `?code=` faz o OAuth (troca code → token curto → token longo → perfil → redireciona); POST com `{ accessToken }` faz refresh lazy
+- `api/instagram-post.js` — publica no Instagram; recebe `accessToken` + `igUserId` do body (não usa env var)
+- `vercel.json` — rewrites: `/api/*`, `/auth/linkedin/callback` → servidor, `/auth/linkedin/done` e `/auth/instagram/done` → index.html, `/*` → index.html
 - `src/templates/index.ts` — registry de templates
 - `src/state/useStore.ts` — Zustand v5 + persist; `activeTemplateId` NÃO é persistido (sempre inicia null); `pendingPost` É persistido; versão 3
+
+## Funções Vercel (11 — dentro do limite free)
+| Arquivo | Função |
+|---|---|
+| `api/agent-chat.js` | Agente conversacional (Claude Haiku) |
+| `api/generate-post.js` | Geração de post padrão (Claude Haiku) |
+| `api/generate-carousel.js` | Geração de carrossel (Claude Haiku) |
+| `api/generate-premium.js` | Post premium (GPT Image 2) |
+| `api/generate-image-ai.js` | Geração de imagem FAL.ai FLUX |
+| `api/edit-image-ai.js` | Edição de imagem com IA |
+| `api/instagram-auth.js` | Inicia OAuth Instagram |
+| `api/instagram-callback.js` | OAuth callback + refresh lazy (dual-purpose) |
+| `api/instagram-post.js` | Publicação no Instagram |
+| `api/linkedin-auth.js` | Inicia OAuth LinkedIn |
+| `api/linkedin-callback.js` | OAuth callback LinkedIn |
+| `api/linkedin-post.js` | Publicação no LinkedIn |
+
+> Removidos: `search-videos.js`, `generate-premium.js.bak`, `instagram-refresh.js`
 
 ## Custos de API (referência)
 - Claude Haiku 4.5: $1/$5 por milhão de tokens input/output
