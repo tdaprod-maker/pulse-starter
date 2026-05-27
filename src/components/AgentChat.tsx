@@ -559,42 +559,49 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           slide.body ? slide.body.slice(0, 120) : '',
         ].filter(Boolean).join('. ')
 
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 55000)
-
-        try {
-          const premRes = await fetch('/api/generate-premium', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: slidePrompt,
-              slideIndex: i + 1,
-              totalSlides: carouselData.slides.length,
-              styleContext,
-              size: '1024x1280',
-            }),
-            signal: controller.signal,
-          })
-          clearTimeout(timeoutId)
-
-          if (!premRes.ok) {
-            const err = await premRes.json().catch(() => ({})) as { error?: string }
-            console.error(`[generatePremiumCarousel] slide ${i + 1} erro:`, err)
-            slidesWithImages.push({ ...slide, imageUrl: '' })
-            continue
+        let imageUrl = ''
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (attempt === 1) {
+            setMessages(prev => {
+              const msgs = [...prev]
+              msgs[msgs.length - 1] = { role: 'agent', content: `Slide ${i + 1} demorou — tentando novamente...` }
+              return msgs
+            })
           }
-
-          const data = await premRes.json() as { image?: string }
-          slidesWithImages.push({ ...slide, imageUrl: data.image ?? '' })
-        } catch (e: any) {
-          clearTimeout(timeoutId)
-          if (e.name === 'AbortError') {
-            console.error(`[generatePremiumCarousel] slide ${i + 1} timeout (55s)`)
-          } else {
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 55000)
+          try {
+            const premRes = await fetch('/api/generate-premium', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                prompt: slidePrompt,
+                slideIndex: i + 1,
+                totalSlides: carouselData.slides.length,
+                styleContext,
+                size: '1024x1280',
+              }),
+              signal: controller.signal,
+            })
+            clearTimeout(timeoutId)
+            if (premRes.ok) {
+              const data = await premRes.json() as { image?: string }
+              imageUrl = data.image ?? ''
+            } else {
+              const err = await premRes.json().catch(() => ({})) as { error?: string }
+              console.error(`[generatePremiumCarousel] slide ${i + 1} erro HTTP:`, err)
+            }
+            break
+          } catch (e: any) {
+            clearTimeout(timeoutId)
+            if (e.name === 'AbortError' && attempt === 0) {
+              continue
+            }
             console.error(`[generatePremiumCarousel] slide ${i + 1} erro:`, e)
+            break
           }
-          slidesWithImages.push({ ...slide, imageUrl: '' })
         }
+        slidesWithImages.push({ ...slide, imageUrl })
       }
 
       // Aplica logo do brand kit em cada slide

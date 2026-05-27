@@ -96,15 +96,54 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { userInput, slideCount, brand, templateId } = req.body
-
-  if (!userInput || !slideCount) {
-    return res.status(400).json({ error: 'userInput e slideCount são obrigatórios' })
-  }
+  const { userInput, slideCount, brand, templateId, captionOnly, captionPrompt } = req.body
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' })
+  }
+
+  // Modo legenda: gera apenas caption via Claude Haiku, sem slides
+  if (captionOnly) {
+    if (!captionPrompt) return res.status(400).json({ error: 'captionPrompt é obrigatório no modo captionOnly' })
+    const brandCtx = brand
+      ? `Marca: ${brand.businessName || ''}. Segmento: ${brand.segment || ''}. Tom: ${brand.tone || ''}.`
+      : ''
+    const prompt = `Você é um especialista em marketing digital brasileiro. Crie legendas para um post de redes sociais.
+
+Contexto do post: ${captionPrompt}
+${brandCtx}
+
+Retorne APENAS JSON válido sem markdown:
+{
+  "instagram": "legenda curta e impactante para Instagram, máximo 80 palavras, tom humano e direto, sem hashtags",
+  "linkedin": "legenda profissional para LinkedIn entre 150 e 250 palavras, começa com dado ou observação relevante, termina com pergunta para engajamento, sem hashtags",
+  "hashtags": "6 a 8 hashtags relevantes separadas por espaço em português e inglês"
+}`
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, temperature: 0.7, messages: [{ role: 'user', content: prompt }] }),
+      })
+      if (!response.ok) throw new Error(`Anthropic error ${response.status}`)
+      const data = await response.json()
+      const raw = data?.content?.[0]?.text ?? '{}'
+      const clean = raw.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
+      return res.status(200).json({
+        instagram: parsed.instagram ?? '',
+        linkedin: parsed.linkedin ?? '',
+        hashtags: parsed.hashtags ?? '',
+      })
+    } catch (err) {
+      console.error('[generate-carousel/caption] erro:', err)
+      return res.status(500).json({ error: `Erro ao gerar legenda: ${err.message}` })
+    }
+  }
+
+  if (!userInput || !slideCount) {
+    return res.status(400).json({ error: 'userInput e slideCount são obrigatórios' })
   }
 
   const prompt = buildCarouselPrompt(userInput, slideCount, brand, templateId)

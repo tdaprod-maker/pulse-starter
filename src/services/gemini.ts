@@ -28,7 +28,6 @@ export interface BrandContext {
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
 const API_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`
-const API_URL_FALLBACK = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`
 
 
 // ─── Carrossel ────────────────────────────────────────────────────────────────
@@ -346,53 +345,30 @@ Responda SOMENTE com JSON válido, sem markdown.`
 }
 
 export async function generatePremiumCaption(prompt: string, brand?: BrandContext): Promise<{ instagram: string; linkedin: string; hashtags: string }> {
-  const brandCtx = brand ? `
-Marca: ${brand.businessName || ''}
-Segmento: ${brand.segment || ''}
-Tom: ${brand.tone || ''}
-Descricao: ${brand.brandDescription || ''}` : ''
-
-  const text = `Você é um especialista em marketing digital brasileiro. Crie legendas para um post gerado com IA.
-
-Contexto do post: ${prompt}
-${brandCtx}
-
-Retorne APENAS JSON válido sem markdown:
-{
-  "instagram": "legenda curta e impactante para Instagram, máximo 80 palavras, tom humano e direto, sem hashtags",
-  "linkedin": "legenda profissional para LinkedIn entre 150 e 250 palavras, começa com dado ou observação relevante, termina com pergunta para engajamento, sem hashtags",
-  "hashtags": "6 a 8 hashtags relevantes separadas por espaço em português e inglês"
-}`
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const url = attempt < 2
-? API_URL
-        : API_URL_FALLBACK
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text }] }],
-          generationConfig: { temperature: 0.7 },
-        }),
-      })
-      const data = await res.json()
-      console.log('[caption] raw response:', JSON.stringify(data).slice(0, 200))
-      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
-      const clean = raw.replace(/```json|```/g, '').trim()
-      const parsed = JSON.parse(clean)
-      return {
-        instagram: parsed.instagram ?? '',
-        linkedin: parsed.linkedin ?? '',
-        hashtags: parsed.hashtags ?? '',
-      }
-    } catch {
-      if (attempt === 2) return { instagram: '', linkedin: '', hashtags: '' }
-      await new Promise(r => setTimeout(r, 2000))
+  try {
+    const res = await fetch('/api/generate-carousel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        captionOnly: true,
+        captionPrompt: prompt,
+        brand: brand ? {
+          businessName: brand.businessName,
+          segment: brand.segment,
+          tone: brand.tone,
+        } : undefined,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    return {
+      instagram: data.instagram ?? '',
+      linkedin: data.linkedin ?? '',
+      hashtags: data.hashtags ?? '',
     }
+  } catch {
+    return { instagram: '', linkedin: '', hashtags: '' }
   }
-  return { instagram: '', linkedin: '', hashtags: '' }
 }
 
 export async function breakCarouselIntoSlides(prompt: string, slideCount: number, brand?: BrandContext): Promise<string[]> {
