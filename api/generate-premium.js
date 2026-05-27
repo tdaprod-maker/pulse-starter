@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt, slideIndex, totalSlides, styleContext, size, visualReferences } = req.body
+  const { prompt, slideIndex, totalSlides, styleContext, size, visualReferences, slideTitle, slideBody } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' })
@@ -16,6 +16,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'OPENAI_API_KEY not configured' })
   }
 
+  // Presente apenas em slides de carrossel premium
+  const carouselTextOverlay = slideTitle ? `
+
+CAROUSEL SLIDE TEXT OVERLAY — MANDATORY OVERRIDE:
+This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. You MUST render the following text visibly integrated into the image design. This requirement overrides the "Typography is secondary" rule above.
+• HEADLINE (large, bold, high contrast, prominent): "${slideTitle}"
+${slideBody ? `• BODY / SUPPORTING TEXT (medium size, legible, below the headline): "${slideBody}"` : ''}
+Text placement rules:
+- Position in the lower-center or center zone of the image
+- Ensure high contrast: white text on dark areas, or dark text on light areas, or use a semi-transparent background strip
+- Typography must be elegant and modern, matching the brand style
+- Text in Portuguese (Brazil) as provided above — do NOT translate or change it` : ''
+
   const fullPrompt = `You are a professional social media art director generating a high-quality image.
 
 BRAND VISUAL STYLE (follow strictly):
@@ -25,7 +38,7 @@ VISUAL BRIEF:
 ${prompt}
 
 VISUAL SUBJECT RULE (most important rule — read carefully):
-- If the brief describes a real person, food dish, physical product, animal, or real location: that subject MUST be rendered as the PHOTOREALISTIC main visual element. The person or subject is the hero of the image. Render them realistically, prominently, clearly. Typography is secondary — one minimal text overlay at most.
+- If the brief describes a real person, food dish, physical product, animal, or real location: that subject MUST be rendered as the PHOTOREALISTIC main visual element. The person or subject is the hero of the image. Render them realistically, prominently, clearly.${slideTitle ? ' Typography is essential — see CAROUSEL SLIDE TEXT OVERLAY section below.' : ' Typography is secondary — one minimal text overlay at most.'}
 - If the brief is purely informational or typographic (no specific visual subject described): create a strong typographic composition with large, bold text as the focal point.
 
 MANDATORY RULES:
@@ -33,12 +46,11 @@ MANDATORY RULES:
 - Dark or neutral background — no loud gradients
 - NO: neon glows, particle effects, lens flares, holographic elements, robotic hands, AI chip imagery unless explicitly requested
 - NO: generic AI stock imagery (blue brain, neural networks, glowing circuits)
-- Text in Portuguese (Brazil) — ONE headline maximum (6 words) + ONE short supporting phrase (10 words max)
 - If the brand has a defined visual style, replicate it: colors, typography weight, spacing, mood
 - CRITICAL: Place all key elements in the CENTER 60% of image width and CENTER 70% of image height only
 - CRITICAL: Outer edges must be empty or background only — no text or subjects near edges
 - CRITICAL: Do NOT include any logo or brand mark — the logo will be overlaid separately
-
+${carouselTextOverlay}
 QUALITY STANDARD: Photorealistic and polished — indistinguishable from a premium photo shoot or agency design.`
 
   try {

@@ -553,12 +553,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           return msgs
         })
 
-        const slidePrompt = [
-          slide.imagePrompt,
-          `Slide ${i + 1} de ${carouselData.slides.length}: ${slide.title}`,
-          slide.body ? slide.body.slice(0, 120) : '',
-        ].filter(Boolean).join('. ')
-
         let imageUrl = ''
         for (let attempt = 0; attempt < 2; attempt++) {
           if (attempt === 1) {
@@ -575,11 +569,13 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                prompt: slidePrompt,
+                prompt: slide.imagePrompt,
                 slideIndex: i + 1,
                 totalSlides: carouselData.slides.length,
                 styleContext,
                 size: '1024x1280',
+                slideTitle: slide.title,
+                slideBody: slide.body ?? '',
               }),
               signal: controller.signal,
             })
