@@ -672,6 +672,15 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       console.log('[handleSend] agentChat response:', JSON.stringify(response))
 
+      const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true'
+      if (debugMode && response.ready && response.mode === 'carousel' && response.engine === 'premium') {
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: `**[DEBUG] JSON do agente (premium carousel):**\n\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``,
+        }])
+        return
+      }
+
       if (response.ready && response.prompt) {
         if (response.mode === 'carousel' && response.engine === 'premium') {
           const slideCount = Math.min(response.slideCount ?? 5, 5)
