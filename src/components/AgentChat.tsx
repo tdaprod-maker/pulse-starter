@@ -61,7 +61,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [generating, setGenerating] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [pendingPremium, setPendingPremium] = useState<{ prompt: string; format?: string } | null>(null)
-  const [pendingPremiumCarousel, setPendingPremiumCarousel] = useState<{ prompt: string; slideCount: number; templateId?: string } | null>(null)
+  const [pendingPremiumCarousel, setPendingPremiumCarousel] = useState<{ prompt: string; slideCount: number; templateId?: string; slides?: { title: string; body?: string }[] } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const { theme } = useTheme()
@@ -496,7 +496,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
-  async function generatePremiumCarousel(prompt: string, slideCount: number, templateId?: string) {
+  async function generatePremiumCarousel(prompt: string, slideCount: number, templateId?: string, presetSlides?: { title: string; body?: string }[]) {
     const cappedCount = Math.min(slideCount, 5)
     setGenerating(true)
     try {
@@ -574,8 +574,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 totalSlides: carouselData.slides.length,
                 styleContext,
                 size: '1024x1280',
-                slideTitle: slide.title,
-                slideBody: slide.body ?? '',
+                slideTitle: presetSlides?.[i]?.title ?? slide.title,
+                slideBody: presetSlides?.[i]?.body ?? slide.body ?? '',
               }),
               signal: controller.signal,
             })
@@ -675,7 +675,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (response.ready && response.prompt) {
         if (response.mode === 'carousel' && response.engine === 'premium') {
           const slideCount = Math.min(response.slideCount ?? 5, 5)
-          setPendingPremiumCarousel({ prompt: response.prompt, slideCount, templateId: response.templateId })
+          setPendingPremiumCarousel({ prompt: response.prompt, slideCount, templateId: response.templateId, slides: response.slides })
           setMessages(prev => [...prev, {
             role: 'agent',
             content: `Esse carrossel usa GPT Image 2 — cada slide é uma imagem fotorrealista. Custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * slideCount} pulses (4 × ${slideCount} slides) e pode levar até ${slideCount * 30}s. Confirmar?`,
@@ -832,7 +832,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 const pending = pendingPremiumCarousel
                 setPendingPremiumCarousel(null)
                 onGenerating?.()
-                generatePremiumCarousel(pending.prompt, pending.slideCount, pending.templateId)
+                generatePremiumCarousel(pending.prompt, pending.slideCount, pending.templateId, pending.slides)
               }}
               style={{
                 padding: '7px 14px', borderRadius: '8px', border: 'none',

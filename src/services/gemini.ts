@@ -451,6 +451,7 @@ export interface AgentResponse {
   slideCount?: number
   templateId?: string
   engine?: 'standard' | 'premium'
+  slides?: { title: string; body?: string }[]
 }
 
 export async function agentChat(
