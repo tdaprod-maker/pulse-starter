@@ -1,7 +1,7 @@
 export default function handler(req, res) {
   const clientId = process.env.INSTAGRAM_CLIENT_ID
   const redirectUri = 'https://pulse-starter.vercel.app/api/instagram-callback'
-  const scope = 'instagram_basic,instagram_content_publishing'
+  const scope = 'instagram_basic,instagram_content_publish'
 
   const userEmail = req.query.email ?? ''
   const state = Buffer.from(userEmail).toString('base64')
