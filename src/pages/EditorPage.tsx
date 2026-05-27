@@ -35,6 +35,7 @@ export function EditorPage() {
   const [carouselTemplateId, setCarouselTemplateId] = useState<string | undefined>(undefined)
   const [carouselCurrentSlide, setCarouselCurrentSlide] = useState(0)
   const [carouselSelectedElement, setCarouselSelectedElement] = useState<string | null>(null)
+  const [carouselEngine, setCarouselEngine] = useState<string | undefined>(undefined)
   const [premiumSlides, setPremiumSlides] = useState<PremiumSlide[] | null>(null)
   const [premiumCaption, setPremiumCaption] = useState<{ instagram: string; linkedin: string; hashtags: string } | null>(null)
   const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
@@ -242,11 +243,12 @@ export function EditorPage() {
           <AgentChat
             onGenerating={() => {}}
             onGenerated={() => {}}
-            onReset={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setPremiumSlides(null); setPremiumCaption(null) }}
-            onCarouselGenerated={(slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string) => {
+            onReset={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselEngine(undefined); setPremiumSlides(null); setPremiumCaption(null) }}
+            onCarouselGenerated={(slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => {
               setCarouselSlides(slides)
               setCarouselCaption(caption)
               setCarouselTemplateId(templateId)
+              setCarouselEngine(engine)
             }}
             onPremiumGenerated={(slides, caption) => {
               console.log('[EditorPage] onPremiumGenerated chamado, slides:', slides.length)
@@ -314,7 +316,8 @@ export function EditorPage() {
               slides={carouselSlides}
               caption={carouselCaption}
               templateId={carouselTemplateId}
-              onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselCurrentSlide(0); setCarouselSelectedElement(null) }}
+              engine={carouselEngine}
+              onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselEngine(undefined); setCarouselCurrentSlide(0); setCarouselSelectedElement(null) }}
               onSlideChange={(i) => { setCarouselCurrentSlide(i); setCarouselSelectedElement(null) }}
               onSelectElement={setCarouselSelectedElement}
             />

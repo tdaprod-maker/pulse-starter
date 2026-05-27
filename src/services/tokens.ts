@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase'
 export const PULSE_COSTS = {
   POST: 4,           // Gerar post com imagem FAL.ai
   PREMIUM_POST: 8,   // Gerar post com GPT Image 2 (fotorrealista)
-  CAROUSEL_SLIDE: 2, // Por slide do carrossel
+  CAROUSEL_SLIDE: 2,         // Por slide do carrossel (FAL.ai)
+  PREMIUM_CAROUSEL_SLIDE: 4, // Por slide do carrossel premium (GPT Image 2)
   EDIT_IMAGE: 3,     // Editar imagem com IA
   REVIEW_POST: 1,    // Revisar post com agente
 } as const

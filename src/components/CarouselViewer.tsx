@@ -17,6 +17,7 @@ interface CarouselViewerProps {
   slides: SlideWithImage[]
   caption: string
   templateId?: string
+  engine?: string
   onClose: () => void
   onSlideChange?: (index: number) => void
   onSelectElement?: (id: string | null) => void
@@ -34,7 +35,7 @@ const TYPE_COLOR: Record<string, string> = {
   cta: '#FF6F5E',
 }
 
-export function CarouselViewer({ slides, caption, templateId, onClose, onSlideChange, onSelectElement }: CarouselViewerProps) {
+export function CarouselViewer({ slides, caption, templateId, engine, onClose, onSlideChange, onSelectElement }: CarouselViewerProps) {
   const [current, setCurrent] = useState(0)
   const [copiedCaption, setCopiedCaption] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -64,6 +65,7 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
 
   // Cria templates Konva para cada slide
   useEffect(() => {
+    if (engine === 'premium') { setReady(true); return }
     if (!templateId) { setReady(true); return }
     const def = templateRegistry.find(d => d.id === templateId)
     if (!def) { setReady(true); return }
@@ -130,6 +132,9 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
   }, [templateId])
 
   async function getSlideImages(): Promise<string[]> {
+    if (engine === 'premium') {
+      return slides.map(s => s.imageUrl).filter(Boolean)
+    }
     await new Promise(r => setTimeout(r, 800))
     const images: string[] = []
     for (let i = 0; i < slides.length; i++) {
@@ -210,6 +215,23 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
   async function handleDownloadAll() {
     setExporting(true)
     try {
+      if (engine === 'premium') {
+        const zip = new JSZip()
+        for (let i = 0; i < slides.length; i++) {
+          const imageUrl = slides[i].imageUrl
+          if (!imageUrl) continue
+          const base64 = imageUrl.split(',')[1]
+          if (base64) zip.file(`slide-${i + 1}.png`, base64, { base64: true })
+        }
+        const blob = await zip.generateAsync({ type: 'blob' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'carrossel-premium.zip'
+        a.click()
+        URL.revokeObjectURL(url)
+        return
+      }
       await new Promise(r => setTimeout(r, 800))
       const zip = new JSZip()
       for (let i = 0; i < slides.length; i++) {
@@ -242,6 +264,15 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
   }
 
   async function handleDownloadCurrent() {
+    if (engine === 'premium') {
+      const imageUrl = slides[current].imageUrl
+      if (!imageUrl) return
+      const a = document.createElement('a')
+      a.href = imageUrl
+      a.download = `slide-${current + 1}.png`
+      a.click()
+      return
+    }
     const stage = stageRefs.current[current]
     if (!stage) return
     const templateStore = useStore.getState().templates.find(t => t.id === `carousel-slide-${current}`)
@@ -259,6 +290,120 @@ export function CarouselViewer({ slides, caption, templateId, onClose, onSlideCh
     )
   }
 
+  // ── Modo premium: render puramente baseado em imagens ──────────────────────
+  if (engine === 'premium') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)', overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 20px', borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-panel)', flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              Carrossel Premium — {slides.length} slides
+            </span>
+            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: '#3A5AFF', color: '#fff', fontWeight: 600 }}>
+              GPT Image 2
+            </span>
+            <span style={{
+              fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
+              background: TYPE_COLOR[slide.type], color: '#fff', fontWeight: 600,
+            }}>
+              {TYPE_LABEL[slide.type]}
+            </span>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '20px' }}>×</button>
+        </div>
+
+        {/* Imagem do slide atual */}
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '24px', overflow: 'hidden', position: 'relative',
+        }}>
+          <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', flexShrink: 0, width: '400px', maxWidth: '100%' }}>
+            {slides[current].imageUrl ? (
+              <img
+                src={slides[current].imageUrl}
+                alt={slides[current].title}
+                style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              <div style={{ width: '100%', aspectRatio: '4/5', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Slide indisponível</p>
+              </div>
+            )}
+          </div>
+          {current > 0 && (
+            <button onClick={() => { const i = current - 1; setCurrent(i); onSlideChange?.(i) }} style={{
+              position: 'absolute', left: '12px',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+              color: '#fff', width: '40px', height: '40px', borderRadius: '50%',
+              cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>‹</button>
+          )}
+          {current < slides.length - 1 && (
+            <button onClick={() => { const i = current + 1; setCurrent(i); onSlideChange?.(i) }} style={{
+              position: 'absolute', right: '12px',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+              color: '#fff', width: '40px', height: '40px', borderRadius: '50%',
+              cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>›</button>
+          )}
+        </div>
+
+        {/* Miniaturas */}
+        <div style={{ display: 'flex', gap: '8px', padding: '0 20px 16px', overflowX: 'auto', flexShrink: 0, justifyContent: 'center' }}>
+          {slides.map((s, i) => (
+            <div key={i} onClick={() => { setCurrent(i); onSlideChange?.(i) }} style={{
+              width: '56px', height: '70px', borderRadius: '6px', overflow: 'hidden',
+              cursor: 'pointer', flexShrink: 0, position: 'relative',
+              border: i === current ? '2px solid var(--accent)' : '2px solid transparent',
+              background: '#111',
+            }}>
+              {s.imageUrl && <img src={s.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              <div style={{
+                position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '11px', fontWeight: 700, color: '#fff',
+              }}>{i + 1}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Ações */}
+        <div style={{ padding: '12px 20px 20px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+          {caption && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, maxHeight: '80px', overflowY: 'auto', background: 'var(--bg-surface)', borderRadius: '8px', padding: '8px 12px', border: '1px solid var(--border)' }}>{caption}</p>
+              <button onClick={handleCopyCaption} style={{ width: '100%', padding: '9px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit' }}>
+                {copiedCaption ? 'Legenda copiada!' : 'Copiar legenda'}
+              </button>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={handleDownloadCurrent} style={{ flex: 1, padding: '11px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, fontFamily: 'inherit' }}>
+              Baixar slide {current + 1}
+            </button>
+            <button onClick={handleDownloadAll} disabled={exporting} style={{ flex: 1, padding: '11px', borderRadius: '8px', cursor: exporting ? 'default' : 'pointer', background: '#3A5AFF', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', opacity: exporting ? 0.7 : 1 }}>
+              {exporting ? 'Exportando...' : 'Baixar todos'}
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={handlePublishLinkedIn} disabled={publishingLI || !linkedinToken} style={{ flex: 1, padding: '10px', borderRadius: '8px', cursor: publishingLI || !linkedinToken ? 'default' : 'pointer', background: linkedinToken ? '#0A66C2' : 'var(--bg-surface)', border: '1px solid var(--border)', color: linkedinToken ? '#fff' : 'var(--text-muted)', fontSize: '12px', fontWeight: 600, fontFamily: 'inherit', opacity: publishingLI ? 0.7 : 1 }}>
+              {publishingLI ? 'Publicando...' : liStatus === 'success' ? 'Publicado!' : liStatus === 'error' ? 'Erro' : 'LinkedIn'}
+            </button>
+            <button onClick={handlePublishInstagram} disabled={publishingIG} style={{ flex: 1, padding: '10px', borderRadius: '8px', cursor: publishingIG ? 'default' : 'pointer', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', border: 'none', color: '#fff', fontSize: '12px', fontWeight: 600, fontFamily: 'inherit', opacity: publishingIG ? 0.7 : 1 }}>
+              {publishingIG ? 'Publicando...' : igStatus === 'success' ? 'Publicado!' : igStatus === 'error' ? 'Erro' : 'Instagram'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Modo standard: render baseado em Konva ──────────────────────────────────
   const slideTemplateId = `carousel-slide-${current}`
   const slideTemplate = useStore.getState().templates.find(t => t.id === slideTemplateId)
 

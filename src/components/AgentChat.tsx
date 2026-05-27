@@ -25,7 +25,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   onGenerating?: () => void
   onGenerated?: () => void
   onReset?: () => void
-  onCarouselGenerated?: (slides: (CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string) => void
+  onCarouselGenerated?: (slides: (CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => void
   onPremiumGenerated?: (slides: PremiumSlide[], caption: { instagram: string; linkedin: string; hashtags: string } | null) => void
 } = {}) {
   const [messages, setMessages] = useState<AgentMessage[]>([
@@ -61,6 +61,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [generating, setGenerating] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [pendingPremium, setPendingPremium] = useState<{ prompt: string; format?: string } | null>(null)
+  const [pendingPremiumCarousel, setPendingPremiumCarousel] = useState<{ prompt: string; slideCount: number; templateId?: string } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const { theme } = useTheme()
@@ -495,6 +496,161 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
+  async function generatePremiumCarousel(prompt: string, slideCount: number, templateId?: string) {
+    const cappedCount = Math.min(slideCount, 5)
+    setGenerating(true)
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const userEmail = authData.user?.email ?? ''
+      const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+
+      const totalCost = PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount
+      const balance = await getTokenBalance(userEmail)
+      if (balance < totalCost) {
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: `Saldo insuficiente. Você tem ${balance} pulses e precisa de ${totalCost} para este carrossel premium.`,
+        }])
+        return
+      }
+
+      const brandContext = brandCtx ? {
+        businessName: brandCtx.business_name || brandCtx.brand_name,
+        segment: brandCtx.segment,
+        tone: brandCtx.tone,
+        visualStyle: brandCtx.visual_style ?? undefined,
+        brandDescription: brandCtx.brand_description ?? undefined,
+      } : undefined
+
+      const currentActiveId = useStore.getState().activeTemplateId
+      const lockedBase = currentActiveId
+        ? currentActiveId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+        : undefined
+      const resolvedTemplateId = lockedBase ?? templateId ?? undefined
+
+      setMessages(prev => [...prev, { role: 'agent', content: `Planejando ${cappedCount} slides...` }])
+
+      const carouselData = await generateCarouselContent(prompt, cappedCount, brandContext, resolvedTemplateId)
+
+      const styleContext = [
+        brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
+        brandCtx?.tone ? `Tone: ${brandCtx.tone}` : '',
+        brandCtx?.visual_style ? `Visual style: ${brandCtx.visual_style}` : '',
+        brandCtx?.brand_description ? `Brand: ${brandCtx.brand_description}` : '',
+        brandCtx?.color_primary ? `Primary color: ${brandCtx.color_primary}` : '',
+      ].filter(Boolean).join('. ')
+
+      const slidesWithImages: (CarouselSlide & { imageUrl: string })[] = []
+
+      for (let i = 0; i < carouselData.slides.length; i++) {
+        const slide = carouselData.slides[i]
+        setMessages(prev => {
+          const msgs = [...prev]
+          msgs[msgs.length - 1] = {
+            role: 'agent',
+            content: `Gerando slide ${i + 1} de ${carouselData.slides.length} com GPT Image 2...`,
+          }
+          return msgs
+        })
+
+        const slidePrompt = [
+          slide.imagePrompt,
+          `Slide ${i + 1} de ${carouselData.slides.length}: ${slide.title}`,
+          slide.body ? slide.body.slice(0, 120) : '',
+        ].filter(Boolean).join('. ')
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 55000)
+
+        try {
+          const premRes = await fetch('/api/generate-premium', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: slidePrompt,
+              slideIndex: i + 1,
+              totalSlides: carouselData.slides.length,
+              styleContext,
+              size: '1024x1280',
+            }),
+            signal: controller.signal,
+          })
+          clearTimeout(timeoutId)
+
+          if (!premRes.ok) {
+            const err = await premRes.json().catch(() => ({})) as { error?: string }
+            console.error(`[generatePremiumCarousel] slide ${i + 1} erro:`, err)
+            slidesWithImages.push({ ...slide, imageUrl: '' })
+            continue
+          }
+
+          const data = await premRes.json() as { image?: string }
+          slidesWithImages.push({ ...slide, imageUrl: data.image ?? '' })
+        } catch (e: any) {
+          clearTimeout(timeoutId)
+          if (e.name === 'AbortError') {
+            console.error(`[generatePremiumCarousel] slide ${i + 1} timeout (55s)`)
+          } else {
+            console.error(`[generatePremiumCarousel] slide ${i + 1} erro:`, e)
+          }
+          slidesWithImages.push({ ...slide, imageUrl: '' })
+        }
+      }
+
+      // Aplica logo do brand kit em cada slide
+      if (brandCtx?.logo_url) {
+        try {
+          const withLogo = await Promise.all(
+            slidesWithImages.map(async s => {
+              if (!s.imageUrl) return s
+              return { ...s, image: await overlayLogoOnImage(s.imageUrl, brandCtx.logo_url!) }
+            })
+          )
+          for (let i = 0; i < withLogo.length; i++) {
+            if ((withLogo[i] as any).image) {
+              slidesWithImages[i] = { ...slidesWithImages[i], imageUrl: (withLogo[i] as any).image }
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao aplicar logo:', e)
+        }
+      }
+
+      const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount)
+      if (debit.success) notifyBalanceUpdate()
+
+      // Gera legenda
+      let generatedCaption = carouselData.caption
+      try {
+        const cap = await generatePremiumCaption(prompt, brandContext ? {
+          businessName: brandContext.businessName,
+          segment: brandContext.segment,
+          tone: brandContext.tone,
+          brandDescription: brandContext.brandDescription,
+        } : undefined)
+        if (cap?.instagram) generatedCaption = cap.instagram
+      } catch (e) {
+        console.error('Erro ao gerar legenda premium:', e)
+      }
+
+      onCarouselGenerated?.(slidesWithImages, generatedCaption, undefined, 'premium')
+      onGenerated?.()
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: `✦ Carrossel premium com ${cappedCount} slides gerado! Cada imagem foi criada com GPT Image 2.`,
+      }])
+      setCollapsed(true)
+    } catch (e: any) {
+      console.error('[generatePremiumCarousel] erro:', e)
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: e.message || 'Erro ao gerar o carrossel premium. Tente novamente.',
+      }])
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   async function handleSend() {
     if (!input.trim() || loading || generating) return
     const userMsg: AgentMessage = { role: 'user', content: input.trim() }
@@ -528,7 +684,14 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       console.log('[handleSend] agentChat response:', JSON.stringify(response))
 
       if (response.ready && response.prompt) {
-        if (response.mode === 'carousel') {
+        if (response.mode === 'carousel' && response.engine === 'premium') {
+          const slideCount = Math.min(response.slideCount ?? 5, 5)
+          setPendingPremiumCarousel({ prompt: response.prompt, slideCount, templateId: response.templateId })
+          setMessages(prev => [...prev, {
+            role: 'agent',
+            content: `Esse carrossel usa GPT Image 2 — cada slide é uma imagem fotorrealista. Custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * slideCount} pulses (4 × ${slideCount} slides) e pode levar até ${slideCount * 30}s. Confirmar?`,
+          }])
+        } else if (response.mode === 'carousel') {
           onGenerating?.()
           await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
         } else if (response.engine === 'premium') {
@@ -570,6 +733,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setInput('')
     setCollapsed(false)
     setPendingPremium(null)
+    setPendingPremiumCarousel(null)
     onReset?.()
   }
 
@@ -672,6 +836,42 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             </div>
           </div>
         ))}
+        {pendingPremiumCarousel && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <button
+              onClick={() => {
+                const pending = pendingPremiumCarousel
+                setPendingPremiumCarousel(null)
+                onGenerating?.()
+                generatePremiumCarousel(pending.prompt, pending.slideCount, pending.templateId)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Confirmar premium · {PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * (pendingPremiumCarousel.slideCount)} pulses
+            </button>
+            <button
+              onClick={() => {
+                const pending = pendingPremiumCarousel
+                setPendingPremiumCarousel(null)
+                onGenerating?.()
+                generateCarousel(pending.prompt, pending.slideCount, pending.templateId)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Usar padrão · {PULSE_COSTS.CAROUSEL_SLIDE * (pendingPremiumCarousel.slideCount)} pulses
+            </button>
+          </div>
+        )}
         {pendingPremium && !loading && !generating && (
           <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
             <button
