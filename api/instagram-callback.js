@@ -5,15 +5,9 @@ export default async function handler(req, res) {
     if (!accessToken) {
       return res.status(400).json({ error: 'accessToken é obrigatório' })
     }
-    const clientId = process.env.INSTAGRAM_CLIENT_ID
-    const clientSecret = process.env.INSTAGRAM_CLIENT_SECRET
     try {
       const refreshRes = await fetch(
-        `https://graph.facebook.com/v21.0/oauth/access_token` +
-        `?grant_type=fb_exchange_token` +
-        `&client_id=${encodeURIComponent(clientId)}` +
-        `&client_secret=${encodeURIComponent(clientSecret)}` +
-        `&fb_exchange_token=${encodeURIComponent(accessToken)}`
+        `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(accessToken)}`
       )
       const data = await refreshRes.json()
       if (!data.access_token) {
@@ -40,8 +34,8 @@ export default async function handler(req, res) {
   const redirectUri = 'https://pulse-starter.vercel.app/api/instagram-callback'
 
   try {
-    // Passo 1: troca code por token de curta duração (Facebook User Access Token)
-    const tokenRes = await fetch('https://graph.facebook.com/v21.0/oauth/access_token', {
+    // Passo 1: troca code por token de curta duração
+    const tokenRes = await fetch('https://api.instagram.com/oauth/access_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -60,14 +54,11 @@ export default async function handler(req, res) {
     }
 
     const shortToken = tokenData.access_token
+    const igUserIdFromToken = tokenData.user_id
 
     // Passo 2: troca por token longo (60 dias)
     const longRes = await fetch(
-      `https://graph.facebook.com/v21.0/oauth/access_token` +
-      `?grant_type=fb_exchange_token` +
-      `&client_id=${encodeURIComponent(clientId)}` +
-      `&client_secret=${encodeURIComponent(clientSecret)}` +
-      `&fb_exchange_token=${encodeURIComponent(shortToken)}`
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(clientSecret)}&access_token=${encodeURIComponent(shortToken)}`
     )
     const longData = await longRes.json()
     console.log('[instagram-callback] long token:', JSON.stringify(longData))
@@ -79,37 +70,15 @@ export default async function handler(req, res) {
     const longToken = longData.access_token
     const expiresIn = longData.expires_in ?? 5184000
 
-    // Passo 3: busca Instagram Business Account ID e username
-    // Tentativa 1: conta IG conectada diretamente ao perfil Facebook
-    let igUserId = ''
-    let username = ''
-
-    const meRes = await fetch(
-      `https://graph.facebook.com/v21.0/me?fields=instagram_business_account%7Bid%2Cusername%7D&access_token=${encodeURIComponent(longToken)}`
+    // Passo 3: busca ig_user_id e username
+    const profileRes = await fetch(
+      `https://graph.instagram.com/me?fields=id,username&access_token=${encodeURIComponent(longToken)}`
     )
-    const meData = await meRes.json()
-    console.log('[instagram-callback] me:', JSON.stringify(meData))
+    const profileData = await profileRes.json()
+    console.log('[instagram-callback] profile:', JSON.stringify(profileData))
 
-    if (meData.instagram_business_account?.id) {
-      igUserId = String(meData.instagram_business_account.id)
-      username = meData.instagram_business_account.username ?? ''
-    } else {
-      // Tentativa 2: conta IG conectada via Facebook Page
-      const pagesRes = await fetch(
-        `https://graph.facebook.com/v21.0/me/accounts?fields=instagram_business_account%7Bid%2Cusername%7D&access_token=${encodeURIComponent(longToken)}`
-      )
-      const pagesData = await pagesRes.json()
-      console.log('[instagram-callback] pages:', JSON.stringify(pagesData))
-
-      const pageWithIG = pagesData.data?.find(p => p.instagram_business_account?.id)
-      if (!pageWithIG) {
-        console.error('[instagram-callback] nenhuma conta Instagram Business encontrada')
-        return res.redirect(`${doneBase}?instagram_error=no_ig_account`)
-      }
-      igUserId = String(pageWithIG.instagram_business_account.id)
-      username = pageWithIG.instagram_business_account.username ?? ''
-    }
-
+    const igUserId = String(profileData.id ?? igUserIdFromToken ?? '')
+    const username = profileData.username ?? ''
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
 
     const params = new URLSearchParams({
