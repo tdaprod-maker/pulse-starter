@@ -80,6 +80,14 @@ DETECÇÃO DE MODO:
 - Para carrossel: não pergunte sobre rede social/formato — é sempre 4x5
 - Para carrossel: se não informou quantos slides, pergunte (opções: 3, 4, 5, 7, 10)
 
+DETECÇÃO DE TÍTULOS DE SLIDES — leia isso antes de escolher a engine:
+SE o usuário especificou explicitamente o título ou conteúdo de cada slide individual (ex: "Slide 1: Introdução, Slide 2: Benefícios, Slide 3: CTA"):
+- OBRIGATORIAMENTE inclua o campo "slides" no JSON, com os títulos EXATOS do usuário
+- O campo "slides" se aplica a qualquer engine (standard OU premium) — não é exclusivo do premium
+- Use as palavras EXATAS do usuário — não parafraseie, não resuma, não invente
+- slideCount deve ser igual ao número de itens no array "slides"
+SE o usuário NÃO especificou títulos individuais de slides → omita o campo "slides" completamente
+
 DECISÃO DE ENGINE (para mode "post" e mode "carousel"):
 Ao retornar ready=true, avalie o conteúdo e escolha a engine:
 - engine: "premium" → use quando o conteúdo envolver: produto físico para venda ou apresentação, prato de comida ou bebida, imóvel ou ambiente interno/externo (foto de espaço realista), atleta em ação ou cena esportiva ao vivo, produto de beleza/cosmético/skincare, pessoa real em situação realista
@@ -122,7 +130,7 @@ OU (post único — produto físico, prato de comida, imóvel, atleta, produto d
   "engine": "premium",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
-OU (carrossel — conteúdo tipográfico, educativo, informativo):
+OU (carrossel — conteúdo tipográfico, educativo, informativo — sem títulos especificados):
 {
   "ready": true,
   "mode": "carousel",
@@ -131,13 +139,40 @@ OU (carrossel — conteúdo tipográfico, educativo, informativo):
   "engine": "standard",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
-OU (carrossel — pessoas, produtos físicos, pratos, ambientes realistas — max 5 slides):
+OU (carrossel standard — quando o usuário especificou os títulos de cada slide explicitamente):
+{
+  "ready": true,
+  "mode": "carousel",
+  "slideCount": 3,
+  "prompt": "tema e objetivo em 1-2 frases",
+  "engine": "standard",
+  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir",
+  "slides": [
+    {"title": "título exato do slide 1 como o usuário disse", "body": "subtítulo ou corpo opcional"},
+    {"title": "título exato do slide 2", "body": "corpo opcional"},
+    {"title": "título exato do slide 3", "body": "corpo opcional"}
+  ]
+}
+OU (carrossel — pessoas, produtos físicos, pratos, ambientes realistas — max 5 slides — sem títulos especificados):
 {
   "ready": true,
   "mode": "carousel",
   "slideCount": 5,
   "prompt": "SUJEITO: [elemento visual principal que aparece em todos os slides]. OBJETIVO: [tema e rede social].",
   "engine": "premium"
+}
+OU (carrossel premium — quando o usuário especificou os títulos de cada slide explicitamente):
+{
+  "ready": true,
+  "mode": "carousel",
+  "slideCount": 3,
+  "prompt": "SUJEITO: [elemento visual principal]. OBJETIVO: [tema e rede social].",
+  "engine": "premium",
+  "slides": [
+    {"title": "título exato do slide 1 como o usuário disse", "body": "subtítulo ou corpo opcional"},
+    {"title": "título exato do slide 2", "body": "corpo opcional"},
+    {"title": "título exato do slide 3", "body": "corpo opcional"}
+  ]
 }
 
 Formatos válidos: "1x1", "4x5", "9x16", "16x9"
@@ -157,7 +192,7 @@ engine válidos: "standard" ou "premium"`
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 400,
+          max_tokens: 600,
           temperature: 0.7,
           messages: [{ role: 'user', content: prompt }],
         }),

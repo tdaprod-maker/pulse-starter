@@ -573,7 +573,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 slideIndex: i + 1,
                 totalSlides: carouselData.slides.length,
                 styleContext,
-                size: '1024x1280',
+                size: '1024x1536',
                 slideTitle: presetSlides?.[i]?.title ?? slide.title,
                 slideBody: presetSlides?.[i]?.body ?? slide.body ?? '',
               }),
