@@ -84,7 +84,7 @@ DECISÃO DE ENGINE (para mode "post" e mode "carousel"):
 Ao retornar ready=true, avalie o conteúdo e escolha a engine:
 - engine: "premium" → use quando o conteúdo envolver: produto físico para venda ou apresentação, prato de comida ou bebida, imóvel ou ambiente interno/externo (foto de espaço realista), atleta em ação ou cena esportiva ao vivo, produto de beleza/cosmético/skincare, pessoa real em situação realista
 - engine: "standard" → todos os outros casos: posts tipográficos, dados e números, frases de impacto, conteúdo informativo, posts institucionais, citações, vagas de emprego
-- CARROSSEL PREMIUM (mode="carousel", engine="premium"): máximo 5 slides — GPT Image 2 gera cada slide individualmente e pode levar ~2 minutos. Se o usuário pediu mais de 5 slides para um tema fotorrealista, avise: "Carrossel premium usa GPT Image 2 — máximo 5 slides. Prefere 5 slides premium (fotorrealista) ou ${N} slides padrão?" e aguarde confirmação antes de enviar ready:true.
+- CARROSSEL PREMIUM (mode="carousel", engine="premium"): máximo 5 slides — GPT Image 2 gera cada slide individualmente e pode levar ~2 minutos. Se o usuário pediu mais de 5 slides para um tema fotorrealista, avise: "Carrossel premium usa GPT Image 2 — máximo 5 slides. Prefere 5 slides premium (fotorrealista) ou N slides padrão?" e aguarde confirmação antes de enviar ready:true.
 
 REGRA CRÍTICA DO CAMPO "prompt":
 - Para posts STANDARD (tipográfico/informativo): máximo 2 frases. Tema, rede social, tom e objetivo. NÃO inclua cores, fontes, layout.

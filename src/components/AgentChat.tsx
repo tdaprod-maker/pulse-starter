@@ -619,21 +619,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount)
       if (debit.success) notifyBalanceUpdate()
 
-      // Gera legenda
-      let generatedCaption = carouselData.caption
-      try {
-        const cap = await generatePremiumCaption(prompt, brandContext ? {
-          businessName: brandContext.businessName,
-          segment: brandContext.segment,
-          tone: brandContext.tone,
-          brandDescription: brandContext.brandDescription,
-        } : undefined)
-        if (cap?.instagram) generatedCaption = cap.instagram
-      } catch (e) {
-        console.error('Erro ao gerar legenda premium:', e)
-      }
-
-      onCarouselGenerated?.(slidesWithImages, generatedCaption, undefined, 'premium')
+      onCarouselGenerated?.(slidesWithImages, carouselData.caption, undefined, 'premium')
       onGenerated?.()
       setMessages(prev => [...prev, {
         role: 'agent',
