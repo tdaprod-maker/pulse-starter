@@ -497,12 +497,15 @@ export function BrandPage() {
                       <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Não conectado</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => { const p = userEmail ? `?email=${encodeURIComponent(userEmail)}` : ''; window.open(`/api/instagram-auth${p}`, 'instagram_popup', 'width=600,height=700') }}
-                    style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', border: 'none', color: 'white', flexShrink: 0 }}
-                  >
-                    Conectar
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+                    <button
+                      onClick={() => { const p = userEmail ? `?email=${encodeURIComponent(userEmail)}` : ''; window.open(`/api/instagram-auth${p}`, 'instagram_popup', 'width=600,height=700') }}
+                      style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', border: 'none', color: 'white', flexShrink: 0 }}
+                    >
+                      Conectar
+                    </button>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>(em breve)</span>
+                  </div>
                 </div>
               )}
 
