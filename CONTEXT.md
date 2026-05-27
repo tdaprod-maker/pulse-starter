@@ -31,7 +31,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Banco: Supabase (auth + storage + postgres)
 - IA Imagem: FAL.ai FLUX (posts editáveis) + GPT Image 2 (posts premium)
 - IA Texto: Claude Haiku 4.5 via Vercel API Routes — migração do Gemini concluída para as funções principais
-- Deploy: Vercel (plano free — `maxDuration: 60` adicionado em `/api/generate-premium.js`)
+- Deploy: Vercel (plano free — `maxDuration: 60` adicionado em `/api/generate-premium.js`; **limitação:** timeout de 55s no cliente pode causar falha ocasional em slides do carrossel premium — upgrade para Pro resolve)
 
 ## Roadmap por Semanas
 
@@ -71,6 +71,8 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - PWA básico instalável (manifest + service worker + ícones do Pulse)
 - Agente decide engine (standard FAL.ai vs premium GPT Image 2)
 - PremiumResultViewer: imagem fotorrealista em formato único, download, legenda editável, publicação
+- Carrossel premium com GPT Image 2: geração sequencial por slide, confirmação com custo, texto overlay por slide via API, retry automático em timeout
+- Debug mode para carrossel premium: `VITE_DEBUG_MODE=true` exibe JSON do agente no chat sem gastar pulses
 - Agente conciso: máximo 2 frases por resposta, max_tokens=400, uma pergunta por vez
 - Template respeitado quando selecionado pelo usuário (lockedTemplateId com guard server-side)
 - Seleção de template por tema do conteúdo, não pelo segmento da marca
@@ -153,9 +155,13 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 - Topbar atualizado: duas abas substituídas por uma única "Biblioteca" → `/library`
 - Rotas legadas `/post-library` e `/carousel-library` preservadas para compatibilidade
 
-### 5. Carrossel com GPT Image 2
-- Carrossel hoje usa sempre FAL.ai (engine: "standard")
-- Roadmap: permitir carrossel premium com imagens fotorrealistas por slide
+### 5. Carrossel com GPT Image 2 ✅ Concluído
+- Agente retorna `mode: "carousel"` + `engine: "premium"` com array `slides[]` contendo título e corpo por slide
+- Geração sequencial: cada slide chama `/api/generate-premium.js` individualmente com o texto do slide injetado no prompt
+- Texto overlay renderizado pela API (GPT Image 2 instrui o conteúdo textual; canvas do cliente não sobrepõe texto)
+- Retry automático: 1 retentativa antes de exibir "slide indisponível"
+- Confirmação antes de gerar com custo total (2 pulses × nº de slides)
+- **Limitação conhecida:** timeout de 55s no Vercel free pode causar falha ocasional em slides que demoram mais — bloqueador técnico; ver item 10 abaixo
 
 ### 6. Redesign do painel de edição direito 🔜 Pendente (sessão futura)
 
@@ -172,6 +178,13 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 ### 7. Melhoria visual UX desktop e mobile
 - AgentChat ocupa muito espaço quando recolhido
 - Microinterações e feedback visual de loading poderiam ser mais polidos
+
+### 10. Upgrade Vercel Pro — desbloqueador para carrossel premium em produção 🔜 Pendente (1º cliente)
+- Plano free limita funções serverless a 60s; cliente adiciona 5s de margem (55s) para evitar "slide indisponível"
+- Slides com imagens complexas podem ultrapassar 55s → falha ocasional no carrossel premium
+- Vercel Pro ($20/mês) eleva `maxDuration` para até 300s — elimina o problema
+- **Ação:** fazer upgrade assim que fechar o primeiro cliente pago; ROI imediato (custo < margem de 1 cliente)
+- Enquanto isso: retry automático já implementado mitiga parcialmente o problema
 
 ### 9. App Review do Meta para Instagram (novo) 🔜 Necessário para produção
 - Sem review: Instagram OAuth funciona apenas com até **25 contas de teste** adicionadas manualmente no App Dashboard
