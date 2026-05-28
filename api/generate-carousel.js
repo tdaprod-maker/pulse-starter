@@ -68,7 +68,7 @@ REGRAS DE TEXTO:
 - Tom direto e alinhado com a marca
 - Títulos sem ponto final
 - Cada slide deve avançar a narrativa do anterior
-caption: legenda completa para Instagram com tom humano, máximo 150 palavras, incluindo 5 hashtags relevantes no final.
+caption: legenda para Instagram — primeira linha com GANCHO forte que para o scroll (pergunta, dado surpreendente ou promessa), estrutura em lista ou dicas que gera salvamento, CTA explícito no final ("Salve este post", "Compartilhe com quem precisa"). Emojis moderados (máx. 6). Máximo 2200 caracteres. Inclua 8-10 hashtags estratégicas por nicho no final (nunca genéricas como #marketing #success).
 Tema: "${userInput}"
 Responda SOMENTE com JSON válido, sem markdown, com EXATAMENTE ${slideCount} slides:
 {
@@ -109,22 +109,43 @@ export default async function handler(req, res) {
     const brandCtx = brand
       ? `Marca: ${brand.businessName || ''}. Segmento: ${brand.segment || ''}. Tom: ${brand.tone || ''}.`
       : ''
-    const prompt = `Você é um especialista em marketing digital brasileiro. Crie legendas para um post de redes sociais.
+    const prompt = `Você é um especialista em copywriting para redes sociais com foco em engajamento e alcance orgânico.
 
 Contexto do post: ${captionPrompt}
 ${brandCtx}
 
+REGRAS PARA INSTAGRAM (máximo 2200 caracteres):
+• Primeira linha: GANCHO obrigatório — pergunta provocativa, dado surpreendente ou afirmação contraintuitiva. SEM "Olá!" ou intro genérica. Essa linha aparece antes do "ver mais" e decide se o usuário continua lendo.
+• Estrutura para SALVAMENTO: lista numerada, "X dicas que...", revelação progressiva ou framework com passos. Posts salvos têm alcance orgânico maior.
+• Emojis: máximo 8, apenas onde reforçam o ponto. Nunca decorativos ou em toda linha.
+• Tom: humano, direto, levemente conversacional. Sem linguagem corporativa.
+• CTA final explícito e específico: "Salve este post antes de precisar disso", "Compartilhe com quem precisa ver isso", "Comente: qual é o seu maior desafio com X?"
+• Quebras de linha entre blocos para facilitar leitura rápida.
+
+REGRAS PARA LINKEDIN (máximo 3000 caracteres):
+• Primeira linha: insight profissional ou dado concreto. Nunca "Olá, pessoal!" ou abertura genérica. Ex: "87% dos gestores cometem esse erro sem perceber."
+• Estrutura: contexto rápido (2-3 linhas) → desenvolvimento com dados, exemplos ou framework → conclusão com aprendizado.
+• Tom: profissional mas humano. Sem buzzwords ("sinergias", "disruptivo", "holístico").
+• Inclua dados, porcentagens ou referências concretas para dar credibilidade.
+• Máximo 2-3 emojis ou nenhum.
+• CTA: pergunta aberta para comentários. Ex: "Como você lida com isso na sua empresa?"
+
+REGRAS DE HASHTAGS (estratégicas, nunca genéricas):
+• 8 a 12 hashtags específicas ao nicho. NUNCA: #marketing #success #business #motivation #empreendedorismo genérico.
+• Mix: 3-4 de nicho específico (10k-200k posts) + 3-4 de tema do post (200k-1M) + 2-3 de comunidade ou segmento.
+• Misture português e inglês.
+
 Retorne APENAS JSON válido sem markdown:
 {
-  "instagram": "legenda curta e impactante para Instagram, máximo 80 palavras, tom humano e direto, sem hashtags",
-  "linkedin": "legenda profissional para LinkedIn entre 150 e 250 palavras, começa com dado ou observação relevante, termina com pergunta para engajamento, sem hashtags",
-  "hashtags": "6 a 8 hashtags relevantes separadas por espaço em português e inglês"
+  "instagram": "legenda completa — gancho + estrutura + emojis moderados + CTA — máximo 2200 caracteres",
+  "linkedin": "legenda completa — insight inicial + desenvolvimento com dados + CTA — máximo 3000 caracteres",
+  "hashtags": "8 a 12 hashtags estratégicas separadas por espaço"
 }`
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, temperature: 0.7, messages: [{ role: 'user', content: prompt }] }),
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1500, temperature: 0.7, messages: [{ role: 'user', content: prompt }] }),
       })
       if (!response.ok) throw new Error(`Anthropic error ${response.status}`)
       const data = await response.json()

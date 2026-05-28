@@ -1,3 +1,60 @@
+async function callAnthropicWithWebSearch(prompt, apiKey) {
+  const messages = [{ role: 'user', content: prompt }]
+
+  for (let round = 0; round < 5; round++) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'web-search-2025-03-05',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        temperature: 0.7,
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+        messages,
+      }),
+    })
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}))
+      throw new Error(errBody?.error?.message ?? `Erro ${response.status} da API Anthropic`)
+    }
+
+    const data = await response.json()
+
+    if (data.stop_reason === 'end_turn') {
+      return data.content.filter(b => b.type === 'text').map(b => b.text).join('')
+    }
+
+    if (data.stop_reason === 'tool_use') {
+      messages.push({ role: 'assistant', content: data.content })
+
+      // web_search_20250305 é server-side: resultados vêm embutidos na resposta
+      const serverResults = {}
+      for (const block of data.content) {
+        if (block.tool_use_id) serverResults[block.tool_use_id] = block.content ?? []
+      }
+
+      const toolResults = data.content
+        .filter(b => b.type === 'tool_use')
+        .map(tu => ({ type: 'tool_result', tool_use_id: tu.id, content: serverResults[tu.id] ?? [] }))
+
+      messages.push({ role: 'user', content: toolResults })
+      continue
+    }
+
+    const text = (data.content ?? []).filter(b => b.type === 'text').map(b => b.text).join('')
+    if (text) return text
+    throw new Error(`Resposta inesperada: stop_reason=${data.stop_reason}`)
+  }
+
+  throw new Error('Agente excedeu o limite de rounds de pesquisa')
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -107,6 +164,17 @@ Exemplos:
 
 ---
 
+PESQUISA WEB — use a ferramenta quando necessário:
+Use web_search ANTES de retornar ready:true quando o pedido envolver informações externas e atuais:
+- Datas de eventos, feriados ou comemorações (Carnaval, Dia do Cliente, Semana do Consumidor, datas específicas)
+- Tendências de redes sociais ou de mercado com contexto temporal ("tendências 2025", "o que está em alta")
+- Estatísticas, dados ou notícias recentes sobre um tema
+- Informações específicas sobre empresas, produtos, eventos ou pessoas reais
+NÃO pesquise para temas genéricos ou atemporais ("post motivacional", "dicas de vendas", "frases de impacto").
+Após pesquisar, incorpore os dados encontrados no campo "prompt" do JSON de retorno para enriquecer o briefing.
+
+---
+
 Responda APENAS com JSON válido sem markdown:
 {
   "ready": false,
@@ -183,28 +251,7 @@ engine válidos: "standard" ou "premium"`
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 600,
-          temperature: 0.7,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      })
-
-      if (!response.ok) {
-        const errBody = await response.json().catch(() => ({}))
-        throw new Error(errBody?.error?.message ?? `Erro ${response.status} da API Anthropic`)
-      }
-
-      const data = await response.json()
-      const raw = data?.content?.[0]?.text ?? ''
+      const raw = await callAnthropicWithWebSearch(prompt, apiKey)
       if (!raw) throw new Error('A API retornou uma resposta vazia')
 
       const clean = raw.replace(/```json|```/g, '').trim()
