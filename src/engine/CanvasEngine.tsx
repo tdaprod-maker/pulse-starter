@@ -177,6 +177,9 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
           onClick={(e) => {
             if (e.target === e.target.getStage()) onSelectElement?.(null)
           }}
+          onTap={(e) => {
+            if (e.target === e.target.getStage()) onSelectElement?.(null)
+          }}
           onWheel={(e) => {
             if (!template.backgroundImage) return
             e.evt.preventDefault()
@@ -444,6 +447,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
           y={y}
           draggable={!isEditing}
           onClick={() => onSelect?.(el.id)}
+          onTap={() => onSelect?.(el.id)}
           onDragMove={(e) => {
             if (!canvasW || !canvasH) return
             const snap = getSnapPosition(
@@ -504,7 +508,9 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
           opacity={isEditing ? 0 : 1}
           draggable={!isEditing}
           onClick={() => onSelect?.(el.id)}
+          onTap={() => onSelect?.(el.id)}
           onDblClick={() => onEditStart?.(el)}
+          onDblTap={() => onEditStart?.(el)}
           onDragMove={(e) => {
             if (!canvasW || !canvasH) return
             const snap = getSnapPosition(
@@ -548,6 +554,7 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         rotation={(el.props.rotation as number) ?? 0}
         draggable
         onClick={() => onSelect?.(el.id)}
+        onTap={() => onSelect?.(el.id)}
         stroke={selectionStroke}
         strokeWidth={isSelected ? 2 : 0}
       />
