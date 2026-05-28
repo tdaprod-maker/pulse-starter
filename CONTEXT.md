@@ -4,9 +4,10 @@
 Pulse é uma ferramenta web de design de posts para redes sociais com assistência de IA, desenvolvida pela Agente 17. Uso interno e white-label para clientes. Repositório: `github.com/tdaprod-maker/pulse-starter`, auto-deploy no Vercel via push para `main`.
 
 ## Modelo de Negócio
-- White-label: ~R$2.500–4.000 setup + retainer mensal
-- SaaS: R$47/mês com 50-100 pulses incluídos + compra de pulses adicionais
-- Pulses: post FAL.ai = 4 pulses, slide carrossel = 2 pulses, post Premium = 8 pulses
+- **SaaS:** R$47/mês com 50–100 pulses incluídos + compra de pulses adicionais
+- **White-label:** R$2.500–4.000 setup + retainer mensal
+- **Pulses:** post FAL.ai = 4 pulses, slide carrossel = 2 pulses, post Premium = 8 pulses
+- **Onboarding manual (primeiros clientes):** Pix + criação de conta manual no Supabase — sem Stripe ainda
 - Margem de API é saudável — custo real por geração é centavos
 
 ## Visão do Produto
@@ -14,6 +15,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Conhece boas práticas de design e redes sociais
 - Orienta antes de gerar ("posts educativos performam 3x mais no LinkedIn")
 - Decide a engine internamente (FAL.ai ou GPT Image 2)
+- Pesquisa informações externas (datas, tendências, dados) via web search antes de gerar
 - Gera post, legenda e publica — tudo no mesmo lugar
 - FAL.ai → resultado editável (template Konva)
 - GPT Image 2 → resultado premium não editável, mais pulses
@@ -37,22 +39,26 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 
 ## Estado Atual dos Módulos
 
-### O que está funcionando ✅
+### O que está implementado ✅
 
 | Funcionalidade | Detalhe |
 |---|---|
-| Agente conversacional | Claude Haiku 4.5; conciso (máx. 2 frases, max_tokens=400); decide engine (FAL.ai vs GPT Image 2) |
+| Agente conversacional | Claude Haiku 4.5; conciso (máx. 2 frases, max_tokens=1500); decide engine (FAL.ai vs GPT Image 2) |
+| Web search no agente | Ferramenta web_search_20250305; pesquisa datas, tendências, dados externos antes de gerar |
 | Posts FAL.ai | Templates Konva editáveis; seleção por tema do conteúdo |
 | Posts premium GPT Image 2 | Fotorrealista; formato definido pelo agente; logo sobreposto via canvas |
 | Carrossel FAL.ai | Geração via `/api/generate-carousel.js`; publicação LinkedIn com imagens comprimidas |
 | Carrossel premium GPT Image 2 | Geração sequencial por slide; texto overlay pela API; retry automático; confirmação com custo |
-| Download PNG e ZIP | Disponível em todos os fluxos |
-| LinkedIn multi-tenant | OAuth com token salvo no Supabase; post único e carrossel; `urn:li:person:{sub}` |
+| Legendas melhoradas | Gancho na 1ª linha, estrutura de salvamento, CTA explícito, hashtags estratégicas por nicho; Instagram ≤2200 chars, LinkedIn ≤3000 chars |
+| Download PNG e ZIP | Disponível em todos os fluxos; iOS abre em tela cheia para salvar na galeria via toque longo |
+| LinkedIn multi-tenant | OAuth com token salvo no Supabase; post único e carrossel; `urn:li:person:{sub}`; redirect flow no mobile |
 | Débito de pulses | FAL.ai padrão (4), carrossel (2×slides), premium (8) — implementado nos três fluxos |
 | PWA | manifest.webmanifest, service worker (vite-plugin-pwa), ícones do Pulse; instalável |
-| Mobile responsivo | Layout adaptado para Chrome e Safari mobile |
+| Mobile responsivo | Layout adaptado para Chrome e Safari mobile; PropertiesPanel como bottom sheet |
+| Touch no canvas | onTap/onDblTap nos nós Konva; seleção de elementos e abertura do painel no mobile |
 | Biblioteca unificada | Posts e carrosséis em grid cronológico único em `/library` |
 | Brand Kit | Logo, cores, tom de voz; seção "Redes Sociais" com LinkedIn conectado; Instagram marcado **(em breve)** |
+| Prompt defensivo FAL.ai | Keywords de pessoas detectadas → instruções anatômicas adicionadas ao prompt automaticamente |
 | Debug mode carrossel premium | `VITE_DEBUG_MODE=true` exibe JSON do agente no chat sem gastar pulses |
 
 ### Instagram — estado atual
@@ -67,8 +73,8 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 | `agentChat` | `/api/agent-chat.js` | ✅ Migrado |
 | `generatePostContent` | `/api/generate-post.js` | ✅ Migrado |
 | `generateCarouselContent` | `/api/generate-carousel.js` | ✅ Migrado |
-| `turboPrompt` / `turboPromptEditor` | — | 🔜 Pendente |
 | `generatePremiumCaption` | — | 🔜 Pendente (ainda usa Gemini direto do frontend) |
+| `turboPrompt` / `turboPromptEditor` | — | 🔜 Pendente |
 | `breakCarouselIntoSlides` | — | 🔜 Pendente |
 | `analyzeVisualReferences` | — | 🔜 Pendente (multimodal) |
 
@@ -101,49 +107,65 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 6. Textos e accent_color aplicados em todas as variantes
 7. `thumbnail_url` salva é usada como background (sem chamar FAL.ai). Só gera nova imagem se `thumbnail_url` for nulo e `image_prompt` existir
 
-**Campos do PostRecord:** `{ id, template_id, texts, accent_color, image_prompt, thumbnail_url, created_at }`  
+**Campos do PostRecord:** `{ id, template_id, texts, accent_color, image_prompt, thumbnail_url, created_at }`
 **template_id salvo:** `activeTemplateId` completo com sufixo (ex: `tech-statement-9x16`)
 
 ---
 
-## Pendentes Críticos (bloqueia escala)
+## Roadmap — Próximos Itens (ordem de prioridade)
 
-### 1. Instagram OAuth multi-tenant — bloqueador para escalar
-- Sem App Review do Meta: OAuth funciona apenas com até **25 contas de teste** adicionadas manualmente
+### 1. Testes em fluxo completo mobile 🔜
+- Download nativo iOS (toque longo para salvar na galeria) — implementado, não testado em dispositivo real
+- LinkedIn OAuth no mobile (redirect flow) — implementado, não testado em dispositivo real
+- Edição de elementos no canvas via toque (onTap/onDblTap) — implementado, não testado
+- PropertiesPanel como bottom sheet — implementado, verificar usabilidade real
+
+### 2. Instagram OAuth multi-tenant 🔜 *(bloqueador para escalar)*
+- Sem App Review do Meta: OAuth funciona apenas com até **25 contas de teste**
 - Permissões necessárias: `instagram_business_basic` + `instagram_business_content_publish` (Advanced Access)
 - O que preparar: screencast em inglês mostrando o fluxo completo (Conectar → Publicar), política de privacidade pública, descrição de uso
 - Tempo estimado: 2–4 semanas (1–5 dias úteis de revisão + possíveis rejeições)
-- **Enquanto isso:** botão marcado como "(em breve)" no BrandPage e CarouselPage; adicionar primeiros clientes como Testadores no Developer Portal
+- Enquanto isso: adicionar primeiros clientes como Testadores no Developer Portal
 
-### 2. Upgrade Vercel Pro — desbloqueador para carrossel premium em produção
-- Plano free limita funções serverless a 60s; cliente adiciona 5s de margem (55s) para evitar "slide indisponível"
-- Slides com imagens complexas podem ultrapassar 55s → falha ocasional no carrossel premium
-- Vercel Pro ($20/mês) eleva `maxDuration` para até 300s — elimina o problema
-- **Ação:** fazer upgrade ao fechar o primeiro cliente pago; ROI imediato (custo < margem de 1 cliente)
-- **Enquanto isso:** retry automático já implementado mitiga parcialmente o problema
+### 3. Landing page de vendas 🔜
+- Página pública com proposta de valor, demo/GIF do agente em ação, planos e preços
+- CTA para cadastro (SaaS) e formulário de contato (white-label)
+- Pode ser subdomínio Vercel separado ou rota `/lp` no mesmo projeto
 
-### 3. Redesign do painel de edição direito
-- PropertiesPanel tem UX de "anos 90": lista de campos plana, sem hierarquia, sem affordances modernas
+### 4. Integração Stripe 🔜
+- Pagamento recorrente R$47/mês (plano SaaS)
+- Compra de pacotes de pulses adicionais (ex: +100 pulses por R$19)
+- Webhook Stripe → Supabase (crédito automático de pulses)
+- Portal do cliente para gerenciar assinatura
+- Enquanto isso: onboarding manual (Pix + adição manual no Supabase)
+
+### 5. Redesign do painel de edição direito 🔜
+- PropertiesPanel atual tem UX plana e sem hierarquia visual
 - Inspiração: Figma, Framer, Canva — grupos colapsáveis, controles inline, feedback visual imediato
-- Não bloqueia vendas mas impacta fortemente a percepção de qualidade
-- **Escopo:** componente inteiramente reescrito em sessão dedicada
+- Não bloqueia vendas mas impacta percepção de qualidade
+- Escopo: componente inteiramente reescrito em sessão dedicada
 
-### 4. Agente editor de posts existentes
+### 6. Agente editor de posts existentes 🔜
 - Usuário abre post da biblioteca e pede ajustes via chat ("muda proporção para 9x16", "troca cor de destaque para verde")
-- O agente edita o post existente no canvas — sem gerar do zero
 - Similar ao Magic Resize do Canva, mas conversacional
 - Requer: contexto do post carregado no prompt do agente, ações de edição mapeadas (resize, recolor, rewrite field), integração com Zustand store
 
+### 7. Upgrade Vercel Pro 🔜
+- Plano free limita funções serverless a 60s; cliente adiciona 5s de margem (55s)
+- Slides com imagens complexas podem ultrapassar 55s → falha ocasional no carrossel premium
+- Vercel Pro ($20/mês) eleva `maxDuration` para até 300s — elimina o problema
+- Ação: fazer upgrade ao fechar o primeiro cliente pago; ROI imediato
+
 ---
 
-## Pendentes Não-Críticos
+## Pendentes Técnicos (não-críticos)
 
-- **Onboarding obrigatório** — primeiro acesso força configuração do brand kit antes de qualquer geração
-- **Logs de debug temporários** — remover `console.log` do AgentChat, agent-chat.js e EditorPage após estabilização
 - **`generatePremiumCaption`** — ainda chama Gemini direto do frontend; migrar para API Route
+- **Logs de debug temporários** — remover `console.log` do AgentChat, agent-chat.js e EditorPage após estabilização
 - **`CarouselPage.tsx` e `PremiumPage.tsx` antigas** — remover do projeto (rotas `/carousel` e `/premium` ainda existem no App.tsx)
-- Logo sobrepõe texto no PremiumResultViewer — posição fixa, sem drag
+- **Logo sobrepõe texto no PremiumResultViewer** — posição fixa, sem drag
 - **Template repetitivo no FAL.ai** — sem template selecionado, agente tende a escolher sempre o mesmo; revisar regras de seleção em `generate-post.js`
+- **Onboarding obrigatório** — primeiro acesso deveria forçar configuração do brand kit antes de qualquer geração
 
 ---
 
@@ -168,39 +190,39 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 - `src/components/PremiumResultViewer.tsx` — exibe resultado do GPT Image 2 (fora do Konva)
 - `src/components/CarouselViewer.tsx` — carrossel integrado ao Editor; publicação LinkedIn com imagens comprimidas
 - `src/components/CaptionPanel.tsx` — legenda + publicação LinkedIn/Instagram para posts Konva; lê token do Supabase via `socialConnections.ts`
-- `src/pages/LinkedInCallbackPage.tsx` — callback OAuth do LinkedIn (popup); postMessage `linkedin_auth` + fecha
-- `src/pages/InstagramCallbackPage.tsx` — callback OAuth do Instagram (popup); postMessage `instagram_oauth` + fecha
-- `src/pages/BrandPage.tsx` — brand kit + seção "Redes Sociais" (LinkedIn conectado; Instagram com botão "(em breve)")
+- `src/engine/CanvasEngine.tsx` — Konva stage; onTap/onDblTap para seleção no mobile; snap to center; drag de fundo
+- `src/export/exportUtils.ts` — exportToPng/Jpeg; download via blob URL; iOS: abre em nova aba para salvar via toque longo
+- `src/pages/LinkedInCallbackPage.tsx` — callback OAuth do LinkedIn; detecta redirect flow (mobile) vs popup (desktop)
+- `src/pages/BrandPage.tsx` — brand kit + redes sociais; LinkedIn: redirect no mobile, popup no desktop; lê token pendente do localStorage
 - `src/pages/CarouselPage.tsx` — CarouselPage standalone; botão "Conectar Instagram" com aviso "(em breve)"
 - `src/pages/LibraryPage.tsx` — biblioteca unificada de posts e carrosséis em grid cronológico
-- `src/pages/CarouselLibraryPage.tsx` — biblioteca de carrosséis; LinkedIn via Supabase
-- `src/pages/PostLibraryPage.tsx` — biblioteca de posts; restore via setPendingPost ao clicar
-- `src/services/socialConnections.ts` — get/save/remove por `user_email` na tabela `social_connections`; `getInstagramConnection` faz refresh lazy (POST `/api/instagram-callback`) se expira em < 7 dias
+- `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas; pendingPost restore com match exato de variante
+- `src/services/socialConnections.ts` — get/save/remove por `user_email` na tabela `social_connections`
 - `src/services/gemini.ts` — thin wrappers HTTP para as API Routes (renomear para claude.ts futuramente)
 - `src/services/tokens.ts` — PULSE_COSTS, debitToken, notifyBalanceUpdate
-- `src/pages/EditorPage.tsx` — tela principal; renderiza PremiumResultViewer > CarouselViewer > KonvaCanvas; pendingPost restore com match exato de variante
-- `api/agent-chat.js` — prompt do agente + Claude Haiku; decide engine e formato; guard server-side do lockedTemplateId
+- `api/agent-chat.js` — prompt do agente + Claude Haiku + web search (callAnthropicWithWebSearch, loop agentico, web_search_20250305)
 - `api/generate-post.js` — seleção de template por tema (não segmento) + geração de campos; Claude Haiku
-- `api/generate-carousel.js` — geração de slides de carrossel; Claude Haiku
+- `api/generate-carousel.js` — geração de slides de carrossel + legendas melhoradas (gancho, salvamento, CTA, hashtags por nicho); Claude Haiku
 - `api/generate-premium.js` — chama GPT Image 2; `maxDuration: 60`
+- `api/generate-image-ai.js` — FAL.ai FLUX; prompt defensivo anatômico quando descreve pessoas
 - `api/linkedin-auth.js` — inicia OAuth LinkedIn
 - `api/linkedin-callback.js` — troca código por token; redireciona para `/auth/linkedin/done`
 - `api/linkedin-post.js` — publica no LinkedIn; suporta imagem única e carrossel; usa `urn:li:person:${linkedinSub}`
-- `api/instagram-auth.js` — inicia OAuth Instagram (www.instagram.com/oauth/authorize); encoda `user_email` no `state` (base64)
-- `api/instagram-callback.js` — dual-purpose: GET com `?code=` faz o OAuth (troca code → token curto → token longo → perfil → redireciona); POST com `{ accessToken }` faz refresh lazy
-- `api/instagram-post.js` — publica no Instagram; recebe `accessToken` + `igUserId` do body (não usa env var)
+- `api/instagram-auth.js` — inicia OAuth Instagram (www.instagram.com/oauth/authorize)
+- `api/instagram-callback.js` — dual-purpose: GET com `?code=` faz o OAuth; POST com `{ accessToken }` faz refresh lazy
+- `api/instagram-post.js` — publica no Instagram; recebe `accessToken` + `igUserId` do body
 - `vercel.json` — rewrites: `/api/*`, `/auth/linkedin/callback` → servidor, `/auth/linkedin/done` e `/auth/instagram/done` → index.html, `/*` → index.html
 - `src/templates/index.ts` — registry de templates
-- `src/state/useStore.ts` — Zustand v5 + persist; `activeTemplateId` NÃO é persistido (sempre inicia null); `pendingPost` É persistido; versão 3
+- `src/state/useStore.ts` — Zustand v5 + persist; `activeTemplateId` NÃO é persistido; `pendingPost` É persistido; versão 3
 
 ---
 
 ## Funções Vercel (12 — dentro do limite free)
 | Arquivo | Função |
 |---|---|
-| `api/agent-chat.js` | Agente conversacional (Claude Haiku) |
+| `api/agent-chat.js` | Agente conversacional (Claude Haiku + web search) |
 | `api/generate-post.js` | Geração de post padrão (Claude Haiku) |
-| `api/generate-carousel.js` | Geração de carrossel (Claude Haiku) |
+| `api/generate-carousel.js` | Geração de carrossel + legendas (Claude Haiku) |
 | `api/generate-premium.js` | Post premium (GPT Image 2) |
 | `api/generate-image-ai.js` | Geração de imagem FAL.ai FLUX |
 | `api/edit-image-ai.js` | Edição de imagem com IA |
@@ -226,11 +248,13 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 ## PWA — Estado Atual
 - ✅ manifest.webmanifest com nome, ícone, cores da marca
 - ✅ Service Worker (vite-plugin-pwa v1.3.0, generateSW mode)
-- ✅ Ícones gerados a partir do logo-pulse.svg: pwa-512x512.png, pwa-192x192.png, apple-touch-icon.png, favicon-32x32.png
+- ✅ Ícones gerados a partir do logo-pulse.svg
 - ✅ Service worker configurado para excluir rotas `/api/*` e `/auth/*` do NavigationRoute
 - ✅ Layout responsivo funcional — Chrome e Safari mobile
-- 🔜 Touch support no canvas Konva
-- 🔜 Painel de edição simplificado para mobile
+- ✅ Touch no canvas Konva (onTap/onDblTap)
+- ✅ PropertiesPanel como bottom sheet no mobile
+- ✅ Download nativo iOS via blob URL (toque longo → salvar na galeria)
+- 🔜 Teste em dispositivo real para validar fluxo completo mobile
 
 ---
 
@@ -243,3 +267,7 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 6. **Parâmetro de tamanho inválido no GPT Image 2** → corrigido em `generate-premium.js`
 7. **URL OAuth do Instagram incorreta** → corrigido de `api.instagram.com` para `www.instagram.com/oauth/authorize`
 8. **LinkedIn publicava como organização** → corrigido de org ID hardcoded para `urn:li:person:${linkedinSub}`
+9. **Download não funcionava no iOS** → dataURL convertido para blob URL; iOS abre em nova aba para salvar via toque longo
+10. **LinkedIn OAuth travava no mobile** → redirect flow (window.location.href) no mobile em vez de popup; callback detecta ausência de window.opener e redireciona para /brand
+11. **Canvas não respondia ao toque** → onTap/onDblTap adicionados em todos os nós Konva (Stage, Text, Group, Shape)
+12. **Alucinações anatômicas no FAL.ai** → prompt defensivo automático quando keywords de pessoas detectadas no prompt
