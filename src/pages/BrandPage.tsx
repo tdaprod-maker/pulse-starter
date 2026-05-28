@@ -41,8 +41,22 @@ export function BrandPage() {
         setLoading(false)
       })
       if (!email) return
+
+      // Consome token pendente do fluxo redirect (mobile)
+      const pendingToken = localStorage.getItem('linkedin_token')
+      const pendingSub = localStorage.getItem('linkedin_sub')
+      const pendingName = localStorage.getItem('linkedin_name')
+      if (pendingToken && pendingSub) {
+        saveConnection(email, 'linkedin', pendingToken, pendingSub, pendingName ?? null, null)
+        setLinkedinToken(pendingToken)
+        setLinkedinName(pendingName ?? '')
+        localStorage.removeItem('linkedin_token')
+        localStorage.removeItem('linkedin_sub')
+        localStorage.removeItem('linkedin_name')
+      }
+
       const [li, ig] = await Promise.all([
-        getConnection(email, 'linkedin'),
+        pendingToken ? Promise.resolve(null) : getConnection(email, 'linkedin'),
         getInstagramConnection(email),
       ])
       if (li) {
@@ -455,7 +469,14 @@ export function BrandPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')}
+                    onClick={() => {
+                      const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+                      if (mobile) {
+                        window.location.href = '/api/linkedin-auth'
+                      } else {
+                        window.open('/api/linkedin-auth', 'linkedin_popup', 'width=600,height=700')
+                      }
+                    }}
                     style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, background: 'linear-gradient(135deg, #0077B5, #005e93)', border: 'none', color: 'white', flexShrink: 0 }}
                   >
                     Conectar

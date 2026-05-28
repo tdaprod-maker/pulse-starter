@@ -8,15 +8,27 @@ export function LinkedInCallbackPage() {
     const name = params.get('linkedin_name')
     const error = params.get('linkedin_error')
 
+    const isRedirectFlow = !window.opener
+
     if (token && sub) {
       localStorage.setItem('linkedin_token', token)
       localStorage.setItem('linkedin_sub', sub)
       localStorage.setItem('linkedin_name', name ?? '')
-      window.opener?.postMessage(
+
+      if (isRedirectFlow) {
+        window.location.replace('/brand')
+        return
+      }
+
+      window.opener.postMessage(
         { type: 'linkedin_auth', linkedin_token: token, linkedin_sub: sub, linkedin_name: name ?? '' },
         window.location.origin,
       )
     } else {
+      if (isRedirectFlow) {
+        window.location.replace('/brand')
+        return
+      }
       window.opener?.postMessage({ type: 'linkedin_auth_error', error }, window.location.origin)
     }
 
