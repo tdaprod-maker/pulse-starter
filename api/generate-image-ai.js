@@ -14,6 +14,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'FAL_API_KEY not configured' })
   }
 
+  const PERSON_KEYWORDS = /\b(person|people|man|woman|men|women|girl|boy|human|face|portrait|model|athlete|doctor|nurse|worker|team|crowd|couple|family|child|baby|adult|professional|businessman|businesswoman|employee|staff|customer|client|pessoa|pessoas|homem|mulher|homens|mulheres|menina|menino|rosto|retrato|atleta|médico|enfermeiro|trabalhador|equipe|família|criança|bebê|adulto)\b/i
+
+  const finalPrompt = PERSON_KEYWORDS.test(prompt)
+    ? `${prompt}, anatomically correct, consistent gender throughout, complete body, professional photography`
+    : prompt
+
   try {
     const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
@@ -22,7 +28,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: prompt,
+        prompt: finalPrompt,
         image_size: { width: 1080, height: 1350 },
         num_inference_steps: 4,
         num_images: 1,
