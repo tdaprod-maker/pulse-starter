@@ -18,14 +18,37 @@ export function buildFileName(templateName: string, suffix: string): string {
   return `${slug}-${suffix}`
 }
 
-/** Dispara o download de um dataURL no browser. */
+function dataURLtoBlob(dataURL: string): Blob {
+  const [header, base64] = dataURL.split(',')
+  const mime = header.match(/:(.*?);/)?.[1] ?? 'image/png'
+  const binary = atob(base64)
+  const array = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i)
+  return new Blob([array], { type: mime })
+}
+
+function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+}
+
+/** Dispara o download de um dataURL no browser, com suporte nativo a mobile iOS. */
 function download(dataURL: string, fileName: string): void {
-  const link = document.createElement('a')
-  link.download = fileName
-  link.href = dataURL
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  const blob = dataURLtoBlob(dataURL)
+  const blobURL = URL.createObjectURL(blob)
+
+  if (isIOS()) {
+    // iOS Safari ignora o atributo download; abre em nova aba para salvar via toque longo
+    window.open(blobURL, '_blank')
+    setTimeout(() => URL.revokeObjectURL(blobURL), 60_000)
+  } else {
+    const link = document.createElement('a')
+    link.download = fileName
+    link.href = blobURL
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    setTimeout(() => URL.revokeObjectURL(blobURL), 1_000)
+  }
 }
 
 /**
