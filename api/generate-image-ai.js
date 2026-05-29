@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         prompt: finalPrompt,
         n: 1,
         size,
-        quality: 'hd',
+        quality: 'high',
 
       }),
     })
