@@ -52,19 +52,28 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json()
-    const imageUrl = data.data?.[0]?.url
+    const item = data.data?.[0]
 
-    if (!imageUrl) {
+    if (!item) {
       return res.status(500).json({ error: 'No image returned from OpenAI' })
     }
 
-    const imageResponse = await fetch(imageUrl)
-    const arrayBuffer = await imageResponse.arrayBuffer()
-    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    if (item.b64_json) {
+      return res.status(200).json({
+        image: `data:image/png;base64,${item.b64_json}`
+      })
+    }
 
-    return res.status(200).json({
-      image: `data:image/png;base64,${base64}`
-    })
+    if (item.url) {
+      const imageResponse = await fetch(item.url)
+      const arrayBuffer = await imageResponse.arrayBuffer()
+      const base64 = Buffer.from(arrayBuffer).toString('base64')
+      return res.status(200).json({
+        image: `data:image/png;base64,${base64}`
+      })
+    }
+
+    return res.status(500).json({ error: 'No image data returned from OpenAI' })
 
   } catch (err) {
     console.error('[generate-image-ai] erro:', err)
