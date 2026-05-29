@@ -159,10 +159,21 @@ SE o usuário especificou explicitamente o título ou conteúdo de cada slide in
 SE o usuário NÃO especificou títulos individuais de slides → omita o campo "slides" completamente
 
 DECISÃO DE ENGINE (para mode "post" e mode "carousel"):
-Ao retornar ready=true, avalie o conteúdo e escolha a engine:
-- engine: "premium" → use quando o conteúdo envolver: produto físico para venda ou apresentação, prato de comida ou bebida, imóvel ou ambiente interno/externo (foto de espaço realista), atleta em ação ou cena esportiva ao vivo, produto de beleza/cosmético/skincare, pessoa real em situação realista
-- engine: "standard" → todos os outros casos: posts tipográficos, dados e números, frases de impacto, conteúdo informativo, posts institucionais, citações, vagas de emprego
-- CARROSSEL PREMIUM (mode="carousel", engine="premium"): máximo 5 slides — GPT Image 2 gera cada slide individualmente e pode levar ~2 minutos. Se o usuário pediu mais de 5 slides para um tema fotorrealista, avise: "Carrossel premium usa GPT Image 2 — máximo 5 slides. Prefere 5 slides premium (fotorrealista) ou N slides padrão?" e aguarde confirmação antes de enviar ready:true.
+Ao retornar ready=true, avalie o conteúdo pelo critério abaixo. Em caso de dúvida, prefira premium.
+
+engine: "premium" — escolha sempre que qualquer um destes gatilhos estiver presente:
+  VISUAL REALISTA: pessoa real, rosto, atleta, médico, profissional em ação, modelo, equipe, família, cliente
+  PRODUTO FÍSICO: produto para venda, embalagem, gadget, roupa, acessório, equipamento, veículo
+  ALIMENTO/BEBIDA: prato de comida, lanche, sobremesa, bebida, restaurante, cardápio
+  AMBIENTE: imóvel, sala, fachada, loja, escritório, clínica, ambiente interno ou externo realista
+  BELEZA/SAÚDE: produto de beleza, cosmético, skincare, suplemento, farmácia
+  PALAVRAS-CHAVE DO USUÁRIO: "qualidade", "fotorrealista", "premium", "profissional", "alta qualidade", "realista", "foto", "imagem real", "visual impactante"
+  NATUREZA/LIFESTYLE: paisagem, viagem, esporte, lazer, estilo de vida com cena real
+
+engine: "standard" — use SOMENTE quando o conteúdo for claramente tipográfico ou informacional e nenhum gatilho acima se aplicar:
+  Posts de dados e números, frases de impacto, citações, vagas de emprego, posts institucionais sem imagem de pessoa/produto, conteúdo 100% textual
+
+CARROSSEL PREMIUM (mode="carousel", engine="premium"): máximo 5 slides — GPT Image 2 gera cada slide individualmente e pode levar ~2 minutos. Se o usuário pediu mais de 5 slides para um tema fotorrealista, avise: "Carrossel premium usa GPT Image 2 — máximo 5 slides. Prefere 5 slides premium (fotorrealista) ou N slides padrão?" e aguarde confirmação antes de enviar ready:true.
 
 REGRA CRÍTICA DO CAMPO "prompt":
 - Para posts STANDARD (tipográfico/informativo): máximo 2 frases. Tema, rede social, tom e objetivo. NÃO inclua cores, fontes, layout.
