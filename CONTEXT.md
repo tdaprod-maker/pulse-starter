@@ -45,13 +45,16 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 |---|---|
 | Agente conversacional | Claude Haiku 4.5; conciso (máx. 2 frases, max_tokens=1500); decide engine (FAL.ai vs GPT Image 2) |
 | Web search no agente | Ferramenta web_search_20250305; pesquisa datas, tendências, dados externos antes de gerar |
+| Agente consultivo | Classifica briefing vago vs completo (com exemplos); alertas de boas práticas bloqueantes aguardam confirmação antes de gerar |
+| Engine premium agressiva | 7 categorias de gatilhos explícitos (pessoa real, produto físico, alimento, ambiente, beleza, lifestyle, palavras-chave como "fotorrealista", "qualidade", "premium"); standard é residual |
 | Posts FAL.ai | Templates Konva editáveis; seleção por tema do conteúdo |
 | Posts premium GPT Image 2 | Fotorrealista; formato definido pelo agente; logo sobreposto via canvas |
 | Carrossel FAL.ai | Geração via `/api/generate-carousel.js`; publicação LinkedIn com imagens comprimidas |
 | Carrossel premium GPT Image 2 | Geração sequencial por slide; texto overlay pela API; retry automático; confirmação com custo |
+| Geração de imagem padrão | `api/generate-image-ai.js` usa gpt-image-1 (OpenAI); suporte a `aspectRatio` (1:1, 9:16, 16:9, 4:5); retorna b64_json direto ou faz fetch de URL como fallback |
 | Legendas melhoradas | Gancho na 1ª linha, estrutura de salvamento, CTA explícito, hashtags estratégicas por nicho; Instagram ≤2200 chars, LinkedIn ≤3000 chars |
 | Download PNG e ZIP | Disponível em todos os fluxos; iOS abre em tela cheia para salvar na galeria via toque longo |
-| LinkedIn multi-tenant | OAuth com token salvo no Supabase; post único e carrossel; `urn:li:person:{sub}`; redirect flow no mobile |
+| LinkedIn multi-tenant | OAuth com token salvo no Supabase; post único e carrossel; `urn:li:person:{sub}`; redirect flow no mobile; `saveConnection` usa `await` para evitar race condition |
 | Débito de pulses | FAL.ai padrão (4), carrossel (2×slides), premium (8) — implementado nos três fluxos |
 | PWA | manifest.webmanifest, service worker (vite-plugin-pwa), ícones do Pulse; instalável |
 | Mobile responsivo | Layout adaptado para Chrome e Safari mobile; PropertiesPanel como bottom sheet |
