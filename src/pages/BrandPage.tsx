@@ -35,24 +35,34 @@ export function BrandPage() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       const email = data.session?.user?.email ?? ''
+      console.log('[BrandPage] init — email:', email, '| href:', window.location.href)
       setUserEmail(email)
       loadBrandConfig(email).then(c => {
         setConfig(c)
         setLoading(false)
       })
-      if (!email) return
+      if (!email) {
+        console.log('[BrandPage] sem email — abortando fluxo LinkedIn')
+        return
+      }
 
       // Consome token pendente do fluxo redirect (mobile)
       const pendingToken = localStorage.getItem('linkedin_token')
       const pendingSub = localStorage.getItem('linkedin_sub')
       const pendingName = localStorage.getItem('linkedin_name')
+      console.log('[BrandPage] localStorage — pendingToken:', !!pendingToken, '| pendingSub:', pendingSub, '| pendingName:', pendingName)
+
       if (pendingToken && pendingSub) {
-        saveConnection(email, 'linkedin', pendingToken, pendingSub, pendingName ?? null, null)
+        console.log('[BrandPage] salvando token LinkedIn no Supabase — sub:', pendingSub)
+        await saveConnection(email, 'linkedin', pendingToken, pendingSub, pendingName ?? null, null)
+        console.log('[BrandPage] saveConnection concluído')
         setLinkedinToken(pendingToken)
         setLinkedinName(pendingName ?? '')
+        console.log('[BrandPage] estado LinkedIn atualizado — name:', pendingName)
         localStorage.removeItem('linkedin_token')
         localStorage.removeItem('linkedin_sub')
         localStorage.removeItem('linkedin_name')
+        console.log('[BrandPage] localStorage limpo')
       }
 
       const [li, ig] = await Promise.all([
@@ -60,6 +70,7 @@ export function BrandPage() {
         getInstagramConnection(email),
       ])
       if (li) {
+        console.log('[BrandPage] LinkedIn carregado do Supabase — username:', li.platform_username)
         setLinkedinToken(li.access_token)
         setLinkedinName(li.platform_username ?? '')
       }
@@ -74,13 +85,18 @@ export function BrandPage() {
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return
+      console.log('[BrandPage] postMessage recebido — type:', event.data?.type)
 
       if (event.data?.type === 'linkedin_auth') {
         const { linkedin_token, linkedin_sub, linkedin_name } = event.data
+        console.log('[BrandPage] linkedin_auth via popup — sub:', linkedin_sub, '| userEmail:', userEmail)
         if (linkedin_token && linkedin_sub && userEmail) {
           saveConnection(userEmail, 'linkedin', linkedin_token, linkedin_sub, linkedin_name ?? null, null)
           setLinkedinToken(linkedin_token)
           setLinkedinName(linkedin_name ?? '')
+          console.log('[BrandPage] estado LinkedIn atualizado via popup — name:', linkedin_name)
+        } else {
+          console.warn('[BrandPage] linkedin_auth ignorado — falta token, sub ou email', { hasToken: !!linkedin_token, hasSub: !!linkedin_sub, hasEmail: !!userEmail })
         }
       }
 
