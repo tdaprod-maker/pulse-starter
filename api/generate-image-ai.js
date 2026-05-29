@@ -3,15 +3,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt } = req.body
+  const { prompt, aspectRatio } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' })
   }
 
-  const apiKey = process.env.FAL_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'FAL_API_KEY not configured' })
+    return res.status(500).json({ error: 'OPENAI_API_KEY not configured' })
   }
 
   const PERSON_KEYWORDS = /\b(person|people|man|woman|men|women|girl|boy|human|face|portrait|model|athlete|doctor|nurse|worker|team|crowd|couple|family|child|baby|adult|professional|businessman|businesswoman|employee|staff|customer|client|pessoa|pessoas|homem|mulher|homens|mulheres|menina|menino|rosto|retrato|atleta|médico|enfermeiro|trabalhador|equipe|família|criança|bebê|adulto)\b/i
@@ -20,42 +20,49 @@ export default async function handler(req, res) {
     ? `${prompt}, anatomically correct, consistent gender throughout, complete body, professional photography`
     : prompt
 
+  const sizeMap = {
+    '9:16': '1024x1792',
+    '16:9': '1792x1024',
+    '1:1':  '1024x1024',
+    '4:5':  '1024x1024',
+  }
+  const size = sizeMap[aspectRatio] ?? '1024x1024'
+
   try {
-    const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        model: 'dall-e-3',
         prompt: finalPrompt,
-        image_size: { width: 1080, height: 1350 },
-        num_inference_steps: 4,
-        num_images: 1,
-        enable_safety_checker: true,
+        n: 1,
+        size,
+        quality: 'hd',
+        response_format: 'url',
       }),
     })
 
     if (!response.ok) {
       const error = await response.text()
-      return res.status(500).json({ error: `FAL API error: ${error}` })
+      return res.status(500).json({ error: `OpenAI API error: ${error}` })
     }
 
     const data = await response.json()
-    const imageUrl = data.images?.[0]?.url
+    const imageUrl = data.data?.[0]?.url
 
     if (!imageUrl) {
-      return res.status(500).json({ error: 'No image returned from FAL' })
+      return res.status(500).json({ error: 'No image returned from OpenAI' })
     }
 
-    // Busca a imagem e converte para base64
     const imageResponse = await fetch(imageUrl)
     const arrayBuffer = await imageResponse.arrayBuffer()
     const base64 = Buffer.from(arrayBuffer).toString('base64')
-    const mimeType = 'image/jpeg'
 
     return res.status(200).json({
-      image: `data:${mimeType};base64,${base64}`
+      image: `data:image/png;base64,${base64}`
     })
 
   } catch (err) {
