@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import type { CanvasElement, Template } from '../state/useStore'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
@@ -110,6 +110,47 @@ function EmojiPicker({ onSelect }: { onSelect: (e: string) => void }) {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Input numérico com +/- ──────────────────────────────────────────────────
+
+function NumericInput({
+  label, value, min, max, step, onChange, unit,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  onChange: (v: number) => void
+  unit?: string
+}) {
+  const btnStyle: React.CSSProperties = {
+    width: '28px', height: '28px', borderRadius: '7px', flexShrink: 0,
+    background: 'var(--bg-base)', border: '1px solid var(--border)',
+    color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '15px',
+    fontFamily: 'inherit', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', lineHeight: 1,
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <button style={btnStyle} onClick={() => onChange(Math.max(min, value - step))}>−</button>
+        <input
+          type="number" min={min} max={max} step={step} value={value}
+          onChange={(e) => onChange(Math.max(min, Math.min(max, Number(e.target.value))))}
+          style={{
+            flex: 1, background: 'var(--bg-base)', border: '1px solid var(--border)',
+            borderRadius: '7px', color: 'var(--text-primary)', fontSize: '12px',
+            padding: '4px 6px', textAlign: 'center', fontFamily: 'inherit', outline: 'none',
+          }}
+        />
+        {unit && <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>{unit}</span>}
+        <button style={btnStyle} onClick={() => onChange(Math.min(max, value + step))}>+</button>
+      </div>
     </div>
   )
 }
@@ -271,27 +312,17 @@ function ShapeFieldPanel({ el, templateId }: { el: CanvasElement; templateId: st
         />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Largura</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
-        </div>
-        <input type="range" min={10} max={500} step={5} value={width}
-          onChange={(e) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { width: Number(e.target.value) } as never) }}
-          style={{ width: '100%', accentColor: 'var(--accent)' }}
-        />
-      </div>
+      <NumericInput
+        label="Largura"
+        value={width} min={10} max={500} step={5} unit="px"
+        onChange={(v) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { width: v } as never) }}
+      />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Espessura</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{height}px</span>
-        </div>
-        <input type="range" min={1} max={40} step={1} value={height}
-          onChange={(e) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { height: Number(e.target.value) } as never) }}
-          style={{ width: '100%', accentColor: 'var(--accent)' }}
-        />
-      </div>
+      <NumericInput
+        label="Espessura"
+        value={height} min={1} max={40} step={1} unit="px"
+        onChange={(v) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { height: v } as never) }}
+      />
     </div>
   )
 }
@@ -431,27 +462,16 @@ function AdvancedSection({ template }: { template: Template }) {
 
       {open && (
         <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Linha decorativa — largura</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{width}px</span>
-            </div>
-            <input type="range" min={40} max={300} step={10} value={width}
-              onChange={(e) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { width: Number(e.target.value) } as never) }}
-              style={{ width: '100%', accentColor: 'var(--accent)' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Rotação</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{rotation}°</span>
-            </div>
-            <input type="range" min={-45} max={45} step={1} value={rotation}
-              onChange={(e) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { rotation: Number(e.target.value) }) }}
-              style={{ width: '100%', accentColor: 'var(--accent)' }}
-            />
-          </div>
+          <NumericInput
+            label="Linha decorativa — largura"
+            value={width} min={40} max={300} step={10} unit="px"
+            onChange={(v) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { width: v } as never) }}
+          />
+          <NumericInput
+            label="Rotação"
+            value={rotation} min={-45} max={45} step={1} unit="°"
+            onChange={(v) => { ensureSiblings(template.id); syncElementStyle(template.id, 'brand-line', { rotation: v }) }}
+          />
         </div>
       )}
     </div>

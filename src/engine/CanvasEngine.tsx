@@ -538,6 +538,9 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
   }
 
   if (el.type === 'shape') {
+    // Thin shapes (accent bars, brand lines, dividers) have very small click targets.
+    // hitFunc extends the hit area vertically without affecting the visual.
+    const hitPad = el.height < 24 ? Math.ceil((24 - el.height) / 2) : 0
     return (
       <Rect
         key={el.id}
@@ -557,6 +560,12 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         onTap={() => onSelect?.(el.id)}
         stroke={selectionStroke}
         strokeWidth={isSelected ? 2 : 0}
+        hitFunc={hitPad > 0 ? (context: KonvaLib.Context, shape: KonvaLib.Shape) => {
+          context.beginPath()
+          context.rect(0, -hitPad, el.width, el.height + hitPad * 2)
+          context.closePath()
+          context.fillStrokeShape(shape)
+        } : undefined}
       />
     )
   }
