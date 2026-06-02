@@ -98,13 +98,15 @@ export default async function handler(req, res) {
 
   // ── MODO EDIÇÃO ──────────────────────────────────────────────────────────────
   if (editContext) {
-    const textList = (editContext.textElements ?? [])
-      .map(e => `  • id="${e.id}" → "${e.currentValue}"`)
-      .join('\n') || '  (nenhum)'
-
-    const shapeList = (editContext.accentElements ?? [])
-      .map(e => `  • id="${e.id}" → fill: "${e.currentColor || 'desconhecida'}"`)
-      .join('\n') || '  (nenhum)'
+    // Todos os elementos com ID, tipo, conteúdo e cor atual — agente usa esses IDs
+    const allElementsList = [
+      ...(editContext.textElements ?? []).map(e =>
+        `  • [TEXTO] id="${e.id}" → texto: "${e.currentValue}" | cor: "${e.currentFill || '#FFFFFF'}"`
+      ),
+      ...(editContext.accentElements ?? []).map(e =>
+        `  • [SHAPE] id="${e.id}" → cor: "${e.currentColor || 'desconhecida'}"`
+      ),
+    ].join('\n') || '  (nenhum)'
 
     const history = messages
       .map(m => `${m.role === 'user' ? 'Usuário' : 'Agente'}: ${m.content}`)
@@ -114,10 +116,8 @@ export default async function handler(req, res) {
 
 POST ATUAL:
 - Template: ${editContext.templateBase} (formato: ${editContext.format})
-- Campos de texto:
-${textList}
-- Elementos visuais (shapes/cores):
-${shapeList}
+- Elementos disponíveis (use estes IDs exatos):
+${allElementsList}
 - Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"
 
 HISTÓRICO DA CONVERSA:
@@ -127,17 +127,19 @@ ${history}
 
 INSTRUÇÕES:
 - Interprete o pedido mais recente do usuário e gere as ações de edição necessárias
-- Use SOMENTE os IDs de elementos listados acima — nunca invente IDs que não existem na lista
+- Use SOMENTE os IDs listados acima — nunca invente IDs que não existem na lista
 - Para cores, retorne hex válido (#RRGGBB)
-- Para "destaque", "accent", "cor de detalhe", "linha colorida": use o shape element mais relevante pelo id
-- Para "fundo mais escuro/claro": use recolor_background com uma cor escura ou clara
+- recolor funciona para QUALQUER elemento — tanto [TEXTO] quanto [SHAPE] — use o id do elemento
+- Para "cor do título/texto", "cor da fonte": use recolor com o id do elemento [TEXTO]
+- Para "destaque", "accent", "cor de detalhe", "linha colorida": use recolor com o id do [SHAPE] relevante
+- Para "fundo mais escuro/claro": use recolor_background
 - Para "nova imagem de fundo" ou "regenera a imagem": retorne needs_confirm:true (custa 4 pulses)
 - Você pode combinar múltiplas ações em um único JSON
 - Máximo 1 frase no campo "message"
 
 TIPOS DE AÇÃO VÁLIDOS:
-- recolor: muda fill de um shape (campos: elementId + color)
-- rewrite: muda texto de um campo (campos: fieldId + text)
+- recolor: muda a cor (fill) de qualquer elemento — texto ou shape (campos: elementId + color)
+- rewrite: muda o conteúdo textual de um campo [TEXTO] (campos: fieldId + text)
 - resize: muda formato do post (campo: format com valor "1x1", "4x5", "9x16" ou "16x9")
 - recolor_background: muda cor sólida de fundo (campo: color)
 
@@ -147,6 +149,7 @@ Retorne APENAS JSON válido sem markdown:
   "ready": true,
   "mode": "edit",
   "actions": [
+    {"type": "recolor", "elementId": "title", "color": "#FF0000"},
     {"type": "recolor", "elementId": "brand-line", "color": "#FF0000"},
     {"type": "rewrite", "fieldId": "title", "text": "Novo título"},
     {"type": "resize", "format": "9x16"},

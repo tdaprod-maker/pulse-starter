@@ -270,7 +270,7 @@ export function EditorPage() {
       format,
       textElements: activeTemplate.elements
         .filter(e => e.type === 'text')
-        .map(e => ({ id: e.id, currentValue: String(e.props.text ?? '') })),
+        .map(e => ({ id: e.id, currentValue: String(e.props.text ?? ''), currentFill: String(e.props.fill ?? '') })),
       accentElements: activeTemplate.elements
         .filter(e => e.type === 'shape')
         .map(e => ({ id: e.id, currentColor: String(e.props.fill ?? '') })),

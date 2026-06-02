@@ -445,7 +445,7 @@ export interface PremiumSlide {
 export interface EditContext {
   templateBase: string
   format: string
-  textElements: { id: string; currentValue: string }[]
+  textElements: { id: string; currentValue: string; currentFill: string }[]
   accentElements: { id: string; currentColor: string }[]
   imagePrompt?: string
 }
