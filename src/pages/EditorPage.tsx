@@ -70,54 +70,92 @@ export function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTemplate?.id])
 
-  // Restaura post do histórico quando pendingPost é definido
+  // Mapeamento de template base → elemento de destaque (deve ser idêntico ao AgentChat.tsx)
   const ACCENT_ELEMENT: Record<string, string> = {
     'hero-title':     'accent-bar',
     'editorial-card': 'accent-bar',
     'big-number':     'number',
     'food-promo':     'bg-color',
-    'tech-news':      'category-line',
+    'tech-news':      'brand-line',
+    'tech-statement': 'brand-line',
     'tech-product':   'accent-strip',
   }
 
   useEffect(() => {
-    console.log('[EditorPage] pendingPost useEffect disparado. valor:', pendingPost)
     if (!pendingPost) return
-
-    console.log('[pendingPost] objeto completo:', JSON.stringify(pendingPost, null, 2))
 
     const rawId = pendingPost.template_id ?? ''
     const normalizedId = rawId.toLowerCase().trim().replace(/\s+/g, '-')
+
+    console.log('[restore] iniciando | template_id:', rawId, '| normalizado:', normalizedId)
+
     const def = templateRegistry.find((d) =>
       rawId === d.id || rawId.startsWith(d.id) ||
       normalizedId === d.id || normalizedId.startsWith(d.id)
     )
-    console.log('[pendingPost] template_id raw:', rawId, '| normalized:', normalizedId, '| def found:', def?.id ?? 'NENHUM')
-    if (!def) { setPendingPost(null); return }
 
+    if (!def) {
+      console.warn('[restore] template definition NÃO encontrado para:', rawId)
+      setPendingPost(null)
+      return
+    }
+
+    console.log('[restore] definition encontrada:', def.id)
+
+    // 1. Registra todas as variantes no store (reseta para defaults limpos)
     const variants = def.getVariants(theme)
     variants.forEach((v) => addTemplate(v))
+    console.log('[restore] variantes registradas:', variants.map(v => v.id).join(', '))
 
-    const target = variants.find(v => v.id === pendingPost.template_id) ?? variants[0]
+    // 2. Identifica a variante-alvo pelo sufixo de proporção salvo
+    //    Tenta: match exato → match com ID normalizado → primeira variante (fallback)
+    const target =
+      variants.find(v => v.id === rawId) ??
+      variants.find(v => v.id === normalizedId) ??
+      variants[0]
+
+    const matchType =
+      target.id === rawId ? 'exact' :
+      target.id === normalizedId ? 'normalized' :
+      'fallback-variants[0]'
+
+    console.log('[restore] variante-alvo:', target.id, '| match:', matchType,
+      matchType === 'fallback-variants[0]' ? `(template_id "${rawId}" não encontrado nas variantes)` : '')
+
+    // 3. Ativa a variante correta ANTES de aplicar textos
     setActiveTemplate(target.id)
+    console.log('[restore] setActiveTemplate →', target.id)
 
-    // Aplica textos em todas as variantes
+    // 4. Aplica textos e accent_color em todas as variantes usando snapshot pós-addTemplate
+    const textEntries = Object.entries(pendingPost.texts)
+    const accentId = ACCENT_ELEMENT[def.id]
+    console.log('[restore] textos a aplicar:', JSON.stringify(pendingPost.texts),
+      '| accentId:', accentId ?? 'nenhum', '| accent_color:', pendingPost.accent_color ?? 'nenhuma')
+
     variants.forEach((v) => {
+      // Lê o estado atual da variante no store (após addTemplate)
       const snap = useStore.getState().templates.find((t) => t.id === v.id) ?? v
-      Object.entries(pendingPost.texts).forEach(([fieldId, text]) => {
+      const isTarget = v.id === target.id
+
+      textEntries.forEach(([fieldId, text]) => {
         const el = snap.elements.find((e) => e.id === fieldId)
         if (el && el.type === 'text') {
           updateElement(v.id, fieldId, { props: { ...el.props, text } })
+          if (isTarget) console.log(`[restore] [${v.id}] texto "${fieldId}" → "${String(text).slice(0, 50)}"`)
+        } else if (isTarget) {
+          console.warn(`[restore] [${v.id}] elemento "${fieldId}" NÃO encontrado ou não é texto`)
         }
       })
 
-      // Aplica accent_color
-      const accentId = ACCENT_ELEMENT[def.id]
       if (accentId && pendingPost.accent_color) {
-        const snapAfter = useStore.getState().templates.find((t) => t.id === v.id) ?? snap
-        const accentEl = snapAfter.elements.find((e) => e.id === accentId)
+        // Relê o snap após updateElement para pegar props atualizados
+        const snapAfterText = useStore.getState().templates.find((t) => t.id === v.id) ?? snap
+        const accentEl = snapAfterText.elements.find((e) => e.id === accentId)
         if (accentEl) {
           updateElement(v.id, accentId, { props: { ...accentEl.props, fill: pendingPost.accent_color } })
+          if (isTarget) console.log(`[restore] [${v.id}] accent "${accentId}" → "${pendingPost.accent_color}"`)
+        } else if (isTarget) {
+          console.warn(`[restore] [${v.id}] elemento accent "${accentId}" NÃO encontrado`)
         }
       }
     })
@@ -126,6 +164,7 @@ export function EditorPage() {
     const postWithCaption = pendingPost as typeof pendingPost & { caption?: { instagram: string; linkedin: string; hashtags: string } }
     if (postWithCaption.caption) setCaption(postWithCaption.caption)
 
+    console.log('[restore] concluído | activeTemplateId final esperado:', target.id)
     setPendingPost(null)
     setEditModeActive(true)
     setAgentChatKey(k => k + 1)
