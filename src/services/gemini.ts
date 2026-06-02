@@ -442,28 +442,51 @@ export interface PremiumSlide {
   label: string
 }
 
+export interface EditContext {
+  templateBase: string
+  format: string
+  textElements: { id: string; currentValue: string }[]
+  accentElements: { id: string; currentColor: string }[]
+  imagePrompt?: string
+}
+
+export interface EditAction {
+  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background'
+  elementId?: string
+  fieldId?: string
+  color?: string
+  text?: string
+  format?: string
+}
+
 export interface AgentResponse {
   ready: boolean
   message?: string
   prompt?: string
   format?: string
-  mode?: 'post' | 'carousel'
+  mode?: 'post' | 'carousel' | 'edit'
   slideCount?: number
   templateId?: string
   engine?: 'standard' | 'premium'
   slides?: { title: string; body?: string }[]
+  // Edit mode fields
+  actions?: EditAction[]
+  needs_confirm?: boolean
+  confirm_type?: 'regenerate_image'
+  confirm_prompt?: string
 }
 
 export async function agentChat(
   messages: AgentMessage[],
   brand?: BrandContext,
-  lockedTemplateId?: string
+  lockedTemplateId?: string,
+  editContext?: EditContext
 ): Promise<AgentResponse> {
   try {
     const res = await fetch('/api/agent-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, brand, lockedTemplateId }),
+      body: JSON.stringify({ messages, brand, lockedTemplateId, editContext }),
     })
     if (!res.ok) throw new Error(`Erro ${res.status}`)
     return await res.json() as AgentResponse

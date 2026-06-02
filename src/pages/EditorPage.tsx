@@ -10,6 +10,7 @@ import { ExportPanel } from '../components/ExportPanel'
 import { PropertiesPanel } from '../components/PropertiesPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { AgentChat } from '../components/AgentChat'
+import type { ActivePost } from '../components/AgentChat'
 import { CarouselViewer } from '../components/CarouselViewer'
 import { PremiumResultViewer } from '../components/PremiumResultViewer'
 import type { PremiumSlide } from '../services/gemini'
@@ -126,6 +127,8 @@ export function EditorPage() {
     if (postWithCaption.caption) setCaption(postWithCaption.caption)
 
     setPendingPost(null)
+    setEditModeActive(true)
+    setAgentChatKey(k => k + 1)
 
     // Restaura imagem de fundo: usa thumbnail_url salva (sem custo) ou, como último
     // recurso, gera nova imagem via FAL.ai (consome pulse)
@@ -214,6 +217,27 @@ export function EditorPage() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
+  const [agentChatKey, setAgentChatKey] = useState(0)
+  const [editModeActive, setEditModeActive] = useState(false)
+
+  // Computa o contexto do post ativo para o agente de edição
+  const editPost = useMemo<ActivePost | undefined>(() => {
+    if (!activeTemplate || !editModeActive) return undefined
+    const base = activeTemplate.id.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+    const suffix = activeTemplate.id.split('-').pop() ?? '1x1'
+    const format = ['1x1', '4x5', '9x16', '16x9'].includes(suffix) ? suffix : '1x1'
+    return {
+      templateBase: base,
+      format,
+      textElements: activeTemplate.elements
+        .filter(e => e.type === 'text')
+        .map(e => ({ id: e.id, currentValue: String(e.props.text ?? '') })),
+      accentElements: activeTemplate.elements
+        .filter(e => e.type === 'shape')
+        .map(e => ({ id: e.id, currentColor: String(e.props.fill ?? '') })),
+      imagePrompt: activeTemplate.imagePrompt,
+    }
+  }, [activeTemplate, editModeActive])
 
   // Auto-expand properties panel when element is selected on mobile
   useEffect(() => {
@@ -241,9 +265,18 @@ export function EditorPage() {
         {/* Agente conversacional — fixo no topo */}
         <div className="agent-chat-wrapper" style={{ padding: '16px 24px 0', flexShrink: 0 }}>
           <AgentChat
+            key={agentChatKey}
             onGenerating={() => {}}
             onGenerated={() => {}}
-            onReset={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselEngine(undefined); setPremiumSlides(null); setPremiumCaption(null) }}
+            onReset={() => {
+              setCarouselSlides(null)
+              setCarouselCaption('')
+              setCarouselTemplateId(undefined)
+              setCarouselEngine(undefined)
+              setPremiumSlides(null)
+              setPremiumCaption(null)
+              setEditModeActive(false)
+            }}
             onCarouselGenerated={(slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => {
               setCarouselSlides(slides)
               setCarouselCaption(caption)
@@ -255,6 +288,8 @@ export function EditorPage() {
               setPremiumSlides(slides)
               setPremiumCaption(caption)
             }}
+            activePost={editPost}
+            isPremiumActive={!!premiumSlides}
           />
         </div>
 

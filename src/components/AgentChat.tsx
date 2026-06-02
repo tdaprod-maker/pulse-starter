@@ -2,11 +2,19 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
-import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type CarouselSlide, type PremiumSlide } from '../services/gemini'
+import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type CarouselSlide, type PremiumSlide, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
+
+export interface ActivePost {
+  templateBase: string
+  format: string
+  textElements: { id: string; currentValue: string }[]
+  accentElements: { id: string; currentColor: string }[]
+  imagePrompt?: string
+}
 
 const ACCENT_ELEMENT: Record<string, string> = {
   'hero-title':     'accent-bar',
@@ -21,16 +29,25 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, activePost, isPremiumActive }: {
   onGenerating?: () => void
   onGenerated?: () => void
   onReset?: () => void
   onCarouselGenerated?: (slides: (CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => void
   onPremiumGenerated?: (slides: PremiumSlide[], caption: { instagram: string; linkedin: string; hashtags: string } | null) => void
+  activePost?: ActivePost
+  isPremiumActive?: boolean
 } = {}) {
-  const [messages, setMessages] = useState<AgentMessage[]>([
-    { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
+  const friendlyTemplateName = activePost
+    ? activePost.templateBase.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : ''
+
+  const [messages, setMessages] = useState<AgentMessage[]>(() => [
+    activePost
+      ? { role: 'agent', content: `Post carregado (${friendlyTemplateName}, ${activePost.format}). Que ajuste você quer fazer? Posso mudar textos, cores, formato ou regenerar a imagem de fundo (4 pulses).` }
+      : { role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }
   ])
+  const [pendingRegenImage, setPendingRegenImage] = useState<{ prompt: string } | null>(null)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
@@ -67,12 +84,60 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const { theme } = useTheme()
   const {
     addTemplate, setActiveTemplate, updateElement, setTemplateBackground,
-    setTemplateImagePrompt, setCaption, 
+    setTemplateImagePrompt, setCaption, setTemplateSolidBackground,
   } = useStore()
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  async function applyEditActions(actions: EditAction[]) {
+    const activeId = useStore.getState().activeTemplateId
+    if (!activeId) return
+
+    const base = activeId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+    const def = templateRegistry.find(d => d.id === base)
+    const allVariants = def ? def.getVariants(theme) : []
+
+    for (const action of actions) {
+      switch (action.type) {
+        case 'recolor': {
+          if (!action.elementId || !action.color) break
+          allVariants.forEach(v => {
+            const snap = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            const el = snap.elements.find(e => e.id === action.elementId)
+            if (el) updateElement(v.id, action.elementId!, { props: { ...el.props, fill: action.color } })
+          })
+          break
+        }
+        case 'rewrite': {
+          if (!action.fieldId || action.text === undefined) break
+          allVariants.forEach(v => {
+            const snap = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            const el = snap.elements.find(e => e.id === action.fieldId)
+            if (el && el.type === 'text') updateElement(v.id, action.fieldId!, { props: { ...el.props, text: action.text } })
+          })
+          break
+        }
+        case 'resize': {
+          if (!action.format) break
+          const formats = ['1x1', '4x5', '9x16', '16x9']
+          const fmt = formats.find(f => action.format === f)
+          if (!fmt) break
+          allVariants.forEach(v => addTemplate(v))
+          const target = allVariants.find(v => v.id.endsWith('-' + fmt))
+          if (target) setActiveTemplate(target.id)
+          break
+        }
+        case 'recolor_background': {
+          if (!action.color) break
+          const currentId = useStore.getState().activeTemplateId
+          if (currentId) setTemplateSolidBackground(currentId, action.color)
+          break
+        }
+      }
+    }
+  }
 
   async function applyResult(result: any, forcedTemplateId?: string) {
     const templateId = forcedTemplateId
@@ -642,6 +707,18 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
   async function handleSend() {
     if (!input.trim() || loading || generating) return
+
+    // Posts premium (GPT Image 2) não são editáveis via chat
+    if (isPremiumActive) {
+      const userMsg: AgentMessage = { role: 'user', content: input.trim() }
+      setMessages(prev => [...prev, userMsg, {
+        role: 'agent',
+        content: 'Posts premium gerados com GPT Image 2 não são editáveis pelo agente. Para fazer alterações, feche o post premium e crie um novo.',
+      }])
+      setInput('')
+      return
+    }
+
     const userMsg: AgentMessage = { role: 'user', content: input.trim() }
     const newMessages = [...messages, userMsg]
     setMessages(newMessages)
@@ -653,13 +730,44 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const userEmail = authData.user?.email ?? ''
       const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
 
+      const filteredMessages = newMessages.filter(m => m.role !== 'agent' || newMessages.indexOf(m) > 0)
+
+      // ── MODO EDIÇÃO ──────────────────────────────────────────────────────────
+      if (activePost) {
+        const editContext: EditContext = {
+          templateBase: activePost.templateBase,
+          format: activePost.format,
+          textElements: activePost.textElements,
+          accentElements: activePost.accentElements,
+          imagePrompt: activePost.imagePrompt,
+        }
+
+        const response = await agentChat(filteredMessages, undefined, undefined, editContext)
+
+        if (response.mode === 'edit') {
+          if (response.actions && response.actions.length > 0) {
+            await applyEditActions(response.actions)
+          }
+          if (response.needs_confirm && response.confirm_type === 'regenerate_image') {
+            const currentImagePrompt = useStore.getState().templates
+              .find(t => t.id === useStore.getState().activeTemplateId)?.imagePrompt
+            setPendingRegenImage({ prompt: response.confirm_prompt || currentImagePrompt || '' })
+          }
+          setMessages(prev => [...prev, { role: 'agent', content: response.message || 'Feito!' }])
+        } else {
+          setMessages(prev => [...prev, { role: 'agent', content: response.message || 'Pode me contar mais?' }])
+        }
+        return
+      }
+      // ── FIM MODO EDIÇÃO ──────────────────────────────────────────────────────
+
       const currentActiveId = useStore.getState().activeTemplateId
       const lockedBase = currentActiveId
         ? currentActiveId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
         : undefined
 
       const response = await agentChat(
-        newMessages.filter(m => m.role !== 'agent' || newMessages.indexOf(m) > 0),
+        filteredMessages,
         brandCtx ? {
           businessName: brandCtx.business_name || brandCtx.brand_name,
           segment: brandCtx.segment,
@@ -732,6 +840,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setCollapsed(false)
     setPendingPremium(null)
     setPendingPremiumCarousel(null)
+    setPendingRegenImage(null)
     onReset?.()
   }
 
@@ -834,6 +943,56 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             </div>
           </div>
         ))}
+        {pendingRegenImage && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <button
+              onClick={async () => {
+                const p = pendingRegenImage
+                setPendingRegenImage(null)
+                setGenerating(true)
+                try {
+                  const url = await generateImage(p.prompt)
+                  const activeId = useStore.getState().activeTemplateId
+                  if (activeId) {
+                    setTemplateBackground(activeId, url)
+                    setTemplateImagePrompt(activeId, p.prompt)
+                    const def = templateRegistry.find(d => activeId.startsWith(d.id))
+                    def?.getVariants(theme).forEach(v => {
+                      if (v.id !== activeId) {
+                        setTemplateBackground(v.id, url)
+                        setTemplateImagePrompt(v.id, p.prompt)
+                      }
+                    })
+                  }
+                  setMessages(prev => [...prev, { role: 'agent', content: '✦ Nova imagem gerada!' }])
+                } catch (e: any) {
+                  setMessages(prev => [...prev, { role: 'agent', content: e.message || 'Erro ao gerar imagem.' }])
+                } finally {
+                  setGenerating(false)
+                }
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Confirmar · 4 pulses
+            </button>
+            <button
+              onClick={() => setPendingRegenImage(null)}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
         {pendingPremiumCarousel && !loading && !generating && (
           <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
             <button

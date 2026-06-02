@@ -1,3 +1,26 @@
+async function callAnthropicSimple(prompt, apiKey) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  })
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({}))
+    throw new Error(errBody?.error?.message ?? `Erro ${response.status} da API Anthropic`)
+  }
+  const data = await response.json()
+  return data.content.filter(b => b.type === 'text').map(b => b.text).join('')
+}
+
 async function callAnthropicWithWebSearch(prompt, apiKey) {
   const messages = [{ role: 'user', content: prompt }]
 
@@ -60,9 +83,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { messages, brand, lockedTemplateId } = req.body
+  const { messages, brand, lockedTemplateId, editContext } = req.body
 
-  console.log('[agent-chat] lockedTemplateId:', lockedTemplateId ?? '(none)')
+  console.log('[agent-chat] lockedTemplateId:', lockedTemplateId ?? '(none)', '| editMode:', !!editContext)
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages array is required' })
@@ -72,6 +95,105 @@ export default async function handler(req, res) {
   if (!apiKey) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' })
   }
+
+  // ── MODO EDIÇÃO ──────────────────────────────────────────────────────────────
+  if (editContext) {
+    const textList = (editContext.textElements ?? [])
+      .map(e => `  • id="${e.id}" → "${e.currentValue}"`)
+      .join('\n') || '  (nenhum)'
+
+    const shapeList = (editContext.accentElements ?? [])
+      .map(e => `  • id="${e.id}" → fill: "${e.currentColor || 'desconhecida'}"`)
+      .join('\n') || '  (nenhum)'
+
+    const history = messages
+      .map(m => `${m.role === 'user' ? 'Usuário' : 'Agente'}: ${m.content}`)
+      .join('\n')
+
+    const editPrompt = `Você é um assistente de edição de posts para redes sociais. O usuário abriu um post existente e quer fazer ajustes.
+
+POST ATUAL:
+- Template: ${editContext.templateBase} (formato: ${editContext.format})
+- Campos de texto:
+${textList}
+- Elementos visuais (shapes/cores):
+${shapeList}
+- Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"
+
+HISTÓRICO DA CONVERSA:
+${history}
+
+---
+
+INSTRUÇÕES:
+- Interprete o pedido mais recente do usuário e gere as ações de edição necessárias
+- Use SOMENTE os IDs de elementos listados acima — nunca invente IDs que não existem na lista
+- Para cores, retorne hex válido (#RRGGBB)
+- Para "destaque", "accent", "cor de detalhe", "linha colorida": use o shape element mais relevante pelo id
+- Para "fundo mais escuro/claro": use recolor_background com uma cor escura ou clara
+- Para "nova imagem de fundo" ou "regenera a imagem": retorne needs_confirm:true (custa 4 pulses)
+- Você pode combinar múltiplas ações em um único JSON
+- Máximo 1 frase no campo "message"
+
+TIPOS DE AÇÃO VÁLIDOS:
+- recolor: muda fill de um shape (campos: elementId + color)
+- rewrite: muda texto de um campo (campos: fieldId + text)
+- resize: muda formato do post (campo: format com valor "1x1", "4x5", "9x16" ou "16x9")
+- recolor_background: muda cor sólida de fundo (campo: color)
+
+Retorne APENAS JSON válido sem markdown:
+
+{
+  "ready": true,
+  "mode": "edit",
+  "actions": [
+    {"type": "recolor", "elementId": "brand-line", "color": "#FF0000"},
+    {"type": "rewrite", "fieldId": "title", "text": "Novo título"},
+    {"type": "resize", "format": "9x16"},
+    {"type": "recolor_background", "color": "#0a0a0a"}
+  ],
+  "message": "frase curta confirmando o que foi feito"
+}
+
+OU se o usuário pediu regenerar a imagem de fundo (com ou sem outras ações):
+{
+  "ready": true,
+  "mode": "edit",
+  "actions": [],
+  "needs_confirm": true,
+  "confirm_type": "regenerate_image",
+  "confirm_prompt": "novo prompt em inglês para a imagem",
+  "message": "Regenerar a imagem de fundo custa 4 pulses. Confirmar?"
+}
+
+OU se não entendeu o pedido:
+{
+  "ready": false,
+  "message": "pergunta objetiva de esclarecimento em 1 frase"
+}`
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
+        const raw = await callAnthropicSimple(editPrompt, apiKey)
+        if (!raw) throw new Error('Resposta vazia')
+        const clean = raw.replace(/```json|```/g, '').trim()
+        const parsed = JSON.parse(clean)
+        console.log('[agent-chat] edit mode response:', JSON.stringify(parsed).slice(0, 200))
+        return res.status(200).json(parsed)
+      } catch (err) {
+        console.error(`[agent-chat] edit mode erro attempt ${attempt}:`, err)
+        if (attempt === 2) {
+          return res.status(200).json({
+            ready: false,
+            message: 'Não consegui interpretar o pedido. Tente descrever a mudança com mais detalhes.',
+          })
+        }
+      }
+    }
+    return res.status(200).json({ ready: false, message: 'Erro interno. Tente novamente.' })
+  }
+  // ── FIM MODO EDIÇÃO ──────────────────────────────────────────────────────────
 
   const brandCtx = brand ? `
 Marca: ${brand.businessName || ''}
