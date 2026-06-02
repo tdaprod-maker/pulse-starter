@@ -108,6 +108,10 @@ export default async function handler(req, res) {
       ),
     ].join('\n') || '  (nenhum)'
 
+    const overlayList = (editContext.overlayElements ?? [])
+      .map(e => `  • id="${e.id}" → opacidade: ${e.currentOpacity.toFixed(2)} | cor: "${e.currentFill}"`)
+      .join('\n') || '  (nenhum)'
+
     const history = messages
       .map(m => `${m.role === 'user' ? 'Usuário' : 'Agente'}: ${m.content}`)
       .join('\n')
@@ -118,6 +122,8 @@ POST ATUAL:
 - Template: ${editContext.templateBase} (formato: ${editContext.format})
 - Elementos disponíveis (use estes IDs exatos):
 ${allElementsList}
+- Elementos de overlay/gradiente (camada escura sobre a imagem):
+${overlayList}
 - Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"
 
 HISTÓRICO DA CONVERSA:
@@ -132,7 +138,12 @@ INSTRUÇÕES:
 - recolor funciona para QUALQUER elemento — tanto [TEXTO] quanto [SHAPE] — use o id do elemento
 - Para "cor do título/texto", "cor da fonte": use recolor com o id do elemento [TEXTO]
 - Para "destaque", "accent", "cor de detalhe", "linha colorida": use recolor com o id do [SHAPE] relevante
-- Para "fundo mais escuro/claro": use recolor_background
+- Para "fundo mais escuro/claro": use recolor_background com hex escuro/claro
+- Para overlay/gradiente escuro sobre a imagem: use overlay_opacity ou overlay_color
+  - "tira o escurecimento" / "remove o overlay" → overlay_opacity com opacity: 0.0
+  - "deixa mais escuro" / "aumenta o escurecimento" → overlay_opacity com opacity: 0.85
+  - "deixa menos escuro" / "reduz o escurecimento" → overlay_opacity com opacity: 0.25
+  - "muda a cor do overlay para azul" → overlay_color com color: "#0000FF"
 - Para "nova imagem de fundo" ou "regenera a imagem": retorne needs_confirm:true (custa 4 pulses)
 - Você pode combinar múltiplas ações em um único JSON
 - Máximo 1 frase no campo "message"
@@ -140,8 +151,10 @@ INSTRUÇÕES:
 TIPOS DE AÇÃO VÁLIDOS:
 - recolor: muda a cor (fill) de qualquer elemento — texto ou shape (campos: elementId + color)
 - rewrite: muda o conteúdo textual de um campo [TEXTO] (campos: fieldId + text)
-- resize: muda formato do post (campo: format com valor "1x1", "4x5", "9x16" ou "16x9")
+- resize: muda formato do post (campos: format com valor "1x1", "4x5", "9x16" ou "16x9")
 - recolor_background: muda cor sólida de fundo (campo: color)
+- overlay_opacity: muda a opacidade de um elemento de overlay (campos: elementId + opacity 0.0–1.0)
+- overlay_color: muda a cor de um elemento de overlay (campos: elementId + color)
 
 Retorne APENAS JSON válido sem markdown:
 
@@ -153,7 +166,9 @@ Retorne APENAS JSON válido sem markdown:
     {"type": "recolor", "elementId": "brand-line", "color": "#FF0000"},
     {"type": "rewrite", "fieldId": "title", "text": "Novo título"},
     {"type": "resize", "format": "9x16"},
-    {"type": "recolor_background", "color": "#0a0a0a"}
+    {"type": "recolor_background", "color": "#0a0a0a"},
+    {"type": "overlay_opacity", "elementId": "overlay", "opacity": 0.0},
+    {"type": "overlay_color", "elementId": "overlay", "color": "#1a1a4e"}
   ],
   "message": "frase curta confirmando o que foi feito"
 }

@@ -272,8 +272,11 @@ export function EditorPage() {
         .filter(e => e.type === 'text')
         .map(e => ({ id: e.id, currentValue: String(e.props.text ?? ''), currentFill: String(e.props.fill ?? '') })),
       accentElements: activeTemplate.elements
-        .filter(e => e.type === 'shape')
+        .filter(e => e.type === 'shape' && !/overlay|gradient|bg-overlay/i.test(e.id))
         .map(e => ({ id: e.id, currentColor: String(e.props.fill ?? '') })),
+      overlayElements: activeTemplate.elements
+        .filter(e => e.type === 'shape' && /overlay|gradient|bg-overlay/i.test(e.id))
+        .map(e => ({ id: e.id, currentOpacity: (e.props.opacity as number) ?? 1, currentFill: String(e.props.fill ?? '') })),
       imagePrompt: activeTemplate.imagePrompt,
     }
   }, [activeTemplate, editModeActive])

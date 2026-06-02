@@ -13,6 +13,7 @@ export interface ActivePost {
   format: string
   textElements: { id: string; currentValue: string; currentFill: string }[]
   accentElements: { id: string; currentColor: string }[]
+  overlayElements: { id: string; currentOpacity: number; currentFill: string }[]
   imagePrompt?: string
 }
 
@@ -124,15 +125,73 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           const formats = ['1x1', '4x5', '9x16', '16x9']
           const fmt = formats.find(f => action.format === f)
           if (!fmt) break
+
+          // Captura textos e cores atuais ANTES de resetar as variantes
+          const currentId = useStore.getState().activeTemplateId
+          const currentTpl = useStore.getState().templates.find(t => t.id === currentId)
+          type ElState = Record<string, unknown>
+          const textState: Record<string, ElState> = {}
+          const shapeState: Record<string, ElState> = {}
+          if (currentTpl) {
+            for (const el of currentTpl.elements) {
+              if (el.type === 'text') {
+                textState[el.id] = { text: el.props.text, fill: el.props.fill }
+              } else if (el.type === 'shape') {
+                shapeState[el.id] = { fill: el.props.fill, opacity: el.props.opacity }
+              }
+            }
+          }
+
+          // Reseta todas as variantes para defaults e ativa o novo formato
           allVariants.forEach(v => addTemplate(v))
           const target = allVariants.find(v => v.id.endsWith('-' + fmt))
-          if (target) setActiveTemplate(target.id)
+          if (!target) break
+          setActiveTemplate(target.id)
+
+          // Re-aplica textos (conteúdo + cor) e fills de shapes em todas as variantes
+          // Não preserva fontSize/posição — cada variante mantém seus próprios valores
+          allVariants.forEach(v => {
+            const snap = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            for (const el of snap.elements) {
+              if (el.type === 'text' && textState[el.id]) {
+                const s = textState[el.id]
+                const updated: ElState = { ...el.props }
+                if (s.text !== undefined) updated.text = s.text
+                if (s.fill !== undefined) updated.fill = s.fill
+                updateElement(v.id, el.id, { props: updated })
+              } else if (el.type === 'shape' && shapeState[el.id]) {
+                const s = shapeState[el.id]
+                const updated: ElState = { ...el.props }
+                if (s.fill !== undefined) updated.fill = s.fill
+                if (s.opacity !== undefined) updated.opacity = s.opacity
+                updateElement(v.id, el.id, { props: updated })
+              }
+            }
+          })
           break
         }
         case 'recolor_background': {
           if (!action.color) break
           const currentId = useStore.getState().activeTemplateId
           if (currentId) setTemplateSolidBackground(currentId, action.color)
+          break
+        }
+        case 'overlay_opacity': {
+          if (!action.elementId || action.opacity === undefined) break
+          allVariants.forEach(v => {
+            const snap = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            const el = snap.elements.find(e => e.id === action.elementId)
+            if (el) updateElement(v.id, action.elementId!, { props: { ...el.props, opacity: action.opacity } })
+          })
+          break
+        }
+        case 'overlay_color': {
+          if (!action.elementId || !action.color) break
+          allVariants.forEach(v => {
+            const snap = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            const el = snap.elements.find(e => e.id === action.elementId)
+            if (el) updateElement(v.id, action.elementId!, { props: { ...el.props, fill: action.color } })
+          })
           break
         }
       }
@@ -739,6 +798,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           format: activePost.format,
           textElements: activePost.textElements,
           accentElements: activePost.accentElements,
+          overlayElements: activePost.overlayElements,
           imagePrompt: activePost.imagePrompt,
         }
 

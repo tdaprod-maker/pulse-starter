@@ -447,16 +447,18 @@ export interface EditContext {
   format: string
   textElements: { id: string; currentValue: string; currentFill: string }[]
   accentElements: { id: string; currentColor: string }[]
+  overlayElements: { id: string; currentOpacity: number; currentFill: string }[]
   imagePrompt?: string
 }
 
 export interface EditAction {
-  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background'
+  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color'
   elementId?: string
   fieldId?: string
   color?: string
   text?: string
   format?: string
+  opacity?: number
 }
 
 export interface AgentResponse {
