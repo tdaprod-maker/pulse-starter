@@ -254,7 +254,7 @@ export const useStore = create<PulseStore>()(
       partialize: (state) => ({
         // activeTemplateId não persiste — sempre começa sem template selecionado
         caption: state.caption,
-        pendingPost: state.pendingPost,
+        // pendingPost não persiste — estado transiente
         templates: state.templates.map(({ backgroundImage: _bg, logoImage: _logo, ...rest }) => rest),
       }),
     }
