@@ -108,13 +108,31 @@ export default async function handler(req, res) {
       ),
     ].join('\n') || '  (nenhum)'
 
-    const overlayList = (editContext.overlayElements ?? [])
-      .map(e => `  • id="${e.id}" → opacidade: ${e.currentOpacity.toFixed(2)} | cor: "${e.currentFill}"`)
-      .join('\n') || '  (nenhum)'
+    const hasOverlay = (editContext.overlayElements ?? []).length > 0
+
+    const overlaySection = hasOverlay
+      ? `- Elementos de overlay/gradiente (camada escura sobre a imagem):\n` +
+        (editContext.overlayElements ?? [])
+          .map(e => `  • id="${e.id}" → opacidade: ${e.currentOpacity.toFixed(2)} | cor: "${e.currentFill}"`)
+          .join('\n')
+      : `- Este template NÃO possui elementos de overlay/gradiente`
 
     const history = messages
       .map(m => `${m.role === 'user' ? 'Usuário' : 'Agente'}: ${m.content}`)
       .join('\n')
+
+    const overlayInstructions = hasOverlay
+      ? `- Para overlay/gradiente escuro sobre a imagem: use overlay_opacity ou overlay_color
+  - "tira o escurecimento" / "remove o overlay" → overlay_opacity com opacity: 0.0
+  - "deixa mais escuro" / "aumenta o escurecimento" → overlay_opacity com opacity: 0.85
+  - "deixa menos escuro" / "reduz o escurecimento" → overlay_opacity com opacity: 0.25
+  - "muda a cor do overlay para azul" → overlay_color com color: "#0000FF"`
+      : `- Se o usuário pedir para escurecer/clarear o overlay ou remover escurecimento: informe que este template não possui camada de overlay e sugira usar "muda o fundo" (recolor_background) se quiser alterar a cor de fundo`
+
+    const overlayActionTypes = hasOverlay
+      ? `- overlay_opacity: muda a opacidade de um elemento de overlay (campos: elementId + opacity 0.0–1.0)
+- overlay_color: muda a cor de um elemento de overlay (campos: elementId + color)`
+      : ``
 
     const editPrompt = `Você é um assistente de edição de posts para redes sociais. O usuário abriu um post existente e quer fazer ajustes.
 
@@ -122,8 +140,7 @@ POST ATUAL:
 - Template: ${editContext.templateBase} (formato: ${editContext.format})
 - Elementos disponíveis (use estes IDs exatos):
 ${allElementsList}
-- Elementos de overlay/gradiente (camada escura sobre a imagem):
-${overlayList}
+${overlaySection}
 - Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"
 
 HISTÓRICO DA CONVERSA:
@@ -139,11 +156,7 @@ INSTRUÇÕES:
 - Para "cor do título/texto", "cor da fonte": use recolor com o id do elemento [TEXTO]
 - Para "destaque", "accent", "cor de detalhe", "linha colorida": use recolor com o id do [SHAPE] relevante
 - Para "fundo mais escuro/claro": use recolor_background com hex escuro/claro
-- Para overlay/gradiente escuro sobre a imagem: use overlay_opacity ou overlay_color
-  - "tira o escurecimento" / "remove o overlay" → overlay_opacity com opacity: 0.0
-  - "deixa mais escuro" / "aumenta o escurecimento" → overlay_opacity com opacity: 0.85
-  - "deixa menos escuro" / "reduz o escurecimento" → overlay_opacity com opacity: 0.25
-  - "muda a cor do overlay para azul" → overlay_color com color: "#0000FF"
+${overlayInstructions}
 - Para "nova imagem de fundo" ou "regenera a imagem": retorne needs_confirm:true (custa 4 pulses)
 - Você pode combinar múltiplas ações em um único JSON
 - Máximo 1 frase no campo "message"
@@ -153,8 +166,7 @@ TIPOS DE AÇÃO VÁLIDOS:
 - rewrite: muda o conteúdo textual de um campo [TEXTO] (campos: fieldId + text)
 - resize: muda formato do post (campos: format com valor "1x1", "4x5", "9x16" ou "16x9")
 - recolor_background: muda cor sólida de fundo (campo: color)
-- overlay_opacity: muda a opacidade de um elemento de overlay (campos: elementId + opacity 0.0–1.0)
-- overlay_color: muda a cor de um elemento de overlay (campos: elementId + color)
+${overlayActionTypes}
 
 Retorne APENAS JSON válido sem markdown:
 
