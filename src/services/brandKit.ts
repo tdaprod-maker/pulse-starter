@@ -120,12 +120,31 @@ export async function loadPosts(userEmail: string): Promise<PostRecord[]> {
   return data as PostRecord[]
 }
 
+function resizeDataUrl(dataUrl: string, maxWidth: number, quality: number): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = img.width > maxWidth ? maxWidth / img.width : 1
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
+}
+
 export async function uploadThumbnail(
   postId: string,
   userEmail: string,
   dataUrl: string
 ): Promise<string | null> {
-  const res = await fetch(dataUrl)
+  const resized = await resizeDataUrl(dataUrl, 400, 0.7)
+  const res = await fetch(resized)
   const blob = await res.blob()
   const path = `thumbnails/${userEmail}/${postId}.jpg`
 
