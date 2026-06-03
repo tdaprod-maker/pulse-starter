@@ -1,9 +1,50 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { loadPosts } from '../services/brandKit'
 import type { PostRecord } from '../services/brandKit'
 import { useStore } from '../state/useStore'
+
+function LazyImage({ src, alt, style }: { src: string; alt: string; style?: React.CSSProperties }) {
+  const [active, setActive] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const ref = useRef<HTMLImageElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setActive(true); obs.disconnect() } },
+      { rootMargin: '300px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [src])
+
+  return (
+    <img
+      ref={ref}
+      src={active ? src : undefined}
+      alt={alt}
+      style={{ ...style, opacity: loaded ? 1 : 0, transition: 'opacity 0.25s' }}
+      onLoad={() => setLoaded(true)}
+    />
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+      <div style={{ width: '100%', aspectRatio: '1', position: 'relative', overflow: 'hidden', background: 'var(--bg-base)' }}>
+        <div className="lib-shimmer" style={{ position: 'absolute', inset: 0 }} />
+      </div>
+      <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="lib-shimmer" style={{ height: '11px', borderRadius: '4px', width: '75%' }} />
+        <div className="lib-shimmer" style={{ height: '10px', borderRadius: '4px', width: '45%' }} />
+      </div>
+    </div>
+  )
+}
 
 interface CarouselRecord {
   id: string
@@ -193,6 +234,17 @@ export function LibraryPage() {
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-base)' }}>
+      <style>{`
+        @keyframes lib-shimmer {
+          0%   { background-position: 200% 0 }
+          100% { background-position: -200% 0 }
+        }
+        .lib-shimmer {
+          background: linear-gradient(90deg, var(--bg-base) 25%, var(--bg-surface) 50%, var(--bg-base) 75%);
+          background-size: 200% 100%;
+          animation: lib-shimmer 1.4s ease-in-out infinite;
+        }
+      `}</style>
       <main style={{ maxWidth: '960px', margin: '0 auto', padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
         {/* Header */}
@@ -225,7 +277,9 @@ export function LibraryPage() {
 
         {/* Grid */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Carregando...</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '16px' }}>
+            {Array.from({ length: 8 }, (_, i) => <SkeletonCard key={i} />)}
+          </div>
         ) : items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 24px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '12px' }}>
             <p style={{ fontSize: '16px', margin: '0 0 8px', color: 'var(--text-secondary)' }}>Nenhum item gerado ainda</p>
@@ -259,7 +313,7 @@ export function LibraryPage() {
                     </div>
                     {/* Thumbnail */}
                     {post.thumbnail_url ? (
-                      <img src={post.thumbnail_url} alt="Post" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
+                      <LazyImage src={post.thumbnail_url} alt="Post" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
                     ) : (
                       <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ fontSize: '32px', opacity: 0.2 }}>✦</span>
@@ -312,7 +366,7 @@ export function LibraryPage() {
                   <div style={{ display: 'flex', height: '110px', overflow: 'hidden' }}>
                     {images.slice(0, 3).map((img, i) => (
                       <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#111' }}>
-                        {img && <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                        {img && <LazyImage src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
                       </div>
                     ))}
