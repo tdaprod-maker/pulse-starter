@@ -21,6 +21,7 @@ export interface BrandContext {
   tone?: string
   visualStyle?: string
   brandDescription?: string
+  logoUrl?: string
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -452,13 +453,15 @@ export interface EditContext {
 }
 
 export interface EditAction {
-  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color'
+  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color' | 'add_logo'
   elementId?: string
   fieldId?: string
   color?: string
   text?: string
   format?: string
   opacity?: number
+  logoUrl?: string
+  corner?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
 }
 
 export interface AgentResponse {

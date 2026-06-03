@@ -134,6 +134,11 @@ export default async function handler(req, res) {
 - overlay_color: muda a cor de um elemento de overlay (campos: elementId + color)`
       : ``
 
+    const brandLogoUrl = brand?.logoUrl ?? null
+    const brandSection = brand
+      ? `\nBRAND KIT:\n- Logo URL: ${brandLogoUrl ?? 'não cadastrado'}`
+      : ''
+
     const editPrompt = `Você é um assistente de edição de posts para redes sociais. O usuário abriu um post existente e quer fazer ajustes.
 
 POST ATUAL:
@@ -141,7 +146,7 @@ POST ATUAL:
 - Elementos disponíveis (use estes IDs exatos):
 ${allElementsList}
 ${overlaySection}
-- Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"
+- Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"${brandSection}
 
 HISTÓRICO DA CONVERSA:
 ${history}
@@ -158,6 +163,7 @@ INSTRUÇÕES:
 - Para "fundo mais escuro/claro": use recolor_background com hex escuro/claro
 ${overlayInstructions}
 - Para "nova imagem de fundo" ou "regenera a imagem": retorne needs_confirm:true (custa 4 pulses)
+- Para adicionar/inserir o logotipo: use add_logo com o logoUrl do brand kit — NÃO peça o arquivo ao usuário${brandLogoUrl ? `. O logoUrl do brand kit é: "${brandLogoUrl}"` : '. Se o brand kit não tiver logo cadastrado, informe ao usuário que não há logotipo no brand kit'}. Inclua o canto desejado (corner: "bottom-right", "bottom-left", "top-right" ou "top-left" — padrão: "bottom-right")
 - Você pode combinar múltiplas ações em um único JSON
 - Máximo 1 frase no campo "message"
 
@@ -166,6 +172,7 @@ TIPOS DE AÇÃO VÁLIDOS:
 - rewrite: muda o conteúdo textual de um campo [TEXTO] (campos: fieldId + text)
 - resize: muda formato do post (campos: format com valor "1x1", "4x5", "9x16" ou "16x9")
 - recolor_background: muda cor sólida de fundo (campo: color)
+- add_logo: adiciona o logotipo do brand kit ao canvas (campos: logoUrl + corner opcional: "bottom-right", "bottom-left", "top-right", "top-left")
 ${overlayActionTypes}
 
 Retorne APENAS JSON válido sem markdown:
@@ -180,7 +187,8 @@ Retorne APENAS JSON válido sem markdown:
     {"type": "resize", "format": "9x16"},
     {"type": "recolor_background", "color": "#0a0a0a"},
     {"type": "overlay_opacity", "elementId": "overlay", "opacity": 0.0},
-    {"type": "overlay_color", "elementId": "overlay", "color": "#1a1a4e"}
+    {"type": "overlay_color", "elementId": "overlay", "color": "#1a1a4e"},
+    {"type": "add_logo", "logoUrl": "https://...", "corner": "bottom-right"}
   ],
   "message": "frase curta confirmando o que foi feito"
 }

@@ -86,6 +86,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const {
     addTemplate, setActiveTemplate, updateElement, setTemplateBackground,
     setTemplateImagePrompt, setCaption, setTemplateSolidBackground,
+    setTemplateLogo, setTemplateLogoPosition,
   } = useStore()
 
   useEffect(() => {
@@ -154,6 +155,43 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             const el = snap.elements.find(e => e.id === action.elementId)
             if (el) updateElement(v.id, action.elementId!, { props: { ...el.props, fill: action.color } })
           })
+          break
+        }
+        case 'add_logo': {
+          if (!action.logoUrl) break
+          try {
+            const resp = await fetch(action.logoUrl)
+            const blob = await resp.blob()
+            const base64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader()
+              reader.onload = () => resolve(reader.result as string)
+              reader.readAsDataURL(blob)
+            })
+            const logoAspect = await new Promise<number>((resolve) => {
+              const img = new Image()
+              img.onload = () => resolve(img.height / img.width)
+              img.onerror = () => resolve(1)
+              img.src = base64
+            })
+            const corner = action.corner ?? 'bottom-right'
+            const logoSize = 160
+            const margin = 16
+            allVariants.forEach(v => {
+              const tmpl = useStore.getState().templates.find(t => t.id === v.id) ?? v
+              const logoH = logoSize * logoAspect
+              let x: number, y: number
+              switch (corner) {
+                case 'bottom-left': x = margin; y = tmpl.height - logoH - margin; break
+                case 'top-right':   x = tmpl.width - logoSize - margin; y = margin; break
+                case 'top-left':    x = margin; y = margin; break
+                default:            x = tmpl.width - logoSize - margin; y = tmpl.height - logoH - margin
+              }
+              setTemplateLogo(v.id, base64)
+              setTemplateLogoPosition(v.id, x, y)
+            })
+          } catch (e) {
+            console.error('[add_logo] erro ao carregar logo:', e)
+          }
           break
         }
       }
@@ -772,6 +810,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             tone: brandCtx.tone,
             brandDescription: brandCtx.brand_description ?? undefined,
             visualStyle: brandCtx.visual_style ?? undefined,
+            logoUrl: brandCtx.logo_url ?? undefined,
           } : undefined,
           undefined,
           editContext
