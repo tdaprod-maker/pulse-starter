@@ -18,6 +18,8 @@ import { CaptionPanel } from '../components/CaptionPanel'
 import { PostReviewer } from '../components/PostReviewer'
 import { TextEditor } from '../components/TextEditor'
 import { generateImage } from '../services/replicate'
+import { loadBrandConfig } from '../services/brandKit'
+import { supabase } from '../lib/supabase'
 
 interface EditingState {
   el: CanvasElement
@@ -189,6 +191,30 @@ export function EditorPage() {
         // falha silenciosa — não interrompe a restauração
       })
     }
+
+    // Restaura logo do brand kit em todas as variantes
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getUser()
+        const email = data.user?.email
+        if (!email) return
+        const brand = await loadBrandConfig(email)
+        if (!brand?.logo_url) return
+        const resp = await fetch(brand.logo_url)
+        const blob = await resp.blob()
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(blob)
+        })
+        variants.forEach(v => {
+          useStore.getState().setTemplateLogo(v.id, base64)
+        })
+        console.log('[restore] logo do brand kit aplicado em', variants.length, 'variantes')
+      } catch {
+        // falha silenciosa — não interrompe a restauração
+      }
+    })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingPost])
 

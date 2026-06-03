@@ -802,6 +802,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           imagePrompt: activePost.imagePrompt,
         }
 
+        console.log('[edit-mode] brandCtx completo:', JSON.stringify(brandCtx))
+
         const response = await agentChat(
           filteredMessages,
           brandCtx ? {
