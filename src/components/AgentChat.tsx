@@ -158,7 +158,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           break
         }
         case 'add_logo': {
-          if (!action.logoUrl) break
+          console.log('[applyEditActions] add_logo chamado | logoUrl:', action.logoUrl, '| corner:', action.corner)
+          if (!action.logoUrl) { console.warn('[applyEditActions] add_logo: logoUrl ausente — abortando'); break }
           try {
             const resp = await fetch(action.logoUrl)
             const blob = await resp.blob()
@@ -192,6 +193,13 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           } catch (e) {
             console.error('[add_logo] erro ao carregar logo:', e)
           }
+          break
+        }
+        case 'remove_logo': {
+          console.log('[applyEditActions] remove_logo chamado | variantes:', allVariants.map(v => v.id))
+          allVariants.forEach(v => {
+            setTemplateLogo(v.id, null)
+          })
           break
         }
       }

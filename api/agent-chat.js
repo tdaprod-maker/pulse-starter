@@ -173,6 +173,7 @@ TIPOS DE AÇÃO VÁLIDOS:
 - resize: muda formato do post (campos: format com valor "1x1", "4x5", "9x16" ou "16x9")
 - recolor_background: muda cor sólida de fundo (campo: color)
 - add_logo: adiciona o logotipo do brand kit ao canvas (campos: logoUrl + corner opcional: "bottom-right", "bottom-left", "top-right", "top-left")
+- remove_logo: remove o logotipo do canvas (sem campos adicionais)
 ${overlayActionTypes}
 
 Retorne APENAS JSON válido sem markdown:
@@ -188,7 +189,8 @@ Retorne APENAS JSON válido sem markdown:
     {"type": "recolor_background", "color": "#0a0a0a"},
     {"type": "overlay_opacity", "elementId": "overlay", "opacity": 0.0},
     {"type": "overlay_color", "elementId": "overlay", "color": "#1a1a4e"},
-    {"type": "add_logo", "logoUrl": "https://...", "corner": "bottom-right"}
+    {"type": "add_logo", "logoUrl": "https://...", "corner": "bottom-right"},
+    {"type": "remove_logo"}
   ],
   "message": "frase curta confirmando o que foi feito"
 }

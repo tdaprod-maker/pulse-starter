@@ -453,7 +453,7 @@ export interface EditContext {
 }
 
 export interface EditAction {
-  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color' | 'add_logo'
+  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color' | 'add_logo' | 'remove_logo'
   elementId?: string
   fieldId?: string
   color?: string
