@@ -62,13 +62,6 @@ type LibraryItem =
   | { kind: 'post';     created_at: string; data: PostRecord }
   | { kind: 'carousel'; created_at: string; data: CarouselRecord }
 
-function thumbUrl(url: string | undefined | null): string | undefined {
-  if (!url) return undefined
-  // Supabase image transform only works on /render/image/ endpoint
-  const transformed = url.replace('/object/public/', '/render/image/public/')
-  return `${transformed}?width=400&quality=70`
-}
-
 export function LibraryPage() {
   const [items, setItems]           = useState<LibraryItem[]>([])
   const [loading, setLoading]       = useState(true)
@@ -320,7 +313,7 @@ export function LibraryPage() {
                     </div>
                     {/* Thumbnail */}
                     {post.thumbnail_url ? (
-                      <LazyImage src={thumbUrl(post.thumbnail_url)!} alt="Post" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
+                      <LazyImage src={post.thumbnail_url} alt="Post" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
                     ) : (
                       <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ fontSize: '32px', opacity: 0.2 }}>✦</span>
@@ -442,7 +435,7 @@ export function LibraryPage() {
                 <button onClick={() => setSelectedPost(null)} style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>Fechar ✕</button>
               </div>
               {selectedPost.thumbnail_url && (
-                <img src={thumbUrl(selectedPost.thumbnail_url)} alt="Post" style={{ width: '200px', borderRadius: '8px', alignSelf: 'center' }} />
+                <img src={selectedPost.thumbnail_url} alt="Post" style={{ width: '200px', borderRadius: '8px', alignSelf: 'center' }} />
               )}
               <div>
                 <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Instagram</p>
