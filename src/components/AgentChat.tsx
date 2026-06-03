@@ -764,7 +764,18 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           imagePrompt: activePost.imagePrompt,
         }
 
-        const response = await agentChat(filteredMessages, undefined, undefined, editContext)
+        const response = await agentChat(
+          filteredMessages,
+          brandCtx ? {
+            businessName: brandCtx.business_name || brandCtx.brand_name,
+            segment: brandCtx.segment,
+            tone: brandCtx.tone,
+            brandDescription: brandCtx.brand_description ?? undefined,
+            visualStyle: brandCtx.visual_style ?? undefined,
+          } : undefined,
+          undefined,
+          editContext
+        )
 
         if (response.mode === 'edit') {
           if (response.actions && response.actions.length > 0) {
