@@ -320,31 +320,20 @@ SE o usuário especificou explicitamente o título ou conteúdo de cada slide in
 - slideCount deve ser igual ao número de itens no array "slides"
 SE o usuário NÃO especificou títulos individuais de slides → omita o campo "slides" completamente
 
-DECISÃO DE ENGINE (para mode "post" e mode "carousel"):
-Ao retornar ready=true, avalie o conteúdo pelo critério abaixo. Em caso de dúvida, prefira premium.
-
-engine: "premium" — escolha sempre que qualquer um destes gatilhos estiver presente:
-  VISUAL REALISTA: pessoa real, rosto, atleta, médico, profissional em ação, modelo, equipe, família, cliente
-  PRODUTO FÍSICO: produto para venda, embalagem, gadget, roupa, acessório, equipamento, veículo
-  ALIMENTO/BEBIDA: prato de comida, lanche, sobremesa, bebida, restaurante, cardápio
-  AMBIENTE: imóvel, sala, fachada, loja, escritório, clínica, ambiente interno ou externo realista
-  BELEZA/SAÚDE: produto de beleza, cosmético, skincare, suplemento, farmácia
-  PALAVRAS-CHAVE DO USUÁRIO: "qualidade", "fotorrealista", "premium", "profissional", "alta qualidade", "realista", "foto", "imagem real", "visual impactante"
-  NATUREZA/LIFESTYLE: paisagem, viagem, esporte, lazer, estilo de vida com cena real
-
-engine: "standard" — use SOMENTE quando o conteúdo for claramente tipográfico ou informacional e nenhum gatilho acima se aplicar:
-  Posts de dados e números, frases de impacto, citações, vagas de emprego, posts institucionais sem imagem de pessoa/produto, conteúdo 100% textual
+DECISÃO DE ENGINE:
+- Para mode "post": sempre retorne engine: "standard" — o usuário escolherá a qualidade de imagem na interface, não cabe ao agente decidir.
+- Para mode "carousel" com conteúdo visual (pessoas reais, produtos físicos, alimentos, ambientes realistas, atletas, imóveis): engine: "premium"
+- Para mode "carousel" com conteúdo tipográfico, educativo, informacional, dados ou institucional: engine: "standard"
 
 CARROSSEL PREMIUM (mode="carousel", engine="premium"): máximo 5 slides — GPT Image 2 gera cada slide individualmente e pode levar ~2 minutos. Se o usuário pediu mais de 5 slides para um tema fotorrealista, avise: "Carrossel premium usa GPT Image 2 — máximo 5 slides. Prefere 5 slides premium (fotorrealista) ou N slides padrão?" e aguarde confirmação antes de enviar ready:true.
 
 REGRA CRÍTICA DO CAMPO "prompt":
-- Para posts STANDARD (tipográfico/informativo): máximo 2 frases. Tema, rede social, tom e objetivo. NÃO inclua cores, fontes, layout.
-- Para posts PREMIUM (pessoa real, produto físico, prato, imóvel, atleta): O campo "prompt" DEVE incluir a descrição visual completa do sujeito principal — aparência física, ambiente, ação — ANTES do objetivo do post. Isso é o que o GPT Image 2 vai renderizar.
+- Para posts: o usuário escolherá a engine (padrão ou premium) na interface — escreva o prompt de forma que funcione para ambas. Se houver sujeito visual claro (pessoa, produto, prato, imóvel), use o formato "SUJEITO: [descrição visual detalhada — aparência, ambiente, ação]. OBJETIVO: [tema, rede social, tom]." Se o conteúdo for puramente tipográfico/informacional, use 1-2 frases com tema, rede social, tom e objetivo.
 - Para CARROSSEL PREMIUM: o campo "prompt" DEVE descrever o sujeito visual principal que aparecerá em todos os slides — ex: "SUJEITO: garrafa de azeite artesanal em cozinha italiana iluminada. OBJETIVO: diferenciais do produto, tom sofisticado." Os textos de cada slide são gerados automaticamente.
 
 Exemplos:
-  standard → "Post Instagram feed sobre os 3 pilares de uma gestão financeira saudável. Tom direto e educativo."
-  premium  → "SUJEITO: Médico brasileiro com traços asiáticos, jaleco branco, consultório clean e bem iluminado, postura de confiança e competência. OBJETIVO: Post Instagram feed sobre medicina do esporte. Tom profissional e acolhedor."
+  post com sujeito visual → "SUJEITO: Médico brasileiro com traços asiáticos, jaleco branco, consultório clean e bem iluminado, postura de confiança e competência. OBJETIVO: Post Instagram feed sobre medicina do esporte. Tom profissional e acolhedor."
+  post tipográfico → "Post Instagram feed sobre os 3 pilares de uma gestão financeira saudável. Tom direto e educativo."
   carousel standard → "Carrossel Instagram sobre os 5 erros de gestão financeira para MEIs. Tom didático, objetivo educar e ganhar seguidores."
   carousel premium → "SUJEITO: garrafa de azeite artesanal em cozinha italiana iluminada. OBJETIVO: Carrossel Instagram sobre os diferenciais do produto, tom sofisticado."
 
@@ -366,22 +355,13 @@ Responda APENAS com JSON válido sem markdown:
   "ready": false,
   "message": "sua mensagem direta aqui — pode incluir orientação + pergunta"
 }
-OU (post único — conteúdo informativo, tipográfico, dados, institucional):
+OU (post único — qualquer conteúdo; engine é sempre "standard", o usuário escolherá na interface):
 {
   "ready": true,
   "mode": "post",
-  "prompt": "tema e rede social em 1-2 frases",
+  "prompt": "briefing completo — use formato SUJEITO+OBJETIVO se houver elemento visual, ou 1-2 frases para conteúdo tipográfico",
   "format": "4x5",
   "engine": "standard",
-  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
-}
-OU (post único — produto físico, prato de comida, imóvel, atleta, produto de beleza, pessoa real):
-{
-  "ready": true,
-  "mode": "post",
-  "prompt": "SUJEITO: [descrição visual completa — aparência, ambiente, ação]. OBJETIVO: [tema e rede social].",
-  "format": "4x5",
-  "engine": "premium",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
 OU (carrossel — conteúdo tipográfico, educativo, informativo — sem títulos especificados):

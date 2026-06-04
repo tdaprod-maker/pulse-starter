@@ -82,6 +82,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [pendingPremium, setPendingPremium] = useState<{ prompt: string; format?: string } | null>(null)
   const [pendingPremiumCarousel, setPendingPremiumCarousel] = useState<{ prompt: string; slideCount: number; templateId?: string; slides?: { title: string; body?: string }[] } | null>(null)
   const [pendingAmbiguous, setPendingAmbiguous] = useState<AgentResponse | null>(null)
+  const [pendingEngineChoice, setPendingEngineChoice] = useState<{ prompt: string; format?: string } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const { theme } = useTheme()
@@ -897,18 +898,13 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         } else if (response.mode === 'carousel') {
           onGenerating?.()
           await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
-        } else if (response.engine === 'premium') {
-          console.log('[handleSend] engine=premium → mostrando confirmação')
-          setPendingPremium({ prompt: response.prompt, format: response.format })
+        } else {
+          // Post — usuário sempre escolhe a engine
+          setPendingEngineChoice({ prompt: response.prompt, format: response.format })
           setMessages(prev => [...prev, {
             role: 'agent',
-            content: 'Esse post usa GPT Image 2 — imagem fotorrealista de alta qualidade. Custa 8 pulses (padrão custa 4). Confirmar?',
+            content: 'Qual qualidade de imagem você prefere?',
           }])
-        } else {
-          console.log('[handleSend] engine=standard (ou ausente):', response.engine, '→ generate() FAL.ai')
-          onGenerating?.()
-          setMessages(prev => [...prev, { role: 'agent', content: 'Perfeito! Gerando seu post...' }])
-          await generate(response.prompt, response.format)
         }
       } else {
         setMessages(prev => [...prev, {
@@ -939,6 +935,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingPremiumCarousel(null)
     setPendingRegenImage(null)
     setPendingAmbiguous(null)
+    setPendingEngineChoice(null)
     onReset?.()
   }
 
@@ -1115,17 +1112,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               onClick={() => {
                 const p = pendingAmbiguous
                 setPendingAmbiguous(null)
-                if (p.engine === 'premium') {
-                  setPendingPremium({ prompt: p.prompt!, format: p.format })
-                  setMessages(prev => [...prev, {
-                    role: 'agent',
-                    content: 'Esse post usa GPT Image 2 — imagem fotorrealista de alta qualidade. Custa 8 pulses (padrão custa 4). Confirmar?',
-                  }])
-                } else {
-                  onGenerating?.()
-                  setMessages(prev => [...prev, { role: 'agent', content: 'Gerando novo post...' }])
-                  generate(p.prompt!, p.format)
-                }
+                setPendingEngineChoice({ prompt: p.prompt!, format: p.format })
+                setMessages(prev => [...prev, {
+                  role: 'agent',
+                  content: 'Qual qualidade de imagem você prefere?',
+                }])
               }}
               style={{
                 padding: '7px 14px', borderRadius: '8px',
@@ -1135,6 +1126,43 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               }}
             >
               Criar novo post
+            </button>
+          </div>
+        )}
+        {pendingEngineChoice && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => {
+                const p = pendingEngineChoice
+                setPendingEngineChoice(null)
+                onGenerating?.()
+                setMessages(prev => [...prev, { role: 'agent', content: 'Gerando seu post...' }])
+                generate(p.prompt, p.format)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Padrão (gpt-image-1) · 4 pulses
+            </button>
+            <button
+              onClick={() => {
+                const p = pendingEngineChoice
+                setPendingEngineChoice(null)
+                onGenerating?.()
+                generatePremium(p.prompt, p.format)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--accent)', background: 'transparent',
+                color: 'var(--accent)', fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Premium (GPT Image 2) · 8 pulses
             </button>
           </div>
         )}
