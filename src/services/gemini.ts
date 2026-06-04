@@ -61,11 +61,11 @@ export async function generateCarouselContent(userInput: string, slideCount: num
 
 // ─── Chamada principal ────────────────────────────────────────────────────────
 
-export async function generatePostContent(userInput: string, brand?: BrandContext, forcedTemplate?: string): Promise<AIResponse> {
+export async function generatePostContent(userInput: string, brand?: BrandContext, forcedTemplate?: string, lastUsedTemplate?: string): Promise<AIResponse> {
   const res = await fetch('/api/generate-post', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userInput, brand, forcedTemplate }),
+    body: JSON.stringify({ userInput, brand, forcedTemplate, lastUsedTemplate }),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as { error?: string }

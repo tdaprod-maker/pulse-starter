@@ -28,7 +28,7 @@ const TEMPLATE_FIELDS = {
   'tech-minimal':       'phrase (frase impactante em capitalizacao normal)',
 }
 
-function buildPrompt(userInput, brand, forcedTemplate) {
+function buildPrompt(userInput, brand, forcedTemplate, lastUsedTemplate) {
   const toneLabel = brand?.tone === 'professional' ? 'profissional e formal'
     : brand?.tone === 'casual' ? 'descontraído e próximo'
     : brand?.tone === 'inspirational' ? 'inspiracional e motivador'
@@ -43,10 +43,16 @@ ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
 ${brand?.visualStyle ? `\nEstilo visual de referência: ${brand.visualStyle}` : ''}
 ${brand?.brandDescription ? `\nDescrição detalhada da marca: ${brand.brandDescription}` : ''}
 
+VARIAÇÃO OBRIGATÓRIA DE TEMPLATE:
+${lastUsedTemplate ? `O último template usado foi "${lastUsedTemplate}". É PROIBIDO usar este mesmo template agora — escolha obrigatoriamente um template diferente.` : 'Escolha o template mais adequado ao conteúdo.'}
+
 REGRA CRÍTICA — SEGMENTO DA MARCA vs TEMA DO POST:
 O segmento da marca define APENAS o tom, estilo de escrita e contexto do negócio. O template é escolhido pelo TEMA DO CONTEÚDO do post — não pelo segmento da empresa.
 Exemplos: marca tech postando sobre frango grelhado → "food-editorial". Marca tech abrindo vaga → "job-glass". Marca tech com dado de negócio → "business-statement".
 Templates tech-statement, tech-news, tech-product, tech-minimal são EXCLUSIVOS para posts cujo ASSUNTO seja tecnologia, IA, software ou inovação digital — NUNCA porque o segmento da empresa é tech.
+
+VARIAÇÃO PARA CONTEÚDO GENÉRICO DE EMPRESA TECH/IA:
+Para empresa de tecnologia ou IA postando conteúdo motivacional, educativo, institucional, dicas de negócio, produtividade, bastidores ou conquistas que NÃO sejam especificamente sobre um produto tech, notícia tech ou opinião filosófica sobre IA: NÃO use tech-statement nem tech-news. Distribua obrigatoriamente entre: editorial-card, hero-gradient, business-statement (se houver número), infographic-ring (se for lista), business-card, toggle-card.
 
 TEMPLATES DISPONÍVEIS:
 
@@ -209,7 +215,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { userInput, brand, forcedTemplate } = req.body
+  const { userInput, brand, forcedTemplate, lastUsedTemplate } = req.body
 
   if (!userInput) {
     return res.status(400).json({ error: 'userInput is required' })
@@ -220,7 +226,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' })
   }
 
-  const prompt = buildPrompt(userInput, brand, forcedTemplate)
+  const prompt = buildPrompt(userInput, brand, forcedTemplate, lastUsedTemplate)
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {

@@ -85,6 +85,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [pendingEngineChoice, setPendingEngineChoice] = useState<{ prompt: string; format?: string } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const lastUsedTemplateRef = useRef<string | null>(null)
   const { theme } = useTheme()
   const {
     addTemplate, setActiveTemplate, updateElement, setTemplateBackground,
@@ -287,7 +288,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         tone: brandCtx.tone,
         visualStyle: brandCtx.visual_style ?? undefined,
         brandDescription: brandCtx.brand_description ?? undefined,
-      } : undefined, activeTemplateBase ?? undefined)
+      } : undefined, activeTemplateBase ?? undefined, lastUsedTemplateRef.current ?? undefined)
+
+      lastUsedTemplateRef.current = normalizeTemplateId(result.template)
 
       if (brandCtx?.color_primary && result.accentColor) {
         result.accentColor = brandCtx.color_primary
