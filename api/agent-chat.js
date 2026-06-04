@@ -163,6 +163,7 @@ INSTRUÇÕES:
 - Para "fundo mais escuro/claro": use recolor_background com hex escuro/claro
 ${overlayInstructions}
 - Para "nova imagem de fundo" ou "regenera a imagem": retorne needs_confirm:true (custa 4 pulses)
+- Para reduzir, aumentar ou redimensionar o logotipo: use resize_logo com logoSize em pixels (80=pequeno, 160=médio, 250=grande, 400=muito grande) — o sistema garante que o logo fique dentro do canvas
 - Para adicionar/inserir o logotipo: use add_logo com o logoUrl do brand kit — NÃO peça o arquivo ao usuário${brandLogoUrl ? `. O logoUrl do brand kit é: "${brandLogoUrl}"` : '. Se o brand kit não tiver logo cadastrado, informe ao usuário que não há logotipo no brand kit'}. Inclua o canto desejado (corner: "bottom-right", "bottom-left", "top-right" ou "top-left" — padrão: "bottom-right")
 - Você pode combinar múltiplas ações em um único JSON
 - Máximo 1 frase no campo "message"
@@ -174,6 +175,7 @@ TIPOS DE AÇÃO VÁLIDOS:
 - recolor_background: muda cor sólida de fundo (campo: color)
 - add_logo: adiciona o logotipo do brand kit ao canvas (campos: logoUrl + corner opcional: "bottom-right", "bottom-left", "top-right", "top-left")
 - remove_logo: remove o logotipo do canvas (sem campos adicionais)
+- resize_logo: redimensiona o logotipo já presente no canvas (campo: logoSize em pixels — sugestões: 80=pequeno, 160=médio padrão, 250=grande, 400=muito grande)
 ${overlayActionTypes}
 
 Retorne APENAS JSON válido sem markdown:
@@ -190,7 +192,8 @@ Retorne APENAS JSON válido sem markdown:
     {"type": "overlay_opacity", "elementId": "overlay", "opacity": 0.0},
     {"type": "overlay_color", "elementId": "overlay", "color": "#1a1a4e"},
     {"type": "add_logo", "logoUrl": "https://...", "corner": "bottom-right"},
-    {"type": "remove_logo"}
+    {"type": "remove_logo"},
+    {"type": "resize_logo", "logoSize": 80}
   ],
   "message": "frase curta confirmando o que foi feito"
 }

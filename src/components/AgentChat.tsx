@@ -90,7 +90,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const {
     addTemplate, setActiveTemplate, updateElement, setTemplateBackground,
     setTemplateImagePrompt, setCaption, setTemplateSolidBackground,
-    setTemplateLogo, setTemplateLogoPosition,
+    setTemplateLogo, setTemplateLogoPosition, setTemplateLogoStyle,
   } = useStore()
 
   useEffect(() => {
@@ -204,6 +204,32 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           allVariants.forEach(v => {
             setTemplateLogo(v.id, null)
           })
+          break
+        }
+        case 'resize_logo': {
+          console.log('[applyEditActions] resize_logo chamado | logoSize:', action.logoSize)
+          if (!action.logoSize) break
+          const newSize = Math.max(40, Math.min(600, action.logoSize))
+          const margin = 16
+          for (const v of allVariants) {
+            const tmpl = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            if (!tmpl.logoImage) continue
+            const logoAspect = await new Promise<number>((resolve) => {
+              const img = new Image()
+              img.onload = () => resolve(img.height / img.width)
+              img.onerror = () => resolve(1)
+              img.src = tmpl.logoImage!
+            })
+            const newLogoH = newSize * logoAspect
+            const prevSize = tmpl.logoSize ?? 160
+            const prevLogoH = prevSize * logoAspect
+            const currentX = tmpl.logoX ?? (tmpl.width - prevSize - margin)
+            const currentY = tmpl.logoY ?? (tmpl.height - prevLogoH - margin)
+            const clampedX = Math.max(margin, Math.min(tmpl.width - newSize - margin, currentX))
+            const clampedY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, currentY))
+            setTemplateLogoStyle(v.id, newSize)
+            setTemplateLogoPosition(v.id, clampedX, clampedY)
+          }
           break
         }
       }

@@ -453,7 +453,7 @@ export interface EditContext {
 }
 
 export interface EditAction {
-  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color' | 'add_logo' | 'remove_logo'
+  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color' | 'add_logo' | 'remove_logo' | 'resize_logo'
   elementId?: string
   fieldId?: string
   color?: string
@@ -462,6 +462,7 @@ export interface EditAction {
   opacity?: number
   logoUrl?: string
   corner?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  logoSize?: number
 }
 
 export interface AgentResponse {
