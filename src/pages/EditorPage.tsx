@@ -284,6 +284,7 @@ export function EditorPage() {
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [agentChatKey, setAgentChatKey] = useState(0)
   const [editModeActive, setEditModeActive] = useState(false)
+  const [canvasModalOpen, setCanvasModalOpen] = useState(false)
 
   // Computa o contexto do post ativo para o agente de edição
   const editPost = useMemo<ActivePost | undefined>(() => {
@@ -445,6 +446,23 @@ export function EditorPage() {
                   editingElementId={editingState?.el.id ?? null}
                   onEditStart={handleEditStart}
                 />
+                {/* Botão expand */}
+                <button
+                  onClick={() => setCanvasModalOpen(true)}
+                  title="Expandir visualização"
+                  style={{
+                    position: 'absolute', bottom: '8px', right: '8px',
+                    width: '28px', height: '28px', borderRadius: '7px',
+                    border: 'none', background: 'rgba(0,0,0,0.55)',
+                    color: 'white', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backdropFilter: 'blur(4px)',
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M1 5V1h4M8 1h4v4M12 8v4H8M5 12H1V8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               </div>
 
               <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
@@ -454,6 +472,53 @@ export function EditorPage() {
           ) : null}
         </main>
       </div>
+
+      {/* Modal de visualização expandida */}
+      {canvasModalOpen && activeTemplate && (() => {
+        const modalScale = Math.min(
+          (window.innerWidth  * 0.88) / activeTemplate.width,
+          (window.innerHeight * 0.88) / activeTemplate.height,
+        )
+        return (
+          <div
+            onClick={() => setCanvasModalOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)',
+              zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <div onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setCanvasModalOpen(false)}
+                style={{
+                  position: 'absolute', top: '-38px', right: 0,
+                  background: 'none', border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '8px', color: 'rgba(255,255,255,0.8)',
+                  fontSize: '12px', fontFamily: 'inherit', fontWeight: 600,
+                  cursor: 'pointer', padding: '4px 12px', display: 'flex',
+                  alignItems: 'center', gap: '6px',
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                  <path d="M1 1l9 9M10 1L1 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                Fechar
+              </button>
+              <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
+                <CanvasEngine
+                  key={`modal-${activeTemplate.id}`}
+                  template={activeTemplate}
+                  scale={modalScale}
+                  selectedElementId={null}
+                  onSelectElement={() => {}}
+                  editingElementId={null}
+                  onEditStart={() => {}}
+                />
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Textarea overlay — renderizado fora do canvas para não herdar a escala do Stage */}
       {editingState && (

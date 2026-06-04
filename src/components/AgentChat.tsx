@@ -211,22 +211,29 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           if (!action.logoSize) break
           const newSize = Math.max(40, Math.min(600, action.logoSize))
           const margin = 16
+          // Lê prevSize e logoImage do template ATIVO (garantidamente no store).
+          // Usar cada variante isolada causava prevSize=160 (fallback da definição)
+          // quando a variante ainda não estava no store, corrompendo o cálculo de Y.
+          const activeTmpl = useStore.getState().templates.find(t => t.id === activeId)
+          if (!activeTmpl?.logoImage) {
+            console.warn('[resize_logo] logoImage ausente no template ativo — abortando')
+            break
+          }
+          const prevSize = activeTmpl.logoSize ?? 160
+          const logoAspect = await new Promise<number>((resolve) => {
+            const img = new Image()
+            img.onload = () => resolve(img.height / img.width)
+            img.onerror = () => resolve(1)
+            img.src = activeTmpl.logoImage!
+          })
+          const newLogoH = newSize * logoAspect
+          const prevLogoH = prevSize * logoAspect
+          console.log('[resize_logo] prevSize:', prevSize, '| newSize:', newSize, '| aspect:', logoAspect.toFixed(3))
           for (const v of allVariants) {
             const tmpl = useStore.getState().templates.find(t => t.id === v.id) ?? v
-            console.log('[resize_logo] variante:', v.id, '| logoImage:', !!tmpl.logoImage, '| logoSize:', tmpl.logoSize, '| logoX:', tmpl.logoX, '| logoY:', tmpl.logoY)
-            if (!tmpl.logoImage) continue
-            const logoAspect = await new Promise<number>((resolve) => {
-              const img = new Image()
-              img.onload = () => resolve(img.height / img.width)
-              img.onerror = () => resolve(1)
-              img.src = tmpl.logoImage!
-            })
-            const newLogoH = newSize * logoAspect
-            const prevSize = tmpl.logoSize ?? 160
-            const prevLogoH = prevSize * logoAspect
-            const currentX = tmpl.logoX ?? (tmpl.width - prevSize - margin)
+            const currentX = tmpl.logoX ?? (tmpl.width  - prevSize  - margin)
             const currentY = tmpl.logoY ?? (tmpl.height - prevLogoH - margin)
-            // Detecta canto mais próximo e re-ancora após resize
+            // Re-ancora ao canto mais próximo para que o logo não salte ao redimensionar
             const nearRight  = currentX >= tmpl.width  - prevSize  - margin * 3
             const nearBottom = currentY >= tmpl.height - prevLogoH - margin * 3
             const nearLeft   = currentX <= margin * 3
@@ -248,10 +255,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               newX = Math.max(margin, Math.min(tmpl.width  - newSize  - margin, currentX))
               newY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, currentY))
             }
-            // Garante que nunca sai dos limites mesmo em cantos
+            // Clamp final — garante que o logo nunca ultrapassa os limites do canvas
             newX = Math.max(margin, Math.min(tmpl.width  - newSize  - margin, newX))
             newY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, newY))
-            console.log('[resize_logo] newSize:', newSize, '| newX:', newX, '| newY:', newY)
+            console.log('[resize_logo]', v.id, '| newX:', newX, '| newY:', newY, '| tmpl.h:', tmpl.height)
             setTemplateLogoStyle(v.id, newSize)
             setTemplateLogoPosition(v.id, newX, newY)
           }
