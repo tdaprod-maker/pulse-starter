@@ -416,7 +416,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (debit.success) notifyBalanceUpdate()
 
       onGenerated?.()
-      onActivateEditMode?.()
       setMessages(prev => [...prev, {
         role: 'agent',
         content: '✦ Post gerado! Pode me pedir alterações aqui mesmo — mude textos, cores, formato ou a imagem de fundo.'
@@ -842,7 +841,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setMessages(newMessages)
     setInput('')
     setLoading(true)
-    inputRef.current?.focus()
 
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -896,9 +894,16 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       // ── FIM MODO EDIÇÃO ──────────────────────────────────────────────────────
 
       const currentActiveId = useStore.getState().activeTemplateId
-      const lockedBase = currentActiveId
+      const currentBase = currentActiveId
         ? currentActiveId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
         : undefined
+      // Só trava o template se o usuário escolheu um diferente do último gerado.
+      // Se currentBase === lastUsedTemplateRef, é o residual do post anterior —
+      // não passa lockedBase para o agente poder variar livremente.
+      const lockedBase = (currentBase && currentBase !== lastUsedTemplateRef.current)
+        ? currentBase
+        : undefined
+      console.log('[handleSend] currentBase:', currentBase ?? '(none)', '| lastUsed:', lastUsedTemplateRef.current ?? '(none)', '| lockedBase:', lockedBase ?? '(none)')
 
       const response = await agentChat(
         filteredMessages,
@@ -955,6 +960,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao processar. Tente novamente.' }])
     } finally {
       setLoading(false)
+      setTimeout(() => inputRef.current?.focus(), 0)
     }
   }
 
