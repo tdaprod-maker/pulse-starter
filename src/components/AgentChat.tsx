@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
-import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type CarouselSlide, type PremiumSlide, type EditContext, type EditAction } from '../services/gemini'
+import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type AgentResponse, type CarouselSlide, type PremiumSlide, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
@@ -30,12 +30,13 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, activePost, isPremiumActive }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive }: {
   onGenerating?: () => void
   onGenerated?: () => void
   onReset?: () => void
   onCarouselGenerated?: (slides: (CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => void
   onPremiumGenerated?: (slides: PremiumSlide[], caption: { instagram: string; linkedin: string; hashtags: string } | null) => void
+  onActivateEditMode?: () => void
   activePost?: ActivePost
   isPremiumActive?: boolean
 } = {}) {
@@ -80,6 +81,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [collapsed, setCollapsed] = useState(false)
   const [pendingPremium, setPendingPremium] = useState<{ prompt: string; format?: string } | null>(null)
   const [pendingPremiumCarousel, setPendingPremiumCarousel] = useState<{ prompt: string; slideCount: number; templateId?: string; slides?: { title: string; body?: string }[] } | null>(null)
+  const [pendingAmbiguous, setPendingAmbiguous] = useState<AgentResponse | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const { theme } = useTheme()
@@ -357,9 +359,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (debit.success) notifyBalanceUpdate()
 
       onGenerated?.()
+      onActivateEditMode?.()
       setMessages(prev => [...prev, {
         role: 'agent',
-        content: '✦ Post gerado! Clique nos elementos do canvas para editar texto, cores e fontes.'
+        content: '✦ Post gerado! Pode me pedir alterações aqui mesmo — mude textos, cores, formato ou a imagem de fundo.'
       }])
       setCollapsed(true)
     } catch (e) {
@@ -862,6 +865,18 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       console.log('[handleSend] agentChat response:', JSON.stringify(response))
 
+      // ── DISAMBIGUAÇÃO: canvas tem post ativo mas não está em edit mode ──────
+      const hasCanvasPost = !!onActivateEditMode && !!useStore.getState().activeTemplateId
+      if (hasCanvasPost && response.ready && response.prompt && response.mode !== 'carousel') {
+        setPendingAmbiguous(response)
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: 'Quer alterar o post atual ou criar um novo post?',
+        }])
+        return
+      }
+      // ── FIM DISAMBIGUAÇÃO ────────────────────────────────────────────────────
+
       const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true'
       if (debugMode && response.ready && response.mode === 'carousel' && response.engine === 'premium') {
         setMessages(prev => [...prev, {
@@ -923,6 +938,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingPremium(null)
     setPendingPremiumCarousel(null)
     setPendingRegenImage(null)
+    setPendingAmbiguous(null)
     onReset?.()
   }
 
@@ -1072,6 +1088,53 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               }}
             >
               Cancelar
+            </button>
+          </div>
+        )}
+        {pendingAmbiguous && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <button
+              onClick={() => {
+                setPendingAmbiguous(null)
+                onActivateEditMode?.()
+                setMessages(prev => [...prev, {
+                  role: 'agent',
+                  content: 'Modo edição ativado! Descreva o que quer mudar — textos, cores, formato ou imagem.',
+                }])
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Alterar post atual
+            </button>
+            <button
+              onClick={() => {
+                const p = pendingAmbiguous
+                setPendingAmbiguous(null)
+                if (p.engine === 'premium') {
+                  setPendingPremium({ prompt: p.prompt!, format: p.format })
+                  setMessages(prev => [...prev, {
+                    role: 'agent',
+                    content: 'Esse post usa GPT Image 2 — imagem fotorrealista de alta qualidade. Custa 8 pulses (padrão custa 4). Confirmar?',
+                  }])
+                } else {
+                  onGenerating?.()
+                  setMessages(prev => [...prev, { role: 'agent', content: 'Gerando novo post...' }])
+                  generate(p.prompt!, p.format)
+                }
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Criar novo post
             </button>
           </div>
         )}

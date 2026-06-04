@@ -336,6 +336,7 @@ export function EditorPage() {
             key={agentChatKey}
             onGenerating={() => {}}
             onGenerated={() => {}}
+            onActivateEditMode={() => setEditModeActive(true)}
             onReset={() => {
               setCarouselSlides(null)
               setCarouselCaption('')
