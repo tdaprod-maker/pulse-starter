@@ -216,6 +216,7 @@ export default async function handler(req, res) {
   }
 
   const { userInput, brand, forcedTemplate, lastUsedTemplate } = req.body
+  console.log('[generate-post] lastUsedTemplate recebido:', lastUsedTemplate ?? '(nenhum)')
 
   if (!userInput) {
     return res.status(400).json({ error: 'userInput is required' })

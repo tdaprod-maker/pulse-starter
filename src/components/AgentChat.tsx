@@ -213,6 +213,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           const margin = 16
           for (const v of allVariants) {
             const tmpl = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            console.log('[resize_logo] variante:', v.id, '| logoImage:', !!tmpl.logoImage, '| logoSize:', tmpl.logoSize, '| logoX:', tmpl.logoX, '| logoY:', tmpl.logoY)
             if (!tmpl.logoImage) continue
             const logoAspect = await new Promise<number>((resolve) => {
               const img = new Image()
@@ -225,10 +226,34 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             const prevLogoH = prevSize * logoAspect
             const currentX = tmpl.logoX ?? (tmpl.width - prevSize - margin)
             const currentY = tmpl.logoY ?? (tmpl.height - prevLogoH - margin)
-            const clampedX = Math.max(margin, Math.min(tmpl.width - newSize - margin, currentX))
-            const clampedY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, currentY))
+            // Detecta canto mais próximo e re-ancora após resize
+            const nearRight  = currentX >= tmpl.width  - prevSize  - margin * 3
+            const nearBottom = currentY >= tmpl.height - prevLogoH - margin * 3
+            const nearLeft   = currentX <= margin * 3
+            const nearTop    = currentY <= margin * 3
+            let newX: number, newY: number
+            if (nearRight && nearBottom) {
+              newX = tmpl.width  - newSize  - margin
+              newY = tmpl.height - newLogoH - margin
+            } else if (nearRight && nearTop) {
+              newX = tmpl.width - newSize - margin
+              newY = margin
+            } else if (nearLeft && nearBottom) {
+              newX = margin
+              newY = tmpl.height - newLogoH - margin
+            } else if (nearLeft && nearTop) {
+              newX = margin
+              newY = margin
+            } else {
+              newX = Math.max(margin, Math.min(tmpl.width  - newSize  - margin, currentX))
+              newY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, currentY))
+            }
+            // Garante que nunca sai dos limites mesmo em cantos
+            newX = Math.max(margin, Math.min(tmpl.width  - newSize  - margin, newX))
+            newY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, newY))
+            console.log('[resize_logo] newSize:', newSize, '| newX:', newX, '| newY:', newY)
             setTemplateLogoStyle(v.id, newSize)
-            setTemplateLogoPosition(v.id, clampedX, clampedY)
+            setTemplateLogoPosition(v.id, newX, newY)
           }
           break
         }
@@ -308,6 +333,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         ? null
         : useStore.getState().activeTemplateId?.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '') ?? null
 
+      console.log('[generate] lastUsedTemplate enviado:', lastUsedTemplateRef.current ?? '(nenhum)')
       const result = await generatePostContent(prompt, brandCtx ? {
         businessName: brandCtx.business_name || brandCtx.brand_name,
         segment: brandCtx.segment,
@@ -316,6 +342,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         brandDescription: brandCtx.brand_description ?? undefined,
       } : undefined, activeTemplateBase ?? undefined, lastUsedTemplateRef.current ?? undefined)
 
+      console.log('[generate] template escolhido pelo modelo:', result.template)
       lastUsedTemplateRef.current = normalizeTemplateId(result.template)
 
       if (brandCtx?.color_primary && result.accentColor) {
@@ -532,17 +559,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       let slides: PremiumSlide[] = [
         { image: croppedImage, label: fmt.label },
       ]
-
-      // Aplica logo do brand kit
-      if (brandCtx?.logo_url) {
-        try {
-          slides = await Promise.all(
-            slides.map(async s => ({ ...s, image: await overlayLogoOnImage(s.image, brandCtx.logo_url!) }))
-          )
-        } catch (e) {
-          console.error('Erro ao aplicar logo:', e)
-        }
-      }
 
       // Debita pulses
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_POST)
@@ -808,6 +824,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   async function handleSend() {
     if (!input.trim() || loading || generating) return
 
+    console.log('[handleSend] activePost:', !!activePost, '| pendingEngineChoice:', !!pendingEngineChoice, '| pendingAmbiguous:', !!pendingAmbiguous)
+
     // Posts premium (GPT Image 2) não são editáveis via chat
     if (isPremiumActive) {
       const userMsg: AgentMessage = { role: 'user', content: input.trim() }
@@ -824,6 +842,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setMessages(newMessages)
     setInput('')
     setLoading(true)
+    inputRef.current?.focus()
 
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -894,18 +913,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       )
 
       console.log('[handleSend] agentChat response:', JSON.stringify(response))
-
-      // ── DISAMBIGUAÇÃO: canvas tem post ativo mas não está em edit mode ──────
-      const hasCanvasPost = !!onActivateEditMode && !!useStore.getState().activeTemplateId
-      if (hasCanvasPost && response.ready && response.prompt && response.mode !== 'carousel') {
-        setPendingAmbiguous(response)
-        setMessages(prev => [...prev, {
-          role: 'agent',
-          content: 'Quer alterar o post atual ou criar um novo post?',
-        }])
-        return
-      }
-      // ── FIM DISAMBIGUAÇÃO ────────────────────────────────────────────────────
+      console.log('[handleSend] activeTemplateId:', useStore.getState().activeTemplateId ?? '(none)')
 
       const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true'
       if (debugMode && response.ready && response.mode === 'carousel' && response.engine === 'premium') {
@@ -929,6 +937,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
         } else {
           // Post — usuário sempre escolhe a engine
+          console.log('[handleSend] setPendingEngineChoice | prompt:', response.prompt?.slice(0, 60), '| format:', response.format)
           setPendingEngineChoice({ prompt: response.prompt, format: response.format })
           setMessages(prev => [...prev, {
             role: 'agent',
