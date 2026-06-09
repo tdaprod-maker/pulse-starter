@@ -30,7 +30,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate }: {
   onGenerating?: () => void
   onGenerated?: () => void
   onReset?: () => void
@@ -39,6 +39,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   onActivateEditMode?: () => void
   activePost?: ActivePost
   isPremiumActive?: boolean
+  premiumSlides?: PremiumSlide[]
+  onPremiumSlidesUpdate?: (slides: PremiumSlide[]) => void
 } = {}) {
   const friendlyTemplateName = activePost
     ? activePost.templateBase.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
@@ -836,14 +838,43 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
     console.log('[handleSend] activePost:', !!activePost, '| pendingEngineChoice:', !!pendingEngineChoice, '| pendingAmbiguous:', !!pendingAmbiguous)
 
-    // Posts premium (GPT Image 2) não são editáveis via chat
+    // Posts premium: só add_logo é suportado via chat
     if (isPremiumActive) {
+      const isLogoRequest = /logo|logotipo/i.test(input.trim())
       const userMsg: AgentMessage = { role: 'user', content: input.trim() }
-      setMessages(prev => [...prev, userMsg, {
-        role: 'agent',
-        content: 'Posts premium gerados com GPT Image 2 não são editáveis pelo agente. Para fazer alterações, feche o post premium e crie um novo.',
-      }])
+      if (!isLogoRequest || !premiumSlides?.length || !onPremiumSlidesUpdate) {
+        setMessages(prev => [...prev, userMsg, {
+          role: 'agent',
+          content: 'Posts premium gerados com GPT Image 2 não são editáveis pelo agente. Você pode pedir para inserir o logo da sua marca digitando "insira o logo".',
+        }])
+        setInput('')
+        return
+      }
+      setMessages(prev => [...prev, userMsg])
       setInput('')
+      setLoading(true)
+      try {
+        const { data: authData } = await supabase.auth.getUser()
+        const userEmail = authData.user?.email ?? ''
+        const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+        if (!brandCtx?.logo_url) {
+          setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca e tente novamente.' }])
+          return
+        }
+        const updatedSlides = await Promise.all(
+          premiumSlides.map(async slide => ({
+            ...slide,
+            image: await overlayLogoOnImage(slide.image, brandCtx.logo_url!),
+          }))
+        )
+        onPremiumSlidesUpdate(updatedSlides)
+        setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo inserido em todos os formatos!' }])
+      } catch (e) {
+        console.error('[premium add_logo] erro:', e)
+        setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao inserir o logo. Tente novamente.' }])
+      } finally {
+        setLoading(false)
+      }
       return
     }
 

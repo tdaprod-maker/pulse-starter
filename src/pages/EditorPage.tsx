@@ -360,6 +360,8 @@ export function EditorPage() {
             }}
             activePost={editPost}
             isPremiumActive={!!premiumSlides}
+            premiumSlides={premiumSlides ?? undefined}
+            onPremiumSlidesUpdate={setPremiumSlides}
           />
         </div>
 
