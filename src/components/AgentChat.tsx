@@ -83,6 +83,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [pendingPremiumCarousel, setPendingPremiumCarousel] = useState<{ prompt: string; slideCount: number; templateId?: string; slides?: { title: string; body?: string }[] } | null>(null)
   const [pendingAmbiguous, setPendingAmbiguous] = useState<AgentResponse | null>(null)
   const [pendingEngineChoice, setPendingEngineChoice] = useState<{ prompt: string; format?: string } | null>(null)
+  const [hasGeneratedPost, setHasGeneratedPost] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastUsedTemplateRef = useRef<string | null>(null)
@@ -423,6 +424,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (debit.success) notifyBalanceUpdate()
 
       onGenerated?.()
+      setHasGeneratedPost(true)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: '✦ Post gerado! Pode me pedir alterações aqui mesmo — mude textos, cores, formato ou a imagem de fundo.'
@@ -857,14 +859,42 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const filteredMessages = newMessages.filter(m => m.role !== 'agent' || newMessages.indexOf(m) > 0)
 
       // ── MODO EDIÇÃO ──────────────────────────────────────────────────────────
-      if (activePost) {
+      // Se há um post gerado localmente mas EditorPage ainda não ativou editModeActive,
+      // reconstruímos activePost diretamente do store para não cair no fluxo de engine choice.
+      let effectiveActivePost = activePost
+      if (!effectiveActivePost && hasGeneratedPost) {
+        const activeId = useStore.getState().activeTemplateId
+        const activeTempl = useStore.getState().templates.find(t => t.id === activeId)
+        if (activeId && activeTempl) {
+          const base = activeId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+          const suffix = activeId.split('-').pop() ?? '1x1'
+          const format = ['1x1', '4x5', '9x16', '16x9'].includes(suffix) ? suffix : '1x1'
+          effectiveActivePost = {
+            templateBase: base,
+            format,
+            textElements: activeTempl.elements
+              .filter(e => e.type === 'text')
+              .map(e => ({ id: e.id, currentValue: String(e.props.text ?? ''), currentFill: String(e.props.fill ?? '') })),
+            accentElements: activeTempl.elements
+              .filter(e => e.type === 'shape' && !/overlay|gradient|bg-overlay/i.test(e.id))
+              .map(e => ({ id: e.id, currentColor: String(e.props.fill ?? '') })),
+            overlayElements: activeTempl.elements
+              .filter(e => e.type === 'shape' && /overlay|gradient|bg-overlay/i.test(e.id))
+              .map(e => ({ id: e.id, currentOpacity: (e.props.opacity as number) ?? 1, currentFill: String(e.props.fill ?? '') })),
+            imagePrompt: activeTempl.imagePrompt,
+          }
+          onActivateEditMode?.()
+        }
+      }
+
+      if (effectiveActivePost) {
         const editContext: EditContext = {
-          templateBase: activePost.templateBase,
-          format: activePost.format,
-          textElements: activePost.textElements,
-          accentElements: activePost.accentElements,
-          overlayElements: activePost.overlayElements,
-          imagePrompt: activePost.imagePrompt,
+          templateBase: effectiveActivePost.templateBase,
+          format: effectiveActivePost.format,
+          textElements: effectiveActivePost.textElements,
+          accentElements: effectiveActivePost.accentElements,
+          overlayElements: effectiveActivePost.overlayElements,
+          imagePrompt: effectiveActivePost.imagePrompt,
         }
 
         console.log('[edit-mode] brandCtx completo:', JSON.stringify(brandCtx))
@@ -987,6 +1017,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingRegenImage(null)
     setPendingAmbiguous(null)
     setPendingEngineChoice(null)
+    setHasGeneratedPost(false)
     onReset?.()
   }
 
