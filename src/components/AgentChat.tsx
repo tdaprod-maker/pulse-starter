@@ -337,9 +337,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const userEmail = authData.user?.email ?? ''
       const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
 
-      const activeTemplateBase = format
-        ? null
-        : useStore.getState().activeTemplateId?.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '') ?? null
+      const activeId = useStore.getState().activeTemplateId
+      const activeBase = activeId?.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '') ?? null
+      const activeTemplateBase = (!format && activeBase && activeBase !== lastUsedTemplateRef.current)
+        ? activeBase
+        : null
 
       console.log('[generate] lastUsedTemplate enviado:', lastUsedTemplateRef.current ?? '(nenhum)')
       const result = await generatePostContent(prompt, brandCtx ? {
