@@ -1320,7 +1320,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'
           }}
           onKeyDown={handleKeyDown}
-          disabled={isDisabled}
           placeholder={generating ? 'Gerando seu post...' : 'Digite sua mensagem...'}
           rows={1}
           style={{
@@ -1328,7 +1327,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             color: 'var(--text-primary)', fontSize: '14px',
             fontFamily: 'inherit', resize: 'none', outline: 'none',
             lineHeight: 1.5, maxHeight: '100px', overflowY: 'auto',
-            opacity: isDisabled ? 0.5 : 1,
+            opacity: isDisabled ? 0.6 : 1,
           }}
         />
         <button
