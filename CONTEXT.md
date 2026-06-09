@@ -47,8 +47,10 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 | Web search no agente | Ferramenta web_search_20250305; pesquisa datas, tendências, dados externos antes de gerar |
 | Agente consultivo | Classifica briefing vago vs completo (com exemplos); alertas de boas práticas bloqueantes aguardam confirmação antes de gerar |
 | Engine premium agressiva | 7 categorias de gatilhos explícitos (pessoa real, produto físico, alimento, ambiente, beleza, lifestyle, palavras-chave como "fotorrealista", "qualidade", "premium"); standard é residual |
-| Posts FAL.ai | Templates Konva editáveis; seleção por tema do conteúdo |
+| Posts FAL.ai | Templates Konva editáveis; seleção por tema do conteúdo (template nunca travado no último gerado) |
 | Posts premium GPT Image 2 | Fotorrealista; formato definido pelo agente; logo sobreposto via canvas |
+| Modo edição pós-geração | Após generate() completar, flag `hasGeneratedPost` permite envios subsequentes irem direto para edit mode sem engine choice |
+| add_logo em posts premium | Detecção por keyword "logo/logotipo"; aplica `overlayLogoOnImage` em todos os slides via canvas; atualiza `PremiumResultViewer` via `onPremiumSlidesUpdate` |
 | Carrossel FAL.ai | Geração via `/api/generate-carousel.js`; publicação LinkedIn com imagens comprimidas |
 | Carrossel premium GPT Image 2 | Geração sequencial por slide; texto overlay pela API; retry automático; confirmação com custo |
 | Geração de imagem padrão | `api/generate-image-ai.js` usa gpt-image-1 (OpenAI); suporte a `aspectRatio` (1:1, 9:16, 16:9, 4:5); retorna b64_json direto ou faz fetch de URL como fallback |
@@ -161,13 +163,23 @@ Quando `engine: "premium"`, o AgentChat exibe confirmação com custo (8 pulses 
 
 ---
 
-## Pendentes Técnicos (não-críticos)
+## Pendentes Técnicos
+
+### Críticos (afetam UX em produção)
+
+- **Canvas gpt-image-1 não abre para edição ao clicar** — após geração padrão, clicar no canvas não ativa modo de edição; investigar fluxo de clique no EditorPage
+- **Logo sai do design ao redimensionar** — ao trocar de formato (1x1 → 9x16 etc.) o logo some ou perde posição; o resize action precisa preservar a posição/escala do logo junto com os demais elementos
+- **Modo edição após generatePremium** — `hasGeneratedPost` flag só é setado em `generate()` (FAL.ai), não em `generatePremium()`; usuário não consegue editar logo via chat se a geração foi premium
+- **remove_logo em posts premium** — `add_logo` foi implementado; `remove_logo` ainda não (premium não tem estado intermediário sem logo)
+- **Overlay automático de logo no premium** — verificar se o overlay automático de logo durante `generatePremium()` ainda está ativo (pode estar duplicando com o add_logo manual)
+- **Perguntas excessivas do agente** — agente às vezes faz mais de 2 rodadas de perguntas antes de gerar; limitar a máx. 2 rodadas de clarificação antes de gerar com o que tem
+
+### Não-críticos
 
 - **`generatePremiumCaption`** — ainda chama Gemini direto do frontend; migrar para API Route
 - **Logs de debug temporários** — remover `console.log` do AgentChat, agent-chat.js e EditorPage após estabilização
 - **`CarouselPage.tsx` e `PremiumPage.tsx` antigas** — remover do projeto (rotas `/carousel` e `/premium` ainda existem no App.tsx)
 - **Logo sobrepõe texto no PremiumResultViewer** — posição fixa, sem drag
-- **Template repetitivo no FAL.ai** — sem template selecionado, agente tende a escolher sempre o mesmo; revisar regras de seleção em `generate-post.js`
 - **Onboarding obrigatório** — primeiro acesso deveria forçar configuração do brand kit antes de qualquer geração
 
 ---
@@ -274,3 +286,7 @@ Mantém os existentes para o MVP. Não investir em novos agora — energia melho
 10. **LinkedIn OAuth travava no mobile** → redirect flow (window.location.href) no mobile em vez de popup; callback detecta ausência de window.opener e redireciona para /brand
 11. **Canvas não respondia ao toque** → onTap/onDblTap adicionados em todos os nós Konva (Stage, Text, Group, Shape)
 12. **Alucinações anatômicas no FAL.ai** → prompt defensivo automático quando keywords de pessoas detectadas no prompt
+13. **Textarea perdia foco após enviar mensagem** → removido `disabled={isDisabled}` do `<textarea>`; `handleSend` já guardava contra envios vazios/em loading
+14. **Modo edição não ativava após gerar com gpt-image-1** → flag local `hasGeneratedPost` setada após `generate()` completar; `handleSend` reconstrói `effectiveActivePost` do store quando a flag está ativa e `activePost` prop ainda é null, chamando `onActivateEditMode()` para sincronizar EditorPage
+15. **Template sempre repetia o último gerado** → `activeTemplateBase` era sempre passado como `forcedTemplate` para `generate-post.js`; corrigido para só passar quando `activeBase !== lastUsedTemplateRef.current` (usuário explicitamente selecionou outro template)
+16. **add_logo bloqueado em posts premium** → bloco `isPremiumActive` agora detecta pedidos de logo por keyword; aplica `overlayLogoOnImage` em todos os slides via `Promise.all` e chama `onPremiumSlidesUpdate` para atualizar o `PremiumResultViewer`
