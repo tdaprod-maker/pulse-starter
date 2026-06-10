@@ -1266,7 +1266,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 cursor: 'pointer', whiteSpace: 'nowrap',
               }}
             >
-              Padrão (gpt-image-1) · 4 pulses
+              Standard · 4 pulses
             </button>
             <button
               onClick={() => {
@@ -1282,7 +1282,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 cursor: 'pointer', whiteSpace: 'nowrap',
               }}
             >
-              Premium (GPT Image 2) · 8 pulses
+              Premium · 8 pulses
             </button>
           </div>
         )}
