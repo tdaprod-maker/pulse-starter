@@ -27,6 +27,50 @@ interface EditingState {
   autoScale: number
 }
 
+const STANDARD_PHRASES = [
+  'Escolhendo a fonte perfeita...',
+  'Pedindo inspiração ao algoritmo...',
+  'Ajustando os pixels com luvas brancas...',
+  'Convencendo a IA a ser criativa...',
+  'Calculando o equilíbrio perfeito entre arte e dados...',
+]
+const PREMIUM_PHRASES = [
+  'Gerando fotorrealismo de respeito...',
+  'Isso leva um tempo. Vale a pena.',
+  'A IA está trabalhando mais do que você hoje...',
+  'Resultado premium requer paciência premium...',
+  'Processando cada pixel com carinho...',
+]
+
+function GeneratingOverlay({ engine }: { engine: 'standard' | 'premium' }) {
+  const phrases = engine === 'premium' ? PREMIUM_PHRASES : STANDARD_PHRASES
+  const rotateMs = engine === 'premium' ? 4000 : 3000
+  const [idx, setIdx] = useState(0)
+  const [visible, setVisible] = useState(true)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setVisible(false)
+      setTimeout(() => { setIdx(i => (i + 1) % phrases.length); setVisible(true) }, 300)
+    }, rotateMs)
+    return () => clearInterval(timer)
+  }, [rotateMs, phrases.length])
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '48px 24px', width: '100%' }}>
+      <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+        {engine === 'premium' ? '✦ Post Premium · GPT Image 2' : '✦ Gerando Post'}
+      </span>
+      <div style={{ width: '260px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '38%', background: 'linear-gradient(90deg, transparent, var(--accent), transparent)', animation: 'generating-scan 1.8s ease-in-out infinite' }} />
+      </div>
+      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, textAlign: 'center', maxWidth: '320px', lineHeight: 1.6, opacity: visible ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+        {phrases[idx]}
+      </p>
+    </div>
+  )
+}
+
 export function EditorPage() {
   const stageRef = useRef<Konva.Stage>(null)
   const [editingState, setEditingState] = useState<EditingState | null>(null)
@@ -285,6 +329,7 @@ export function EditorPage() {
   const [agentChatKey, setAgentChatKey] = useState(0)
   const [editModeActive, setEditModeActive] = useState(false)
   const [canvasExpanded, setCanvasExpanded] = useState(false)
+  const [generatingEngine, setGeneratingEngine] = useState<'standard' | 'premium' | null>(null)
 
   // Computa o contexto do post ativo para o agente de edição
   const editPost = useMemo<ActivePost | undefined>(() => {
@@ -335,8 +380,8 @@ export function EditorPage() {
         <div className="agent-chat-wrapper" style={{ padding: '16px 24px 0', flexShrink: 0 }}>
           <AgentChat
             key={agentChatKey}
-            onGenerating={() => {}}
-            onGenerated={() => {}}
+            onGenerating={(engine) => { if (engine) setGeneratingEngine(engine) }}
+            onGenerated={() => setGeneratingEngine(null)}
             onActivateEditMode={() => setEditModeActive(true)}
             onReset={() => {
               setCarouselSlides(null)
@@ -431,48 +476,45 @@ export function EditorPage() {
               onSelectElement={setCarouselSelectedElement}
             />
           ) : activeTemplate ? (
-            <>
-              {/* Preview principal — formato ativo */}
-              <div style={{
-                borderRadius: '12px',
-                boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)',
-                overflow: 'hidden',
-                position: 'relative',
-                flexShrink: 0,
-              }}>
-                <CanvasEngine
-                  key={activeTemplate.id}
-                  ref={stageRef}
-                  template={activeTemplate}
-                  scale={canvasScale}
-                  selectedElementId={selectedElementId}
-                  onSelectElement={setSelectedElement}
-                  editingElementId={editingState?.el.id ?? null}
-                  onEditStart={handleEditStart}
-                />
-                {/* Botão expand */}
-                <button
-                  onClick={() => setCanvasExpanded(true)}
-                  title="Expandir visualização"
-                  style={{
-                    position: 'absolute', bottom: '8px', right: '8px',
-                    width: '28px', height: '28px', borderRadius: '7px',
-                    border: 'none', background: 'rgba(0,0,0,0.55)',
-                    color: 'white', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backdropFilter: 'blur(4px)',
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                    <path d="M1 5V1h4M8 1h4v4M12 8v4H8M5 12H1V8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
+              {/* Overlay de geração — sobre o canvas invisível */}
+              {generatingEngine && (
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', justifyContent: 'center' }}>
+                  <GeneratingOverlay engine={generatingEngine} />
+                </div>
+              )}
+              {/* Canvas + controles com fade */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%', opacity: generatingEngine ? 0 : 1, transition: generatingEngine ? 'none' : 'opacity 0.5s ease', pointerEvents: generatingEngine ? 'none' : 'auto' }}>
+                {/* Preview principal — formato ativo */}
+                <div style={{ borderRadius: '12px', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                  <CanvasEngine
+                    key={activeTemplate.id}
+                    ref={stageRef}
+                    template={activeTemplate}
+                    scale={canvasScale}
+                    selectedElementId={selectedElementId}
+                    onSelectElement={setSelectedElement}
+                    editingElementId={editingState?.el.id ?? null}
+                    onEditStart={handleEditStart}
+                  />
+                  {/* Botão expand */}
+                  <button
+                    onClick={() => setCanvasExpanded(true)}
+                    title="Expandir visualização"
+                    style={{ position: 'absolute', bottom: '8px', right: '8px', width: '28px', height: '28px', borderRadius: '7px', border: 'none', background: 'rgba(0,0,0,0.55)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                      <path d="M1 5V1h4M8 1h4v4M12 8v4H8M5 12H1V8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
+                <CaptionPanel stageRef={stageRef} template={activeTemplate} />
+                <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
               </div>
-
-              <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
-              <CaptionPanel stageRef={stageRef} template={activeTemplate} />
-              <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
-            </>
+            </div>
+          ) : generatingEngine ? (
+            <GeneratingOverlay engine={generatingEngine} />
           ) : null}
         </main>
       </div>

@@ -31,7 +31,7 @@ function normalizeTemplateId(raw: string): string {
 }
 
 export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, forceCollapsed, onCollapsedChange }: {
-  onGenerating?: () => void
+  onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
   onReset?: () => void
   onCarouselGenerated?: (slides: (CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => void
@@ -521,7 +521,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
-      content: '⏳ Aviso: a geração premium pode levar até 20 segundos. Gerando com GPT Image 2...',
+      content: 'Gerando com GPT Image 2 — pode levar até 60s...',
     }])
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -1255,7 +1255,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               onClick={() => {
                 const p = pendingEngineChoice
                 setPendingEngineChoice(null)
-                onGenerating?.()
+                onGenerating?.('standard')
                 setMessages(prev => [...prev, { role: 'agent', content: 'Gerando seu post...' }])
                 generate(p.prompt, p.format)
               }}
@@ -1272,7 +1272,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               onClick={() => {
                 const p = pendingEngineChoice
                 setPendingEngineChoice(null)
-                onGenerating?.()
+                onGenerating?.('premium')
                 generatePremium(p.prompt, p.format)
               }}
               style={{
