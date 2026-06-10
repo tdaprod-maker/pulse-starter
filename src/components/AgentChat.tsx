@@ -30,7 +30,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, forceCollapsed, onCollapsedChange }: {
   onGenerating?: () => void
   onGenerated?: () => void
   onReset?: () => void
@@ -41,6 +41,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   isPremiumActive?: boolean
   premiumSlides?: PremiumSlide[]
   onPremiumSlidesUpdate?: (slides: PremiumSlide[]) => void
+  forceCollapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
 } = {}) {
   const friendlyTemplateName = activePost
     ? activePost.templateBase.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
@@ -100,6 +102,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    if (forceCollapsed) setCollapsed(true)
+  }, [forceCollapsed])
 
   async function applyEditActions(actions: EditAction[]) {
     const activeId = useStore.getState().activeTemplateId
@@ -1043,6 +1049,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setMessages([{ role: 'agent', content: 'Olá! Me conta o que você quer comunicar no post de hoje.' }])
     setInput('')
     setCollapsed(false)
+    onCollapsedChange?.(false)
     setPendingPremium(null)
     setPendingPremiumCarousel(null)
     setPendingRegenImage(null)
@@ -1057,7 +1064,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   if (collapsed) {
     return (
       <div
-        onClick={() => setCollapsed(false)}
+        onClick={() => { setCollapsed(false); onCollapsedChange?.(false) }}
         style={{
           width: '100%', maxWidth: '680px', margin: '0 auto',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
