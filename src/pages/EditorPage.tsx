@@ -49,11 +49,12 @@ function GeneratingOverlay({ engine }: { engine: 'standard' | 'premium' }) {
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     const timer = setInterval(() => {
       setVisible(false)
-      setTimeout(() => { setIdx(i => (i + 1) % phrases.length); setVisible(true) }, 300)
+      timeoutId = setTimeout(() => { setIdx(i => (i + 1) % phrases.length); setVisible(true) }, 300)
     }, rotateMs)
-    return () => clearInterval(timer)
+    return () => { clearInterval(timer); if (timeoutId !== null) clearTimeout(timeoutId) }
   }, [rotateMs, phrases.length])
 
   return (
@@ -475,46 +476,37 @@ export function EditorPage() {
               onSlideChange={(i) => { setCarouselCurrentSlide(i); setCarouselSelectedElement(null) }}
               onSelectElement={setCarouselSelectedElement}
             />
-          ) : activeTemplate ? (
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
-              {/* Overlay de geração — sobre o canvas invisível */}
-              {generatingEngine && (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', justifyContent: 'center' }}>
-                  <GeneratingOverlay engine={generatingEngine} />
-                </div>
-              )}
-              {/* Canvas + controles com fade */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%', opacity: generatingEngine ? 0 : 1, transition: generatingEngine ? 'none' : 'opacity 0.5s ease', pointerEvents: generatingEngine ? 'none' : 'auto' }}>
-                {/* Preview principal — formato ativo */}
-                <div style={{ borderRadius: '12px', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-                  <CanvasEngine
-                    key={activeTemplate.id}
-                    ref={stageRef}
-                    template={activeTemplate}
-                    scale={canvasScale}
-                    selectedElementId={selectedElementId}
-                    onSelectElement={setSelectedElement}
-                    editingElementId={editingState?.el.id ?? null}
-                    onEditStart={handleEditStart}
-                  />
-                  {/* Botão expand */}
-                  <button
-                    onClick={() => setCanvasExpanded(true)}
-                    title="Expandir visualização"
-                    style={{ position: 'absolute', bottom: '8px', right: '8px', width: '28px', height: '28px', borderRadius: '7px', border: 'none', background: 'rgba(0,0,0,0.55)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                      <path d="M1 5V1h4M8 1h4v4M12 8v4H8M5 12H1V8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-                <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
-                <CaptionPanel stageRef={stageRef} template={activeTemplate} />
-                <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
-              </div>
-            </div>
           ) : generatingEngine ? (
             <GeneratingOverlay engine={generatingEngine} />
+          ) : activeTemplate ? (
+            <>
+              {/* Preview principal — formato ativo */}
+              <div style={{ borderRadius: '12px', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                <CanvasEngine
+                  key={activeTemplate.id}
+                  ref={stageRef}
+                  template={activeTemplate}
+                  scale={canvasScale}
+                  selectedElementId={selectedElementId}
+                  onSelectElement={setSelectedElement}
+                  editingElementId={editingState?.el.id ?? null}
+                  onEditStart={handleEditStart}
+                />
+                {/* Botão expand */}
+                <button
+                  onClick={() => setCanvasExpanded(true)}
+                  title="Expandir visualização"
+                  style={{ position: 'absolute', bottom: '8px', right: '8px', width: '28px', height: '28px', borderRadius: '7px', border: 'none', background: 'rgba(0,0,0,0.55)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M1 5V1h4M8 1h4v4M12 8v4H8M5 12H1V8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <ExportPanel stageRef={stageRef} template={activeTemplate} variantRefs={variantRefs} allVariants={allVariants} />
+              <CaptionPanel stageRef={stageRef} template={activeTemplate} />
+              <PostReviewer key={activeTemplate?.id} stageRef={stageRef} template={activeTemplate} />
+            </>
           ) : null}
         </main>
       </div>

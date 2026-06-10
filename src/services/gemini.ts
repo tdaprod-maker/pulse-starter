@@ -450,10 +450,11 @@ export interface EditContext {
   accentElements: { id: string; currentColor: string }[]
   overlayElements: { id: string; currentOpacity: number; currentFill: string }[]
   imagePrompt?: string
+  logoSize?: number
 }
 
 export interface EditAction {
-  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color' | 'add_logo' | 'remove_logo' | 'resize_logo'
+  type: 'recolor' | 'rewrite' | 'resize' | 'recolor_background' | 'overlay_opacity' | 'overlay_color' | 'add_logo' | 'remove_logo' | 'resize_logo' | 'move_logo'
   elementId?: string
   fieldId?: string
   color?: string
@@ -463,6 +464,7 @@ export interface EditAction {
   logoUrl?: string
   corner?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
   logoSize?: number
+  position?: string
 }
 
 export interface AgentResponse {

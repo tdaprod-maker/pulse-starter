@@ -139,6 +139,11 @@ export default async function handler(req, res) {
       ? `\nBRAND KIT:\n- Logo URL: ${brandLogoUrl ?? 'não cadastrado'}`
       : ''
 
+    const currentLogoSize = editContext.logoSize ?? null
+    const logoSizeInfo = currentLogoSize !== null
+      ? `\n- Tamanho atual do logo: ${currentLogoSize}px`
+      : ''
+
     const editPrompt = `Você é um assistente de edição de posts para redes sociais. O usuário abriu um post existente e quer fazer ajustes.
 
 POST ATUAL:
@@ -146,7 +151,7 @@ POST ATUAL:
 - Elementos disponíveis (use estes IDs exatos):
 ${allElementsList}
 ${overlaySection}
-- Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"${brandSection}
+- Imagem de fundo (prompt): "${editContext.imagePrompt || 'nenhuma'}"${brandSection}${logoSizeInfo}
 
 HISTÓRICO DA CONVERSA:
 ${history}
@@ -163,7 +168,8 @@ INSTRUÇÕES:
 - Para "fundo mais escuro/claro": use recolor_background com hex escuro/claro
 ${overlayInstructions}
 - Para "nova imagem de fundo" ou "regenera a imagem": retorne needs_confirm:true (custa 4 pulses)
-- Para reduzir, aumentar ou redimensionar o logotipo: use resize_logo com logoSize em pixels (80=pequeno, 160=médio, 250=grande, 400=muito grande) — o sistema garante que o logo fique dentro do canvas
+- Para reduzir, aumentar ou redimensionar o logotipo: use resize_logo com logoSize calculado em pixels a partir do tamanho atual do logo (informado como "Tamanho atual do logo: Xpx"). CALCULE SEMPRE em relação ao tamanho atual: "reduza 10%" → logoSize = currentLogoSize × 0.90; "aumente 20%" → logoSize = currentLogoSize × 1.20; "metade" → logoSize = currentLogoSize × 0.50; se não houver tamanho atual (logo não inserido ainda), use 160px como base. Arredonde para inteiro.
+- Para mover/posicionar o logotipo: use move_logo com position descrevendo a posição em inglês. Exemplos: "bottom-center", "top-center", "bottom-right", "bottom-left", "top-right", "top-left", "center-right", "center-left", "center". Mapeie sempre: "centro inferior"→"bottom-center", "centro superior"→"top-center", "centro"→"center", "direita baixo"→"bottom-right", "esquerda baixo"→"bottom-left", "direita cima"→"top-right", "esquerda cima"→"top-left"
 - Para adicionar/inserir o logotipo: use add_logo com o logoUrl do brand kit — NÃO peça o arquivo ao usuário${brandLogoUrl ? `. O logoUrl do brand kit é: "${brandLogoUrl}"` : '. Se o brand kit não tiver logo cadastrado, informe ao usuário que não há logotipo no brand kit'}. Inclua o canto desejado (corner: "bottom-right", "bottom-left", "top-right" ou "top-left" — padrão: "bottom-right")
 - Você pode combinar múltiplas ações em um único JSON
 - Máximo 1 frase no campo "message"
@@ -175,7 +181,8 @@ TIPOS DE AÇÃO VÁLIDOS:
 - recolor_background: muda cor sólida de fundo (campo: color)
 - add_logo: adiciona o logotipo do brand kit ao canvas (campos: logoUrl + corner opcional: "bottom-right", "bottom-left", "top-right", "top-left")
 - remove_logo: remove o logotipo do canvas (sem campos adicionais)
-- resize_logo: redimensiona o logotipo já presente no canvas (campo: logoSize em pixels — sugestões: 80=pequeno, 160=médio padrão, 250=grande, 400=muito grande)
+- resize_logo: redimensiona o logotipo (campo: logoSize em pixels — calculado como currentLogoSize × fator)
+- move_logo: reposiciona o logotipo (campo: position — ex: "bottom-center", "top-center", "center", "bottom-right", "bottom-left", "top-right", "top-left", "center-right", "center-left")
 ${overlayActionTypes}
 
 Retorne APENAS JSON válido sem markdown:
@@ -193,7 +200,8 @@ Retorne APENAS JSON válido sem markdown:
     {"type": "overlay_color", "elementId": "overlay", "color": "#1a1a4e"},
     {"type": "add_logo", "logoUrl": "https://...", "corner": "bottom-right"},
     {"type": "remove_logo"},
-    {"type": "resize_logo", "logoSize": 80}
+    {"type": "resize_logo", "logoSize": 144},
+    {"type": "move_logo", "position": "bottom-center"}
   ],
   "message": "frase curta confirmando o que foi feito"
 }

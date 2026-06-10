@@ -274,6 +274,40 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           }
           break
         }
+        case 'move_logo': {
+          if (!action.position) break
+          const margin = 16
+          const activeTmpl = useStore.getState().templates.find(t => t.id === activeId)
+          if (!activeTmpl?.logoImage) break
+          const logoSize = activeTmpl.logoSize ?? 160
+          const logoAspect = await new Promise<number>((resolve) => {
+            const img = new Image()
+            img.onload = () => resolve(img.height / img.width)
+            img.onerror = () => resolve(1)
+            img.src = activeTmpl.logoImage!
+          })
+          const pos = action.position.toLowerCase()
+          for (const v of allVariants) {
+            const tmpl = useStore.getState().templates.find(t => t.id === v.id) ?? v
+            const logoH = logoSize * logoAspect
+            const centerX = (tmpl.width  - logoSize) / 2
+            const centerY = (tmpl.height - logoH)   / 2
+            const rightX  = tmpl.width  - logoSize  - margin
+            const bottomY = tmpl.height - logoH     - margin
+            let newX: number, newY: number
+            if (pos.includes('bottom') && pos.includes('center')) { newX = centerX; newY = bottomY }
+            else if (pos.includes('top') && pos.includes('center')) { newX = centerX; newY = margin }
+            else if (pos.includes('center') && pos.includes('right')) { newX = rightX; newY = centerY }
+            else if (pos.includes('center') && pos.includes('left')) { newX = margin; newY = centerY }
+            else if (pos.includes('bottom') && pos.includes('right')) { newX = rightX; newY = bottomY }
+            else if (pos.includes('bottom') && pos.includes('left')) { newX = margin; newY = bottomY }
+            else if (pos.includes('top') && pos.includes('right')) { newX = rightX; newY = margin }
+            else if (pos.includes('top') && pos.includes('left')) { newX = margin; newY = margin }
+            else { newX = centerX; newY = centerY }
+            setTemplateLogoPosition(v.id, Math.max(0, newX), Math.max(0, newY))
+          }
+          break
+        }
       }
     }
   }
@@ -925,6 +959,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }
 
       if (effectiveActivePost) {
+        const activeId = useStore.getState().activeTemplateId
+        const activeTmplForCtx = useStore.getState().templates.find(t => t.id === activeId)
         const editContext: EditContext = {
           templateBase: effectiveActivePost.templateBase,
           format: effectiveActivePost.format,
@@ -932,6 +968,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           accentElements: effectiveActivePost.accentElements,
           overlayElements: effectiveActivePost.overlayElements,
           imagePrompt: effectiveActivePost.imagePrompt,
+          logoSize: activeTmplForCtx?.logoSize ?? undefined,
         }
 
         console.log('[edit-mode] brandCtx completo:', JSON.stringify(brandCtx))
