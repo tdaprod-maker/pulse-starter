@@ -17,6 +17,7 @@ export interface BrandConfig {
   brand_description?: string
   visual_style?: string
   visual_references?: string[]
+  site_url?: string
   photos: string[]
 }
 

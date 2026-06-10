@@ -246,11 +246,13 @@ OU se não entendeu o pedido:
   }
   // ── FIM MODO EDIÇÃO ──────────────────────────────────────────────────────────
 
+  const hasBrandDescription = brand?.brandDescription && brand.brandDescription.trim().length >= 20
+
   const brandCtx = brand ? `
 Marca: ${brand.businessName || ''}
 Segmento: ${brand.segment || ''}
 Tom: ${brand.tone || ''}
-Descrição: ${brand.brandDescription || ''}
+Descrição: ${brand.brandDescription || '(não informado)'}
 Estilo visual: ${brand.visualStyle || ''}` : ''
 
   const lockedCtx = lockedTemplateId
@@ -263,12 +265,21 @@ Estilo visual: ${brand.visualStyle || ''}` : ''
 
   const userMessageCount = messages.filter(m => m.role === 'user').length
 
+  const brandDescriptionRule = !hasBrandDescription ? `
+
+REGRA BRAND DESCRIPTION — EXECUTE ANTES DE QUALQUER OUTRA COISA:
+A descrição da empresa não foi preenchida ou está incompleta (menos de 20 caracteres).
+- Se userMessageCount === 1: INDEPENDENTEMENTE de o briefing ser completo, retorne IMEDIATAMENTE:
+  {"ready": false, "message": "Para criar conteúdo mais personalizado, me conte em uma frase o que sua empresa faz e quem é seu cliente ideal."}
+  Não avalie o briefing. Não faça outras perguntas. Apenas essa.
+- Se userMessageCount >= 2: o usuário já respondeu sobre a empresa na mensagem anterior. Use essa informação como contexto adicional para o post. Prossiga normalmente com a geração.` : ''
+
   const prompt = `Você é um designer sênior de redes sociais. Fala pouco, pergunta o essencial, gera rápido.
 
 REGRA ABSOLUTA DE RESPOSTA: máximo 2 frases por mensagem de texto. Sem elogios. Sem contexto desnecessário. Sem repetir o que o usuário disse. Uma pergunta por vez quando precisar de informação.
 
 CONTEXTO DA MARCA (já conhecido — não pergunte sobre isso):
-${brandCtx || 'Não disponível'}${lockedCtx}
+${brandCtx || 'Não disponível'}${lockedCtx}${brandDescriptionRule}
 
 HISTÓRICO DA CONVERSA:
 ${history}

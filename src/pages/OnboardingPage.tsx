@@ -71,7 +71,14 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [error, setError] = useState('')
   const logoInputRef = useRef<HTMLInputElement>(null)
-  const TOTAL_STEPS = 7
+
+  // Step 3 — site URL
+  const [siteUrl, setSiteUrl] = useState('')
+  const [fetchingUrl, setFetchingUrl] = useState(false)
+  const [urlFetched, setUrlFetched] = useState(false)
+  const [urlError, setUrlError] = useState('')
+
+  const TOTAL_STEPS = 8
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -118,6 +125,37 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
     }
   }
 
+  async function handleFetchSite() {
+    const rawUrl = siteUrl.trim()
+    if (!rawUrl) { setUrlError('Digite a URL do site'); return }
+    setFetchingUrl(true)
+    setUrlError('')
+    setUrlFetched(false)
+    try {
+      const res = await fetch('/api/fetch-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: rawUrl }),
+      })
+      const data = await res.json() as { description?: string; resolvedUrl?: string; error?: string }
+      if (!res.ok || data.error) {
+        setUrlError(data.error ?? 'Erro ao buscar o site. Pule esta etapa se preferir.')
+        return
+      }
+      if (data.description && data.description.length > 20) {
+        setBrandDescription(data.description)
+        setUrlFetched(true)
+      } else {
+        setUrlError('Não conseguimos extrair informações suficientes deste site. Preencha a descrição manualmente no próximo passo.')
+        setUrlFetched(true)
+      }
+    } catch {
+      setUrlError('Erro de conexão. Verifique a URL ou pule esta etapa.')
+    } finally {
+      setFetchingUrl(false)
+    }
+  }
+
   async function handleFinish() {
     setLoading(true)
     setError('')
@@ -146,6 +184,7 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
           visual_references: refImages.length > 0 ? refImages : null,
           visual_style: visualStyle || null,
           brand_description: brandDescription || null,
+          site_url: siteUrl.trim() || null,
         }, { onConflict: 'user_email' })
 
       if (error) throw error
@@ -157,6 +196,9 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
       setLoading(false)
     }
   }
+
+  const btnBack: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }
+  const btnNext: React.CSSProperties = { flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }
 
   if (loading && step === TOTAL_STEPS) {
     return (
@@ -196,13 +238,13 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               </div>
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <button onClick={() => { if (!businessName.trim()) { setError('Digite o nome da empresa'); return } setError(''); setStep(2) }}
-                className="btn-gerar" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                className="btn-gerar" style={{ ...btnNext, flex: 'unset', width: '100%' }}>
                 Continuar →
               </button>
             </>
           )}
 
-          {/* Passo 2 — Segmento */}
+          {/* Passo 2 — Segmento + Descrição */}
           {step === 2 && (
             <>
               <div>
@@ -220,41 +262,117 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
                   }}>{s}</button>
                 ))}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Descreva sua marca em detalhes <span style={{ color: 'var(--text-muted)', fontWeight: 400, textTransform: 'none' }}>(opcional mas recomendado)</span>
-                </label>
+
+              {/* Campo de descrição mais destacado */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(58,90,255,0.04)', border: '1px solid rgba(58,90,255,0.2)', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Descreva sua empresa em detalhes
+                  </label>
+                  <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, background: 'rgba(58,90,255,0.12)', padding: '2px 8px', borderRadius: '20px' }}>
+                    Recomendado
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  Quanto mais detalhes você fornecer, mais personalizados e eficazes serão os posts gerados pela IA.
+                </p>
                 <textarea
                   value={brandDescription}
                   onChange={e => setBrandDescription(e.target.value)}
-                  placeholder="Ex: Somos uma consultoria de RH focada em pequenas empresas. Nosso público são donos de negócio que precisam contratar melhor. Gostamos de posts diretos, com dados e dicas práticas. Tons de azul e branco predominam na nossa comunicação."
+                  placeholder="Ex: Somos uma clínica odontológica especializada em implantes para adultos acima de 40 anos que buscam qualidade e conforto. Trabalhamos com tecnologia de ponta e atendimento humanizado. Nosso diferencial é o parcelamento sem juros e o acompanhamento pós-procedimento."
                   rows={4}
                   style={{
                     background: 'var(--bg-surface)', border: '1px solid var(--border)',
                     borderRadius: '8px', padding: '12px', color: 'var(--text-primary)',
                     fontSize: '13px', fontFamily: 'inherit', resize: 'none', outline: 'none',
-                    lineHeight: 1.6, boxSizing: 'border-box',
+                    lineHeight: 1.6, boxSizing: 'border-box', width: '100%',
                   }}
                   onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
                   onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
                 />
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-                  Quanto mais detalhes, mais personalizados serão os posts gerados pela IA.
+                  Inclua: o que você faz, para quem, e o que te diferencia da concorrência.
                 </p>
               </div>
+
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(1)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
+                <button onClick={() => setStep(1)} style={btnBack}>← Voltar</button>
                 <button onClick={() => { if (!segment) { setError('Selecione o segmento'); return } setError(''); setStep(3) }}
-                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                  className="btn-gerar" style={btnNext}>
                   Continuar →
                 </button>
               </div>
             </>
           )}
 
-          {/* Passo 3 — Tom de voz */}
+          {/* Passo 3 — URL do site (NOVO) */}
           {step === 3 && (
+            <>
+              <div>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Tem um site?</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
+                  Informamos a URL e a IA extrai automaticamente a descrição do seu negócio. Opcional — pode pular.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>URL do site</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="url"
+                    value={siteUrl}
+                    onChange={e => { setSiteUrl(e.target.value); setUrlFetched(false); setUrlError('') }}
+                    placeholder="Ex: minhaempresa.com.br"
+                    onKeyDown={e => e.key === 'Enter' && !fetchingUrl && handleFetchSite()}
+                    style={{ flex: 1, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'inherit', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                  />
+                  <button
+                    onClick={handleFetchSite}
+                    disabled={fetchingUrl || !siteUrl.trim()}
+                    style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(58,90,255,0.4)', background: 'rgba(58,90,255,0.1)', color: 'var(--accent)', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: fetchingUrl || !siteUrl.trim() ? 'not-allowed' : 'pointer', opacity: fetchingUrl || !siteUrl.trim() ? 0.6 : 1, whiteSpace: 'nowrap', flexShrink: 0 }}
+                  >
+                    {fetchingUrl ? 'Buscando...' : 'Analisar'}
+                  </button>
+                </div>
+
+                {fetchingUrl && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                    Acessando o site e extraindo informações...
+                  </div>
+                )}
+
+                {urlError && (
+                  <p style={{ fontSize: '12px', color: '#f59e0b', margin: 0, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '6px', padding: '8px 12px' }}>
+                    {urlError}
+                  </p>
+                )}
+
+                {urlFetched && !urlError && brandDescription && (
+                  <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <p style={{ fontSize: '12px', color: 'rgb(34,197,94)', margin: 0, fontWeight: 600 }}>✓ Descrição extraída com sucesso</p>
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{brandDescription}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Você pode editar essa descrição no próximo passo.</p>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setStep(2)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(4) }}
+                  className="btn-gerar" style={btnNext}>
+                  {siteUrl.trim() ? 'Continuar →' : 'Pular por agora →'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Passo 4 — Tom de voz */}
+          {step === 4 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Tom de voz da marca</h2>
@@ -276,17 +394,17 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               </div>
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(2)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
-                <button onClick={() => { if (!tone) { setError('Selecione o tom de voz'); return } setError(''); setStep(4) }}
-                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                <button onClick={() => setStep(3)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { if (!tone) { setError('Selecione o tom de voz'); return } setError(''); setStep(5) }}
+                  className="btn-gerar" style={btnNext}>
                   Continuar →
                 </button>
               </div>
             </>
           )}
 
-          {/* Passo 4 — Logo */}
-          {step === 4 && (
+          {/* Passo 5 — Logo */}
+          {step === 5 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Logo da marca</h2>
@@ -309,17 +427,17 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
                 </button>
               )}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(3)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
-                <button onClick={() => { setError(''); setStep(5) }}
-                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                <button onClick={() => setStep(4)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(6) }}
+                  className="btn-gerar" style={btnNext}>
                   {logoPreview ? 'Continuar →' : 'Pular por agora →'}
                 </button>
               </div>
             </>
           )}
 
-          {/* Passo 5 — Fontes */}
-          {step === 5 && (
+          {/* Passo 6 — Fontes */}
+          {step === 6 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Fontes da marca</h2>
@@ -359,17 +477,17 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(4)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
-                <button onClick={() => { setError(''); setStep(6) }}
-                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                <button onClick={() => setStep(5)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(7) }}
+                  className="btn-gerar" style={btnNext}>
                   Continuar →
                 </button>
               </div>
             </>
           )}
 
-          {/* Passo 6 — Cores */}
-          {step === 6 && (
+          {/* Passo 7 — Cores */}
+          {step === 7 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Cores da marca</h2>
@@ -417,17 +535,17 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
 
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(5)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
-                <button onClick={() => { setError(''); setStep(7) }}
-                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+                <button onClick={() => setStep(6)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(8) }}
+                  className="btn-gerar" style={btnNext}>
                   Continuar →
                 </button>
               </div>
             </>
           )}
 
-          {/* Passo 7 — Referências visuais */}
-          {step === 7 && (
+          {/* Passo 8 — Referências visuais */}
+          {step === 8 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Referências visuais</h2>
@@ -478,9 +596,9 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(6)} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'inherit' }}>← Voltar</button>
+                <button onClick={() => setStep(7)} style={btnBack}>← Voltar</button>
                 <button onClick={handleFinish} disabled={loading}
-                  className="btn-gerar" style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+                  className="btn-gerar" style={{ ...btnNext, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
                   {loading ? 'Salvando...' : refImages.length > 0 ? 'Começar a usar o Pulse →' : 'Pular por agora →'}
                 </button>
               </div>
