@@ -106,16 +106,20 @@ export function EditorPage() {
   const { theme } = useTheme()
   const activeTemplate = templates.find((t) => t.id === activeTemplateId)
 
-  // Registra todas as variantes do template ativo no store ao trocar de template
+  // Registra todas as variantes do template ativo no store ao trocar de template.
+  // NÃO executa durante restauração de pendingPost — o pendingPost effect já faz o addTemplate
+  // com a ordem certa (reset → apply texts). Se este effect rodasse junto, poderia sobrescrever
+  // os textos restaurados com os defaults da definição.
   useEffect(() => {
     if (!activeTemplate) return
+    if (pendingPost) return
     const def = templateRegistry.find((d) => activeTemplate.id.startsWith(d.id))
     if (!def) return
     def.getVariants(theme).forEach((v) => {
       if (!templates.find((t) => t.id === v.id)) addTemplate(v)
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTemplate?.id])
+  }, [activeTemplate?.id, !!pendingPost])
 
   // Mapeamento de template base → elemento de destaque (deve ser idêntico ao AgentChat.tsx)
   const ACCENT_ELEMENT: Record<string, string> = {
@@ -177,20 +181,31 @@ export function EditorPage() {
     const textEntries = Object.entries(pendingPost.texts)
     const accentId = ACCENT_ELEMENT[def.id]
     console.log('[restore] textos a aplicar:', JSON.stringify(pendingPost.texts),
-      '| accentId:', accentId ?? 'nenhum', '| accent_color:', pendingPost.accent_color ?? 'nenhuma')
+      '| accentId:', accentId ?? 'nenhum', '| accent_color:', pendingPost.accent_color ?? 'nenhuma',
+      '| total campos:', textEntries.length)
 
     variants.forEach((v) => {
       // Lê o estado atual da variante no store (após addTemplate)
       const snap = useStore.getState().templates.find((t) => t.id === v.id) ?? v
       const isTarget = v.id === target.id
 
+      if (isTarget) {
+        const snapTextIds = snap.elements.filter(e => e.type === 'text').map(e => e.id)
+        const savedIds = textEntries.map(([id]) => id)
+        const matched = savedIds.filter(id => snapTextIds.includes(id))
+        const missing = savedIds.filter(id => !snapTextIds.includes(id))
+        console.log(`[restore] [${v.id}] IDs de texto no template:`, snapTextIds.join(', '))
+        console.log(`[restore] [${v.id}] IDs salvos no post:`, savedIds.join(', '))
+        console.log(`[restore] [${v.id}] match: ${matched.length}/${savedIds.length}`, missing.length ? `| não encontrados: ${missing.join(', ')}` : '')
+      }
+
       textEntries.forEach(([fieldId, text]) => {
         const el = snap.elements.find((e) => e.id === fieldId)
         if (el && el.type === 'text') {
           updateElement(v.id, fieldId, { props: { ...el.props, text } })
-          if (isTarget) console.log(`[restore] [${v.id}] texto "${fieldId}" → "${String(text).slice(0, 50)}"`)
+          if (isTarget) console.log(`[restore] [${v.id}] ✓ "${fieldId}" → "${String(text).slice(0, 60)}"`)
         } else if (isTarget) {
-          console.warn(`[restore] [${v.id}] elemento "${fieldId}" NÃO encontrado ou não é texto`)
+          console.warn(`[restore] [${v.id}] ✗ "${fieldId}" NÃO encontrado (tipo: ${snap.elements.find(e => e.id === fieldId)?.type ?? 'ausente'})`)
         }
       })
 
@@ -200,12 +215,19 @@ export function EditorPage() {
         const accentEl = snapAfterText.elements.find((e) => e.id === accentId)
         if (accentEl) {
           updateElement(v.id, accentId, { props: { ...accentEl.props, fill: pendingPost.accent_color } })
-          if (isTarget) console.log(`[restore] [${v.id}] accent "${accentId}" → "${pendingPost.accent_color}"`)
+          if (isTarget) console.log(`[restore] [${v.id}] ✓ accent "${accentId}" → "${pendingPost.accent_color}"`)
         } else if (isTarget) {
-          console.warn(`[restore] [${v.id}] elemento accent "${accentId}" NÃO encontrado`)
+          console.warn(`[restore] [${v.id}] ✗ accent "${accentId}" NÃO encontrado`)
         }
       }
     })
+
+    // Verifica o estado final do template ativo após todos os updateElement
+    const snapFinal = useStore.getState().templates.find(t => t.id === target.id)
+    if (snapFinal) {
+      const finalTexts = snapFinal.elements.filter(e => e.type === 'text').map(e => `${e.id}="${String(e.props.text ?? '').slice(0, 30)}"`)
+      console.log('[restore] estado final do template ativo:', finalTexts.join(' | '))
+    }
 
     // Restaura legenda se existir no post (campo opcional, não presente em posts antigos)
     const postWithCaption = pendingPost as typeof pendingPost & { caption?: { instagram: string; linkedin: string; hashtags: string } }

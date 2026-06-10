@@ -276,7 +276,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         }
         case 'move_logo': {
           if (!action.position) break
-          const margin = 16
+          const margin = 60
           const activeTmpl = useStore.getState().templates.find(t => t.id === activeId)
           if (!activeTmpl?.logoImage) break
           const logoSize = activeTmpl.logoSize ?? 160
