@@ -132,10 +132,10 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
     setUrlError('')
     setUrlFetched(false)
     try {
-      const res = await fetch('/api/fetch-site', {
+      const res = await fetch('/api/agent-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: rawUrl }),
+        body: JSON.stringify({ siteUrl: rawUrl }),
       })
       const data = await res.json() as { description?: string; resolvedUrl?: string; error?: string }
       if (!res.ok || data.error) {
