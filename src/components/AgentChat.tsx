@@ -89,6 +89,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastUsedTemplateRef = useRef<string | null>(null)
+  const originalPremiumSlidesRef = useRef<PremiumSlide[] | null>(null)
   const { theme } = useTheme()
   const {
     addTemplate, setActiveTemplate, updateElement, setTemplateBackground,
@@ -243,24 +244,24 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             const nearTop    = currentY <= margin * 3
             let newX: number, newY: number
             if (nearRight && nearBottom) {
-              newX = tmpl.width  - newSize  - margin
-              newY = tmpl.height - newLogoH - margin
+              newX = Math.max(0, tmpl.width  - newSize  - margin)
+              newY = Math.max(0, tmpl.height - newLogoH - margin)
             } else if (nearRight && nearTop) {
-              newX = tmpl.width - newSize - margin
+              newX = Math.max(0, tmpl.width - newSize - margin)
               newY = margin
             } else if (nearLeft && nearBottom) {
               newX = margin
-              newY = tmpl.height - newLogoH - margin
+              newY = Math.max(0, tmpl.height - newLogoH - margin)
             } else if (nearLeft && nearTop) {
               newX = margin
               newY = margin
             } else {
-              newX = Math.max(margin, Math.min(tmpl.width  - newSize  - margin, currentX))
-              newY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, currentY))
+              newX = Math.max(0, Math.min(Math.max(0, tmpl.width  - newSize  - margin), currentX))
+              newY = Math.max(0, Math.min(Math.max(0, tmpl.height - newLogoH - margin), currentY))
             }
             // Clamp final — garante que o logo nunca ultrapassa os limites do canvas
-            newX = Math.max(margin, Math.min(tmpl.width  - newSize  - margin, newX))
-            newY = Math.max(margin, Math.min(tmpl.height - newLogoH - margin, newY))
+            newX = Math.max(0, Math.min(Math.max(0, tmpl.width  - newSize  - margin), newX))
+            newY = Math.max(0, Math.min(Math.max(0, tmpl.height - newLogoH - margin), newY))
             console.log('[resize_logo]', v.id, '| newX:', newX, '| newY:', newY, '| tmpl.h:', tmpl.height)
             setTemplateLogoStyle(v.id, newSize)
             setTemplateLogoPosition(v.id, newX, newY)
@@ -610,6 +611,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       console.log('[generatePremium] chamando onPremiumGenerated com', slides.length, 'slides')
       onPremiumGenerated?.(slides, generatedCaption)
       onGenerated?.()
+      setHasGeneratedPost(true)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: '✦ Post premium gerado! Faça o download ou publique diretamente.',
@@ -793,25 +795,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         slidesWithImages.push({ ...slide, imageUrl })
       }
 
-      // Aplica logo do brand kit em cada slide
-      if (brandCtx?.logo_url) {
-        try {
-          const withLogo = await Promise.all(
-            slidesWithImages.map(async s => {
-              if (!s.imageUrl) return s
-              return { ...s, image: await overlayLogoOnImage(s.imageUrl, brandCtx.logo_url!) }
-            })
-          )
-          for (let i = 0; i < withLogo.length; i++) {
-            if ((withLogo[i] as any).image) {
-              slidesWithImages[i] = { ...slidesWithImages[i], imageUrl: (withLogo[i] as any).image }
-            }
-          }
-        } catch (e) {
-          console.error('Erro ao aplicar logo:', e)
-        }
-      }
-
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount)
       if (debit.success) notifyBalanceUpdate()
 
@@ -838,10 +821,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
     console.log('[handleSend] activePost:', !!activePost, '| pendingEngineChoice:', !!pendingEngineChoice, '| pendingAmbiguous:', !!pendingAmbiguous)
 
-    // Posts premium: só add_logo é suportado via chat
+    // Posts premium: suporta add_logo e remove_logo via chat
     if (isPremiumActive) {
-      const isLogoRequest = /logo|logotipo/i.test(input.trim())
-      const userMsg: AgentMessage = { role: 'user', content: input.trim() }
+      const msgText = input.trim()
+      const isRemoveLogo = /\b(remov[ae]?r?|tira[r]?|retira[r]?|exclu[ií]r?|sem)\b.*\b(logo|logotipo)\b/i.test(msgText) || /\b(logo|logotipo)\b.*\b(remov[ae]?r?|tira[r]?|retira[r]?)\b/i.test(msgText)
+      const isLogoRequest = /logo|logotipo/i.test(msgText)
+      const userMsg: AgentMessage = { role: 'user', content: msgText }
       if (!isLogoRequest || !premiumSlides?.length || !onPremiumSlidesUpdate) {
         setMessages(prev => [...prev, userMsg, {
           role: 'agent',
@@ -852,6 +837,18 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }
       setMessages(prev => [...prev, userMsg])
       setInput('')
+
+      if (isRemoveLogo) {
+        if (originalPremiumSlidesRef.current) {
+          onPremiumSlidesUpdate(originalPremiumSlidesRef.current)
+          originalPremiumSlidesRef.current = null
+          setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo removido!' }])
+        } else {
+          setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo para remover.' }])
+        }
+        return
+      }
+
       setLoading(true)
       try {
         const { data: authData } = await supabase.auth.getUser()
@@ -861,6 +858,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca e tente novamente.' }])
           return
         }
+        originalPremiumSlidesRef.current = premiumSlides
         const updatedSlides = await Promise.all(
           premiumSlides.map(async slide => ({
             ...slide,
