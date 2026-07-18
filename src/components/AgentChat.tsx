@@ -79,6 +79,30 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           role: 'agent',
           content: '📷 Foto recebida! Vou usar ela como base do post. Qual qualidade de imagem você prefere?',
         }])
+      } else if (activePost || hasGeneratedPost) {
+        // Já existe um post ativo (modo edição) — aplica a foto direto como novo fundo,
+        // sem depender do fluxo de regenerate_image do agente.
+        const activeId = useStore.getState().activeTemplateId
+        if (activeId) {
+          const currentTemplate = useStore.getState().templates.find(t => t.id === activeId)
+          const promptFallback = currentTemplate?.imagePrompt
+          setTemplateBackground(activeId, result)
+          if (promptFallback) setTemplateImagePrompt(activeId, promptFallback)
+          const base = activeId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+          const def = templateRegistry.find(d => d.id === base)
+          def?.getVariants(theme).forEach(v => {
+            if (v.id !== activeId) {
+              setTemplateBackground(v.id, result)
+              if (promptFallback) setTemplateImagePrompt(v.id, promptFallback)
+            }
+          })
+        }
+        setPendingRegenImage(null)
+        setUploadedPhoto(null)
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: '📷 Foto aplicada como novo fundo do post!',
+        }])
       } else {
         setMessages(prev => [...prev, {
           role: 'agent',
@@ -1135,6 +1159,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingRegenImage(null)
     setPendingAmbiguous(null)
     setPendingEngineChoice(null)
+    setPendingPhotoAsk(null)
+    setUploadedPhoto(null)
     setHasGeneratedPost(false)
     onReset?.()
   }
@@ -1246,7 +1272,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 setPendingRegenImage(null)
                 setGenerating(true)
                 try {
-                  const url = await generateImage(p.prompt)
+                  const url = uploadedPhoto ?? await generateImage(p.prompt)
                   const activeId = useStore.getState().activeTemplateId
                   if (activeId) {
                     setTemplateBackground(activeId, url)
@@ -1259,7 +1285,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                       }
                     })
                   }
-                  setMessages(prev => [...prev, { role: 'agent', content: '✦ Nova imagem gerada!' }])
+                  if (uploadedPhoto) setUploadedPhoto(null)
+                  setMessages(prev => [...prev, { role: 'agent', content: uploadedPhoto ? '✦ Foto aplicada como nova imagem!' : '✦ Nova imagem gerada!' }])
                 } catch (e: any) {
                   setMessages(prev => [...prev, { role: 'agent', content: e.message || 'Erro ao gerar imagem.' }])
                 } finally {
