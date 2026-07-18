@@ -58,6 +58,36 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [loading, setLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<{ stop(): void } | null>(null)
+  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null)
+  const [pendingPhotoAsk, setPendingPhotoAsk] = useState<{ prompt: string; format?: string } | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const result = ev.target?.result
+      if (typeof result !== 'string') return
+      setUploadedPhoto(result)
+      if (pendingPhotoAsk) {
+        const p = pendingPhotoAsk
+        setPendingPhotoAsk(null)
+        setPendingEngineChoice({ prompt: p.prompt, format: p.format })
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: '📷 Foto recebida! Vou usar ela como base do post. Qual qualidade de imagem você prefere?',
+        }])
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: '📷 Foto anexada — vou usar ela como base quando você pedir para gerar o post.',
+        }])
+      }
+    }
+    reader.readAsDataURL(file)
+  }
 
   function toggleMic() {
     if (isListening) {
@@ -419,10 +449,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         }
       }
 
-      // Gera imagem de fundo
+      // Gera imagem de fundo (ou usa a foto enviada pelo usuário como base)
       if (result.imagePrompt && result.template !== 'tech-minimal') {
         try {
-          const url = await generateImage(result.imagePrompt)
+          const url = uploadedPhoto ?? await generateImage(result.imagePrompt)
           const activeId = useStore.getState().activeTemplateId
           if (activeId) {
             setTemplateBackground(activeId, url)
@@ -435,6 +465,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               }
             })
           }
+          if (uploadedPhoto) setUploadedPhoto(null)
         } catch (e) {
           console.error('Erro ao gerar imagem:', e)
         }
@@ -587,7 +618,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         const premRes = await fetch('/api/generate-premium', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, slideIndex: 1, totalSlides: 1, styleContext, size: fmt.size }),
+          body: JSON.stringify({
+            prompt, slideIndex: 1, totalSlides: 1, styleContext, size: fmt.size,
+            ...(uploadedPhoto ? { visualReferences: [uploadedPhoto] } : {}),
+          }),
           signal: controller.signal,
         })
         clearTimeout(timeoutId)
@@ -652,6 +686,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       onPremiumGenerated?.(slides, generatedCaption)
       onGenerated?.()
       setHasGeneratedPost(true)
+      if (uploadedPhoto) setUploadedPhoto(null)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: '✦ Post premium gerado! Faça o download ou publique diretamente.',
@@ -1051,13 +1086,21 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         } else if (response.mode === 'carousel') {
           onGenerating?.()
           await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
+        } else if (!uploadedPhoto) {
+          // Antes de gerar, pergunta se o usuário tem uma foto para usar
+          console.log('[handleSend] setPendingPhotoAsk | prompt:', response.prompt?.slice(0, 60), '| format:', response.format)
+          setPendingPhotoAsk({ prompt: response.prompt, format: response.format })
+          setMessages(prev => [...prev, {
+            role: 'agent',
+            content: 'Você tem uma foto para usar? Pode enviar agora ou deixo a IA criar uma.',
+          }])
         } else {
           // Post — usuário sempre escolhe a engine
           console.log('[handleSend] setPendingEngineChoice | prompt:', response.prompt?.slice(0, 60), '| format:', response.format)
           setPendingEngineChoice({ prompt: response.prompt, format: response.format })
           setMessages(prev => [...prev, {
             role: 'agent',
-            content: 'Qual qualidade de imagem você prefere?',
+            content: 'Vou usar a foto que você enviou como base da imagem. Qual qualidade de imagem você prefere?',
           }])
         }
       } else {
@@ -1286,6 +1329,40 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             </button>
           </div>
         )}
+        {pendingPhotoAsk && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => photoInputRef.current?.click()}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              📷 Enviar foto
+            </button>
+            <button
+              onClick={() => {
+                const p = pendingPhotoAsk
+                setPendingPhotoAsk(null)
+                setPendingEngineChoice({ prompt: p.prompt, format: p.format })
+                setMessages(prev => [...prev, {
+                  role: 'agent',
+                  content: 'Sem problema, deixo a IA criar a imagem. Qual qualidade de imagem você prefere?',
+                }])
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Deixar a IA criar
+            </button>
+          </div>
+        )}
         {pendingEngineChoice && !loading && !generating && (
           <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
             <button
@@ -1411,12 +1488,35 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       </div>
 
       {/* Input */}
+      {uploadedPhoto && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 16px 0', background: 'var(--bg-base)',
+        }}>
+          <img src={uploadedPhoto} alt="Foto anexada" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border)' }} />
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Foto anexada — será usada no post</span>
+          <button
+            onClick={() => setUploadedPhoto(null)}
+            title="Remover foto"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '14px', padding: '2px 6px' }}
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div style={{
         display: 'flex', alignItems: 'flex-end', gap: '8px',
         padding: '12px 16px',
         borderTop: '1px solid var(--border)',
         background: 'var(--bg-base)',
       }}>
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoUpload}
+          style={{ display: 'none' }}
+        />
         <textarea
           ref={inputRef}
           value={input}
@@ -1436,6 +1536,24 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             opacity: isDisabled ? 0.6 : 1,
           }}
         />
+        <button
+          onClick={() => photoInputRef.current?.click()}
+          disabled={isDisabled}
+          title="Enviar foto"
+          style={{
+            width: '36px', height: '36px', borderRadius: '10px', border: 'none',
+            background: 'transparent',
+            color: uploadedPhoto ? 'var(--accent)' : 'var(--text-muted)',
+            cursor: isDisabled ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, transition: 'all 0.15s',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h1.6l.6-1.1A1 1 0 0 1 6.6 2.4h2.8a1 1 0 0 1 .9.5L10.9 4h1.6A1.5 1.5 0 0 1 14 5.5v6A1.5 1.5 0 0 1 12.5 13h-9A1.5 1.5 0 0 1 2 11.5v-6z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+            <circle cx="8" cy="8.2" r="2.4" stroke="currentColor" strokeWidth="1.3"/>
+          </svg>
+        </button>
         <button
           onClick={toggleMic}
           disabled={isDisabled}

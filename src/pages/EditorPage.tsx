@@ -5,7 +5,6 @@ import type { CanvasElement } from '../state/useStore'
 import { CanvasEngine } from '../engine/CanvasEngine'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
-import { Sidebar } from '../components/Sidebar'
 import { ExportPanel } from '../components/ExportPanel'
 import { PropertiesPanel } from '../components/PropertiesPanel'
 import { ImagePanel } from '../components/ImagePanel'
@@ -347,7 +346,6 @@ export function EditorPage() {
     setEditingState(null)
   }
 
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [agentChatKey, setAgentChatKey] = useState(0)
   const [editModeActive, setEditModeActive] = useState(false)
@@ -383,19 +381,12 @@ export function EditorPage() {
 
   return (
     <div className="editor-layout" style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
-      {/* Sidebar backdrop (mobile) */}
-      {sidebarOpen && (
-        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Boas-vindas — visível antes do primeiro post */}
         {!activeTemplate && !premiumSlides && !carouselSlides && (
           <div style={{ textAlign: 'center', padding: '32px 24px 0', flexShrink: 0 }}>
             <p className="display-title" style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '10px', margin: '0 0 10px' }}>Bem-vindo ao Pulse</p>
-            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 24px' }}>Diga o que precisa fazer ou selecione um template na barra lateral para começar.</p>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 24px' }}>Diga o que precisa fazer para começar.</p>
           </div>
         )}
 
@@ -448,40 +439,6 @@ export function EditorPage() {
           padding: '24px',
           paddingTop: '16px',
         }}>
-          {/* Mobile FAB: open templates sidebar */}
-          <button
-            className="mobile-only"
-            onClick={() => setSidebarOpen(true)}
-            title="Templates"
-            style={{
-              position: 'fixed',
-              bottom: '64px',
-              left: '16px',
-              zIndex: 350,
-              background: 'rgba(13,17,23,0.95)',
-              border: '1px solid rgba(91,143,212,0.3)',
-              borderRadius: '12px',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              padding: '10px 14px',
-              fontSize: '12px',
-              fontWeight: 600,
-              fontFamily: 'inherit',
-              gap: '6px',
-              alignItems: 'center',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.8"/>
-              <rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.5"/>
-              <rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.5"/>
-              <rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity="0.3"/>
-            </svg>
-            Templates
-          </button>
-
           {premiumSlides ? (
             <PremiumResultViewer
               slides={premiumSlides}
