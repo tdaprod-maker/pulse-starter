@@ -428,6 +428,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   }
 
   async function generate(prompt: string, format?: string) {
+    console.log('[generate] uploadedPhoto no momento da chamada:', uploadedPhoto ? `presente (${uploadedPhoto.length} chars)` : '(nenhuma)')
     setGenerating(true)
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -599,6 +600,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   async function generatePremium(prompt: string, format?: string) {
     console.log('[generatePremium] iniciando, prompt:', prompt.slice(0, 60))
     console.log('[generatePremium] onPremiumGenerated disponível?', typeof onPremiumGenerated)
+    console.log('[generatePremium] uploadedPhoto no momento da chamada:', uploadedPhoto ? `presente (${uploadedPhoto.length} chars)` : '(nenhuma)')
 
     const FORMAT_MAP: Record<string, { size: string; ratio: string; label: string; orientation: string }> = {
       '9x16': { size: '1024x1536', ratio: '9/16', label: '9:16', orientation: 'vertical (9:16, Stories/Reels)' },
@@ -639,6 +641,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       let rawImage: string
       try {
+        console.log('[generatePremium] enviando visualReferences?', !!uploadedPhoto)
         const premRes = await fetch('/api/generate-premium', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
