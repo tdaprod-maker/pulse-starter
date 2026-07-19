@@ -1,4 +1,4 @@
-export type LogoPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom-center'
+export type LogoPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom-center' | 'center' | 'top-center'
 export type LogoSize = 'small' | 'medium' | 'large'
 
 const SIZE_RATIO: Record<LogoSize, number> = {
@@ -46,6 +46,12 @@ export function overlayLogoOnImage(
             break
           case 'bottom-center':
             x = (img.width - logoW) / 2; y = img.height - logoH - margin
+            break
+          case 'center':
+            x = (img.width - logoW) / 2; y = (img.height - logoH) / 2
+            break
+          case 'top-center':
+            x = (img.width - logoW) / 2; y = img.height / 3 - logoH / 2
             break
           case 'bottom-right':
           default:

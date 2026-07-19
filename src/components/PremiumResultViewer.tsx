@@ -22,6 +22,8 @@ const POSITION_OPTIONS: { value: LogoPosition; label: string }[] = [
   { value: 'bottom-left', label: '↙ Inferior esq.' },
   { value: 'bottom-right', label: '↘ Inferior dir.' },
   { value: 'bottom-center', label: '⬇ Centro inferior' },
+  { value: 'top-center', label: '⬆ Centro superior' },
+  { value: 'center', label: '⊙ Centro' },
 ]
 
 const SIZE_OPTIONS: { value: LogoSize; label: string }[] = [
