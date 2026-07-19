@@ -9,6 +9,8 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
+      filename: 'sw-v2.js',
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
         name: 'Pulse — Designer de Posts com IA',
