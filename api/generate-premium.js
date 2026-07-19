@@ -50,6 +50,7 @@ MANDATORY RULES:
 - CRITICAL: Place all key elements in the CENTER 60% of image width and CENTER 70% of image height only
 - CRITICAL: Outer edges must be empty or background only — no text or subjects near edges
 - CRITICAL: Do NOT include any logo or brand mark — the logo will be overlaid separately
+- CRITICAL TEXT LIMIT: Use NO MAXIMUM 2 lines of headline text and 1 short subtitle. NO bullet points, NO icons with labels, NO lists, NO multiple sections of text. One powerful message only. White space is design.
 ${carouselTextOverlay}
 QUALITY STANDARD: Photorealistic and polished — indistinguishable from a premium photo shoot or agency design.`
 
