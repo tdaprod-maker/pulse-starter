@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import type { PremiumSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
+import { loadBrandConfig } from '../services/brandKit'
+import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
 
 interface Props {
   slides: PremiumSlide[]
@@ -14,8 +16,83 @@ const ASPECT_STYLES: Record<string, React.CSSProperties> = {
   '1:1':  { aspectRatio: '1/1' },
 }
 
+const POSITION_OPTIONS: { value: LogoPosition; label: string }[] = [
+  { value: 'top-left', label: '↖ Superior esq.' },
+  { value: 'top-right', label: '↗ Superior dir.' },
+  { value: 'bottom-left', label: '↙ Inferior esq.' },
+  { value: 'bottom-right', label: '↘ Inferior dir.' },
+  { value: 'bottom-center', label: '⬇ Centro inferior' },
+]
+
+const SIZE_OPTIONS: { value: LogoSize; label: string }[] = [
+  { value: 'small', label: 'Pequeno' },
+  { value: 'medium', label: 'Médio' },
+  { value: 'large', label: 'Grande' },
+]
+
 export function PremiumResultViewer({ slides, caption: initialCaption, onClose }: Props) {
   const [caption, setCaption] = useState(initialCaption)
+
+  // Logo overlay: os slides originais (sem logo) ficam preservados para permitir
+  // reprocessar posição/tamanho sem perder qualidade por overlays acumulados.
+  const [originalSlides] = useState(slides)
+  const [displaySlides, setDisplaySlides] = useState(slides)
+  const [logoActive, setLogoActive] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoPosition, setLogoPosition] = useState<LogoPosition>('bottom-right')
+  const [logoSize, setLogoSize] = useState<LogoSize>('medium')
+  const [applyingLogo, setApplyingLogo] = useState(false)
+  const [logoError, setLogoError] = useState('')
+
+  async function applyLogo(position: LogoPosition, size: LogoSize, urlOverride?: string) {
+    const url = urlOverride ?? logoUrl
+    if (!url) return
+    setApplyingLogo(true)
+    try {
+      const withLogo = await Promise.all(
+        originalSlides.map(async slide => ({
+          ...slide,
+          image: await overlayLogoOnImage(slide.image, url, position, size),
+        }))
+      )
+      setDisplaySlides(withLogo)
+      setLogoActive(true)
+    } finally {
+      setApplyingLogo(false)
+    }
+  }
+
+  async function handleAddLogo() {
+    setLogoError('')
+    let url = logoUrl
+    if (!url) {
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      const brandCtx = email ? await loadBrandConfig(email) : null
+      if (!brandCtx?.logo_url) {
+        setLogoError('Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca.')
+        return
+      }
+      url = brandCtx.logo_url
+      setLogoUrl(url)
+    }
+    await applyLogo(logoPosition, logoSize, url)
+  }
+
+  function handleRemoveLogo() {
+    setLogoActive(false)
+    setDisplaySlides(originalSlides)
+  }
+
+  function handlePositionChange(position: LogoPosition) {
+    setLogoPosition(position)
+    if (logoActive) applyLogo(position, logoSize)
+  }
+
+  function handleSizeChange(size: LogoSize) {
+    setLogoSize(size)
+    if (logoActive) applyLogo(logoPosition, size)
+  }
   const [captionTab, setCaptionTab] = useState<'instagram' | 'linkedin'>('instagram')
   const [linkedinToken, setLinkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
   const [linkedinSub, setLinkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
@@ -46,18 +123,18 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
   }
 
   function handleDownloadAll() {
-    slides.forEach((slide, i) => {
+    displaySlides.forEach((slide, i) => {
       setTimeout(() => handleDownload(slide.image, slide.label), i * 800)
     })
   }
 
   async function handlePublishLinkedIn() {
-    if (!caption || publishingLI || !linkedinToken || slides.length === 0) return
+    if (!caption || publishingLI || !linkedinToken || displaySlides.length === 0) return
     setPublishingLI(true)
     setLiStatus('idle')
     try {
       const text = `${caption.linkedin}\n\n${caption.hashtags}`
-      const mainImage = slides.find(s => s.label === '1:1')?.image ?? slides[0].image
+      const mainImage = displaySlides.find(s => s.label === '1:1')?.image ?? displaySlides[0].image
       const res = await fetch('/api/linkedin-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,13 +154,13 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
   }
 
   async function handlePublishInstagram() {
-    if (!caption || publishingIG || slides.length === 0) return
+    if (!caption || publishingIG || displaySlides.length === 0) return
     setPublishingIG(true)
     setIgStatus('idle')
     try {
       const text = `${caption.instagram}\n\n${caption.hashtags}`
       const igUserId = '17841479034844249'
-      const mainImage = slides.find(s => s.label === '1:1')?.image ?? slides[0].image
+      const mainImage = displaySlides.find(s => s.label === '1:1')?.image ?? displaySlides[0].image
       const base64 = mainImage.replace(/^data:image\/\w+;base64,/, '')
       const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
       const blob = new Blob([byteArray], { type: 'image/jpeg' })
@@ -134,16 +211,16 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
       </div>
 
       {/* Image grid — single format or multiple side by side */}
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        {slides.map((slide, i) => (
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap', opacity: applyingLogo ? 0.6 : 1, transition: 'opacity 0.15s' }}>
+        {displaySlides.map((slide, i) => (
           <div
             key={i}
             style={{
               position: 'relative', borderRadius: '10px', overflow: 'hidden',
               border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-              flex: slides.length === 1 ? '0 0 auto' : '1 1 140px',
-              minWidth: slides.length === 1 ? 'min(320px, 100%)' : '120px',
-              maxWidth: slides.length === 1 ? '380px' : '260px',
+              flex: displaySlides.length === 1 ? '0 0 auto' : '1 1 140px',
+              minWidth: displaySlides.length === 1 ? 'min(320px, 100%)' : '120px',
+              maxWidth: displaySlides.length === 1 ? '380px' : '260px',
             }}
           >
             <div style={{
@@ -178,8 +255,99 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
         ))}
       </div>
 
+      {/* Controles de logo */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: '10px',
+        background: 'var(--bg-surface)', border: '1px solid var(--border)',
+        borderRadius: '12px', padding: '14px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Logo da marca
+          </span>
+          {!logoActive ? (
+            <button
+              onClick={handleAddLogo}
+              disabled={applyingLogo}
+              style={{
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingLogo ? 'default' : 'pointer',
+                fontFamily: 'inherit', fontWeight: 600, border: 'none',
+                background: 'var(--accent)', color: 'white', opacity: applyingLogo ? 0.6 : 1,
+              }}
+            >
+              {applyingLogo ? 'Aplicando...' : 'Adicionar logo'}
+            </button>
+          ) : (
+            <button
+              onClick={handleRemoveLogo}
+              disabled={applyingLogo}
+              style={{
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingLogo ? 'default' : 'pointer',
+                fontFamily: 'inherit', fontWeight: 600,
+                border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)',
+              }}
+            >
+              Remover logo
+            </button>
+          )}
+        </div>
+
+        {logoError && (
+          <span style={{ fontSize: '11px', color: 'rgba(239,68,68,0.9)' }}>{logoError}</span>
+        )}
+
+        {logoActive && (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Posição</span>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {POSITION_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handlePositionChange(opt.value)}
+                    disabled={applyingLogo}
+                    style={{
+                      fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
+                      cursor: applyingLogo ? 'default' : 'pointer', fontFamily: 'inherit',
+                      whiteSpace: 'nowrap',
+                      ...(logoPosition === opt.value
+                        ? { background: 'var(--accent)', border: 'none', color: 'white' }
+                        : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Tamanho</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {SIZE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSizeChange(opt.value)}
+                    disabled={applyingLogo}
+                    style={{
+                      flex: 1, fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
+                      cursor: applyingLogo ? 'default' : 'pointer', fontFamily: 'inherit',
+                      ...(logoSize === opt.value
+                        ? { background: 'var(--accent)', border: 'none', color: 'white' }
+                        : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Download — só mostra "Baixar tudo" se houver mais de 1 formato */}
-      {slides.length > 1 && (
+      {displaySlides.length > 1 && (
         <button
           onClick={handleDownloadAll}
           style={{
@@ -188,7 +356,7 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
             color: 'var(--text-secondary)', fontSize: '12px', fontFamily: 'inherit', cursor: 'pointer',
           }}
         >
-          Baixar tudo ({slides.length} formatos)
+          Baixar tudo ({displaySlides.length} formatos)
         </button>
       )}
 

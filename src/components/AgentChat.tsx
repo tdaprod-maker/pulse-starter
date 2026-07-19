@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type AgentResponse, type CarouselSlide, type PremiumSlide, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
+import { overlayLogoOnImage } from '../services/logoOverlay'
 import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
 
@@ -565,35 +566,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         resolve(canvas.toDataURL('image/png'))
       }
       img.src = imageUrl
-    })
-  }
-
-  function overlayLogoOnImage(imageBase64: string, logoUrl: string): Promise<string> {
-    return new Promise(resolve => {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        const logo = new Image()
-        logo.crossOrigin = 'anonymous'
-        logo.onload = () => {
-          const canvas = document.createElement('canvas')
-          canvas.width = img.width
-          canvas.height = img.height
-          const ctx = canvas.getContext('2d')!
-          ctx.drawImage(img, 0, 0)
-          const margin = img.width * 0.04
-          const maxLogoW = img.width * 0.20
-          const ratio = logo.naturalWidth / logo.naturalHeight
-          const logoW = Math.min(maxLogoW, logo.naturalWidth)
-          const logoH = logoW / ratio
-          ctx.drawImage(logo, img.width - logoW - margin, img.height - logoH - margin, logoW, logoH)
-          resolve(canvas.toDataURL('image/png'))
-        }
-        logo.onerror = () => resolve(imageBase64)
-        logo.src = logoUrl
-      }
-      img.onerror = () => resolve(imageBase64)
-      img.src = imageBase64
     })
   }
 
