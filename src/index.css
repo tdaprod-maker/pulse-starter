@@ -166,6 +166,22 @@ body {
   display: none !important;
 }
 
+/* ═══ INTRO VIDEO (MOBILE) ═════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .intro-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .intro-video {
+    width: 100vw !important;
+    height: 100vh !important;
+    object-fit: cover !important;
+  }
+}
+
 /* ═══ MOBILE RESPONSIVE ════════════════════════════════════════════════════ */
 
 @media (max-width: 767px) {

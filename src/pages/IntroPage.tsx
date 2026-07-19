@@ -14,13 +14,14 @@ export function IntroPage({ onFinish }: IntroPageProps) {
   }, [])
 
   return (
-    <div style={{
+    <div className="intro-container" style={{
       position: 'fixed', inset: 0, background: '#000',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 9999,
     }}>
       <video
         ref={videoRef}
+        className="intro-video"
         src="/intro.mp4"
         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         muted
