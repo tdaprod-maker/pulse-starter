@@ -477,7 +477,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       // Gera imagem de fundo (ou usa a foto enviada pelo usuário como base)
       if (result.imagePrompt && result.template !== 'tech-minimal') {
         try {
-          const url = uploadedPhoto ?? await generateImage(result.imagePrompt)
+          const url = uploadedPhoto ?? await generateImage(result.imagePrompt, undefined, brandCtx?.segment)
           const activeId = useStore.getState().activeTemplateId
           if (activeId) {
             setTemplateBackground(activeId, url)
@@ -646,7 +646,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            prompt, slideIndex: 1, totalSlides: 1, styleContext, size: fmt.size,
+            prompt, slideIndex: 1, totalSlides: 1, styleContext, segment: brandCtx?.segment, size: fmt.size,
             ...(uploadedPhoto ? { visualReferences: [uploadedPhoto] } : {}),
           }),
           signal: controller.signal,

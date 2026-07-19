@@ -1,11 +1,31 @@
 export const config = { maxDuration: 60 }
 
+function styleForSegment(text) {
+  const t = (text || '').toLowerCase()
+  if (/food|restaurant|gastronom|comida|culin[aá]ria|card[aá]pio|delivery|chef|bebida/.test(t)) {
+    return 'warm cinematic lighting, shallow depth of field, editorial food photography'
+  }
+  if (/health|sa[uú]de|cl[ií]nic|medic|farm[aá]c|hospital|dentist|odont|paciente/.test(t)) {
+    return 'clean clinical aesthetic, soft natural light, professional healthcare photography'
+  }
+  if (/tech|\bia\b|intelig[eê]ncia artificial|software|startup|\bai\b|saas|agente/.test(t)) {
+    return 'dark background, blue/purple neon accents, cinematic corporate photography'
+  }
+  if (/im[óo]v|constru|realty|real estate|arquitet|imobili[aá]ri/.test(t)) {
+    return 'architectural photography, golden hour lighting, aspirational lifestyle'
+  }
+  if (/moda|fashion|beleza|beauty|cosm[eé]tic|est[eé]tica/.test(t)) {
+    return 'high fashion editorial, studio lighting, luxury brand aesthetic'
+  }
+  return 'cinematic photography, professional lighting, editorial style'
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt, slideIndex, totalSlides, styleContext, size, visualReferences, slideTitle, slideBody } = req.body
+  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' })
@@ -20,19 +40,28 @@ export default async function handler(req, res) {
   const carouselTextOverlay = slideTitle ? `
 
 CAROUSEL SLIDE TEXT OVERLAY — MANDATORY OVERRIDE:
-This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. You MUST render the following text visibly integrated into the image design. This requirement overrides the "Typography is secondary" rule above.
-• HEADLINE (large, bold, high contrast, prominent): "${slideTitle}"
-${slideBody ? `• BODY / SUPPORTING TEXT (medium size, legible, below the headline): "${slideBody}"` : ''}
+This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. This requirement overrides the "Typography is secondary" rule above.
+${slideBody
+  ? `Render ONLY this exact text visible in the image: "${slideTitle}" as the headline, and "${slideBody}" as a short supporting subtitle. Nothing else. No bullet points, no icons with labels, no lists, no additional text sections.`
+  : `Render ONLY this exact text visible in the image: "${slideTitle}". Nothing else. No subtitles, no bullet points, no icons with labels, no lists, no multiple text sections.`}
 Text placement rules:
 - Position in the lower-center or center zone of the image
 - Ensure high contrast: white text on dark areas, or dark text on light areas, or use a semi-transparent background strip
 - Typography must be elegant and modern, matching the brand style
 - Text in Portuguese (Brazil) as provided above — do NOT translate or change it` : ''
 
+  const visualStyleDirective = styleForSegment(segment || styleContext)
+
+  const photoIdentityRule = visualReferences?.length
+    ? '\n- CRITICAL: Use the provided photo as the main subject. Preserve the person\'s face and identity exactly. Enhance lighting and background only.'
+    : ''
+
   const fullPrompt = `You are a professional social media art director generating a high-quality image.
 
 BRAND VISUAL STYLE (follow strictly):
 ${styleContext || 'clean, minimal, professional'}
+
+VISUAL STYLE DIRECTION: ${visualStyleDirective}
 
 VISUAL BRIEF:
 ${prompt}
@@ -51,6 +80,7 @@ MANDATORY RULES:
 - CRITICAL: Outer edges must be empty or background only — no text or subjects near edges
 - CRITICAL: Do NOT include any logo or brand mark — the logo will be overlaid separately
 - CRITICAL TEXT LIMIT: Use NO MAXIMUM 2 lines of headline text and 1 short subtitle. NO bullet points, NO icons with labels, NO lists, NO multiple sections of text. One powerful message only. White space is design.
+- CRITICAL COMPOSITION: One dominant subject. Generous white space. Text placed in lower third or upper third, never center. The image must breathe.${photoIdentityRule}
 ${carouselTextOverlay}
 QUALITY STANDARD: Photorealistic and polished — indistinguishable from a premium photo shoot or agency design.`
 
