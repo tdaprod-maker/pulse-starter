@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { loadBrandConfig, saveBrandConfig, uploadMedia, uploadPhoto, uploadLogo, DEFAULT_BRAND } from '../services/brandKit'
 import { analyzeVisualReferences } from '../services/gemini'
 import { SEGMENTS } from './OnboardingPage'
+import { getNicheQuestions } from '../data/nicheQuestions'
 import type { BrandConfig, BrandLogo } from '../services/brandKit'
 import {
   getConnection,
@@ -212,6 +213,13 @@ export function BrandPage() {
     }
   }
 
+  const nicheKey = SEGMENTS.find(s => s.label === config.segment)?.nicheKey ?? 'generico'
+  const nicheQuestions = getNicheQuestions(nicheKey)
+
+  function handleNichoInfoChange(question: string, value: string) {
+    setConfig(prev => ({ ...prev, nicho_info: { ...(prev.nicho_info ?? {}), [question]: value } }))
+  }
+
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-base)' }}>
       <main style={{ padding: '40px',
@@ -249,6 +257,28 @@ export function BrandPage() {
               {SEGMENTS.map(s => <option key={s.label} value={s.label}>{s.label}</option>)}
             </select>
           </Section>
+
+          {/* Perguntas do nicho */}
+          {config.segment && (
+            <Section title="Sobre o seu negócio">
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
+                Perguntas específicas do seu segmento — todas opcionais, mas ajudam a IA a gerar posts muito mais precisos.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {nicheQuestions.map(q => (
+                  <div key={q} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{q}</label>
+                    <input
+                      type="text"
+                      value={config.nicho_info?.[q] ?? ''}
+                      onChange={e => handleNichoInfoChange(q, e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
           {/* Logo */}
           <Section title="Logotipo">
