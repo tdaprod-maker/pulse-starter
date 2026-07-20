@@ -1,4 +1,6 @@
 import saude from './saude.js'
+import imoveis from './imoveis.js'
+import alimentacao from './alimentacao.js'
 
 /**
  * Mapa de nichos disponíveis, por chave interna.
@@ -7,6 +9,8 @@ import saude from './saude.js'
  */
 export const niches = {
   saude,
+  imoveis,
+  alimentacao,
 }
 
 /**
@@ -20,6 +24,12 @@ export function getNichePersonality(segment) {
 
   if (/health|sa[uú]de|cl[ií]nic|medic|farm[aá]c|hospital|dentist|odont|paciente/.test(t)) {
     return niches.saude
+  }
+  if (/im[óo]v|constru|realty|real estate|arquitet|imobili[aá]ri/.test(t)) {
+    return niches.imoveis
+  }
+  if (/food|restaurant|gastronom|comida|culin[aá]ria|card[aá]pio|delivery|chef|bebida/.test(t)) {
+    return niches.alimentacao
   }
 
   return null
