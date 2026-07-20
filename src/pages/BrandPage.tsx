@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig, saveBrandConfig, uploadMedia, uploadPhoto, uploadLogo, DEFAULT_BRAND } from '../services/brandKit'
 import { analyzeVisualReferences } from '../services/gemini'
+import { SEGMENTS } from './OnboardingPage'
 import type { BrandConfig, BrandLogo } from '../services/brandKit'
 import {
   getConnection,
@@ -235,6 +236,18 @@ export function BrandPage() {
               onChange={e => setConfig(p => ({ ...p, brand_name: e.target.value }))}
               style={inputStyle}
             />
+          </Section>
+
+          {/* Segmento */}
+          <Section title="Segmento">
+            <select
+              value={config.segment ?? ''}
+              onChange={e => setConfig(p => ({ ...p, segment: e.target.value }))}
+              style={inputStyle}
+            >
+              <option value="">Selecione um segmento</option>
+              {SEGMENTS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
           </Section>
 
           {/* Logo */}

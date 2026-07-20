@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { uploadLogo, uploadMedia } from '../services/brandKit'
 import { analyzeVisualReferences } from '../services/gemini'
 
-const SEGMENTS = [
+export const SEGMENTS = [
   'Restaurante / Food',
   'Consultoria / Serviços',
   'Varejo / E-commerce',
