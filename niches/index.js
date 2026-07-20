@@ -5,6 +5,10 @@ import beleza from './beleza.js'
 import fitness from './fitness.js'
 import educacao from './educacao.js'
 import moda from './moda.js'
+import advocacia from './advocacia.js'
+import construcao from './construcao.js'
+import pets from './pets.js'
+import financeiro from './financeiro.js'
 
 /**
  * Mapa de nichos disponíveis, por chave interna.
@@ -19,6 +23,10 @@ export const niches = {
   fitness,
   educacao,
   moda,
+  advocacia,
+  construcao,
+  pets,
+  financeiro,
 }
 
 /**
@@ -32,6 +40,9 @@ export function getNichePersonality(segment) {
 
   if (/health|sa[uú]de|cl[ií]nic|medic|farm[aá]c|hospital|dentist|odont|paciente/.test(t)) {
     return niches.saude
+  }
+  if (/constru[çc][aã]o|construtora|reforma|obra|engenharia civil|arquitetura de obra|empreiteira/.test(t)) {
+    return niches.construcao
   }
   if (/im[óo]v|constru|realty|real estate|arquitet|imobili[aá]ri/.test(t)) {
     return niches.imoveis
@@ -50,6 +61,15 @@ export function getNichePersonality(segment) {
   }
   if (/moda|fashion|roupa|vestu[aá]rio|boutique|estilista|cole[çc][aã]o|look/.test(t)) {
     return niches.moda
+  }
+  if (/advocacia|advogad|jur[íi]dic|direito|escrit[óo]rio de advocacia|oab/.test(t)) {
+    return niches.advocacia
+  }
+  if (/pet|cachorro|gato|veterin[aá]ri|banho e tosa|petshop|animal de estima[çc][aã]o/.test(t)) {
+    return niches.pets
+  }
+  if (/financeir|investimento|consultoria financeira|planejamento financeiro|corretora|previdência|banco/.test(t)) {
+    return niches.financeiro
   }
 
   return null
