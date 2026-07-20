@@ -1,4 +1,4 @@
-import { getNichePersonality } from './niches/index.js'
+import { getNichePersonality } from '../niches/index.js'
 
 function buildNicheContext(segment) {
   const niche = segment ? getNichePersonality(segment) : null
