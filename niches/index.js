@@ -1,16 +1,24 @@
 import saude from './saude.js'
 import imoveis from './imoveis.js'
 import alimentacao from './alimentacao.js'
+import beleza from './beleza.js'
+import fitness from './fitness.js'
+import educacao from './educacao.js'
+import moda from './moda.js'
 
 /**
  * Mapa de nichos disponíveis, por chave interna.
- * Adicione um novo nicho criando /api/niches/<nome>.js (exportando um
+ * Adicione um novo nicho criando /niches/<nome>.js (exportando um
  * NichePersonality) e registrando-o aqui + no matcher abaixo.
  */
 export const niches = {
   saude,
   imoveis,
   alimentacao,
+  beleza,
+  fitness,
+  educacao,
+  moda,
 }
 
 /**
@@ -30,6 +38,18 @@ export function getNichePersonality(segment) {
   }
   if (/food|restaurant|gastronom|comida|culin[aá]ria|card[aá]pio|delivery|chef|bebida/.test(t)) {
     return niches.alimentacao
+  }
+  if (/beleza|est[ée]tica|sal[aã]o|cabelei?r|barbearia|manicur|maquiag|cosm[eé]tic|spa/.test(t)) {
+    return niches.beleza
+  }
+  if (/fitness|academia|treino|personal trainer|crossfit|muscula[çc][aã]o|pilates|funcional/.test(t)) {
+    return niches.fitness
+  }
+  if (/educa[çc][aã]o|curso|escola|faculdade|universidade|ensino|aula|professor|estudante/.test(t)) {
+    return niches.educacao
+  }
+  if (/moda|fashion|roupa|vestu[aá]rio|boutique|estilista|cole[çc][aã]o|look/.test(t)) {
+    return niches.moda
   }
 
   return null
