@@ -16,6 +16,7 @@ import negocios from './negocios.js'
 import direito from './direito.js'
 import arquitetura from './arquitetura.js'
 import odontologia from './odontologia.js'
+import esportes from './esportes.js'
 
 /**
  * Mapa de nichos disponíveis, por chave interna.
@@ -41,6 +42,7 @@ export const niches = {
   direito,
   arquitetura,
   odontologia,
+  esportes,
 }
 
 /**
@@ -93,6 +95,9 @@ function matchNicheKey(segment) {
   }
   if (/fitness|academia|treino|personal trainer|crossfit|muscula[çc][aã]o|pilates|funcional/.test(t)) {
     return 'fitness'
+  }
+  if (/esporte|\btimes?\b|clube|futebol|beisebol|v[oô]lei|basquete|federa[çc][aã]o|liga|torcida/.test(t)) {
+    return 'esportes'
   }
   if (/educa[çc][aã]o|curso|escola|faculdade|universidade|ensino|aula|professor|estudante/.test(t)) {
     return 'educacao'
