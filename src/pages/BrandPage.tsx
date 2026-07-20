@@ -246,7 +246,7 @@ export function BrandPage() {
               style={inputStyle}
             >
               <option value="">Selecione um segmento</option>
-              {SEGMENTS.map(s => <option key={s} value={s}>{s}</option>)}
+              {SEGMENTS.map(s => <option key={s.label} value={s.label}>{s.label}</option>)}
             </select>
           </Section>
 

@@ -1058,6 +1058,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           tone: brandCtx.tone,
           brandDescription: brandCtx.brand_description ?? undefined,
           visualStyle: brandCtx.visual_style ?? undefined,
+          nichoInfo: brandCtx.nicho_info ?? undefined,
         } : undefined,
         lockedBase ?? undefined
       )

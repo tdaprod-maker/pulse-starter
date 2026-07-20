@@ -19,6 +19,7 @@ export interface BrandConfig {
   visual_references?: string[]
   site_url?: string
   photos: string[]
+  nicho_info?: Record<string, string> | null
 }
 
 export const DEFAULT_BRAND: BrandConfig = {
@@ -35,6 +36,7 @@ export const DEFAULT_BRAND: BrandConfig = {
   business_name: 'AGENTE 17',
   brand_description: '',
   photos: [],
+  nicho_info: {},
 }
 
 export async function uploadPhoto(file: File, email: string): Promise<string | null> {

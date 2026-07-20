@@ -1,4 +1,5 @@
-import { getNichePersonality } from '../niches/index.js'
+import { getNichePersonality, getNicheKey } from '../niches/index.js'
+import { getNicheQuestions } from '../niches/questions.js'
 
 function buildNicheContext(segment) {
   const niche = segment ? getNichePersonality(segment) : null
@@ -332,6 +333,14 @@ OU se não entendeu o pedido:
 
   const hasBrandDescription = brand?.brandDescription && brand.brandDescription.trim().length >= 20
 
+  const nichoInfoEntries = brand?.nichoInfo && typeof brand.nichoInfo === 'object'
+    ? Object.entries(brand.nichoInfo).filter(([, v]) => typeof v === 'string' && v.trim().length > 0)
+    : []
+  const hasNichoInfo = nichoInfoEntries.length > 0
+
+  const nicheKey = getNicheKey(brand?.segment)
+  const nichePostQuestions = getNicheQuestions(nicheKey).slice(0, 2)
+
   const brandCtx = brand ? `
 Marca: ${brand.businessName || ''}
 Segmento: ${brand.segment || ''}
@@ -340,6 +349,10 @@ Descrição: ${brand.brandDescription || '(não informado)'}
 Estilo visual: ${brand.visualStyle || ''}` : ''
 
   const nicheCtx = brand?.segment ? buildNicheContext(brand.segment) : ''
+
+  const nichoInfoCtx = hasNichoInfo
+    ? `\n\nINFORMAÇÕES REAIS DO NEGÓCIO (nicho_info — use estas respostas reais em vez de genéricas ao escrever o post):\n${nichoInfoEntries.map(([q, a]) => `- ${q}: ${a}`).join('\n')}`
+    : ''
 
   const lockedCtx = lockedTemplateId
     ? `\nTEMPLATE FIXADO PELO USUÁRIO: "${lockedTemplateId}" — o usuário já escolheu este template. Quando retornar ready:true, inclua OBRIGATORIAMENTE "templateId": "${lockedTemplateId}" no JSON. Não sugira nem use outro template.`
@@ -351,21 +364,29 @@ Estilo visual: ${brand.visualStyle || ''}` : ''
 
   const userMessageCount = messages.filter(m => m.role === 'user').length
 
-  const brandDescriptionRule = !hasBrandDescription ? `
+  const missingProfileAsks = []
+  if (!hasBrandDescription) {
+    missingProfileAsks.push('o que sua empresa faz e quem é seu cliente ideal, em uma frase')
+  }
+  if (!hasNichoInfo) {
+    missingProfileAsks.push(`estas 2 perguntas sobre o negócio: "${nichePostQuestions[0]}" e "${nichePostQuestions[1]}"`)
+  }
 
-REGRA BRAND DESCRIPTION — EXECUTE ANTES DE QUALQUER OUTRA COISA:
-A descrição da empresa não foi preenchida ou está incompleta (menos de 20 caracteres).
-- Se userMessageCount === 1: INDEPENDENTEMENTE de o briefing ser completo, retorne IMEDIATAMENTE:
-  {"ready": false, "message": "Para criar conteúdo mais personalizado, me conte em uma frase o que sua empresa faz e quem é seu cliente ideal."}
-  Não avalie o briefing. Não faça outras perguntas. Apenas essa.
-- Se userMessageCount >= 2: o usuário já respondeu sobre a empresa na mensagem anterior. Use essa informação como contexto adicional para o post. Prossiga normalmente com a geração.` : ''
+  const profileRule = missingProfileAsks.length ? `
+
+REGRA DE PERFIL INCOMPLETO — EXECUTE ANTES DE QUALQUER OUTRA COISA:
+Faltam informações do perfil da marca (brand description e/ou informações do nicho).
+- Se userMessageCount === 1: INDEPENDENTEMENTE de o briefing ser completo, retorne IMEDIATAMENTE, em uma única mensagem natural e objetiva perguntando ${missingProfileAsks.join(' e também ')}:
+  {"ready": false, "message": "sua pergunta aqui, integrando os itens acima em 1-2 frases"}
+  Não avalie o briefing. Não faça outras perguntas.
+- Se userMessageCount >= 2: o usuário já respondeu na mensagem anterior. Use essas respostas como contexto adicional SOMENTE para este post (não repita essas perguntas de novo nesta conversa, e não presuma que elas foram salvas no Brand Kit). Prossiga normalmente com a geração.` : ''
 
   const prompt = `Você é um designer sênior de redes sociais. Fala pouco, pergunta o essencial, gera rápido.
 
 REGRA ABSOLUTA DE RESPOSTA: máximo 2 frases por mensagem de texto. Sem elogios. Sem contexto desnecessário. Sem repetir o que o usuário disse. Uma pergunta por vez quando precisar de informação.
 
 CONTEXTO DA MARCA (já conhecido — não pergunte sobre isso):
-${brandCtx || 'Não disponível'}${nicheCtx}${lockedCtx}${brandDescriptionRule}
+${brandCtx || 'Não disponível'}${nicheCtx}${nichoInfoCtx}${lockedCtx}${profileRule}
 
 HISTÓRICO DA CONVERSA:
 ${history}

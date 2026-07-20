@@ -22,6 +22,7 @@ export interface BrandContext {
   visualStyle?: string
   brandDescription?: string
   logoUrl?: string
+  nichoInfo?: Record<string, string> | null
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────

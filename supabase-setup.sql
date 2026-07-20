@@ -39,3 +39,7 @@ for all
 to authenticated
 using (user_email = auth.jwt() ->> 'email')
 with check (user_email = auth.jwt() ->> 'email');
+
+-- Informações específicas do nicho, coletadas no onboarding (opcional, JSON
+-- de pergunta → resposta). Usado pelo agente como contexto real ao gerar posts.
+alter table brand_config add column if not exists nicho_info jsonb default '{}'::jsonb;

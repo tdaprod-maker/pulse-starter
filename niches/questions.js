@@ -1,0 +1,141 @@
+// Mantenha em sincronia com /src/data/nicheQuestions.ts (duplicado porque o
+// frontend TS não pode importar módulos .js fora de /src sem allowJs).
+export const nicheQuestions = {
+  saude: [
+    'Quais são suas principais especialidades?',
+    'Você oferece consulta de retorno gratuita?',
+    'Qual é o tempo médio de espera para uma consulta?',
+    'Você aceita planos de saúde? Quais?',
+    'Tem algum resultado típico que pode compartilhar com pacientes?',
+  ],
+  odontologia: [
+    'Quais procedimentos você oferece?',
+    'Clareamento: quantos tons em quantas sessões? Duração típica?',
+    'Você atende emergências? Qual horário?',
+    'Aceita planos odontológicos? Quais?',
+    'Tem casos de antes e depois para compartilhar (com autorização)?',
+  ],
+  imoveis: [
+    'Você trabalha com venda, locação ou ambos?',
+    'Qual o ticket médio dos seus imóveis?',
+    'Quais bairros ou regiões você atende?',
+    'Você tem financiamento próprio ou indica financeiras?',
+    'Qual seu tempo médio para fechar um negócio?',
+  ],
+  alimentacao: [
+    'Qual é o prato mais pedido?',
+    'Você tem delivery? Qual plataforma?',
+    'Qual o horário de funcionamento?',
+    'Tem algum ingrediente especial ou origem que diferencia sua cozinha?',
+    'Você faz eventos ou reservas para grupos?',
+  ],
+  beleza: [
+    'Quais são seus serviços principais?',
+    'Qual o tempo médio de atendimento?',
+    'Você trabalha com hora marcada ou aceita encaixe?',
+    'Quais marcas de produto você utiliza?',
+    'Tem alguma técnica exclusiva ou especialidade?',
+  ],
+  fitness: [
+    'Quais modalidades você oferece?',
+    'Você tem avaliação física gratuita?',
+    'Qual o horário de funcionamento?',
+    'Tem personal trainer incluso no plano?',
+    'Qual resultado típico seus alunos alcançam em quanto tempo?',
+  ],
+  educacao: [
+    'Quais cursos ou modalidades você oferece?',
+    'As aulas são presenciais, online ou híbridas?',
+    'Qual a duração e carga horária dos cursos?',
+    'O certificado tem reconhecimento? Por qual instituição?',
+    'Você tem taxa de aprovação ou empregabilidade para compartilhar?',
+  ],
+  moda: [
+    'Você trabalha com marca própria ou multimarcas?',
+    'Qual o estilo predominante da sua coleção?',
+    'Você vende online? Qual plataforma?',
+    'Faz envio nacional? Prazo e custo?',
+    'Tem programa de fidelidade ou benefícios para clientes recorrentes?',
+  ],
+  advocacia: [
+    'Quais são suas áreas de atuação?',
+    'Você atende pessoa física, jurídica ou ambos?',
+    'Oferece consulta inicial gratuita?',
+    'Trabalha com honorários fixos ou êxito?',
+    'Tem algum case de sucesso que pode compartilhar (sem identificar o cliente)?',
+  ],
+  construcao: [
+    'Você faz obra completa, reforma ou ambos?',
+    'Qual o ticket médio dos seus projetos?',
+    'Qual o prazo típico de uma obra?',
+    'Você fornece materiais ou só mão de obra?',
+    'Tem projetos entregues com fotos para mostrar?',
+  ],
+  pets: [
+    'Quais serviços você oferece? (consulta, banho, hotel, cirurgia)',
+    'Você atende quais espécies?',
+    'Tem atendimento de emergência? Qual horário?',
+    'Aceita pets de grande porte?',
+    'Tem algum programa de vacinação ou prevenção periódica?',
+  ],
+  financeiro: [
+    'Você atende pessoa física, jurídica ou ambos?',
+    'Quais produtos ou serviços você oferece? (investimentos, planejamento, crédito)',
+    'Você tem certificação? CPA-10, CFP, outro?',
+    'Cobra taxa de consultoria ou trabalha com comissão?',
+    'Tem algum resultado típico de cliente que pode compartilhar?',
+  ],
+  tecnologia: [
+    'Qual o seu produto ou serviço principal?',
+    'Você atende qual porte de empresa?',
+    'Qual problema principal você resolve para o cliente?',
+    'Tem integração com sistemas que seus clientes já usam?',
+    'Qual o tempo médio de implementação?',
+  ],
+  negocios: [
+    'Qual é o seu serviço principal? (consultoria, mentoria, treinamento)',
+    'Você atende qual porte ou segmento de empresa?',
+    'Qual resultado típico seus clientes alcançam?',
+    'Você tem metodologia própria?',
+    'Atende presencialmente, online ou ambos?',
+  ],
+  turismo: [
+    'Você trabalha com destinos nacionais, internacionais ou ambos?',
+    'Monta pacotes personalizados ou trabalha com pacotes fixos?',
+    'Tem parceria com companhias aéreas ou hotéis?',
+    'Qual o seu destino mais vendido?',
+    'Você oferece seguro viagem incluso?',
+  ],
+  gastronomia: [
+    'Qual é a proposta gastronômica do seu restaurante?',
+    'Você tem menu degustação ou carta fixa?',
+    'Aceita reservas? É necessário?',
+    'Tem opções para dietas especiais? (vegano, sem glúten, etc)',
+    'Qual o ticket médio por pessoa?',
+  ],
+  direito: [
+    'Quais são suas áreas de atuação?',
+    'Você atende empresas, pessoas físicas ou ambos?',
+    'Trabalha com contratos, litígio ou consultoria preventiva?',
+    'Tem escritório físico ou atende online?',
+    'Qual seu diferencial em relação a outros escritórios?',
+  ],
+  arquitetura: [
+    'Você faz projetos residenciais, comerciais ou ambos?',
+    'Também executa a obra ou só o projeto?',
+    'Qual o tempo médio de um projeto?',
+    'Tem portfólio de projetos entregues?',
+    'Você trabalha com algum estilo predominante?',
+  ],
+  generico: [
+    'Qual é o seu produto ou serviço principal?',
+    'Quem é o seu cliente ideal?',
+    'Qual é o seu principal diferencial em relação à concorrência?',
+    'Qual resultado ou transformação você entrega ao cliente?',
+    'Tem algum dado, número ou resultado que comprove sua entrega?',
+  ],
+}
+
+export function getNicheQuestions(nicheKey) {
+  return nicheQuestions[nicheKey] ?? nicheQuestions.generico
+}

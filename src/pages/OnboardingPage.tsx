@@ -3,20 +3,28 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadLogo, uploadMedia } from '../services/brandKit'
 import { analyzeVisualReferences } from '../services/gemini'
+import { getNicheQuestions } from '../data/nicheQuestions'
 
-export const SEGMENTS = [
-  'Restaurante / Food',
-  'Consultoria / Serviços',
-  'Varejo / E-commerce',
-  'Saúde / Bem-estar',
-  'Academia / Esportes',
-  'Educação / Cursos',
-  'Tecnologia / SaaS',
-  'Imobiliário',
-  'Moda / Beleza',
-  'Agência / Marketing',
-  'Jurídico / Contabilidade',
-  'Outro',
+export const SEGMENTS: { label: string; nicheKey: string }[] = [
+  { label: 'Saúde / Bem-estar', nicheKey: 'saude' },
+  { label: 'Odontologia', nicheKey: 'odontologia' },
+  { label: 'Imobiliário', nicheKey: 'imoveis' },
+  { label: 'Restaurante / Food', nicheKey: 'alimentacao' },
+  { label: 'Beleza / Estética', nicheKey: 'beleza' },
+  { label: 'Academia / Fitness', nicheKey: 'fitness' },
+  { label: 'Educação / Cursos', nicheKey: 'educacao' },
+  { label: 'Moda / Vestuário', nicheKey: 'moda' },
+  { label: 'Advocacia', nicheKey: 'advocacia' },
+  { label: 'Construção / Reforma', nicheKey: 'construcao' },
+  { label: 'Pets / Veterinária', nicheKey: 'pets' },
+  { label: 'Financeiro / Investimentos', nicheKey: 'financeiro' },
+  { label: 'Tecnologia / SaaS', nicheKey: 'tecnologia' },
+  { label: 'Consultoria / Negócios', nicheKey: 'negocios' },
+  { label: 'Turismo / Viagens', nicheKey: 'turismo' },
+  { label: 'Gastronomia', nicheKey: 'gastronomia' },
+  { label: 'Direito Empresarial', nicheKey: 'direito' },
+  { label: 'Arquitetura / Design', nicheKey: 'arquitetura' },
+  { label: 'Outro', nicheKey: 'generico' },
 ]
 
 const TONES = [
@@ -55,6 +63,7 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
   const [step, setStep] = useState(1)
   const [businessName, setBusinessName] = useState('')
   const [segment, setSegment] = useState('')
+  const [nichoInfo, setNichoInfo] = useState<Record<string, string>>({})
   const [brandDescription, setBrandDescription] = useState('')
   const [tone, setTone] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
@@ -78,7 +87,10 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
   const [urlFetched, setUrlFetched] = useState(false)
   const [urlError, setUrlError] = useState('')
 
-  const TOTAL_STEPS = 8
+  const TOTAL_STEPS = 9
+
+  const nicheKey = SEGMENTS.find(s => s.label === segment)?.nicheKey ?? 'generico'
+  const nicheQuestions = getNicheQuestions(nicheKey)
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -165,6 +177,9 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
       if (!email) throw new Error('Usuário não autenticado')
 
       const logos = logoUrl ? [{ url: logoUrl, label: 'Logo principal' }] : []
+      const filledNichoInfo = Object.fromEntries(
+        Object.entries(nichoInfo).filter(([, v]) => v.trim().length > 0)
+      )
 
       const { error } = await supabase
         .from('brand_config')
@@ -173,6 +188,7 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
           brand_name: businessName,
           business_name: businessName,
           segment,
+          nicho_info: Object.keys(filledNichoInfo).length > 0 ? filledNichoInfo : null,
           tone,
           logo_url: logoUrl,
           logos: logos,
@@ -251,15 +267,15 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Qual é o seu segmento?</h2>
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>A IA vai usar essa informação para criar posts mais relevantes.</p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                 {SEGMENTS.map(s => (
-                  <button key={s} onClick={() => setSegment(s)} style={{
-                    padding: '12px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
-                    fontSize: '13px', fontWeight: segment === s ? 600 : 400, textAlign: 'left',
-                    background: segment === s ? 'rgba(58,90,255,0.15)' : 'var(--bg-surface)',
-                    border: `1px solid ${segment === s ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`,
-                    color: segment === s ? 'var(--accent)' : 'var(--text-secondary)', transition: 'all 0.15s',
-                  }}>{s}</button>
+                  <button key={s.label} onClick={() => setSegment(s.label)} style={{
+                    padding: '10px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: '12px', fontWeight: segment === s.label ? 600 : 400, textAlign: 'left',
+                    background: segment === s.label ? 'rgba(58,90,255,0.15)' : 'var(--bg-surface)',
+                    border: `1px solid ${segment === s.label ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`,
+                    color: segment === s.label ? 'var(--accent)' : 'var(--text-secondary)', transition: 'all 0.15s',
+                  }}>{s.label}</button>
                 ))}
               </div>
 
@@ -307,8 +323,42 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
             </>
           )}
 
-          {/* Passo 3 — URL do site (NOVO) */}
+          {/* Passo 3 — Perguntas do nicho (NOVO) */}
           {step === 3 && (
+            <>
+              <div>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Conte mais sobre o seu negócio</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
+                  Perguntas específicas do seu segmento — todas opcionais, mas ajudam a IA a gerar posts muito mais precisos.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {nicheQuestions.map(q => (
+                  <div key={q} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{q}</label>
+                    <input
+                      type="text"
+                      value={nichoInfo[q] ?? ''}
+                      onChange={e => setNichoInfo(prev => ({ ...prev, [q]: e.target.value }))}
+                      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'inherit', outline: 'none' }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setStep(2)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(4) }}
+                  className="btn-gerar" style={btnNext}>
+                  {Object.values(nichoInfo).some(v => v.trim()) ? 'Continuar →' : 'Pular por agora →'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Passo 4 — URL do site */}
+          {step === 4 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Tem um site?</h2>
@@ -362,8 +412,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(2)} style={btnBack}>← Voltar</button>
-                <button onClick={() => { setError(''); setStep(4) }}
+                <button onClick={() => setStep(3)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(5) }}
                   className="btn-gerar" style={btnNext}>
                   {siteUrl.trim() ? 'Continuar →' : 'Pular por agora →'}
                 </button>
@@ -371,8 +421,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
             </>
           )}
 
-          {/* Passo 4 — Tom de voz */}
-          {step === 4 && (
+          {/* Passo 5 — Tom de voz */}
+          {step === 5 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Tom de voz da marca</h2>
@@ -394,8 +444,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               </div>
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(3)} style={btnBack}>← Voltar</button>
-                <button onClick={() => { if (!tone) { setError('Selecione o tom de voz'); return } setError(''); setStep(5) }}
+                <button onClick={() => setStep(4)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { if (!tone) { setError('Selecione o tom de voz'); return } setError(''); setStep(6) }}
                   className="btn-gerar" style={btnNext}>
                   Continuar →
                 </button>
@@ -403,8 +453,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
             </>
           )}
 
-          {/* Passo 5 — Logo */}
-          {step === 5 && (
+          {/* Passo 6 — Logo */}
+          {step === 6 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Logo da marca</h2>
@@ -427,8 +477,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
                 </button>
               )}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(4)} style={btnBack}>← Voltar</button>
-                <button onClick={() => { setError(''); setStep(6) }}
+                <button onClick={() => setStep(5)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(7) }}
                   className="btn-gerar" style={btnNext}>
                   {logoPreview ? 'Continuar →' : 'Pular por agora →'}
                 </button>
@@ -436,8 +486,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
             </>
           )}
 
-          {/* Passo 6 — Fontes */}
-          {step === 6 && (
+          {/* Passo 7 — Fontes */}
+          {step === 7 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Fontes da marca</h2>
@@ -477,8 +527,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(5)} style={btnBack}>← Voltar</button>
-                <button onClick={() => { setError(''); setStep(7) }}
+                <button onClick={() => setStep(6)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(8) }}
                   className="btn-gerar" style={btnNext}>
                   Continuar →
                 </button>
@@ -486,8 +536,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
             </>
           )}
 
-          {/* Passo 7 — Cores */}
-          {step === 7 && (
+          {/* Passo 8 — Cores */}
+          {step === 8 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Cores da marca</h2>
@@ -535,8 +585,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
 
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(6)} style={btnBack}>← Voltar</button>
-                <button onClick={() => { setError(''); setStep(8) }}
+                <button onClick={() => setStep(7)} style={btnBack}>← Voltar</button>
+                <button onClick={() => { setError(''); setStep(9) }}
                   className="btn-gerar" style={btnNext}>
                   Continuar →
                 </button>
@@ -544,8 +594,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
             </>
           )}
 
-          {/* Passo 8 — Referências visuais */}
-          {step === 8 && (
+          {/* Passo 9 — Referências visuais */}
+          {step === 9 && (
             <>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Referências visuais</h2>
@@ -596,7 +646,7 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
               {error && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{error}</p>}
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setStep(7)} style={btnBack}>← Voltar</button>
+                <button onClick={() => setStep(8)} style={btnBack}>← Voltar</button>
                 <button onClick={handleFinish} disabled={loading}
                   className="btn-gerar" style={{ ...btnNext, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
                   {loading ? 'Salvando...' : refImages.length > 0 ? 'Começar a usar o Pulse →' : 'Pular por agora →'}
