@@ -1,3 +1,21 @@
+import { getNichePersonality } from './niches/index.js'
+
+function buildNicheContext(segment) {
+  const niche = segment ? getNichePersonality(segment) : null
+  if (!niche) return ''
+
+  const parts = []
+  if (niche.gatilhos?.length) parts.push(`- Gatilhos emocionais: ${niche.gatilhos.join(', ')}`)
+  if (niche.ctas?.length) parts.push(`- CTAs que convertem: ${niche.ctas.join(', ')}`)
+  if (niche.formatos?.length) parts.push(`- Formatos que performam: ${niche.formatos.join(', ')}`)
+  if (niche.alertas?.length) parts.push(`- Evitar: ${niche.alertas.join(', ')}`)
+  if (niche.estiloVisual) parts.push(`- Direção visual: ${niche.estiloVisual}`)
+  if (niche.copyTone) parts.push(`- Tom de copy: ${niche.copyTone}`)
+
+  if (!parts.length) return ''
+  return `\n\nPERSONALIDADE DO NICHO (${segment}):\n${parts.join('\n')}`
+}
+
 async function callAnthropicSimple(prompt, apiKey) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -321,6 +339,8 @@ Tom: ${brand.tone || ''}
 Descrição: ${brand.brandDescription || '(não informado)'}
 Estilo visual: ${brand.visualStyle || ''}` : ''
 
+  const nicheCtx = brand?.segment ? buildNicheContext(brand.segment) : ''
+
   const lockedCtx = lockedTemplateId
     ? `\nTEMPLATE FIXADO PELO USUÁRIO: "${lockedTemplateId}" — o usuário já escolheu este template. Quando retornar ready:true, inclua OBRIGATORIAMENTE "templateId": "${lockedTemplateId}" no JSON. Não sugira nem use outro template.`
     : ''
@@ -345,7 +365,7 @@ A descrição da empresa não foi preenchida ou está incompleta (menos de 20 ca
 REGRA ABSOLUTA DE RESPOSTA: máximo 2 frases por mensagem de texto. Sem elogios. Sem contexto desnecessário. Sem repetir o que o usuário disse. Uma pergunta por vez quando precisar de informação.
 
 CONTEXTO DA MARCA (já conhecido — não pergunte sobre isso):
-${brandCtx || 'Não disponível'}${lockedCtx}${brandDescriptionRule}
+${brandCtx || 'Não disponível'}${nicheCtx}${lockedCtx}${brandDescriptionRule}
 
 HISTÓRICO DA CONVERSA:
 ${history}
