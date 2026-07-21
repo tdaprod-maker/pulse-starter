@@ -53,7 +53,7 @@ Text placement rules:
   const visualStyleDirective = styleForSegment(segment || styleContext)
 
   const photoIdentityRule = visualReferences?.length
-    ? '\n- CRITICAL: Use the provided photo as the main subject. Preserve the person\'s face and identity exactly. Enhance lighting and background only.'
+    ? '\n- CRITICAL: Preserve ALL human faces, bodies and people EXACTLY as they appear in the reference photo. Do NOT alter, replace, add or remove any person. Do NOT generate new people. Only enhance lighting, atmosphere, background and add text overlays. Any person visible in the reference must appear identical in the output.'
     : ''
 
   const fullPrompt = `You are a professional social media art director generating a high-quality image.
