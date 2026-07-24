@@ -298,6 +298,7 @@ export function CarouselPage() {
   const slideImageInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [slides, setSlides] = useState<CarouselSlide[]>([])
+  const slidesList = Array.isArray(slides) ? slides : []
   const [slideImages, setSlideImages] = useState<string[]>([])
   const [caption, setCaption] = useState('')
   const [copied, setCopied] = useState(false)
@@ -777,7 +778,7 @@ export function CarouselPage() {
   }
 
   function updateSlide(index: number, field: 'title' | 'body', value: string) {
-    setSlides(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
+    setSlides(prev => (Array.isArray(prev) ? prev : []).map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
 
   const isLoading = status === 'loading'
@@ -1035,7 +1036,7 @@ export function CarouselPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-              {slides.map((slide, i) => (
+              {slidesList.map((slide, i) => (
                 <div
                   key={i}
                   onClick={() => setPreviewIndex(i)}

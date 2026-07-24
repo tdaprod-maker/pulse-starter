@@ -14,6 +14,15 @@ interface CarouselRecord {
   created_at: string
 }
 
+function parseJsonArray<T>(raw: string): T[] {
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
 export function CarouselLibraryPage() {
   const [carousels, setCarousels] = useState<CarouselRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -93,7 +102,7 @@ export function CarouselLibraryPage() {
     if (!linkedinToken || !linkedinSub || publishingId) return
     setPublishingId(carousel.id)
     try {
-      const images = JSON.parse(carousel.slide_images) as string[]
+      const images = parseJsonArray<string>(carousel.slide_images)
       const text = carousel.caption || carousel.prompt || carousel.title
 
       const res = await fetch('/api/linkedin-post', {
@@ -188,8 +197,8 @@ export function CarouselLibraryPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
             {carousels.map(carousel => {
-              const images = JSON.parse(carousel.slide_images) as string[]
-              const slides = JSON.parse(carousel.slides) as { title: string }[]
+              const images = parseJsonArray<string>(carousel.slide_images)
+              const slides = parseJsonArray<{ title: string }>(carousel.slides)
               const isSelected = selected.has(carousel.id)
               return (
                 <div
@@ -302,7 +311,7 @@ export function CarouselLibraryPage() {
 
       {/* Modal de visualização do carrossel Premium */}
       {activeCarousel && (() => {
-        const modalImages = JSON.parse(activeCarousel.slide_images) as string[]
+        const modalImages = parseJsonArray<string>(activeCarousel.slide_images)
         const caption = activeCarousel.caption || ''
         return (
           <div

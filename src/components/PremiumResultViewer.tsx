@@ -33,12 +33,13 @@ const SIZE_OPTIONS: { value: LogoSize; label: string }[] = [
 ]
 
 export function PremiumResultViewer({ slides, caption: initialCaption, onClose }: Props) {
+  const slidesList = Array.isArray(slides) ? slides : []
   const [caption, setCaption] = useState(initialCaption)
 
   // Logo overlay: os slides originais (sem logo) ficam preservados para permitir
   // reprocessar posição/tamanho sem perder qualidade por overlays acumulados.
-  const [originalSlides] = useState(slides)
-  const [displaySlides, setDisplaySlides] = useState(slides)
+  const [originalSlides] = useState(slidesList)
+  const [displaySlides, setDisplaySlides] = useState(slidesList)
   const [logoActive, setLogoActive] = useState(false)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPosition, setLogoPosition] = useState<LogoPosition>('bottom-right')

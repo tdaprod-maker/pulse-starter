@@ -727,21 +727,22 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const resolvedTemplateId = lockedBase ?? templateId ?? 'editorial-card'
 
       const carouselData = await generateCarouselContent(prompt, slideCount, brandContext, resolvedTemplateId)
+      const agentSlides: CarouselSlide[] = Array.isArray(carouselData.slides) ? carouselData.slides : []
 
       // Gera imagens em paralelo via FAL.ai
       const slidesWithImages: (CarouselSlide & { imageUrl: string })[] = []
       setMessages(prev => {
         const msgs = [...prev]
-        msgs[msgs.length - 1] = { role: 'agent', content: `Gerando imagens dos ${carouselData.slides.length} slides...` }
+        msgs[msgs.length - 1] = { role: 'agent', content: `Gerando imagens dos ${agentSlides.length} slides...` }
         return msgs
       })
 
       const imageResults = await Promise.allSettled(
-        carouselData.slides.map(slide => generateImage(slide.imagePrompt))
+        agentSlides.map(slide => generateImage(slide.imagePrompt))
       )
 
-      for (let i = 0; i < carouselData.slides.length; i++) {
-        const slide = carouselData.slides[i]
+      for (let i = 0; i < agentSlides.length; i++) {
+        const slide = agentSlides[i]
         const imgResult = imageResults[i]
         const imageUrl = imgResult.status === 'fulfilled' ? imgResult.value : ''
         slidesWithImages.push({ ...slide, imageUrl })
@@ -800,6 +801,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       setMessages(prev => [...prev, { role: 'agent', content: `Planejando ${cappedCount} slides...` }])
 
       const carouselData = await generateCarouselContent(prompt, cappedCount, brandContext, resolvedTemplateId)
+      const agentSlides: CarouselSlide[] = Array.isArray(carouselData.slides) ? carouselData.slides : []
 
       const styleContext = [
         brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
@@ -811,13 +813,13 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       const slidesWithImages: (CarouselSlide & { imageUrl: string })[] = []
 
-      for (let i = 0; i < carouselData.slides.length; i++) {
-        const slide = carouselData.slides[i]
+      for (let i = 0; i < agentSlides.length; i++) {
+        const slide = agentSlides[i]
         setMessages(prev => {
           const msgs = [...prev]
           msgs[msgs.length - 1] = {
             role: 'agent',
-            content: `Gerando slide ${i + 1} de ${carouselData.slides.length} com GPT Image 2...`,
+            content: `Gerando slide ${i + 1} de ${agentSlides.length} com GPT Image 2...`,
           }
           return msgs
         })
@@ -840,7 +842,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               body: JSON.stringify({
                 prompt: slide.imagePrompt,
                 slideIndex: i + 1,
-                totalSlides: carouselData.slides.length,
+                totalSlides: agentSlides.length,
                 styleContext,
                 size: '1024x1536',
                 slideTitle: presetSlides?.[i]?.title ?? slide.title,
@@ -901,7 +903,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const isRemoveLogo = /\b(remov[ae]?r?|tira[r]?|retira[r]?|exclu[ií]r?|sem)\b.*\b(logo|logotipo)\b/i.test(msgText) || /\b(logo|logotipo)\b.*\b(remov[ae]?r?|tira[r]?|retira[r]?)\b/i.test(msgText)
       const isLogoRequest = /logo|logotipo/i.test(msgText)
       const userMsg: AgentMessage = { role: 'user', content: msgText }
-      if (!isLogoRequest || !premiumSlides?.length || !onPremiumSlidesUpdate) {
+      const premiumSlidesList = Array.isArray(premiumSlides) ? premiumSlides : []
+      if (!isLogoRequest || !premiumSlidesList.length || !onPremiumSlidesUpdate) {
         setMessages(prev => [...prev, userMsg, {
           role: 'agent',
           content: 'Posts premium gerados com GPT Image 2 não são editáveis pelo agente. Você pode pedir para inserir o logo da sua marca digitando "insira o logo".',
@@ -932,9 +935,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca e tente novamente.' }])
           return
         }
-        originalPremiumSlidesRef.current = premiumSlides
+        originalPremiumSlidesRef.current = premiumSlidesList
         const updatedSlides = await Promise.all(
-          premiumSlides.map(async slide => ({
+          premiumSlidesList.map(async slide => ({
             ...slide,
             image: await overlayLogoOnImage(slide.image, brandCtx.logo_url!),
           }))

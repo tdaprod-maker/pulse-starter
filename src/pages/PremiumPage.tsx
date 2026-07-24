@@ -24,6 +24,7 @@ export function PremiumPage() {
   const [mode, setMode] = useState<Mode>('single')
   const [slideCount, setSlideCount] = useState(3)
   const [slides, setSlides] = useState<Slide[]>([])
+  const slidesList = Array.isArray(slides) ? slides : []
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [currentStep, setCurrentStep] = useState(0)
   const [totalSteps, setTotalSteps] = useState(0)
@@ -73,7 +74,8 @@ export function PremiumPage() {
       const saved = sessionStorage.getItem('premium_state')
       if (saved) {
         const { slides: s, caption: c, status: st } = JSON.parse(saved)
-        if (s?.length) { setSlides(s); setStatus(st ?? 'done') }
+        const restoredSlides: Slide[] = Array.isArray(s) ? s : []
+        if (restoredSlides.length) { setSlides(restoredSlides); setStatus(st ?? 'done') }
         if (c) setCaption(c)
       }
     } catch {}
@@ -379,7 +381,7 @@ export function PremiumPage() {
         const data = await res.json()
         if (!data.success) throw new Error(data.error)
       } else {
-        const images = slides.map(s => s.image)
+        const images = slidesList.map(s => s.image)
         const res = await fetch('/api/linkedin-post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -572,7 +574,7 @@ ${cap.hashtags}` : '',
             gap: '16px',
             alignItems: mode === 'single' ? 'start' : 'center',
           }}>
-            {slides.map((slide, i) => (
+            {slidesList.map((slide, i) => (
               <div key={i} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
                 <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '4px', backdropFilter: 'blur(4px)', zIndex: 2 }}>
                   {slide.label}

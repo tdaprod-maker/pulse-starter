@@ -58,6 +58,15 @@ interface CarouselRecord {
   created_at: string
 }
 
+function parseJsonArray<T>(raw: string): T[] {
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
 type LibraryItem =
   | { kind: 'post';     created_at: string; data: PostRecord }
   | { kind: 'carousel'; created_at: string; data: CarouselRecord }
@@ -202,7 +211,7 @@ export function LibraryPage() {
     if (!linkedinToken || !linkedinSub || publishingId) return
     setPublishingId(carousel.id)
     try {
-      const images = JSON.parse(carousel.slide_images) as string[]
+      const images = parseJsonArray<string>(carousel.slide_images)
       const text = carousel.caption || carousel.prompt || carousel.title
       const res = await fetch('/api/linkedin-post', {
         method: 'POST',
@@ -342,8 +351,8 @@ export function LibraryPage() {
 
               // Carousel card
               const carousel = item.data
-              const images = JSON.parse(carousel.slide_images) as string[]
-              const slides = JSON.parse(carousel.slides) as { title: string }[]
+              const images = parseJsonArray<string>(carousel.slide_images)
+              const slides = parseJsonArray<{ title: string }>(carousel.slides)
               const isPremiumCarousel = carousel.template_id === 'premium-carousel'
               return (
                 <div
@@ -460,7 +469,7 @@ export function LibraryPage() {
 
       {/* Modal carrossel premium */}
       {activeCarousel && (() => {
-        const modalImages = JSON.parse(activeCarousel.slide_images) as string[]
+        const modalImages = parseJsonArray<string>(activeCarousel.slide_images)
         const caption = activeCarousel.caption || ''
         return (
           <div
