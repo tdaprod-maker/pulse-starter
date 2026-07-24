@@ -91,6 +91,41 @@ function extractJSON(raw) {
   throw new Error('Resposta da IA não pôde ser interpretada como JSON')
 }
 
+// Extrai texto legível de qualquer campo de texts (title/body às vezes não existem
+// diretamente no slide — o conteúdo real fica nos campos mapeados do template).
+function firstTextsValue(texts) {
+  if (!texts || typeof texts !== 'object') return ''
+  const val = Object.values(texts).find(v => typeof v === 'string' && v.trim())
+  return val ?? ''
+}
+
+// Gera um imagePrompt de fallback quando a IA não retornou um válido para o slide —
+// evita que o slide fique sem geração de imagem (e sem debitar pulses à toa numa
+// chamada que falharia por prompt vazio).
+function buildFallbackImagePrompt(slide, userInput) {
+  const subject = (slide.title || firstTextsValue(slide.texts) || userInput || 'concept')
+    .replace(/[^\w\s]/g, ' ')
+    .trim()
+    .slice(0, 80) || 'concept'
+  const sceneHint = slide.type === 'cover'
+    ? 'bold editorial hero shot'
+    : slide.type === 'cta'
+    ? 'inspiring closing scene'
+    : 'illustrative supporting scene'
+  return `${sceneHint} related to ${subject}, hyperrealistic, award-winning photography, no text, no logos`
+}
+
+// Garante que todo slide retornado tenha um imagePrompt não-vazio, mesmo se a IA
+// omitiu o campo (ex: truncamento por limite de tokens em carrosséis grandes).
+function ensureImagePrompts(slides, userInput) {
+  return slides.map(slide => ({
+    ...slide,
+    imagePrompt: typeof slide.imagePrompt === 'string' && slide.imagePrompt.trim()
+      ? slide.imagePrompt
+      : buildFallbackImagePrompt(slide, userInput),
+  }))
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -205,6 +240,8 @@ Retorne APENAS JSON válido sem markdown:
       if (!parsed.slides || !Array.isArray(parsed.slides)) {
         throw new Error('Resposta não contém array de slides válido')
       }
+
+      parsed.slides = ensureImagePrompts(parsed.slides, userInput)
 
       return res.status(200).json(parsed)
 
