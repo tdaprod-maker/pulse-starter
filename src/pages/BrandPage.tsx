@@ -13,6 +13,10 @@ import {
   removeConnection,
 } from '../services/socialConnections'
 
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : []
+}
+
 export function BrandPage() {
   const navigate = useNavigate()
   const [config, setConfig] = useState<BrandConfig>(DEFAULT_BRAND)
@@ -111,20 +115,20 @@ export function BrandPage() {
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
-    const current = config.photos ?? []
+    const current = asArray<string>(config.photos)
     const slots = 20 - current.length
     if (slots <= 0) return
     setUploadingPhotos(true)
     const toUpload = files.slice(0, slots)
     const urls = await Promise.all(toUpload.map(f => uploadPhoto(f, userEmail)))
     const valid = urls.filter((u): u is string => !!u)
-    setConfig(prev => ({ ...prev, photos: [...(prev.photos ?? []), ...valid] }))
+    setConfig(prev => ({ ...prev, photos: [...asArray<string>(prev.photos), ...valid] }))
     setUploadingPhotos(false)
     e.target.value = ''
   }
 
   function handleRemovePhoto(url: string) {
-    setConfig(prev => ({ ...prev, photos: (prev.photos ?? []).filter(u => u !== url) }))
+    setConfig(prev => ({ ...prev, photos: asArray<string>(prev.photos).filter(u => u !== url) }))
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -140,17 +144,17 @@ export function BrandPage() {
     const defaultLabel = file.name.replace(/\.[^.]+$/, '')
     const label = window.prompt('Nome do logotipo (ex: Branco, Preto)', defaultLabel)
     if (!label) { e.target.value = ''; return }
-    const current = config.logos ?? []
+    const current = asArray<BrandLogo>(config.logos)
     if (current.length >= 10) { e.target.value = ''; return }
     setUploadingLogo(true)
     const result = await uploadLogo(file, userEmail, label)
-    if (result) setConfig(prev => ({ ...prev, logos: [...(prev.logos ?? []), result] }))
+    if (result) setConfig(prev => ({ ...prev, logos: [...asArray<BrandLogo>(prev.logos), result] }))
     setUploadingLogo(false)
     e.target.value = ''
   }
 
   function handleRemoveLogo(logo: BrandLogo) {
-    setConfig(prev => ({ ...prev, logos: (prev.logos ?? []).filter(l => l.url !== logo.url) }))
+    setConfig(prev => ({ ...prev, logos: asArray<BrandLogo>(prev.logos).filter(l => l.url !== logo.url) }))
   }
 
   if (loading) return (
@@ -168,7 +172,7 @@ export function BrandPage() {
     try {
       const { data } = await supabase.auth.getUser()
       const email = data.user?.email ?? ''
-      const current = config.visual_references ?? []
+      const current = asArray<string>(config.visual_references)
       const urls: string[] = []
       for (const file of files.slice(0, 5 - current.length)) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -198,7 +202,7 @@ export function BrandPage() {
   async function handleRemoveRef(url: string) {
     const { data } = await supabase.auth.getUser()
     const email = data.user?.email ?? ''
-    const newRefs = (config.visual_references ?? []).filter(u => u !== url)
+    const newRefs = asArray<string>(config.visual_references).filter(u => u !== url)
     setConfig(prev => ({ ...prev, visual_references: newRefs }))
     await saveBrandConfig(email, { visual_references: newRefs })
     if (newRefs.length > 0) {
@@ -215,6 +219,10 @@ export function BrandPage() {
 
   const nicheKey = SEGMENTS.find(s => s.label === config.segment)?.nicheKey ?? 'generico'
   const nicheQuestions = getNicheQuestions(nicheKey)
+
+  const logosList = asArray<BrandLogo>(config?.logos)
+  const photosList = asArray<string>(config?.photos)
+  const visualReferencesList = asArray<string>(config?.visual_references)
 
   function handleNichoInfoChange(question: string, value: string) {
     setConfig(prev => ({ ...prev, nicho_info: { ...(prev.nicho_info ?? {}), [question]: value } }))
@@ -309,9 +317,9 @@ export function BrandPage() {
               onChange={handleAddLogo}
               style={{ display: 'none' }}
             />
-            {(config.logos ?? []).length > 0 && (
+            {logosList.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
-                {(config.logos ?? []).map((logo) => (
+                {logosList.map((logo) => (
                   <div key={logo.url} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', width: '80px', height: '80px', background: 'repeating-conic-gradient(#374151 0% 25%, #1f2937 0% 50%) 0 0 / 12px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <img src={logo.url} alt={logo.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', padding: '6px' }} />
                     <button
@@ -332,15 +340,15 @@ export function BrandPage() {
             )}
             <button
               onClick={() => logoLibInputRef.current?.click()}
-              disabled={uploadingLogo || (config.logos ?? []).length >= 10}
+              disabled={uploadingLogo || logosList.length >= 10}
               style={{
                 padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
                 background: 'var(--bg-surface)', border: '1px solid var(--border)',
                 color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit',
-                opacity: uploadingLogo || (config.logos ?? []).length >= 10 ? 0.5 : 1,
+                opacity: uploadingLogo || logosList.length >= 10 ? 0.5 : 1,
               }}
             >
-              {uploadingLogo ? 'Enviando...' : `Adicionar logotipo ${(config.logos ?? []).length}/10`}
+              {uploadingLogo ? 'Enviando...' : `Adicionar logotipo ${logosList.length}/10`}
             </button>
           </Section>
 
@@ -354,9 +362,9 @@ export function BrandPage() {
               onChange={handlePhotoUpload}
               style={{ display: 'none' }}
             />
-            {(config.photos ?? []).length > 0 && (
+            {photosList.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
-                {(config.photos ?? []).map((url) => (
+                {photosList.map((url) => (
                   <div key={url} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', width: '80px', height: '80px' }}>
                     <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     <button
@@ -376,15 +384,15 @@ export function BrandPage() {
             )}
             <button
               onClick={() => photoInputRef.current?.click()}
-              disabled={uploadingPhotos || (config.photos ?? []).length >= 20}
+              disabled={uploadingPhotos || photosList.length >= 20}
               style={{
                 padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
                 background: 'var(--bg-surface)', border: '1px solid var(--border)',
                 color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit',
-                opacity: uploadingPhotos || (config.photos ?? []).length >= 20 ? 0.5 : 1,
+                opacity: uploadingPhotos || photosList.length >= 20 ? 0.5 : 1,
               }}
             >
-              {uploadingPhotos ? 'Enviando...' : `Adicionar foto ${(config.photos ?? []).length}/20`}
+              {uploadingPhotos ? 'Enviando...' : `Adicionar foto ${photosList.length}/20`}
             </button>
           </Section>
 
@@ -395,7 +403,7 @@ export function BrandPage() {
               {analyzingRefs && <span style={{ color: 'var(--accent)', marginLeft: '8px' }}>Analisando...</span>}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
-              {(config.visual_references ?? []).map((url) => (
+              {visualReferencesList.map((url) => (
                 <div key={url} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1', border: '1px solid var(--border)' }}>
                   <img src={url} alt="Referência" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <button
@@ -407,10 +415,10 @@ export function BrandPage() {
                 </div>
               ))}
             </div>
-            {(config.visual_references ?? []).length < 5 && (
+            {visualReferencesList.length < 5 && (
               <label style={{ display: 'block', padding: '10px', borderRadius: '8px', border: '1px dashed var(--border)', textAlign: 'center', cursor: uploadingRefs ? 'default' : 'pointer', color: 'var(--text-muted)', fontSize: '12px', opacity: uploadingRefs ? 0.5 : 1 }}>
                 <input type="file" accept="image/*" multiple onChange={handleUploadRef} style={{ display: 'none' }} disabled={uploadingRefs} />
-                {uploadingRefs ? 'Enviando...' : `Adicionar referência (${(config.visual_references ?? []).length}/5)`}
+                {uploadingRefs ? 'Enviando...' : `Adicionar referência (${visualReferencesList.length}/5)`}
               </label>
             )}
             {config.visual_style && (
