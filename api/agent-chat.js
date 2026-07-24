@@ -468,30 +468,27 @@ DETECÇÃO DE MODO:
 - Para carrossel: não pergunte sobre rede social/formato — é sempre 4x5
 - Para carrossel: se não informou quantos slides, pergunte (opções: 3, 4, 5, 7, 10)
 
-DETECÇÃO DE TÍTULOS DE SLIDES — leia isso antes de escolher a engine:
+DETECÇÃO DE TÍTULOS DE SLIDES:
 SE o usuário especificou explicitamente o título ou conteúdo de cada slide individual (ex: "Slide 1: Introdução, Slide 2: Benefícios, Slide 3: CTA"):
 - OBRIGATORIAMENTE inclua o campo "slides" no JSON, com os títulos EXATOS do usuário
-- O campo "slides" se aplica a qualquer engine (standard OU premium) — não é exclusivo do premium
+- Isso vale independentemente de qual engine (Standard ou Premium) o usuário escolher depois na interface
 - Use as palavras EXATAS do usuário — não parafraseie, não resuma, não invente
 - slideCount deve ser igual ao número de itens no array "slides"
 SE o usuário NÃO especificou títulos individuais de slides → omita o campo "slides" completamente
 
 DECISÃO DE ENGINE:
-- Para mode "post": sempre retorne engine: "standard" — o usuário escolherá a qualidade de imagem na interface, não cabe ao agente decidir.
-- Para mode "carousel" com conteúdo visual (pessoas reais, produtos físicos, alimentos, ambientes realistas, atletas, imóveis): engine: "premium"
-- Para mode "carousel" com conteúdo tipográfico, educativo, informacional, dados ou institucional: engine: "standard"
-
-CARROSSEL PREMIUM (mode="carousel", engine="premium"): máximo 5 slides — GPT Image 2 gera cada slide individualmente e pode levar ~2 minutos. Se o usuário pediu mais de 5 slides para um tema fotorrealista, avise: "Carrossel premium usa GPT Image 2 — máximo 5 slides. Prefere 5 slides premium (fotorrealista) ou N slides padrão?" e aguarde confirmação antes de enviar ready:true.
+- Para mode "post" E para mode "carousel": SEMPRE retorne engine: "standard" — não cabe ao agente decidir qualidade de imagem. O usuário escolherá Standard ou Premium na interface antes de gerar, para post único e para carrossel igualmente. Nunca retorne engine: "premium".
+- O limite de 5 slides para carrossel premium (GPT Image 2 gera cada slide individualmente) é tratado pela interface quando o usuário escolhe Premium — o agente não precisa negociar isso.
 
 REGRA CRÍTICA DO CAMPO "prompt":
-- Para posts: o usuário escolherá a engine (padrão ou premium) na interface — escreva o prompt de forma que funcione para ambas. Se houver sujeito visual claro (pessoa, produto, prato, imóvel), use o formato "SUJEITO: [descrição visual detalhada — aparência, ambiente, ação]. OBJETIVO: [tema, rede social, tom]." Se o conteúdo for puramente tipográfico/informacional, use 1-2 frases com tema, rede social, tom e objetivo.
-- Para CARROSSEL PREMIUM: o campo "prompt" DEVE descrever o sujeito visual principal que aparecerá em todos os slides — ex: "SUJEITO: garrafa de azeite artesanal em cozinha italiana iluminada. OBJETIVO: diferenciais do produto, tom sofisticado." Os textos de cada slide são gerados automaticamente.
+- Para post OU carrossel: o usuário escolherá a engine (Standard ou Premium) na interface DEPOIS do agente responder — escreva o prompt de forma que funcione bem para ambas. Se houver sujeito visual claro (pessoa, produto, prato, imóvel, ambiente real), use o formato "SUJEITO: [descrição visual detalhada — aparência, ambiente, ação]. OBJETIVO: [tema, rede social, tom]." — isso garante fotorrealismo de qualidade se o usuário escolher Premium. Se o conteúdo for puramente tipográfico/informacional, use 1-2 frases com tema, rede social, tom e objetivo.
+- Para carrossel com sujeito visual, o "SUJEITO" descreve o elemento que aparece (com variações) em todos os slides.
 
 Exemplos:
   post com sujeito visual → "SUJEITO: Médico brasileiro com traços asiáticos, jaleco branco, consultório clean e bem iluminado, postura de confiança e competência. OBJETIVO: Post Instagram feed sobre medicina do esporte. Tom profissional e acolhedor."
   post tipográfico → "Post Instagram feed sobre os 3 pilares de uma gestão financeira saudável. Tom direto e educativo."
-  carousel standard → "Carrossel Instagram sobre os 5 erros de gestão financeira para MEIs. Tom didático, objetivo educar e ganhar seguidores."
-  carousel premium → "SUJEITO: garrafa de azeite artesanal em cozinha italiana iluminada. OBJETIVO: Carrossel Instagram sobre os diferenciais do produto, tom sofisticado."
+  carrossel tipográfico → "Carrossel Instagram sobre os 5 erros de gestão financeira para MEIs. Tom didático, objetivo educar e ganhar seguidores."
+  carrossel com sujeito visual → "SUJEITO: garrafa de azeite artesanal em cozinha italiana iluminada. OBJETIVO: Carrossel Instagram sobre os diferenciais do produto, tom sofisticado."
 
 ---
 
@@ -529,35 +526,23 @@ OU (carrossel — conteúdo tipográfico, educativo, informativo — sem título
   "engine": "standard",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
-OU (carrossel standard — quando o usuário especificou os títulos de cada slide explicitamente):
-{
-  "ready": true,
-  "mode": "carousel",
-  "slideCount": 3,
-  "prompt": "tema e objetivo em 1-2 frases",
-  "engine": "standard",
-  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir",
-  "slides": [
-    {"title": "título exato do slide 1 como o usuário disse", "body": "subtítulo ou corpo opcional"},
-    {"title": "título exato do slide 2", "body": "corpo opcional"},
-    {"title": "título exato do slide 3", "body": "corpo opcional"}
-  ]
-}
-OU (carrossel — pessoas, produtos físicos, pratos, ambientes realistas — max 5 slides — sem títulos especificados):
+OU (carrossel com sujeito visual — pessoas reais, produtos físicos, pratos, ambientes realistas — sem títulos especificados; engine é sempre "standard", o usuário escolherá Standard ou Premium na interface):
 {
   "ready": true,
   "mode": "carousel",
   "slideCount": 5,
   "prompt": "SUJEITO: [elemento visual principal que aparece em todos os slides]. OBJETIVO: [tema e rede social].",
-  "engine": "premium"
+  "engine": "standard",
+  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
-OU (carrossel premium — quando o usuário especificou os títulos de cada slide explicitamente):
+OU (carrossel — quando o usuário especificou os títulos de cada slide explicitamente, com ou sem sujeito visual):
 {
   "ready": true,
   "mode": "carousel",
   "slideCount": 3,
-  "prompt": "SUJEITO: [elemento visual principal]. OBJETIVO: [tema e rede social].",
-  "engine": "premium",
+  "prompt": "tema e objetivo em 1-2 frases, ou formato SUJEITO+OBJETIVO se houver elemento visual",
+  "engine": "standard",
+  "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir",
   "slides": [
     {"title": "título exato do slide 1 como o usuário disse", "body": "subtítulo ou corpo opcional"},
     {"title": "título exato do slide 2", "body": "corpo opcional"},
@@ -567,7 +552,7 @@ OU (carrossel premium — quando o usuário especificou os títulos de cada slid
 
 Formatos válidos: "1x1", "4x5", "9x16", "16x9"
 slideCount válidos: 3, 4, 5, 7, 10
-engine válidos: "standard" ou "premium"`
+engine: sempre "standard" — nunca retorne "premium", a escolha é do usuário na interface`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {

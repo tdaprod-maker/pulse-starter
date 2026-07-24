@@ -10,6 +10,15 @@ import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
 import { validateSlides, validatePremiumSlides } from '../services/carouselValidation'
 
+interface PendingGeneration {
+  prompt: string
+  format?: string
+  mode: 'post' | 'carousel'
+  slideCount?: number
+  templateId?: string
+  slides?: { title: string; body?: string }[]
+}
+
 export interface ActivePost {
   templateBase: string
   format: string
@@ -61,7 +70,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<{ stop(): void } | null>(null)
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null)
-  const [pendingPhotoAsk, setPendingPhotoAsk] = useState<{ prompt: string; format?: string } | null>(null)
+  const [pendingPhotoAsk, setPendingPhotoAsk] = useState<PendingGeneration | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -76,10 +85,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (pendingPhotoAsk) {
         const p = pendingPhotoAsk
         setPendingPhotoAsk(null)
-        setPendingEngineChoice({ prompt: p.prompt, format: p.format })
+        setPendingEngineChoice(p)
         setMessages(prev => [...prev, {
           role: 'agent',
-          content: '📷 Foto recebida! Vou usar ela como base do post. Qual qualidade de imagem você prefere?',
+          content: p.mode === 'carousel'
+            ? '📷 Foto recebida! Vou usar ela como referência visual nos slides. Qual qualidade de imagem você prefere?'
+            : '📷 Foto recebida! Vou usar ela como base do post. Qual qualidade de imagem você prefere?',
         }])
       } else if (activePost || hasGeneratedPost) {
         // Já existe um post ativo (modo edição) — aplica a foto direto como novo fundo,
@@ -140,9 +151,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [generating, setGenerating] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [pendingPremium, setPendingPremium] = useState<{ prompt: string; format?: string } | null>(null)
-  const [pendingPremiumCarousel, setPendingPremiumCarousel] = useState<{ prompt: string; slideCount: number; templateId?: string; slides?: { title: string; body?: string }[] } | null>(null)
   const [pendingAmbiguous, setPendingAmbiguous] = useState<AgentResponse | null>(null)
-  const [pendingEngineChoice, setPendingEngineChoice] = useState<{ prompt: string; format?: string } | null>(null)
+  const [pendingEngineChoice, setPendingEngineChoice] = useState<PendingGeneration | null>(null)
   const [hasGeneratedPost, setHasGeneratedPost] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -747,7 +757,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       const imageResults = await Promise.allSettled(
         agentSlides.map(slide =>
-          slide.imagePrompt?.trim() ? generateImage(slide.imagePrompt) : Promise.resolve('')
+          slide.imagePrompt?.trim() ? generateImage(slide.imagePrompt, undefined, undefined, uploadedPhoto ?? undefined) : Promise.resolve('')
         )
       )
 
@@ -762,6 +772,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (debit.success) notifyBalanceUpdate()
 
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, resolvedTemplateId)
+      if (uploadedPhoto) setUploadedPhoto(null)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel com ${slideCount} slides gerado! Use as setas para navegar entre os slides.`
@@ -857,6 +868,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 size: '1024x1536',
                 slideTitle: presetSlides?.[i]?.title ?? slide.title,
                 slideBody: presetSlides?.[i]?.body ?? slide.body ?? '',
+                ...(uploadedPhoto ? { visualReferences: [uploadedPhoto] } : {}),
               }),
               signal: controller.signal,
             })
@@ -885,6 +897,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (debit.success) notifyBalanceUpdate()
 
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, undefined, 'premium')
+      if (uploadedPhoto) setUploadedPhoto(null)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel premium com ${cappedCount} slides gerado! Cada imagem foi criada com GPT Image 2.`,
@@ -1089,22 +1102,29 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }
 
       if (response.ready && response.prompt) {
-        if (response.mode === 'carousel' && response.engine === 'premium') {
-          const slideCount = Math.min(response.slideCount ?? 5, 5)
+        if (response.mode === 'carousel') {
+          const slideCount = response.slideCount ?? 5
           const userSlides = response.slidesAutoGenerated ? undefined : response.slides
-          setPendingPremiumCarousel({ prompt: response.prompt, slideCount, templateId: response.templateId, slides: userSlides })
-          setMessages(prev => [...prev, {
-            role: 'agent',
-            content: `Esse carrossel usa GPT Image 2 — cada slide é uma imagem fotorrealista. Custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * slideCount} pulses (4 × ${slideCount} slides) e pode levar até ${slideCount * 30}s. Confirmar?`,
-          }])
-        } else if (response.mode === 'carousel') {
-          onGenerating?.()
-          const userSlides = response.slidesAutoGenerated ? undefined : response.slides
-          await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId, userSlides)
+          const pending: PendingGeneration = { prompt: response.prompt, mode: 'carousel', slideCount, templateId: response.templateId, slides: userSlides }
+          if (!uploadedPhoto) {
+            // Antes de gerar, pergunta se o usuário tem uma foto para usar como referência nos slides
+            setPendingPhotoAsk(pending)
+            setMessages(prev => [...prev, {
+              role: 'agent',
+              content: 'Você tem uma foto para usar como referência visual nos slides? Pode enviar agora ou deixo a IA criar as imagens.',
+            }])
+          } else {
+            // Carrossel — usuário sempre escolhe a engine, igual ao post único
+            setPendingEngineChoice(pending)
+            setMessages(prev => [...prev, {
+              role: 'agent',
+              content: 'Vou usar a foto que você enviou como referência nos slides. Qual qualidade de imagem você prefere para o carrossel?',
+            }])
+          }
         } else if (!uploadedPhoto) {
           // Antes de gerar, pergunta se o usuário tem uma foto para usar
           console.log('[handleSend] setPendingPhotoAsk | prompt:', response.prompt?.slice(0, 60), '| format:', response.format)
-          setPendingPhotoAsk({ prompt: response.prompt, format: response.format })
+          setPendingPhotoAsk({ prompt: response.prompt, format: response.format, mode: 'post' })
           setMessages(prev => [...prev, {
             role: 'agent',
             content: 'Você tem uma foto para usar? Pode enviar agora ou deixo a IA criar uma.',
@@ -1112,7 +1132,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         } else {
           // Post — usuário sempre escolhe a engine
           console.log('[handleSend] setPendingEngineChoice | prompt:', response.prompt?.slice(0, 60), '| format:', response.format)
-          setPendingEngineChoice({ prompt: response.prompt, format: response.format })
+          setPendingEngineChoice({ prompt: response.prompt, format: response.format, mode: 'post' })
           setMessages(prev => [...prev, {
             role: 'agent',
             content: 'Vou usar a foto que você enviou como base da imagem. Qual qualidade de imagem você prefere?',
@@ -1146,7 +1166,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setCollapsed(false)
     onCollapsedChange?.(false)
     setPendingPremium(null)
-    setPendingPremiumCarousel(null)
     setPendingRegenImage(null)
     setPendingAmbiguous(null)
     setPendingEngineChoice(null)
@@ -1330,7 +1349,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               onClick={() => {
                 const p = pendingAmbiguous
                 setPendingAmbiguous(null)
-                setPendingEngineChoice({ prompt: p.prompt!, format: p.format })
+                setPendingEngineChoice({ prompt: p.prompt!, format: p.format, mode: 'post' })
                 setMessages(prev => [...prev, {
                   role: 'agent',
                   content: 'Qual qualidade de imagem você prefere?',
@@ -1364,10 +1383,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               onClick={() => {
                 const p = pendingPhotoAsk
                 setPendingPhotoAsk(null)
-                setPendingEngineChoice({ prompt: p.prompt, format: p.format })
+                setPendingEngineChoice(p)
                 setMessages(prev => [...prev, {
                   role: 'agent',
-                  content: 'Sem problema, deixo a IA criar a imagem. Qual qualidade de imagem você prefere?',
+                  content: p.mode === 'carousel'
+                    ? 'Sem problema, deixo a IA criar as imagens dos slides. Qual qualidade de imagem você prefere?'
+                    : 'Sem problema, deixo a IA criar a imagem. Qual qualidade de imagem você prefere?',
                 }])
               }}
               style={{
@@ -1381,79 +1402,62 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             </button>
           </div>
         )}
-        {pendingEngineChoice && !loading && !generating && (
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => {
-                const p = pendingEngineChoice
-                setPendingEngineChoice(null)
-                onGenerating?.('standard')
-                setMessages(prev => [...prev, { role: 'agent', content: 'Gerando seu post...' }])
-                generate(p.prompt, p.format)
-              }}
-              style={{
-                padding: '7px 14px', borderRadius: '8px', border: 'none',
-                background: 'var(--accent)', color: 'white',
-                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              Standard · 4 pulses
-            </button>
-            <button
-              onClick={() => {
-                const p = pendingEngineChoice
-                setPendingEngineChoice(null)
-                onGenerating?.('premium')
-                generatePremium(p.prompt, p.format)
-              }}
-              style={{
-                padding: '7px 14px', borderRadius: '8px',
-                border: '1px solid var(--accent)', background: 'transparent',
-                color: 'var(--accent)', fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              Premium · 8 pulses
-            </button>
-          </div>
-        )}
-        {pendingPremiumCarousel && !loading && !generating && (
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
-            <button
-              onClick={() => {
-                const pending = pendingPremiumCarousel
-                setPendingPremiumCarousel(null)
-                onGenerating?.()
-                generatePremiumCarousel(pending.prompt, pending.slideCount, pending.templateId, pending.slides)
-              }}
-              style={{
-                padding: '7px 14px', borderRadius: '8px', border: 'none',
-                background: 'var(--accent)', color: 'white',
-                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              Confirmar premium · {PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * (pendingPremiumCarousel.slideCount)} pulses
-            </button>
-            <button
-              onClick={() => {
-                const pending = pendingPremiumCarousel
-                setPendingPremiumCarousel(null)
-                onGenerating?.()
-                generateCarousel(pending.prompt, pending.slideCount, pending.templateId, pending.slides)
-              }}
-              style={{
-                padding: '7px 14px', borderRadius: '8px',
-                border: '1px solid var(--border)', background: 'transparent',
-                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              Usar padrão · {PULSE_COSTS.CAROUSEL_SLIDE * (pendingPremiumCarousel.slideCount)} pulses
-            </button>
-          </div>
-        )}
+        {pendingEngineChoice && !loading && !generating && (() => {
+          const p = pendingEngineChoice
+          const isCarousel = p.mode === 'carousel'
+          const slideCount = p.slideCount ?? 5
+          const cappedPremiumCount = Math.min(slideCount, 5)
+          const standardLabel = isCarousel
+            ? `Standard · ${slideCount} slides · ${PULSE_COSTS.CAROUSEL_SLIDE * slideCount} pulses`
+            : 'Standard · 4 pulses'
+          const premiumLabel = isCarousel
+            ? `Premium · ${cappedPremiumCount} slide${cappedPremiumCount > 1 ? 's' : ''}${slideCount > 5 ? ' (máx.)' : ''} · ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedPremiumCount} pulses`
+            : 'Premium · 8 pulses'
+          return (
+            <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => {
+                  setPendingEngineChoice(null)
+                  onGenerating?.('standard')
+                  if (isCarousel) {
+                    setMessages(prev => [...prev, { role: 'agent', content: `Gerando ${slideCount} slides...` }])
+                    generateCarousel(p.prompt, slideCount, p.templateId, p.slides)
+                  } else {
+                    setMessages(prev => [...prev, { role: 'agent', content: 'Gerando seu post...' }])
+                    generate(p.prompt, p.format)
+                  }
+                }}
+                style={{
+                  padding: '7px 14px', borderRadius: '8px', border: 'none',
+                  background: 'var(--accent)', color: 'white',
+                  fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                {standardLabel}
+              </button>
+              <button
+                onClick={() => {
+                  setPendingEngineChoice(null)
+                  onGenerating?.('premium')
+                  if (isCarousel) {
+                    generatePremiumCarousel(p.prompt, cappedPremiumCount, p.templateId, p.slides)
+                  } else {
+                    generatePremium(p.prompt, p.format)
+                  }
+                }}
+                style={{
+                  padding: '7px 14px', borderRadius: '8px',
+                  border: '1px solid var(--accent)', background: 'transparent',
+                  color: 'var(--accent)', fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                {premiumLabel}
+              </button>
+            </div>
+          )
+        })()}
         {pendingPremium && !loading && !generating && (
           <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
             <button

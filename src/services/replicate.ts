@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { debitToken, PULSE_COSTS, notifyBalanceUpdate } from './tokens'
 
-export async function generateImage(imagePrompt: string, cost?: number, segment?: string): Promise<string> {
+export async function generateImage(imagePrompt: string, cost?: number, segment?: string, referenceImage?: string): Promise<string> {
   const { data: authData } = await supabase.auth.getSession()
   const email = authData.session?.user?.email ?? ''
   if (email) {
@@ -16,7 +16,7 @@ export async function generateImage(imagePrompt: string, cost?: number, segment?
   const res = await fetch('/api/generate-image-ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: imagePrompt, segment }),
+    body: JSON.stringify({ prompt: imagePrompt, segment, ...(referenceImage ? { referenceImage } : {}) }),
   })
   if (!res.ok) throw new Error(`Erro ao gerar imagem: ${res.status}`)
   const data = await res.json()
