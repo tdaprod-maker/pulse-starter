@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   const PERSON_KEYWORDS = /\b(person|people|man|woman|men|women|girl|boy|human|face|portrait|model|athlete|doctor|nurse|worker|team|crowd|couple|family|child|baby|adult|professional|businessman|businesswoman|employee|staff|customer|client|pessoa|pessoas|homem|mulher|homens|mulheres|menina|menino|rosto|retrato|atleta|médico|enfermeiro|trabalhador|equipe|família|criança|bebê|adulto)\b/i
 
   const basePrompt = PERSON_KEYWORDS.test(prompt)
-    ? `${prompt}, anatomically correct, consistent gender throughout, complete body, professional photography`
+    ? `${prompt}, natural proportions, professional photography`
     : prompt
 
   const visualStyleDirective = styleForSegment(segment)
@@ -145,7 +145,8 @@ COMPOSITION: One dominant subject. Generous white space. Text placed in lower th
     if (!response.ok) {
       const errorText = await response.text()
       console.error('[DALL-E] status:', response.status, 'body:', errorText)
-      return res.status(500).json({ error: `OpenAI API error: ${errorText}` })
+      const status = response.status >= 400 && response.status < 500 ? response.status : 502
+      return res.status(status).json({ error: `OpenAI API error: ${errorText}` })
     }
 
     const data = await response.json()

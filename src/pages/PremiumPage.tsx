@@ -4,6 +4,7 @@ import { generatePremiumCaption, reviewPost, type PostReview, breakCarouselIntoS
 import { debitToken, notifyBalanceUpdate } from '../services/tokens'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
+import { validatePremiumSlides } from '../services/carouselValidation'
 
 const SLIDE_OPTIONS = [3, 4, 5, 6, 7]
 const PULSE_SINGLE = 4
@@ -24,7 +25,7 @@ export function PremiumPage() {
   const [mode, setMode] = useState<Mode>('single')
   const [slideCount, setSlideCount] = useState(3)
   const [slides, setSlides] = useState<Slide[]>([])
-  const slidesList = Array.isArray(slides) ? slides : []
+  const slidesList = validatePremiumSlides<Slide>(slides)
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [currentStep, setCurrentStep] = useState(0)
   const [totalSteps, setTotalSteps] = useState(0)
@@ -74,7 +75,7 @@ export function PremiumPage() {
       const saved = sessionStorage.getItem('premium_state')
       if (saved) {
         const { slides: s, caption: c, status: st } = JSON.parse(saved)
-        const restoredSlides: Slide[] = Array.isArray(s) ? s : []
+        const restoredSlides = validatePremiumSlides<Slide>(s)
         if (restoredSlides.length) { setSlides(restoredSlides); setStatus(st ?? 'done') }
         if (c) setCaption(c)
       }

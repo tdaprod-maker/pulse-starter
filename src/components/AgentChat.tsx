@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
-import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type AgentResponse, type CarouselSlide, type PremiumSlide, type EditContext, type EditAction } from '../services/gemini'
+import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type AgentResponse, type PremiumSlide, type SlideWithImage, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { overlayLogoOnImage } from '../services/logoOverlay'
 import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
+import { validateSlides, validatePremiumSlides } from '../services/carouselValidation'
 
 export interface ActivePost {
   templateBase: string
@@ -35,7 +36,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
   onReset?: () => void
-  onCarouselGenerated?: (slides: (CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => void
+  onCarouselGenerated?: (slides: SlideWithImage[], caption: string, templateId?: string, engine?: string) => void
   onPremiumGenerated?: (slides: PremiumSlide[], caption: { instagram: string; linkedin: string; hashtags: string } | null) => void
   onActivateEditMode?: () => void
   activePost?: ActivePost
@@ -727,10 +728,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const resolvedTemplateId = lockedBase ?? templateId ?? 'editorial-card'
 
       const carouselData = await generateCarouselContent(prompt, slideCount, brandContext, resolvedTemplateId)
-      const agentSlides: CarouselSlide[] = Array.isArray(carouselData.slides) ? carouselData.slides : []
+      const agentSlides = validateSlides(carouselData.slides)
 
       // Gera imagens em paralelo via FAL.ai
-      const slidesWithImages: (CarouselSlide & { imageUrl: string })[] = []
+      const slidesWithImages: SlideWithImage[] = []
       setMessages(prev => {
         const msgs = [...prev]
         msgs[msgs.length - 1] = { role: 'agent', content: `Gerando imagens dos ${agentSlides.length} slides...` }
@@ -751,7 +752,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.CAROUSEL_SLIDE * slideCount)
       if (debit.success) notifyBalanceUpdate()
 
-      onCarouselGenerated?.(Array.isArray(slidesWithImages) ? slidesWithImages : [], carouselData.caption, resolvedTemplateId)
+      onCarouselGenerated?.(slidesWithImages, carouselData.caption, resolvedTemplateId)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel com ${slideCount} slides gerado! Use as setas para navegar entre os slides.`
@@ -801,7 +802,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       setMessages(prev => [...prev, { role: 'agent', content: `Planejando ${cappedCount} slides...` }])
 
       const carouselData = await generateCarouselContent(prompt, cappedCount, brandContext, resolvedTemplateId)
-      const agentSlides: CarouselSlide[] = Array.isArray(carouselData.slides) ? carouselData.slides : []
+      const agentSlides = validateSlides(carouselData.slides)
 
       const styleContext = [
         brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
@@ -811,7 +812,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         brandCtx?.color_primary ? `Primary color: ${brandCtx.color_primary}` : '',
       ].filter(Boolean).join('. ')
 
-      const slidesWithImages: (CarouselSlide & { imageUrl: string })[] = []
+      const slidesWithImages: SlideWithImage[] = []
 
       for (let i = 0; i < agentSlides.length; i++) {
         const slide = agentSlides[i]
@@ -874,7 +875,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount)
       if (debit.success) notifyBalanceUpdate()
 
-      onCarouselGenerated?.(Array.isArray(slidesWithImages) ? slidesWithImages : [], carouselData.caption, undefined, 'premium')
+      onCarouselGenerated?.(slidesWithImages, carouselData.caption, undefined, 'premium')
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel premium com ${cappedCount} slides gerado! Cada imagem foi criada com GPT Image 2.`,
@@ -903,7 +904,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const isRemoveLogo = /\b(remov[ae]?r?|tira[r]?|retira[r]?|exclu[ií]r?|sem)\b.*\b(logo|logotipo)\b/i.test(msgText) || /\b(logo|logotipo)\b.*\b(remov[ae]?r?|tira[r]?|retira[r]?)\b/i.test(msgText)
       const isLogoRequest = /logo|logotipo/i.test(msgText)
       const userMsg: AgentMessage = { role: 'user', content: msgText }
-      const premiumSlidesList = Array.isArray(premiumSlides) ? premiumSlides : []
+      const premiumSlidesList = validatePremiumSlides<PremiumSlide>(premiumSlides)
       if (!isLogoRequest || !premiumSlidesList.length || !onPremiumSlidesUpdate) {
         setMessages(prev => [...prev, userMsg, {
           role: 'agent',

@@ -3,6 +3,7 @@ import type { PremiumSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
+import { validatePremiumSlides } from '../services/carouselValidation'
 
 interface Props {
   slides: PremiumSlide[]
@@ -33,7 +34,7 @@ const SIZE_OPTIONS: { value: LogoSize; label: string }[] = [
 ]
 
 export function PremiumResultViewer({ slides, caption: initialCaption, onClose }: Props) {
-  const slidesList = Array.isArray(slides) ? slides : []
+  const slidesList = validatePremiumSlides<PremiumSlide>(slides)
   const [caption, setCaption] = useState(initialCaption)
 
   // Logo overlay: os slides originais (sem logo) ficam preservados para permitir

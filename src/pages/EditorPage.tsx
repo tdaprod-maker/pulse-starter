@@ -12,13 +12,14 @@ import { AgentChat } from '../components/AgentChat'
 import type { ActivePost } from '../components/AgentChat'
 import { CarouselViewer } from '../components/CarouselViewer'
 import { PremiumResultViewer } from '../components/PremiumResultViewer'
-import type { PremiumSlide } from '../services/gemini'
+import type { PremiumSlide, SlideWithImage } from '../services/gemini'
 import { CaptionPanel } from '../components/CaptionPanel'
 import { PostReviewer } from '../components/PostReviewer'
 import { TextEditor } from '../components/TextEditor'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
+import { validateSlides } from '../services/carouselValidation'
 
 interface EditingState {
   el: CanvasElement
@@ -77,7 +78,7 @@ export function EditorPage() {
     const mainRef = useRef<HTMLElement>(null)
   const [containerW, setContainerW] = useState(800)
   const [containerH, setContainerH] = useState(600)
-  const [carouselSlides, setCarouselSlides] = useState<(import('../services/gemini').CarouselSlide & { imageUrl: string })[] | null>(null)
+  const [carouselSlides, setCarouselSlides] = useState<SlideWithImage[] | null>(null)
   const [carouselCaption, setCarouselCaption] = useState('')
   const [carouselTemplateId, setCarouselTemplateId] = useState<string | undefined>(undefined)
   const [carouselCurrentSlide, setCarouselCurrentSlide] = useState(0)
@@ -406,9 +407,8 @@ export function EditorPage() {
               setPremiumCaption(null)
               setEditModeActive(false)
             }}
-            onCarouselGenerated={(slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => {
-              const slidesList = Array.isArray(slides) ? slides : []
-              setCarouselSlides(slidesList)
+            onCarouselGenerated={(slides: SlideWithImage[], caption: string, templateId?: string, engine?: string) => {
+              setCarouselSlides(validateSlides<SlideWithImage>(slides))
               setCarouselCaption(caption)
               setCarouselTemplateId(templateId)
               setCarouselEngine(engine)

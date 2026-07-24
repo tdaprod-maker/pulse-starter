@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { validateSlides, parseJsonArray } from '../services/carouselValidation'
 
 interface CarouselRecord {
   id: string
@@ -12,15 +13,6 @@ interface CarouselRecord {
   caption: string
   settings: string
   created_at: string
-}
-
-function parseJsonArray<T>(raw: string): T[] {
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
 }
 
 export function CarouselLibraryPage() {
@@ -198,7 +190,7 @@ export function CarouselLibraryPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
             {carousels.map(carousel => {
               const images = parseJsonArray<string>(carousel.slide_images)
-              const slides = parseJsonArray<{ title: string }>(carousel.slides)
+              const slides = validateSlides(carousel.slides)
               const isSelected = selected.has(carousel.id)
               return (
                 <div

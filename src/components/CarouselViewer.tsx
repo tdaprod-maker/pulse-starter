@@ -6,12 +6,11 @@ import { useTheme } from '../contexts/ThemeContext'
 import { CanvasEngine } from '../engine/CanvasEngine'
 import { exportToPng, buildFileName } from '../export/exportUtils'
 import JSZip from 'jszip'
-import type { CarouselSlide } from '../services/gemini'
+import type { SlideWithImage } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { calcAutoScale } from '../engine/CanvasEngine'
-
-type SlideWithImage = CarouselSlide & { imageUrl: string }
+import { validateSlides } from '../services/carouselValidation'
 
 interface CarouselViewerProps {
   slides: SlideWithImage[]
@@ -36,7 +35,7 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 export function CarouselViewer({ slides, caption, templateId, engine, onClose, onSlideChange, onSelectElement }: CarouselViewerProps) {
-  const slidesList = Array.isArray(slides) ? slides : []
+  const slidesList = validateSlides<SlideWithImage>(slides)
   const [current, setCurrent] = useState(0)
   const [copiedCaption, setCopiedCaption] = useState(false)
   const [exporting, setExporting] = useState(false)

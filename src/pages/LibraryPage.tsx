@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { loadPosts } from '../services/brandKit'
 import type { PostRecord } from '../services/brandKit'
 import { useStore } from '../state/useStore'
+import { validateSlides, parseJsonArray } from '../services/carouselValidation'
 
 function LazyImage({ src, alt, style }: { src: string; alt: string; style?: React.CSSProperties }) {
   const [active, setActive] = useState(false)
@@ -56,15 +57,6 @@ interface CarouselRecord {
   caption: string
   settings: string
   created_at: string
-}
-
-function parseJsonArray<T>(raw: string): T[] {
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
 }
 
 type LibraryItem =
@@ -352,7 +344,7 @@ export function LibraryPage() {
               // Carousel card
               const carousel = item.data
               const images = parseJsonArray<string>(carousel.slide_images)
-              const slides = parseJsonArray<{ title: string }>(carousel.slides)
+              const slides = validateSlides(carousel.slides)
               const isPremiumCarousel = carousel.template_id === 'premium-carousel'
               return (
                 <div

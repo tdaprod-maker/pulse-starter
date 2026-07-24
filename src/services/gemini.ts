@@ -47,6 +47,9 @@ export interface CarouselResponse {
   caption: string
 }
 
+/** CarouselSlide já com a imagem gerada — formato usado no viewer e nos callbacks de geração. */
+export type SlideWithImage = CarouselSlide & { imageUrl: string }
+
 export async function generateCarouselContent(userInput: string, slideCount: number, brand?: BrandContext, templateId?: string): Promise<CarouselResponse> {
   const res = await fetch('/api/generate-carousel', {
     method: 'POST',
@@ -442,6 +445,7 @@ export interface AgentMessage {
 export interface PremiumSlide {
   image: string
   label: string
+  aspectRatio?: string
 }
 
 export interface EditContext {

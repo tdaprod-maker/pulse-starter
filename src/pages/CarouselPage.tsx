@@ -8,6 +8,7 @@ import { generateImage } from '../services/replicate'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { PULSE_COSTS } from '../services/tokens'
+import { validateSlides, parseJsonArray } from '../services/carouselValidation'
 
 const SLIDE_COUNTS = [3, 4, 5, 7, 10]
 
@@ -298,7 +299,7 @@ export function CarouselPage() {
   const slideImageInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [slides, setSlides] = useState<CarouselSlide[]>([])
-  const slidesList = Array.isArray(slides) ? slides : []
+  const slidesList = validateSlides<CarouselSlide>(slides)
   const [slideImages, setSlideImages] = useState<string[]>([])
   const [caption, setCaption] = useState('')
   const [copied, setCopied] = useState(false)
@@ -473,11 +474,9 @@ export function CarouselPage() {
     if (!restore) return
     try {
       const data = JSON.parse(restore)
-      const parsedSlidesRaw = JSON.parse(data.slides)
-      const parsedImagesRaw = JSON.parse(data.slide_images)
       const parsedSettings = data.settings ? JSON.parse(data.settings) : null
-      const parsedSlides: CarouselSlide[] = Array.isArray(parsedSlidesRaw) ? parsedSlidesRaw : []
-      const parsedImages: string[] = Array.isArray(parsedImagesRaw) ? parsedImagesRaw : []
+      const parsedSlides = validateSlides<CarouselSlide>(data.slides)
+      const parsedImages = parseJsonArray<string>(data.slide_images)
 
       setSlides(parsedSlides)
       setSlideImages(parsedImages)
@@ -516,7 +515,7 @@ export function CarouselPage() {
     setCaption('')
     try {
       const result = await generateCarouselContent(prompt, slideCount, brandContext)
-      const resultSlides: CarouselSlide[] = Array.isArray(result.slides) ? result.slides : []
+      const resultSlides = validateSlides<CarouselSlide>(result.slides)
       setSlides(resultSlides)
       setCaption(result.caption)
       const images: string[] = []
@@ -778,7 +777,7 @@ export function CarouselPage() {
   }
 
   function updateSlide(index: number, field: 'title' | 'body', value: string) {
-    setSlides(prev => (Array.isArray(prev) ? prev : []).map((s, i) => i === index ? { ...s, [field]: value } : s))
+    setSlides(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
 
   const isLoading = status === 'loading'
