@@ -703,7 +703,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
-  async function generateCarousel(prompt: string, slideCount: number, templateId?: string) {
+  async function generateCarousel(prompt: string, slideCount: number, templateId?: string, presetSlides?: { title: string; body?: string }[]) {
     setGenerating(true)
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -728,7 +728,14 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const resolvedTemplateId = lockedBase ?? templateId ?? 'editorial-card'
 
       const carouselData = await generateCarouselContent(prompt, slideCount, brandContext, resolvedTemplateId)
-      const agentSlides = validateSlides(carouselData.slides)
+      const agentSlides = validateSlides(carouselData.slides).map((slide, i) => {
+        const preset = presetSlides?.[i]
+        if (!preset) return slide
+        const texts = slide.texts ? { ...slide.texts } : undefined
+        if (texts && 'title' in texts) texts.title = preset.title
+        if (texts && preset.body !== undefined && 'body' in texts) texts.body = preset.body
+        return { ...slide, title: preset.title, body: preset.body ?? slide.body, texts }
+      })
 
       // Gera imagens em paralelo via FAL.ai
       const slidesWithImages: SlideWithImage[] = []
@@ -1091,7 +1098,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           }])
         } else if (response.mode === 'carousel') {
           onGenerating?.()
-          await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId)
+          await generateCarousel(response.prompt, response.slideCount ?? 5, response.templateId, response.slides)
         } else if (!uploadedPhoto) {
           // Antes de gerar, pergunta se o usuário tem uma foto para usar
           console.log('[handleSend] setPendingPhotoAsk | prompt:', response.prompt?.slice(0, 60), '| format:', response.format)
@@ -1432,7 +1439,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 const pending = pendingPremiumCarousel
                 setPendingPremiumCarousel(null)
                 onGenerating?.()
-                generateCarousel(pending.prompt, pending.slideCount, pending.templateId)
+                generateCarousel(pending.prompt, pending.slideCount, pending.templateId, pending.slides)
               }}
               style={{
                 padding: '7px 14px', borderRadius: '8px',
