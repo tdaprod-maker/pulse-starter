@@ -472,9 +472,11 @@ export function CarouselPage() {
     if (!restore) return
     try {
       const data = JSON.parse(restore)
-      const parsedSlides = JSON.parse(data.slides)
-      const parsedImages = JSON.parse(data.slide_images)
+      const parsedSlidesRaw = JSON.parse(data.slides)
+      const parsedImagesRaw = JSON.parse(data.slide_images)
       const parsedSettings = data.settings ? JSON.parse(data.settings) : null
+      const parsedSlides: CarouselSlide[] = Array.isArray(parsedSlidesRaw) ? parsedSlidesRaw : []
+      const parsedImages: string[] = Array.isArray(parsedImagesRaw) ? parsedImagesRaw : []
 
       setSlides(parsedSlides)
       setSlideImages(parsedImages)
@@ -513,10 +515,11 @@ export function CarouselPage() {
     setCaption('')
     try {
       const result = await generateCarouselContent(prompt, slideCount, brandContext)
-      setSlides(result.slides)
+      const resultSlides: CarouselSlide[] = Array.isArray(result.slides) ? result.slides : []
+      setSlides(resultSlides)
       setCaption(result.caption)
       const images: string[] = []
-      for (const s of result.slides) {
+      for (const s of resultSlides) {
         try {
           const url = await generateImage(s.imagePrompt, PULSE_COSTS.CAROUSEL_SLIDE)
           images.push(url)
