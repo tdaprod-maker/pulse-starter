@@ -407,7 +407,8 @@ export function EditorPage() {
               setEditModeActive(false)
             }}
             onCarouselGenerated={(slides: (import('../services/gemini').CarouselSlide & { imageUrl: string })[], caption: string, templateId?: string, engine?: string) => {
-              setCarouselSlides(slides)
+              const slidesList = Array.isArray(slides) ? slides : []
+              setCarouselSlides(slidesList)
               setCarouselCaption(caption)
               setCarouselTemplateId(templateId)
               setCarouselEngine(engine)

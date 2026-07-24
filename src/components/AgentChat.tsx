@@ -525,7 +525,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.POST)
       if (debit.success) notifyBalanceUpdate()
 
-      onGenerated?.()
       setHasGeneratedPost(true)
       setMessages(prev => [...prev, {
         role: 'agent',
@@ -540,6 +539,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }])
     } finally {
       setGenerating(false)
+      onGenerated?.()
     }
   }
 
@@ -683,7 +683,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       console.log('[generatePremium] chamando onPremiumGenerated com', slides.length, 'slides')
       onPremiumGenerated?.(slides, generatedCaption)
-      onGenerated?.()
       setHasGeneratedPost(true)
       if (uploadedPhoto) setUploadedPhoto(null)
       setMessages(prev => [...prev, {
@@ -699,6 +698,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }])
     } finally {
       setGenerating(false)
+      onGenerated?.()
     }
   }
 
@@ -750,8 +750,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.CAROUSEL_SLIDE * slideCount)
       if (debit.success) notifyBalanceUpdate()
 
-      onCarouselGenerated?.(slidesWithImages, carouselData.caption, resolvedTemplateId)
-      onGenerated?.()
+      onCarouselGenerated?.(Array.isArray(slidesWithImages) ? slidesWithImages : [], carouselData.caption, resolvedTemplateId)
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel com ${slideCount} slides gerado! Use as setas para navegar entre os slides.`
@@ -762,6 +761,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao gerar o carrossel. Tente novamente.' }])
     } finally {
       setGenerating(false)
+      onGenerated?.()
     }
   }
 
@@ -872,8 +872,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount)
       if (debit.success) notifyBalanceUpdate()
 
-      onCarouselGenerated?.(slidesWithImages, carouselData.caption, undefined, 'premium')
-      onGenerated?.()
+      onCarouselGenerated?.(Array.isArray(slidesWithImages) ? slidesWithImages : [], carouselData.caption, undefined, 'premium')
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel premium com ${cappedCount} slides gerado! Cada imagem foi criada com GPT Image 2.`,
@@ -887,6 +886,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }])
     } finally {
       setGenerating(false)
+      onGenerated?.()
     }
   }
 

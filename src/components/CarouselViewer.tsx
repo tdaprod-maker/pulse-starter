@@ -36,6 +36,7 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 export function CarouselViewer({ slides, caption, templateId, engine, onClose, onSlideChange, onSelectElement }: CarouselViewerProps) {
+  const slidesList = Array.isArray(slides) ? slides : []
   const [current, setCurrent] = useState(0)
   const [copiedCaption, setCopiedCaption] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -61,7 +62,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
   const stageRefs = useRef<Record<number, Konva.Stage | null>>({})
   const { theme } = useTheme()
   const { addTemplate, updateElement, setTemplateBackground, setTemplateLogo, setTemplateLogoStyle } = useStore()
-  const slide = slides[current]
+  const slide = slidesList[current]
 
   // Cria templates Konva para cada slide
   useEffect(() => {
@@ -72,7 +73,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     const variants = def.getVariants(theme)
     const base = variants.find(v => v.id.endsWith('-4x5')) ?? variants[0]
 
-    slides.forEach((slide, i) => {
+    slidesList.forEach((slide, i) => {
       const variant = {
         ...base,
         id: `carousel-slide-${i}`,
@@ -117,7 +118,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
               const reader = new FileReader()
               reader.onload = () => {
                 const base64 = reader.result as string
-                slides.forEach((_, i) => {
+                slidesList.forEach((_, i) => {
                   setTemplateLogo(`carousel-slide-${i}`, base64)
                   setTemplateLogoStyle(`carousel-slide-${i}`, 400)
                 })
@@ -133,11 +134,11 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
   async function getSlideImages(): Promise<string[]> {
     if (engine === 'premium') {
-      return slides.map(s => s.imageUrl).filter(Boolean)
+      return slidesList.map(s => s.imageUrl).filter(Boolean)
     }
     await new Promise(r => setTimeout(r, 800))
     const images: string[] = []
-    for (let i = 0; i < slides.length; i++) {
+    for (let i = 0; i < slidesList.length; i++) {
       const stage = stageRefs.current[i]
       if (!stage) continue
       const tmpl = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
@@ -217,8 +218,8 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     try {
       if (engine === 'premium') {
         const zip = new JSZip()
-        for (let i = 0; i < slides.length; i++) {
-          const imageUrl = slides[i].imageUrl
+        for (let i = 0; i < slidesList.length; i++) {
+          const imageUrl = slidesList[i].imageUrl
           if (!imageUrl) continue
           const base64 = imageUrl.split(',')[1]
           if (base64) zip.file(`slide-${i + 1}.png`, base64, { base64: true })
@@ -234,7 +235,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
       }
       await new Promise(r => setTimeout(r, 800))
       const zip = new JSZip()
-      for (let i = 0; i < slides.length; i++) {
+      for (let i = 0; i < slidesList.length; i++) {
         const stage = stageRefs.current[i]
         if (!stage) continue
         const templateStore = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
@@ -265,7 +266,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
   async function handleDownloadCurrent() {
     if (engine === 'premium') {
-      const imageUrl = slides[current].imageUrl
+      const imageUrl = slidesList[current].imageUrl
       if (!imageUrl) return
       const a = document.createElement('a')
       a.href = imageUrl
@@ -302,7 +303,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Carrossel Premium — {slides.length} slides
+              Carrossel Premium — {slidesList.length} slides
             </span>
             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: '#3A5AFF', color: '#fff', fontWeight: 600 }}>
               GPT Image 2
@@ -323,10 +324,10 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
           padding: '24px', overflow: 'hidden', position: 'relative',
         }}>
           <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', flexShrink: 0, width: '400px', maxWidth: '100%' }}>
-            {slides[current].imageUrl ? (
+            {slidesList[current].imageUrl ? (
               <img
-                src={slides[current].imageUrl}
-                alt={slides[current].title}
+                src={slidesList[current].imageUrl}
+                alt={slidesList[current].title}
                 style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block' }}
               />
             ) : (
@@ -343,7 +344,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
               cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>‹</button>
           )}
-          {current < slides.length - 1 && (
+          {current < slidesList.length - 1 && (
             <button onClick={() => { const i = current + 1; setCurrent(i); onSlideChange?.(i) }} style={{
               position: 'absolute', right: '12px',
               background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
@@ -355,7 +356,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
         {/* Miniaturas */}
         <div style={{ display: 'flex', gap: '8px', padding: '0 20px 16px', overflowX: 'auto', flexShrink: 0, justifyContent: 'center' }}>
-          {slides.map((s, i) => (
+          {slidesList.map((s, i) => (
             <div key={i} onClick={() => { setCurrent(i); onSlideChange?.(i) }} style={{
               width: '56px', height: '70px', borderRadius: '6px', overflow: 'hidden',
               cursor: 'pointer', flexShrink: 0, position: 'relative',
@@ -427,7 +428,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            Carrossel — {slides.length} slides
+            Carrossel — {slidesList.length} slides
           </span>
           <span style={{
             fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
@@ -459,7 +460,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         </div>
         {/* Slides ocultos renderizados fora da tela para export */}
         <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
-          {slides.map((_, i) => {
+          {slidesList.map((_, i) => {
             if (i === current) return null
             const tid = `carousel-slide-${i}`
             const tmpl = useStore.getState().templates.find(t => t.id === tid)
@@ -488,7 +489,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
             cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>‹</button>
         )}
-        {current < slides.length - 1 && (
+        {current < slidesList.length - 1 && (
           <button onClick={() => { const i = current + 1; setCurrent(i); onSlideChange?.(i) }} style={{
             position: 'absolute', right: '12px',
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
@@ -503,7 +504,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         display: 'flex', gap: '8px', padding: '0 20px 16px',
         overflowX: 'auto', flexShrink: 0, justifyContent: 'center',
       }}>
-        {slides.map((s, i) => (
+        {slidesList.map((s, i) => (
           <div key={i} onClick={() => { setCurrent(i); onSlideChange?.(i) }} style={{
             width: '56px', height: '70px', borderRadius: '6px', overflow: 'hidden',
             cursor: 'pointer', flexShrink: 0, position: 'relative',
