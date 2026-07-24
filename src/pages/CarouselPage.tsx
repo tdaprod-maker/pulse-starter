@@ -520,6 +520,7 @@ export function CarouselPage() {
       setCaption(result.caption)
       const images: string[] = []
       for (const s of resultSlides) {
+        if (!s.imagePrompt?.trim()) { images.push(''); continue }
         try {
           const url = await generateImage(s.imagePrompt, PULSE_COSTS.CAROUSEL_SLIDE)
           images.push(url)

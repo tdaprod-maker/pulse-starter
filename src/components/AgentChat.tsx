@@ -739,7 +739,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       })
 
       const imageResults = await Promise.allSettled(
-        agentSlides.map(slide => generateImage(slide.imagePrompt))
+        agentSlides.map(slide =>
+          slide.imagePrompt?.trim() ? generateImage(slide.imagePrompt) : Promise.resolve('')
+        )
       )
 
       for (let i = 0; i < agentSlides.length; i++) {

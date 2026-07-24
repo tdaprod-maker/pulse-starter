@@ -24,7 +24,7 @@ export function LogoSection({ template }: LogoSectionProps) {
       const email = data.user?.email ?? ''
       if (!email) return
       loadBrandConfig(email).then(config => {
-        setBrandLogos(config.logos ?? [])
+        setBrandLogos(Array.isArray(config.logos) ? config.logos : [])
       })
     })
   }, [])
