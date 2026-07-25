@@ -12,6 +12,7 @@ import { loadBrandConfig } from '../services/brandKit'
 import { calcAutoScale } from '../engine/CanvasEngine'
 import { validateSlides } from '../services/carouselValidation'
 import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
+import { getInstagramConnection } from '../services/socialConnections'
 
 interface CarouselViewerProps {
   slides: SlideWithImage[]
@@ -275,6 +276,24 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     setPublishingIG(true)
     setIgStatus('idle')
     try {
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      const igConnection = email ? await getInstagramConnection(email) : null
+
+      console.log('[CarouselViewer] Instagram connection check:', {
+        email,
+        hasConnection: !!igConnection,
+        igUserId: igConnection?.ig_user_id || null,
+        accessTokenPresent: !!igConnection?.access_token,
+      })
+
+      if (!igConnection?.access_token || !igConnection?.ig_user_id) {
+        throw new Error('Instagram não conectado. Conecte sua conta no painel de configuração da marca.')
+      }
+
+      const igUserId = igConnection.ig_user_id
+      const accessToken = igConnection.access_token
+
       const images = await getSlideImages()
       const imageUrls: string[] = []
       for (let i = 0; i < images.length; i++) {
@@ -287,17 +306,28 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
         imageUrls.push(urlData.publicUrl)
       }
-      const igUserId = '17841479034844249'
       const text = caption || ''
+
+      console.log('[CarouselViewer] Instagram fetch payload:', {
+        imageCount: imageUrls.length,
+        igUserId,
+        accessTokenPreview: accessToken ? `${accessToken.slice(0, 10)}...` : null,
+        captionLength: text.length,
+      })
+
       const res = await fetch('/api/instagram-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrls, caption: text, igUserId }),
+        body: JSON.stringify({ imageUrls, caption: text, igUserId, accessToken }),
       })
       const data = await res.json()
       if (data.success) { setIgStatus('success'); setTimeout(() => setIgStatus('idle'), 3000) }
       else throw new Error(data.error)
-    } catch { setIgStatus('error'); setTimeout(() => setIgStatus('idle'), 3000) }
+    } catch (e) {
+      console.error('[CarouselViewer] instagram publish:', e)
+      setIgStatus('error')
+      setTimeout(() => setIgStatus('idle'), 3000)
+    }
     finally { setPublishingIG(false) }
   }
 

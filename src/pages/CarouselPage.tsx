@@ -6,6 +6,7 @@ import { generateCarouselContent, turboPrompt } from '../services/gemini'
 import type { CarouselSlide } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { supabase } from '../lib/supabase'
+import { getInstagramConnection } from '../services/socialConnections'
 import { loadBrandConfig } from '../services/brandKit'
 import { PULSE_COSTS } from '../services/tokens'
 import { validateSlides, parseJsonArray } from '../services/carouselValidation'
@@ -709,6 +710,24 @@ export function CarouselPage() {
     setPublishingInstagram(true)
     setInstagramStatus('idle')
     try {
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      const igConnection = email ? await getInstagramConnection(email) : null
+
+      console.log('[CarouselPage] Instagram connection check:', {
+        email,
+        hasConnection: !!igConnection,
+        igUserId: igConnection?.ig_user_id || null,
+        accessTokenPresent: !!igConnection?.access_token,
+      })
+
+      if (!igConnection?.access_token || !igConnection?.ig_user_id) {
+        throw new Error('Instagram não conectado. Conecte sua conta no painel de configuração da marca.')
+      }
+
+      const igUserId = igConnection.ig_user_id
+      const accessToken = igConnection.access_token
+
       // Renderiza todos os slides e faz upload para o Supabase Storage
       const imageUrls: string[] = []
       for (let i = 0; i < slides.length; i++) {
@@ -742,13 +761,19 @@ export function CarouselPage() {
       }
 
       // Publica no Instagram
-      const igUserId = '17841479034844249'
       const text = caption || prompt
+
+      console.log('[CarouselPage] Instagram fetch payload:', {
+        imageCount: imageUrls.length,
+        igUserId,
+        accessTokenPreview: accessToken ? `${accessToken.slice(0, 10)}...` : null,
+        captionLength: text.length,
+      })
 
       const res = await fetch('/api/instagram-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrls, caption: text, igUserId }),
+        body: JSON.stringify({ imageUrls, caption: text, igUserId, accessToken }),
       })
 
       const data = await res.json()

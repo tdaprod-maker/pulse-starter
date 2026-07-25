@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { getInstagramConnection } from '../services/socialConnections'
 import { generatePremiumCaption, reviewPost, type PostReview, breakCarouselIntoSlides } from '../services/gemini'
 import { debitToken, notifyBalanceUpdate } from '../services/tokens'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
@@ -315,8 +316,25 @@ export function PremiumPage() {
     setPublishingIG(true)
     setIgStatus('idle')
     try {
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      const igConnection = email ? await getInstagramConnection(email) : null
+
+      console.log('[PremiumPage] Instagram connection check:', {
+        email,
+        hasConnection: !!igConnection,
+        igUserId: igConnection?.ig_user_id || null,
+        accessTokenPresent: !!igConnection?.access_token,
+      })
+
+      if (!igConnection?.access_token || !igConnection?.ig_user_id) {
+        throw new Error('Instagram não conectado. Conecte sua conta no painel de configuração da marca.')
+      }
+
+      const igUserId = igConnection.ig_user_id
+      const accessToken = igConnection.access_token
+
       const text = `${caption.instagram}\n\n${caption.hashtags}`
-      const igUserId = '17841479034844249'
       if (mode === 'single') {
         // Post único — usa a imagem 1:1
         const mainImage = slides.find(s => s.label === '1:1')?.image ?? slides[0].image
@@ -326,10 +344,18 @@ export function PremiumPage() {
         const fileName = `premium-ig-${Date.now()}.jpg`
         await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
         const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+
+        console.log('[PremiumPage] Instagram fetch payload (single):', {
+          imageUrl: urlData.publicUrl,
+          igUserId,
+          accessTokenPreview: accessToken ? `${accessToken.slice(0, 10)}...` : null,
+          captionLength: text.length,
+        })
+
         const res = await fetch('/api/instagram-post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: urlData.publicUrl, caption: text, igUserId }),
+          body: JSON.stringify({ imageUrl: urlData.publicUrl, caption: text, igUserId, accessToken }),
         })
         const data = await res.json()
         if (!data.success) throw new Error(data.error)
@@ -346,10 +372,18 @@ export function PremiumPage() {
           const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
           imageUrls.push(urlData.publicUrl)
         }
+
+        console.log('[PremiumPage] Instagram fetch payload (carousel):', {
+          imageCount: imageUrls.length,
+          igUserId,
+          accessTokenPreview: accessToken ? `${accessToken.slice(0, 10)}...` : null,
+          captionLength: text.length,
+        })
+
         const res = await fetch('/api/instagram-post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrls, caption: text, igUserId }),
+          body: JSON.stringify({ imageUrls, caption: text, igUserId, accessToken }),
         })
         const data = await res.json()
         if (!data.success) throw new Error(data.error)

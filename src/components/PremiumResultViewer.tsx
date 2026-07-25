@@ -3,6 +3,7 @@ import type { PremiumSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
+import { getInstagramConnection } from '../services/socialConnections'
 import { validatePremiumSlides } from '../services/carouselValidation'
 
 interface Props {
@@ -162,8 +163,25 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
     setPublishingIG(true)
     setIgStatus('idle')
     try {
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      const igConnection = email ? await getInstagramConnection(email) : null
+
+      console.log('[PremiumResultViewer] Instagram connection check:', {
+        email,
+        hasConnection: !!igConnection,
+        igUserId: igConnection?.ig_user_id || null,
+        accessTokenPresent: !!igConnection?.access_token,
+      })
+
+      if (!igConnection?.access_token || !igConnection?.ig_user_id) {
+        throw new Error('Instagram não conectado. Conecte sua conta no painel de configuração da marca.')
+      }
+
+      const igUserId = igConnection.ig_user_id
+      const accessToken = igConnection.access_token
+
       const text = `${caption.instagram}\n\n${caption.hashtags}`
-      const igUserId = '17841479034844249'
       const mainImage = displaySlides.find(s => s.label === '1:1')?.image ?? displaySlides[0].image
       const base64 = mainImage.replace(/^data:image\/\w+;base64,/, '')
       const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -171,10 +189,18 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
       const fileName = `premium-ig-${Date.now()}.jpg`
       await supabase.storage.from('media').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
       const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
+
+      console.log('[PremiumResultViewer] Instagram fetch payload:', {
+        imageUrl: urlData.publicUrl,
+        igUserId,
+        accessTokenPreview: accessToken ? `${accessToken.slice(0, 10)}...` : null,
+        captionLength: text.length,
+      })
+
       const res = await fetch('/api/instagram-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: urlData.publicUrl, caption: text, igUserId }),
+        body: JSON.stringify({ imageUrl: urlData.publicUrl, caption: text, igUserId, accessToken }),
       })
       const data = await res.json() as { success?: boolean; error?: string }
       if (!data.success) throw new Error(data.error)
