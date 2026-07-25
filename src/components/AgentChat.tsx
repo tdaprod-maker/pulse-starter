@@ -845,6 +845,14 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           return msgs
         })
 
+        // A IA quase sempre preenche apenas slide.texts (title/body ou campos do
+        // template) e deixa slide.title/slide.body top-level vazios — por isso o
+        // fallback precisa olhar dentro de texts antes de cair em string vazia.
+        const slideTexts = slide.texts ?? {}
+        const firstTextsValue = Object.values(slideTexts).find((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        const resolvedSlideTitle = presetSlides?.[i]?.title || slide.title || slideTexts.title || firstTextsValue || ''
+        const resolvedSlideBody = presetSlides?.[i]?.body || slide.body || slideTexts.body || ''
+
         let imageUrl = ''
         for (let attempt = 0; attempt < 2; attempt++) {
           if (attempt === 1) {
@@ -857,6 +865,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           const controller = new AbortController()
           const timeoutId = setTimeout(() => controller.abort(), 55000)
           try {
+            console.log(`[generatePremiumCarousel] slide ${i + 1}/${agentSlides.length} payload:`, {
+              slideTitle: resolvedSlideTitle,
+              slideBody: resolvedSlideBody,
+              imagePrompt: slide.imagePrompt,
+              hasVisualReference: !!uploadedPhoto,
+            })
             const premRes = await fetch('/api/generate-premium', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -866,8 +880,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 totalSlides: agentSlides.length,
                 styleContext,
                 size: '1024x1536',
-                slideTitle: presetSlides?.[i]?.title ?? slide.title,
-                slideBody: presetSlides?.[i]?.body ?? slide.body ?? '',
+                slideTitle: resolvedSlideTitle,
+                slideBody: resolvedSlideBody,
                 ...(uploadedPhoto ? { visualReferences: [uploadedPhoto] } : {}),
               }),
               signal: controller.signal,
