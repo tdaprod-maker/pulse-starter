@@ -118,11 +118,11 @@ export function PremiumPage() {
     finally { setTurbining(false) }
   }
 
-  async function generateImage(slidePrompt: string, slideIndex: number, totalSlides: number, styleContext: string, size: string, refs: string[] = []) {
+  async function generateImage(slidePrompt: string, slideIndex: number, totalSlides: number, styleContext: string, size: string, refs: string[] = [], slideTitle?: string, slideBody?: string) {
     const res = await fetch('/api/generate-premium', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: slidePrompt, slideIndex, totalSlides, styleContext, size, visualReferences: refs }),
+      body: JSON.stringify({ prompt: slidePrompt, slideIndex, totalSlides, styleContext, size, visualReferences: refs, slideTitle, slideBody }),
     })
     if (!res.ok) {
       const err = await res.json()
@@ -219,7 +219,7 @@ export function PremiumPage() {
             : i === slideCount
             ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. This is a CALL TO ACTION slide. The CTA phrase to display is: "${slideContent}". Show this as a bold visual CTA — large action words, a highlighted button or underline on the key phrase. Do NOT write the word "CTA" — just display the action phrase visually. One supporting line maximum 8 words. Dark background, brand accent color on CTA element, cinematic mood. NO robotic hands, NO AI cubes. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : `CAROUSEL SLIDE ${i} of ${slideCount}. THE HEADLINE FOR THIS SLIDE IS EXACTLY: "${slideContent}". Use these words as the main headline — do not substitute, do not invent a different headline, do not use the carousel topic as the headline. Visual scene: ${scene}. Design: the headline IS the specific text provided above, supporting line maximum 8 words complementing it. Dark background, brand accent color on one key word of the headline, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
-          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences)
+          const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences, slideContent)
           generated.push({ image, label: `Slide ${i}`, aspectRatio: '4/5' })
           setSlides([...generated])
         }

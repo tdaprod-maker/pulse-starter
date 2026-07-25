@@ -822,7 +822,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       setMessages(prev => [...prev, { role: 'agent', content: `Planejando ${cappedCount} slides...` }])
 
       const carouselData = await generateCarouselContent(prompt, cappedCount, brandContext, resolvedTemplateId)
-      const agentSlides = validateSlides(carouselData.slides)
+      const agentSlides = validateSlides(carouselData.slides).slice(0, cappedCount)
 
       const styleContext = [
         brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
