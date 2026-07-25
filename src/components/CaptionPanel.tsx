@@ -5,6 +5,7 @@ import type { Template } from '../state/useStore'
 import { calcAutoScale } from '../engine/CanvasEngine'
 import { useStore } from '../state/useStore'
 import { supabase } from '../lib/supabase'
+import { getInstagramConnection } from '../services/socialConnections'
 
 interface CaptionPanelProps {
   stageRef?: RefObject<Konva.Stage | null>
@@ -117,6 +118,25 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
     setPublishingInstagram(true)
     setInstagramStatus('idle')
     try {
+      // Lê a conexão Instagram (access_token + ig_user_id) salva no OAuth
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      const igConnection = email ? await getInstagramConnection(email) : null
+
+      console.log('[CaptionPanel] Instagram connection check:', {
+        email,
+        hasConnection: !!igConnection,
+        igUserId: igConnection?.ig_user_id || null,
+        accessTokenPresent: !!igConnection?.access_token,
+      })
+
+      if (!igConnection?.access_token || !igConnection?.ig_user_id) {
+        throw new Error('Instagram não conectado. Conecte sua conta no painel de configuração da marca.')
+      }
+
+      const igUserId = igConnection.ig_user_id
+      const accessToken = igConnection.access_token
+
       // Exporta o canvas como blob
       const autoScale = template ? calcAutoScale(template) : 1
       const pixelRatio = 2 / autoScale
@@ -137,14 +157,19 @@ export function CaptionPanel({ stageRef, template }: CaptionPanelProps = {}) {
       const { data: urlData } = supabase.storage.from('media').getPublicUrl(fileName)
       const imageUrl = urlData.publicUrl
 
-      // Publica no Instagram
-      const igUserId = '17841479034844249' // agente17ia
       const text = `${caption.instagram}\n\n${caption.hashtags}`
+
+      console.log('[CaptionPanel] Instagram fetch payload:', {
+        imageUrl,
+        igUserId,
+        accessTokenPreview: accessToken ? `${accessToken.slice(0, 10)}...` : null,
+        captionLength: text.length,
+      })
 
       const res = await fetch('/api/instagram-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, caption: text, igUserId }),
+        body: JSON.stringify({ imageUrl, caption: text, igUserId, accessToken }),
       })
 
       const data = await res.json()
