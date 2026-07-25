@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const clientId = process.env.INSTAGRAM_CLIENT_ID
   const clientSecret = process.env.INSTAGRAM_CLIENT_SECRET
-  const redirectUri = 'https://pulse-starter.vercel.app/api/instagram-callback'
+  const redirectUri = 'https://pulse.agente17.com.br/api/instagram-callback'
 
   try {
     // Passo 1: troca code por token de curta duração
