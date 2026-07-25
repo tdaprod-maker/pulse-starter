@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
   // GET com code → OAuth callback
   const { code, error, state } = req.query
-  const doneBase = 'https://pulse-starter.vercel.app/auth/instagram/done'
+  const doneBase = 'https://pulse.agente17.com.br/auth/instagram/done'
 
   if (error || !code) {
     return res.redirect(`${doneBase}?instagram_error=true`)
