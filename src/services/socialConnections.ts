@@ -14,7 +14,7 @@ export async function getConnection(email: string, platform: string): Promise<So
     .select('access_token, platform_user_id, platform_username, expires_at, is_valid')
     .eq('user_email', email)
     .eq('platform', platform)
-    .single()
+    .maybeSingle()
 
   if (error || !data) return null
   return data as SocialConnection
