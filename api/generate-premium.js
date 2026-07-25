@@ -48,7 +48,8 @@ Text placement rules:
 - Position in the lower-center or center zone of the image
 - Ensure high contrast: white text on dark areas, or dark text on light areas, or use a semi-transparent background strip
 - Typography must be elegant and modern, matching the brand style
-- Text in Portuguese (Brazil) as provided above — do NOT translate or change it` : ''
+- Text in Portuguese (Brazil) as provided above — do NOT translate or change it
+- Typography consistency is critical: use only a single clean sans-serif typeface (like Helvetica, Arial or similar) throughout the entire image. Bold weight for headline, regular weight for subtitle. No decorative fonts, no mixed typefaces.` : ''
 
   const visualStyleDirective = styleForSegment(segment || styleContext)
 

@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { calcAutoScale } from '../engine/CanvasEngine'
 import { validateSlides } from '../services/carouselValidation'
+import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
 
 interface CarouselViewerProps {
   slides: SlideWithImage[]
@@ -21,6 +22,22 @@ interface CarouselViewerProps {
   onSlideChange?: (index: number) => void
   onSelectElement?: (id: string | null) => void
 }
+
+const LOGO_POSITION_OPTIONS: { value: LogoPosition; label: string }[] = [
+  { value: 'top-left', label: '↖ Superior esq.' },
+  { value: 'top-right', label: '↗ Superior dir.' },
+  { value: 'bottom-left', label: '↙ Inferior esq.' },
+  { value: 'bottom-right', label: '↘ Inferior dir.' },
+  { value: 'bottom-center', label: '⬇ Centro inferior' },
+  { value: 'top-center', label: '⬆ Centro superior' },
+  { value: 'center', label: '⊙ Centro' },
+]
+
+const LOGO_SIZE_OPTIONS: { value: LogoSize; label: string }[] = [
+  { value: 'small', label: 'Pequeno' },
+  { value: 'medium', label: 'Médio' },
+  { value: 'large', label: 'Grande' },
+]
 
 const TYPE_LABEL: Record<string, string> = {
   cover: 'CAPA',
@@ -62,6 +79,34 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
   const { theme } = useTheme()
   const { addTemplate, updateElement, setTemplateBackground, setTemplateLogo, setTemplateLogoStyle } = useStore()
   const slide = slidesList[current]
+
+  // Logo overlay do carrossel premium: os slides originais (sem logo) ficam
+  // preservados para permitir reprocessar posição/tamanho sem perder qualidade
+  // por overlays acumulados. Aplicado em todos os slides de uma vez.
+  const [originalPremiumSlides] = useState<SlideWithImage[]>(() => validateSlides<SlideWithImage>(slides))
+  const [premiumSlidesWithLogo, setPremiumSlidesWithLogo] = useState<SlideWithImage[] | null>(null)
+  const [premiumLogoActive, setPremiumLogoActive] = useState(false)
+  const [premiumLogoUrl, setPremiumLogoUrl] = useState<string | null>(null)
+  const [premiumLogoPosition, setPremiumLogoPosition] = useState<LogoPosition>('bottom-right')
+  const [premiumLogoSize, setPremiumLogoSize] = useState<LogoSize>('medium')
+  const [applyingPremiumLogo, setApplyingPremiumLogo] = useState(false)
+  const [premiumLogoError, setPremiumLogoError] = useState('')
+  const displayedPremiumSlides = premiumLogoActive && premiumSlidesWithLogo ? premiumSlidesWithLogo : originalPremiumSlides
+
+  // Mede a área disponível para a imagem do slide (viewport menos header e
+  // controles) para escalar a imagem inteira visível, sem cortar, sem scroll.
+  const imageAreaRef = useRef<HTMLDivElement>(null)
+  const [imageAreaSize, setImageAreaSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const el = imageAreaRef.current
+    if (!el) return
+    const update = () => setImageAreaSize({ width: el.clientWidth, height: el.clientHeight })
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // Cria templates Konva para cada slide
   useEffect(() => {
@@ -131,9 +176,59 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     })
   }, [templateId])
 
+  async function applyPremiumLogo(position: LogoPosition, size: LogoSize, urlOverride?: string) {
+    const url = urlOverride ?? premiumLogoUrl
+    if (!url) return
+    setApplyingPremiumLogo(true)
+    try {
+      const withLogo = await Promise.all(
+        originalPremiumSlides.map(async s => ({
+          ...s,
+          imageUrl: s.imageUrl ? await overlayLogoOnImage(s.imageUrl, url, position, size) : s.imageUrl,
+        }))
+      )
+      setPremiumSlidesWithLogo(withLogo)
+      setPremiumLogoActive(true)
+    } finally {
+      setApplyingPremiumLogo(false)
+    }
+  }
+
+  async function handleAddPremiumLogo() {
+    setPremiumLogoError('')
+    let url = premiumLogoUrl
+    if (!url) {
+      const { data: authData } = await supabase.auth.getUser()
+      const email = authData.user?.email ?? ''
+      const brandCtx = email ? await loadBrandConfig(email) : null
+      if (!brandCtx?.logo_url) {
+        setPremiumLogoError('Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca.')
+        return
+      }
+      url = brandCtx.logo_url
+      setPremiumLogoUrl(url)
+    }
+    await applyPremiumLogo(premiumLogoPosition, premiumLogoSize, url)
+  }
+
+  function handleRemovePremiumLogo() {
+    setPremiumLogoActive(false)
+    setPremiumSlidesWithLogo(null)
+  }
+
+  function handlePremiumLogoPositionChange(position: LogoPosition) {
+    setPremiumLogoPosition(position)
+    if (premiumLogoActive) applyPremiumLogo(position, premiumLogoSize)
+  }
+
+  function handlePremiumLogoSizeChange(size: LogoSize) {
+    setPremiumLogoSize(size)
+    if (premiumLogoActive) applyPremiumLogo(premiumLogoPosition, size)
+  }
+
   async function getSlideImages(): Promise<string[]> {
     if (engine === 'premium') {
-      return slidesList.map(s => s.imageUrl).filter(Boolean)
+      return displayedPremiumSlides.map(s => s.imageUrl).filter(Boolean)
     }
     await new Promise(r => setTimeout(r, 800))
     const images: string[] = []
@@ -217,8 +312,8 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     try {
       if (engine === 'premium') {
         const zip = new JSZip()
-        for (let i = 0; i < slidesList.length; i++) {
-          const imageUrl = slidesList[i].imageUrl
+        for (let i = 0; i < displayedPremiumSlides.length; i++) {
+          const imageUrl = displayedPremiumSlides[i].imageUrl
           if (!imageUrl) continue
           const base64 = imageUrl.split(',')[1]
           if (base64) zip.file(`slide-${i + 1}.png`, base64, { base64: true })
@@ -265,7 +360,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
   async function handleDownloadCurrent() {
     if (engine === 'premium') {
-      const imageUrl = slidesList[current].imageUrl
+      const imageUrl = displayedPremiumSlides[current].imageUrl
       if (!imageUrl) return
       const a = document.createElement('a')
       a.href = imageUrl
@@ -292,6 +387,22 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
   // ── Modo premium: render puramente baseado em imagens ──────────────────────
   if (engine === 'premium') {
+    // Escala a imagem para caber inteira na área disponível (viewport menos
+    // header e controles) sem cortar e sem precisar de scroll.
+    const AREA_PADDING = 24
+    const availW = Math.max(imageAreaSize.width - AREA_PADDING * 2, 0)
+    const availH = Math.max(imageAreaSize.height - AREA_PADDING * 2, 0)
+    let boxWidth = availH * (4 / 5)
+    let boxHeight = availH
+    if (availW > 0 && boxWidth > availW) {
+      boxWidth = availW
+      boxHeight = availW * (5 / 4)
+    }
+    const hasMeasuredImageArea = imageAreaSize.width > 0 && imageAreaSize.height > 0
+    const imageBoxStyle = hasMeasuredImageArea
+      ? { width: `${boxWidth}px`, height: `${boxHeight}px`, maxWidth: '100%', maxHeight: '100%' }
+      : { width: '400px', maxWidth: '100%', aspectRatio: '4/5' }
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)', overflow: 'hidden' }}>
         {/* Header */}
@@ -302,7 +413,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Carrossel Premium — {slidesList.length} slides
+              Carrossel Premium — {displayedPremiumSlides.length} slides
             </span>
             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: '#3A5AFF', color: '#fff', fontWeight: 600 }}>
               GPT Image 2
@@ -318,19 +429,19 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         </div>
 
         {/* Imagem do slide atual */}
-        <div style={{
+        <div ref={imageAreaRef} style={{
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '24px', overflow: 'hidden', position: 'relative',
+          padding: '24px', overflow: 'hidden', position: 'relative', minHeight: 0,
         }}>
-          <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', flexShrink: 0, width: '400px', maxWidth: '100%' }}>
-            {slidesList[current].imageUrl ? (
+          <div style={{ ...imageBoxStyle, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', flexShrink: 0, opacity: applyingPremiumLogo ? 0.6 : 1, transition: 'opacity 0.15s' }}>
+            {displayedPremiumSlides[current].imageUrl ? (
               <img
-                src={slidesList[current].imageUrl}
-                alt={slidesList[current].title}
-                style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block' }}
+                src={displayedPremiumSlides[current].imageUrl}
+                alt={displayedPremiumSlides[current].title}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#111' }}
               />
             ) : (
-              <div style={{ width: '100%', aspectRatio: '4/5', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '100%', height: '100%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Slide indisponível</p>
               </div>
             )}
@@ -343,7 +454,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
               cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>‹</button>
           )}
-          {current < slidesList.length - 1 && (
+          {current < displayedPremiumSlides.length - 1 && (
             <button onClick={() => { const i = current + 1; setCurrent(i); onSlideChange?.(i) }} style={{
               position: 'absolute', right: '12px',
               background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
@@ -355,7 +466,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
         {/* Miniaturas */}
         <div style={{ display: 'flex', gap: '8px', padding: '0 20px 16px', overflowX: 'auto', flexShrink: 0, justifyContent: 'center' }}>
-          {slidesList.map((s, i) => (
+          {displayedPremiumSlides.map((s, i) => (
             <div key={i} onClick={() => { setCurrent(i); onSlideChange?.(i) }} style={{
               width: '56px', height: '70px', borderRadius: '6px', overflow: 'hidden',
               cursor: 'pointer', flexShrink: 0, position: 'relative',
@@ -374,6 +485,97 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
         {/* Ações */}
         <div style={{ padding: '12px 20px 20px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+          {/* Controles de logo */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: '10px',
+            background: 'var(--bg-surface)', border: '1px solid var(--border)',
+            borderRadius: '10px', padding: '12px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Logo da marca
+              </span>
+              {!premiumLogoActive ? (
+                <button
+                  onClick={handleAddPremiumLogo}
+                  disabled={applyingPremiumLogo}
+                  style={{
+                    fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingPremiumLogo ? 'default' : 'pointer',
+                    fontFamily: 'inherit', fontWeight: 600, border: 'none',
+                    background: 'var(--accent)', color: 'white', opacity: applyingPremiumLogo ? 0.6 : 1,
+                  }}
+                >
+                  {applyingPremiumLogo ? 'Aplicando...' : 'Adicionar logo'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleRemovePremiumLogo}
+                  disabled={applyingPremiumLogo}
+                  style={{
+                    fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingPremiumLogo ? 'default' : 'pointer',
+                    fontFamily: 'inherit', fontWeight: 600,
+                    border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)',
+                  }}
+                >
+                  Remover logo
+                </button>
+              )}
+            </div>
+
+            {premiumLogoError && (
+              <span style={{ fontSize: '11px', color: 'rgba(239,68,68,0.9)' }}>{premiumLogoError}</span>
+            )}
+
+            {premiumLogoActive && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Posição</span>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {LOGO_POSITION_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handlePremiumLogoPositionChange(opt.value)}
+                        disabled={applyingPremiumLogo}
+                        style={{
+                          fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
+                          cursor: applyingPremiumLogo ? 'default' : 'pointer', fontFamily: 'inherit',
+                          whiteSpace: 'nowrap',
+                          ...(premiumLogoPosition === opt.value
+                            ? { background: 'var(--accent)', border: 'none', color: 'white' }
+                            : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Tamanho</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {LOGO_SIZE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handlePremiumLogoSizeChange(opt.value)}
+                        disabled={applyingPremiumLogo}
+                        style={{
+                          flex: 1, fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
+                          cursor: applyingPremiumLogo ? 'default' : 'pointer', fontFamily: 'inherit',
+                          ...(premiumLogoSize === opt.value
+                            ? { background: 'var(--accent)', border: 'none', color: 'white' }
+                            : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           {caption && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, maxHeight: '80px', overflowY: 'auto', background: 'var(--bg-surface)', borderRadius: '8px', padding: '8px 12px', border: '1px solid var(--border)' }}>{caption}</p>
