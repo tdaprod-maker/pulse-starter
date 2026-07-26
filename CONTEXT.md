@@ -77,10 +77,11 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 | Brand Kit | Logo, cores, fontes, tom de voz; redes sociais; análise de refs visuais com IA |
 
 ### Instagram — estado atual
-- OAuth implementado tecnicamente (`instagram-auth.js`, `instagram-callback.js`, `instagram-post.js`)
-- **Bloqueado para produção:** sem App Review do Meta, funciona apenas com até 25 contas de teste
-- **UX:** botão "Conectar" exibe **(em breve)** em cinza
-- Primeiros clientes: adicionar como Testadores no Meta Developer Portal
+- OAuth multi-tenant tecnicamente funcional (`instagram-auth.js`, `instagram-callback.js`, `instagram-post.js`)
+- Bug de `accessToken`/`igUserId` hardcoded corrigido em todos os fluxos de publicação (CaptionPanel, CarouselViewer, PremiumResultViewer, CarouselPage, PremiumPage) — todos usam agora `getInstagramConnection` com credenciais reais do Supabase
+- **App Review submetido ao Meta em 26/07/2026** — aguardando aprovação (prazo estimado até 20 dias, ou seja até ~15/08/2026)
+- **Enquanto aguarda aprovação:** funciona apenas com até 25 contas de teste; clientes beta precisam ser adicionados manualmente como **Testadores** no Meta Developer Portal antes de conseguir conectar
+- **UX:** botão "Conectar" exibe **(em breve)** em cinza até aprovação do review
 
 ### Migração Gemini → Claude Haiku 4.5
 | Função | Rota Vercel | Status |
@@ -140,7 +141,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 |---|---|
 | **Vercel Pro** | $120/mês — resolve timeout do Premium definitivamente (maxDuration até 300s). Fazer upgrade ao fechar primeiro cliente pago. |
 | **Stripe** | Pagamento recorrente R$47,90/mês com 200 pulses; recargas; webhook → crédito automático de pulses. Enquanto isso: onboarding manual via Pix. |
-| **Instagram OAuth multi-tenant** | Bloqueado sem App Review do Meta. Preparar screencast + política de privacidade para review. |
+| **Instagram OAuth multi-tenant** | App Review submetido ao Meta em 26/07/2026, aguardando aprovação (prazo até 20 dias). Enquanto isso, adicionar clientes beta manualmente como Testadores no Meta Developer Portal antes de conseguirem conectar. OAuth tecnicamente funcional; bug de accessToken/igUserId no CaptionPanel/CarouselViewer/PremiumResultViewer já corrigido. |
 | **Testar: texto desconfigurado ao restaurar** | Regressão suspeita; logs de diagnóstico adicionados no pendingPost effect — verificar no console ao restaurar da biblioteca. |
 | **Testar: premium sem logo automático** | Verificar que `generatePremium` não sobrepõe logo automaticamente; testar add/remove logo via chat. |
 | **Testar: análise de site no onboarding** | `/api/agent-chat { siteUrl }` → fetch + Claude → brand_description preenchido automaticamente. |
@@ -181,8 +182,9 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Fazer upgrade ao fechar primeiro cliente pago
 
 ### 3. Instagram OAuth multi-tenant 🔜 *(bloqueador para escalar)*
-- App Review do Meta: screencast + política de privacidade + descrição de uso
-- Enquanto isso: adicionar clientes como Testadores no Developer Portal
+- App Review submetido ao Meta em 26/07/2026 — aguardando aprovação (prazo até 20 dias)
+- Enquanto isso: adicionar clientes beta manualmente como Testadores no Developer Portal antes de conseguirem conectar
+- OAuth multi-tenant tecnicamente funcional; bug de accessToken/igUserId corrigido em todos os fluxos de publicação
 
 ### 4. Landing page de vendas 🔜
 - Proposta de valor, demo do agente em ação, planos e preços, CTA
@@ -300,3 +302,4 @@ Mantém os existentes para o MVP. Com GPT Image 2, templates se tornam menos rel
 19. **resize_logo com percentual drástico** → agente calcula `currentLogoSize × fator`; `logoSize` passado via `EditContext`
 20. **Texto desconfigurado ao restaurar da biblioteca** → guard `if (pendingPost) return` no `useEffect([activeTemplate?.id])` evita re-registration sobrescrever textos aplicados
 21. **fetch-site ultrapassando limite de funções Vercel** → lógica incorporada em `agent-chat.js` via branch `{ siteUrl }`
+22. **Publicação no Instagram falhava (400) em todos os fluxos** → `igUserId` hardcoded e `accessToken` ausente em CaptionPanel, CarouselViewer, PremiumResultViewer, CarouselPage e PremiumPage; corrigido usando `getInstagramConnection` para credenciais OAuth reais do Supabase
