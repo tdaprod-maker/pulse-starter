@@ -889,7 +889,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             clearTimeout(timeoutId)
             if (premRes.ok) {
               const data = await premRes.json() as { image?: string }
-              imageUrl = data.image ?? ''
+              // A API sempre retorna 1024x1536 (2:3) — cropa para o 4:5 real do carrossel
+              imageUrl = data.image ? await cropImageToRatio(data.image, '4/5') : ''
             } else {
               const err = await premRes.json().catch(() => ({})) as { error?: string }
               console.error(`[generatePremiumCarousel] slide ${i + 1} erro HTTP:`, err)

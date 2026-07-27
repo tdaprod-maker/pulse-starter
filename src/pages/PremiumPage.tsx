@@ -182,13 +182,15 @@ export function PremiumPage() {
       if (mode === 'single') {
         setTotalSteps(1)
 
-        // Uma única geração vertical — 9:16, 4:5 e 1:1 via crop
+        // Uma única geração vertical — cropada de fato em 9:16, 4:5 e 1:1,
+        // já que a imagem bruta gerada pela API vem em 1024x1536 (2:3), que
+        // não corresponde a nenhum desses formatos.
         setCurrentStep(1)
         const verticalPrompt = `Create a professional social media post. Content: ${prompt}. Vertical format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. Use compact font sizes and tight line spacing. No text or elements near edges. No borders, frames or decorative containers. Background only in outer areas.`
         const verticalImage = await generateImage(verticalPrompt, 1, 1, styleContext, '1024x1536', visualReferences)
-        generated.push({ image: verticalImage, label: '9:16', aspectRatio: '9/16' })
-        generated.push({ image: verticalImage, label: '4:5', aspectRatio: '4/5' })
-        generated.push({ image: verticalImage, label: '1:1', aspectRatio: '1/1' })
+        generated.push({ image: await cropImageToRatio(verticalImage, '9/16'), label: '9:16' })
+        generated.push({ image: await cropImageToRatio(verticalImage, '4/5'), label: '4:5' })
+        generated.push({ image: await cropImageToRatio(verticalImage, '1/1'), label: '1:1' })
         setSlides([...generated])
       } else {
         setTotalSteps(slideCount)
@@ -221,24 +223,19 @@ export function PremiumPage() {
             ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. This is a CALL TO ACTION slide. The CTA phrase to display is: "${slideContent}". Show this as a bold visual CTA — large action words, a highlighted button or underline on the key phrase. Do NOT write the word "CTA" — just display the action phrase visually. One supporting line maximum 8 words. Dark background, brand accent color on CTA element, cinematic mood. NO robotic hands, NO AI cubes. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
             : `CAROUSEL SLIDE ${i} of ${slideCount}. THE HEADLINE FOR THIS SLIDE IS EXACTLY: "${slideContent}". Use these words as the main headline — do not substitute, do not invent a different headline, do not use the carousel topic as the headline. Visual scene: ${scene}. Design: the headline IS the specific text provided above, supporting line maximum 8 words complementing it. Dark background, brand accent color on one key word of the headline, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences, slideContent)
-          generated.push({ image, label: `Slide ${i}`, aspectRatio: '4/5' })
+          generated.push({ image: await cropImageToRatio(image, '4/5'), label: `Slide ${i}` })
           setSlides([...generated])
         }
       }
 
-      // Aplica logo real do Brand Kit em todas as imagens
+      // Aplica logo real do Brand Kit em todas as imagens (já cropadas no formato correto)
       const brandForLogo = await loadBrandConfig(email)
       if (brandForLogo.logo_url) {
         for (let i = 0; i < generated.length; i++) {
           try {
-            // Primeiro cropa, depois aplica o logo
-            const cropped = generated[i].aspectRatio
-              ? await cropImageToRatio(generated[i].image, generated[i].aspectRatio!)
-              : generated[i].image
             generated[i] = {
               ...generated[i],
-              image: await overlayLogo(cropped, brandForLogo.logo_url),
-              aspectRatio: undefined, // já cropado, não precisa cropar de novo
+              image: await overlayLogo(generated[i].image, brandForLogo.logo_url),
             }
           } catch (e) {
             console.error('[logo overlay]', e)
