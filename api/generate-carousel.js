@@ -1,3 +1,17 @@
+// Data real do servidor no momento da requisição — injetada nos prompts para
+// impedir que o modelo use anos desatualizados (ex: "2024") por viés de treino.
+function getCurrentDateContext() {
+  const now = new Date()
+  const label = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return { label, year: now.getFullYear() }
+}
+
+function buildAntiHallucinationRules(dateCtx) {
+  return `REGRAS ANTI-ALUCINAÇÃO — OBRIGATÓRIAS:
+- A data atual é ${dateCtx.label}. NUNCA use anos ou datas desatualizadas (ex: 2024, 2025) — sempre use o ano corrente (${dateCtx.year}) ao mencionar urgência temporal, prazos, "novidades de [ano]" ou datas de eventos.
+- NUNCA invente números específicos, percentuais ou estatísticas (ex: "80% mais engajamento", "3x mais confiança") a menos que o usuário tenha fornecido esse dado explicitamente. Prefira linguagem qualitativa quando não houver dado real disponível.`
+}
+
 const TEMPLATE_FIELDS = {
   'sport-arena':        'tag (categoria do evento em maiusculas), title (titulo em maiusculas, 2 linhas com \\n), subtitle (detalhe do evento)',
   'sport-brand':        'brand-label (nome da marca), phrase-line1 (1 palavra em maiusculas), phrase-line2 (1 palavra em maiusculas na cor de destaque), tagline (slogan curto com pontos separadores)',
@@ -45,6 +59,8 @@ function buildCarouselPrompt(userInput, slideCount, brand, templateId) {
     : `"texts": { "title": "...", "body": "..." }`
 
   return `Você é um especialista em criação de carrosséis para Instagram.
+
+${buildAntiHallucinationRules(getCurrentDateContext())}
 ${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
 ${brand?.segment ? `Segmento: ${brand.segment}` : ''}
 ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
@@ -146,6 +162,8 @@ export default async function handler(req, res) {
       : ''
     const prompt = `Você é um especialista em copywriting para redes sociais com foco em engajamento e alcance orgânico.
 
+${buildAntiHallucinationRules(getCurrentDateContext())}
+
 Contexto do post: ${captionPrompt}
 ${brandCtx}
 
@@ -161,7 +179,7 @@ REGRAS PARA LINKEDIN (máximo 3000 caracteres):
 • Primeira linha: insight profissional ou dado concreto. Nunca "Olá, pessoal!" ou abertura genérica. Ex: "87% dos gestores cometem esse erro sem perceber."
 • Estrutura: contexto rápido (2-3 linhas) → desenvolvimento com dados, exemplos ou framework → conclusão com aprendizado.
 • Tom: profissional mas humano. Sem buzzwords ("sinergias", "disruptivo", "holístico").
-• Inclua dados, porcentagens ou referências concretas para dar credibilidade.
+• Se o contexto do post fornecer dados, porcentagens ou referências concretas, use-os para dar credibilidade. Caso contrário, NÃO invente números — construa a credibilidade com clareza e especificidade qualitativa.
 • Máximo 2-3 emojis ou nenhum.
 • CTA: pergunta aberta para comentários. Ex: "Como você lida com isso na sua empresa?"
 

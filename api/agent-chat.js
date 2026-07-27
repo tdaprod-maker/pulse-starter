@@ -1,6 +1,20 @@
 import { getNichePersonality, getNicheKey } from '../niches/index.js'
 import { getNicheQuestions } from '../niches/questions.js'
 
+// Data real do servidor no momento da requisição — injetada nos prompts para
+// impedir que o modelo use anos desatualizados (ex: "2024") por viés de treino.
+function getCurrentDateContext() {
+  const now = new Date()
+  const label = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return { label, year: now.getFullYear() }
+}
+
+function buildAntiHallucinationRules(dateCtx) {
+  return `\n\nREGRAS ANTI-ALUCINAÇÃO — OBRIGATÓRIAS:
+- A data atual é ${dateCtx.label}. NUNCA use anos ou datas desatualizadas (ex: 2024, 2025) — sempre use o ano corrente (${dateCtx.year}) ao mencionar urgência temporal, prazos, "novidades de [ano]" ou datas de eventos.
+- NUNCA invente números específicos, percentuais ou estatísticas (ex: "80% mais engajamento", "3x mais confiança") a menos que o usuário tenha fornecido esse dado explicitamente. Prefira linguagem qualitativa quando não houver dado real disponível.`
+}
+
 function buildNicheContext(segment) {
   const niche = segment ? getNichePersonality(segment) : null
   if (!niche) return ''
@@ -256,6 +270,8 @@ export default async function handler(req, res) {
       ? `\n- Tamanho atual do logo: ${currentLogoSize}px`
       : ''
 
+    const editDateCtx = getCurrentDateContext()
+
     const editPrompt = `Você é um assistente de edição de posts para redes sociais. O usuário abriu um post existente e quer fazer ajustes.
 
 POST ATUAL:
@@ -285,6 +301,7 @@ ${overlayInstructions}
 - Para adicionar/inserir o logotipo: use add_logo com o logoUrl do brand kit — NÃO peça o arquivo ao usuário${brandLogoUrl ? `. O logoUrl do brand kit é: "${brandLogoUrl}"` : '. Se o brand kit não tiver logo cadastrado, informe ao usuário que não há logotipo no brand kit'}. Inclua o canto desejado (corner: "bottom-right", "bottom-left", "top-right" ou "top-left" — padrão: "bottom-right")
 - Você pode combinar múltiplas ações em um único JSON
 - Máximo 1 frase no campo "message"
+- Ao usar rewrite para alterar texto: aplique as REGRAS ANTI-ALUCINAÇÃO abaixo${buildAntiHallucinationRules(editDateCtx)}
 
 TIPOS DE AÇÃO VÁLIDOS:
 - recolor: muda a cor (fill) de qualquer elemento — texto ou shape (campos: elementId + color)
@@ -408,9 +425,12 @@ Faltam informações do perfil da marca (brand description e/ou informações do
   Não avalie o briefing. Não faça outras perguntas.
 - Se userMessageCount >= 2: o usuário já respondeu na mensagem anterior. Use essas respostas como contexto adicional SOMENTE para este post (não repita essas perguntas de novo nesta conversa, e não presuma que elas foram salvas no Brand Kit). Prossiga normalmente com a geração.` : ''
 
+  const mainDateCtx = getCurrentDateContext()
+
   const prompt = `Você é um designer sênior de redes sociais. Fala pouco, pergunta o essencial, gera rápido.
 
 REGRA ABSOLUTA DE RESPOSTA: máximo 2 frases por mensagem de texto. Sem elogios. Sem contexto desnecessário. Sem repetir o que o usuário disse. Uma pergunta por vez quando precisar de informação.
+${buildAntiHallucinationRules(mainDateCtx)}
 
 CONTEXTO DA MARCA (já conhecido — não pergunte sobre isso):
 ${brandCtx || 'Não disponível'}${nicheCtx}${nichoInfoCtx}${lockedCtx}${profileRule}
