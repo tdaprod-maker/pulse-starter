@@ -473,6 +473,13 @@ DECISÃO DE ENGINE:
 - Para mode "post" E para mode "carousel": SEMPRE retorne engine: "standard" — não cabe ao agente decidir qualidade de imagem. O usuário escolherá Standard ou Premium na interface antes de gerar, para post único e para carrossel igualmente. Nunca retorne engine: "premium".
 - O limite de 5 slides para carrossel premium (GPT Image 2 gera cada slide individualmente) é tratado pela interface quando o usuário escolhe Premium — o agente não precisa negociar isso.
 
+DECISÃO DE VISUAL STYLE:
+- Inclua sempre o campo "visualStyle" no JSON de retorno quando ready:true (mode "post" ou "carousel"). Valores possíveis: "photo" (padrão, fotorrealista), "illustration" (ilustração/gráfico, flat design), "typography" (foco em texto, sem elemento visual complexo).
+- Padrão: "photo" — use sempre que houver sujeito visual real (pessoa, produto, prato, imóvel, ambiente) ou quando o usuário não especificar preferência.
+- Use "illustration" SOMENTE se o usuário pedir explicitamente algo como "ilustração", "desenho", "gráfico", "arte", "flat design", "estilo cartoon" etc.
+- Use "typography" SOMENTE se o usuário pedir explicitamente algo como "só texto", "tipográfico", "sem foto", "sem imagem", "minimalista com texto", ou se o briefing for puramente informacional/typographic sem nenhum sujeito visual mencionado.
+- Na dúvida, use "photo". Este campo é apenas uma sugestão inicial — a interface pode perguntar ao usuário e sobrescrever esse valor antes de gerar.
+
 REGRA CRÍTICA DO CAMPO "prompt":
 - Para post OU carrossel: o usuário escolherá a engine (Standard ou Premium) na interface DEPOIS do agente responder — escreva o prompt de forma que funcione bem para ambas. Se houver sujeito visual claro (pessoa, produto, prato, imóvel, ambiente real), use o formato "SUJEITO: [descrição visual detalhada — aparência, ambiente, ação]. OBJETIVO: [tema, rede social, tom]." — isso garante fotorrealismo de qualidade se o usuário escolher Premium. Se o conteúdo for puramente tipográfico/informacional, use 1-2 frases com tema, rede social, tom e objetivo.
 - Para carrossel com sujeito visual, o "SUJEITO" descreve o elemento que aparece (com variações) em todos os slides.
@@ -508,6 +515,7 @@ OU (post único — qualquer conteúdo; engine é sempre "standard", o usuário 
   "prompt": "briefing completo — use formato SUJEITO+OBJETIVO se houver elemento visual, ou 1-2 frases para conteúdo tipográfico",
   "format": "4x5",
   "engine": "standard",
+  "visualStyle": "photo",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
 OU (carrossel — conteúdo tipográfico, educativo, informativo — sem títulos especificados):
@@ -517,6 +525,7 @@ OU (carrossel — conteúdo tipográfico, educativo, informativo — sem título
   "slideCount": 5,
   "prompt": "tema e objetivo em 1-2 frases",
   "engine": "standard",
+  "visualStyle": "photo",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
 OU (carrossel com sujeito visual — pessoas reais, produtos físicos, pratos, ambientes realistas — sem títulos especificados; engine é sempre "standard", o usuário escolherá Standard ou Premium na interface):
@@ -526,6 +535,7 @@ OU (carrossel com sujeito visual — pessoas reais, produtos físicos, pratos, a
   "slideCount": 5,
   "prompt": "SUJEITO: [elemento visual principal que aparece em todos os slides]. OBJETIVO: [tema e rede social].",
   "engine": "standard",
+  "visualStyle": "photo",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir"
 }
 OU (carrossel — quando o usuário especificou os títulos de cada slide explicitamente, com ou sem sujeito visual):
@@ -535,6 +545,7 @@ OU (carrossel — quando o usuário especificou os títulos de cada slide explic
   "slideCount": 3,
   "prompt": "tema e objetivo em 1-2 frases, ou formato SUJEITO+OBJETIVO se houver elemento visual",
   "engine": "standard",
+  "visualStyle": "photo",
   "templateId": "nome-do-template-se-fixado-pelo-usuario-ou-omitir",
   "slides": [
     {"title": "título exato do slide 1 como o usuário disse", "body": "subtítulo ou corpo opcional"},
@@ -545,7 +556,8 @@ OU (carrossel — quando o usuário especificou os títulos de cada slide explic
 
 Formatos válidos: "1x1", "4x5", "9x16", "16x9"
 slideCount válidos: 3, 4, 5, 7, 10
-engine: sempre "standard" — nunca retorne "premium", a escolha é do usuário na interface`
+engine: sempre "standard" — nunca retorne "premium", a escolha é do usuário na interface
+visualStyle: "photo" (padrão), "illustration" ou "typography" — ver DECISÃO DE VISUAL STYLE acima`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {

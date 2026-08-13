@@ -10,6 +10,8 @@ import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
 import { validateSlides, validatePremiumSlides } from '../services/carouselValidation'
 
+type VisualStyle = 'photo' | 'illustration' | 'typography'
+
 interface PendingGeneration {
   prompt: string
   format?: string
@@ -17,6 +19,7 @@ interface PendingGeneration {
   slideCount?: number
   templateId?: string
   slides?: { title: string; body?: string }[]
+  visualStyle?: VisualStyle
 }
 
 export interface ActivePost {
@@ -114,7 +117,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setUploadedPhotos(results)
     const count = results.length
     if (pendingPhotoAsk) {
-      const p = pendingPhotoAsk
+      const p: PendingGeneration = { ...pendingPhotoAsk, visualStyle: 'photo' }
       setPendingPhotoAsk(null)
       setPendingEngineChoice(p)
       setMessages(prev => [...prev, {
@@ -635,7 +638,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     })
   }
 
-  async function generatePremium(prompt: string, format?: string) {
+  async function generatePremium(prompt: string, format?: string, visualStyle?: VisualStyle) {
     console.log('[generatePremium] iniciando, prompt:', prompt.slice(0, 60))
     console.log('[generatePremium] onPremiumGenerated disponível?', typeof onPremiumGenerated)
     console.log('[generatePremium] uploadedPhoto no momento da chamada:', uploadedPhoto ? `presente (${uploadedPhoto.length} chars)` : '(nenhuma)')
@@ -687,6 +690,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt, slideIndex: 1, totalSlides: 1, styleContext, segment: brandCtx?.segment, size: fmt.size,
+            ...(visualStyle ? { visualStyle } : {}),
             ...(compressedPhoto ? { visualReferences: [compressedPhoto] } : {}),
           }),
           signal: controller.signal,
@@ -844,7 +848,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
-  async function generatePremiumCarousel(prompt: string, slideCount: number, templateId?: string, presetSlides?: { title: string; body?: string }[]) {
+  async function generatePremiumCarousel(prompt: string, slideCount: number, templateId?: string, presetSlides?: { title: string; body?: string }[], visualStyle?: VisualStyle) {
     const cappedCount = Math.min(slideCount, 5)
     setGenerating(true)
     try {
@@ -955,6 +959,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 size: '1024x1536',
                 slideTitle: resolvedSlideTitle,
                 slideBody: resolvedSlideBody,
+                ...(visualStyle ? { visualStyle } : {}),
                 ...(compressedPhoto ? { visualReferences: [compressedPhoto] } : {}),
               }),
               signal: controller.signal,
@@ -1192,13 +1197,14 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (response.ready && response.prompt) {
         if (response.mode === 'carousel') {
           const slideCount = response.slideCount ?? 5
-          const pending: PendingGeneration = { prompt: response.prompt, mode: 'carousel', slideCount, templateId: response.templateId, slides: response.slides }
+          const pending: PendingGeneration = { prompt: response.prompt, mode: 'carousel', slideCount, templateId: response.templateId, slides: response.slides, visualStyle: response.visualStyle }
           if (!uploadedPhoto) {
-            // Antes de gerar, pergunta se o usuário tem uma foto para usar como referência nos slides
+            // Antes de gerar, pergunta se o usuário tem uma foto para usar como referência nos slides,
+            // ou prefere que a IA crie em outro estilo visual (foto, ilustração ou tipográfico)
             setPendingPhotoAsk(pending)
             setMessages(prev => [...prev, {
               role: 'agent',
-              content: 'Você tem uma foto para usar como referência visual nos slides? Pode enviar agora ou deixo a IA criar as imagens.',
+              content: 'Você tem uma foto para usar como referência nos slides, ou prefere que eu crie: uma foto realista, uma ilustração/gráfico, ou algo mais tipográfico (foco no texto)?',
             }])
           } else {
             // Carrossel — usuário sempre escolhe a engine, igual ao post único
@@ -1211,12 +1217,13 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             }])
           }
         } else if (!uploadedPhoto) {
-          // Antes de gerar, pergunta se o usuário tem uma foto para usar
+          // Antes de gerar, pergunta se o usuário tem uma foto para usar,
+          // ou prefere que a IA crie em outro estilo visual (foto, ilustração ou tipográfico)
           console.log('[handleSend] setPendingPhotoAsk | prompt:', response.prompt?.slice(0, 60), '| format:', response.format)
-          setPendingPhotoAsk({ prompt: response.prompt, format: response.format, mode: 'post' })
+          setPendingPhotoAsk({ prompt: response.prompt, format: response.format, mode: 'post', visualStyle: response.visualStyle })
           setMessages(prev => [...prev, {
             role: 'agent',
-            content: 'Você tem uma foto para usar? Pode enviar agora ou deixo a IA criar uma.',
+            content: 'Você tem uma foto para usar como referência, ou prefere que eu crie: uma foto realista, uma ilustração/gráfico, ou algo mais tipográfico (foco no texto)?',
           }])
         } else {
           // Post — usuário sempre escolhe a engine
@@ -1455,42 +1462,74 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             </button>
           </div>
         )}
-        {pendingPhotoAsk && !loading && !generating && (
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => photoInputRef.current?.click()}
-              style={{
-                padding: '7px 14px', borderRadius: '8px', border: 'none',
-                background: 'var(--accent)', color: 'white',
-                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              📷 Enviar foto
-            </button>
-            <button
-              onClick={() => {
-                const p = pendingPhotoAsk
-                setPendingPhotoAsk(null)
-                setPendingEngineChoice(p)
-                setMessages(prev => [...prev, {
-                  role: 'agent',
-                  content: p.mode === 'carousel'
-                    ? 'Sem problema, deixo a IA criar as imagens dos slides. Qual qualidade de imagem você prefere?'
-                    : 'Sem problema, deixo a IA criar a imagem. Qual qualidade de imagem você prefere?',
-                }])
-              }}
-              style={{
-                padding: '7px 14px', borderRadius: '8px',
-                border: '1px solid var(--border)', background: 'transparent',
-                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              Deixar a IA criar
-            </button>
-          </div>
-        )}
+        {pendingPhotoAsk && !loading && !generating && (() => {
+          const chooseVisualStyle = (visualStyle: VisualStyle, confirmMsg: { carousel: string; post: string }) => {
+            const p = pendingPhotoAsk!
+            setPendingPhotoAsk(null)
+            setPendingEngineChoice({ ...p, visualStyle })
+            setMessages(prev => [...prev, {
+              role: 'agent',
+              content: p.mode === 'carousel' ? confirmMsg.carousel : confirmMsg.post,
+            }])
+          }
+          return (
+            <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                style={{
+                  padding: '7px 14px', borderRadius: '8px', border: 'none',
+                  background: 'var(--accent)', color: 'white',
+                  fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                📷 Enviar foto
+              </button>
+              <button
+                onClick={() => chooseVisualStyle('photo', {
+                  carousel: 'Sem problema, deixo a IA criar as imagens dos slides como fotos realistas. Qual qualidade de imagem você prefere?',
+                  post: 'Sem problema, deixo a IA criar uma foto realista. Qual qualidade de imagem você prefere?',
+                })}
+                style={{
+                  padding: '7px 14px', borderRadius: '8px',
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                🖼️ Foto realista
+              </button>
+              <button
+                onClick={() => chooseVisualStyle('illustration', {
+                  carousel: 'Combinado, vou criar os slides como ilustração/gráfico. Qual qualidade de imagem você prefere?',
+                  post: 'Combinado, vou criar como ilustração/gráfico. Qual qualidade de imagem você prefere?',
+                })}
+                style={{
+                  padding: '7px 14px', borderRadius: '8px',
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                🎨 Ilustração
+              </button>
+              <button
+                onClick={() => chooseVisualStyle('typography', {
+                  carousel: 'Combinado, vou focar em tipografia nos slides, sem elemento fotográfico central. Qual qualidade de imagem você prefere?',
+                  post: 'Combinado, vou focar em tipografia, sem elemento fotográfico central. Qual qualidade de imagem você prefere?',
+                })}
+                style={{
+                  padding: '7px 14px', borderRadius: '8px',
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                🔤 Tipográfico
+              </button>
+            </div>
+          )
+        })()}
         {pendingEngineChoice && !loading && !generating && (() => {
           const p = pendingEngineChoice
           const isCarousel = p.mode === 'carousel'
@@ -1530,9 +1569,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                   setPendingEngineChoice(null)
                   onGenerating?.('premium')
                   if (isCarousel) {
-                    generatePremiumCarousel(p.prompt, cappedPremiumCount, p.templateId, p.slides)
+                    generatePremiumCarousel(p.prompt, cappedPremiumCount, p.templateId, p.slides, p.visualStyle)
                   } else {
-                    generatePremium(p.prompt, p.format)
+                    generatePremium(p.prompt, p.format, p.visualStyle)
                   }
                 }}
                 style={{

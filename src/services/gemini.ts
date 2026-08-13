@@ -482,6 +482,8 @@ export interface AgentResponse {
   templateId?: string
   engine?: 'standard' | 'premium'
   slides?: { title: string; body?: string }[]
+  /** Estilo visual sugerido pelo agente: "photo" (padrão, fotorrealista), "illustration" (ilustração/flat design) ou "typography" (foco em texto, sem elemento visual complexo). */
+  visualStyle?: 'photo' | 'illustration' | 'typography'
   // Edit mode fields
   actions?: EditAction[]
   needs_confirm?: boolean

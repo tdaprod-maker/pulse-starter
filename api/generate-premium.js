@@ -20,16 +20,63 @@ function styleForSegment(text) {
   return 'cinematic photography, professional lighting, editorial style'
 }
 
+function illustrationStyleForSegment(text) {
+  const t = (text || '').toLowerCase()
+  if (/food|restaurant|gastronom|comida|culin[aá]ria|card[aá]pio|delivery|chef|bebida/.test(t)) {
+    return 'warm flat illustration, appetizing color palette, simple food iconography'
+  }
+  if (/health|sa[uú]de|cl[ií]nic|medic|farm[aá]c|hospital|dentist|odont|paciente/.test(t)) {
+    return 'clean clinical flat illustration, calming pastel palette, simple medical iconography'
+  }
+  if (/tech|\bia\b|intelig[eê]ncia artificial|software|startup|\bai\b|saas|agente/.test(t)) {
+    return 'modern tech flat illustration, dark background with blue/purple accent shapes, geometric iconography'
+  }
+  if (/im[óo]v|constru|realty|real estate|arquitet|imobili[aá]ri/.test(t)) {
+    return 'architectural flat illustration, warm golden-hour palette, simplified building shapes'
+  }
+  if (/moda|fashion|beleza|beauty|cosm[eé]tic|est[eé]tica/.test(t)) {
+    return 'elegant fashion flat illustration, refined color palette, minimal luxury iconography'
+  }
+  return 'professional flat illustration, clean editorial color palette'
+}
+
+// Regras específicas por estilo visual — sujeito, padrão de qualidade e negative
+// prompt mudam bastante entre foto realista, ilustração vetorial e composição
+// tipográfica pura, então cada um tem seu próprio bloco em vez de forçar as
+// mesmas instruções fotográficas em todos os casos.
+const SUBJECT_RULE_BY_STYLE = {
+  photo: (slideTitle) => `- If the brief describes a real person, food dish, physical product, animal, or real location: that subject MUST be rendered as the PHOTOREALISTIC main visual element. The person or subject is the hero of the image. Render them realistically, prominently, clearly.${slideTitle ? ' Typography is essential — see CAROUSEL SLIDE TEXT OVERLAY section below.' : ' Typography is secondary — one minimal text overlay at most.'}
+- If the brief is purely informational or typographic (no specific visual subject described): create a strong typographic composition with large, bold text as the focal point.`,
+  illustration: (slideTitle) => `- Render the subject described in the VISUAL BRIEF as a professional vector illustration / flat design graphic — NOT a photograph. Use clean geometric shapes, bold flat colors, confident line work, and simple gradients if any. Style reference: modern SaaS/editorial flat illustration systems (e.g. Stripe, Notion, premium design agency work).
+- No photographic textures, no photorealistic skin/materials, no 3D render, no photo-collage. Keep a single consistent illustration style throughout the image.${slideTitle ? ' Typography is essential — see CAROUSEL SLIDE TEXT OVERLAY section below.' : ' Typography is secondary — one minimal text overlay at most.'}`,
+  typography: () => `- Do NOT render any photographic or illustrated subject. This is a purely typographic composition — large, bold text IS the entire visual. No people, no products, no photographic background, no complex illustration.
+- Background must be a simple solid color, subtle gradient, or minimal geometric shape/pattern that supports the text without competing with it. Typography is always the primary and essential element, regardless of slide title presence.`,
+}
+
+const QUALITY_STANDARD_BY_STYLE = {
+  photo: 'Photorealistic and polished — indistinguishable from a premium photo shoot or agency design.',
+  illustration: "Polished professional vector illustration — indistinguishable from a premium design agency's custom illustration system.",
+  typography: 'Polished minimalist typographic design — indistinguishable from a premium editorial or brand campaign title card.',
+}
+
+const AVOID_BY_STYLE = {
+  photo: 'generic AI aesthetics, plastic skin, symmetrical faces, oversaturated colors, fake HDR, dramatic god rays, floating particles, lens flares, glowing edges, perfect smiles, perfect hands, perfect offices, exaggerated reflections, random futuristic elements, visual clutter, stock photo feeling, cheap advertising aesthetic, CGI appearance, overly polished rendering, neon colors, excessive gradients',
+  illustration: 'photographic realism, photo textures, 3D render, CGI, stock photo look, blurry raster edges, inconsistent illustration styles mixed in one image, generic meaningless AI illustration clichés (random floating blobs/shapes), muddy colors, low-contrast flat shapes, visual clutter',
+  typography: 'photographic elements, realistic people or objects, complex illustrations, busy or noisy backgrounds, stock photo textures, 3D render, gradients or shapes that compete with the text, visual clutter',
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody } = req.body
+  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody, visualStyle } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' })
   }
+
+  const resolvedVisualStyle = visualStyle === 'illustration' || visualStyle === 'typography' ? visualStyle : 'photo'
 
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
@@ -40,7 +87,7 @@ export default async function handler(req, res) {
   const carouselTextOverlay = slideTitle ? `
 
 CAROUSEL SLIDE TEXT OVERLAY — MANDATORY OVERRIDE:
-This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. This requirement overrides the "Typography is secondary" rule above.
+This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. This requirement takes priority over any conflicting typography guidance above.
 ${slideBody
   ? `Render ONLY this exact text visible in the image: "${slideTitle}" as the headline, and "${slideBody}" as a short supporting subtitle. Nothing else. No bullet points, no icons with labels, no lists, no additional text sections.`
   : `Render ONLY this exact text visible in the image: "${slideTitle}". Nothing else. No subtitles, no bullet points, no icons with labels, no lists, no multiple text sections.`}
@@ -54,7 +101,11 @@ Text placement rules:
 - CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
 - CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.` : ''
 
-  const visualStyleDirective = styleForSegment(segment || styleContext)
+  const visualStyleDirective = resolvedVisualStyle === 'illustration'
+    ? illustrationStyleForSegment(segment || styleContext)
+    : resolvedVisualStyle === 'typography'
+    ? 'minimalist typographic design, generous negative space, no photographic or illustrated elements'
+    : styleForSegment(segment || styleContext)
 
   const photoIdentityRule = visualReferences?.length
     ? '\n- CRITICAL: Preserve ALL human faces, bodies and people EXACTLY as they appear in the reference photo. Do NOT alter, replace, add or remove any person. Do NOT generate new people. Only enhance lighting, atmosphere, background and add text overlays. Any person visible in the reference must appear identical in the output.'
@@ -73,8 +124,7 @@ VISUAL BRIEF:
 ${prompt}
 
 VISUAL SUBJECT RULE (most important rule — read carefully):
-- If the brief describes a real person, food dish, physical product, animal, or real location: that subject MUST be rendered as the PHOTOREALISTIC main visual element. The person or subject is the hero of the image. Render them realistically, prominently, clearly.${slideTitle ? ' Typography is essential — see CAROUSEL SLIDE TEXT OVERLAY section below.' : ' Typography is secondary — one minimal text overlay at most.'}
-- If the brief is purely informational or typographic (no specific visual subject described): create a strong typographic composition with large, bold text as the focal point.
+${SUBJECT_RULE_BY_STYLE[resolvedVisualStyle](slideTitle)}
 
 MANDATORY RULES:
 - Clean layout with generous negative space — no clutter
@@ -91,9 +141,9 @@ MANDATORY RULES:
 - CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
 - CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.${photoIdentityRule}
 ${carouselTextOverlay}
-QUALITY STANDARD: Photorealistic and polished — indistinguishable from a premium photo shoot or agency design.
+QUALITY STANDARD: ${QUALITY_STANDARD_BY_STYLE[resolvedVisualStyle]}
 
-Avoid: generic AI aesthetics, plastic skin, symmetrical faces, oversaturated colors, fake HDR, dramatic god rays, floating particles, lens flares, glowing edges, perfect smiles, perfect hands, perfect offices, exaggerated reflections, random futuristic elements, visual clutter, stock photo feeling, cheap advertising aesthetic, CGI appearance, overly polished rendering, neon colors, excessive gradients.`
+Avoid: ${AVOID_BY_STYLE[resolvedVisualStyle]}.`
 
   try {
     // Se tem referência de imagem (base64 ou URL), usa edits
