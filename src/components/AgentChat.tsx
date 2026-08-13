@@ -69,61 +69,94 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [loading, setLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<{ stop(): void } | null>(null)
-  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null)
+  // Múltiplas fotos de referência: em carrosséis, cada foto é associada a um slide
+  // na ordem de envio (ver photoForSlideIndex). Fora do carrossel, apenas a primeira
+  // foto (uploadedPhoto) é usada — comportamento inalterado para post único/edição.
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
+  const uploadedPhoto = uploadedPhotos[0] ?? null
   const [pendingPhotoAsk, setPendingPhotoAsk] = useState<PendingGeneration | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
-  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const result = ev.target?.result
-      if (typeof result !== 'string') return
-      setUploadedPhoto(result)
-      if (pendingPhotoAsk) {
-        const p = pendingPhotoAsk
-        setPendingPhotoAsk(null)
-        setPendingEngineChoice(p)
-        setMessages(prev => [...prev, {
-          role: 'agent',
-          content: p.mode === 'carousel'
-            ? '📷 Foto recebida! Vou usar ela como referência visual nos slides. Qual qualidade de imagem você prefere?'
-            : '📷 Foto recebida! Vou usar ela como base do post. Qual qualidade de imagem você prefere?',
-        }])
-      } else if (activePost || hasGeneratedPost) {
-        // Já existe um post ativo (modo edição) — aplica a foto direto como novo fundo,
-        // sem depender do fluxo de regenerate_image do agente.
-        const activeId = useStore.getState().activeTemplateId
-        if (activeId) {
-          const currentTemplate = useStore.getState().templates.find(t => t.id === activeId)
-          const promptFallback = currentTemplate?.imagePrompt
-          setTemplateBackground(activeId, result)
-          if (promptFallback) setTemplateImagePrompt(activeId, promptFallback)
-          const base = activeId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
-          const def = templateRegistry.find(d => d.id === base)
-          def?.getVariants(theme).forEach(v => {
-            if (v.id !== activeId) {
-              setTemplateBackground(v.id, result)
-              if (promptFallback) setTemplateImagePrompt(v.id, promptFallback)
-            }
-          })
-        }
-        setPendingRegenImage(null)
-        setUploadedPhoto(null)
-        setMessages(prev => [...prev, {
-          role: 'agent',
-          content: '📷 Foto aplicada como novo fundo do post!',
-        }])
-      } else {
-        setMessages(prev => [...prev, {
-          role: 'agent',
-          content: '📷 Foto anexada — vou usar ela como base quando você pedir para gerar o post.',
-        }])
+  function readFileAsDataURL(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const result = ev.target?.result
+        if (typeof result === 'string') resolve(result)
+        else reject(new Error('Falha ao ler arquivo'))
       }
+      reader.onerror = () => reject(new Error('Falha ao ler arquivo'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Dado um array de fotos e o índice do slide, decide qual foto (se houver) usar:
+  // - 0 fotos: nenhuma referência
+  // - 1 foto: a mesma foto em todos os slides (comportamento atual, inalterado)
+  // - N fotos: uma por slide, na ordem enviada; slides além de N geram sem referência
+  function photoForSlideIndex(photos: string[], index: number): string | undefined {
+    if (photos.length === 0) return undefined
+    if (photos.length === 1) return photos[0]
+    return photos[index]
+  }
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    if (files.length === 0) return
+    let results: string[]
+    try {
+      results = await Promise.all(files.map(readFileAsDataURL))
+    } catch (err) {
+      console.error('[handlePhotoUpload] erro ao ler fotos:', err)
+      return
     }
-    reader.readAsDataURL(file)
+    setUploadedPhotos(results)
+    const count = results.length
+    if (pendingPhotoAsk) {
+      const p = pendingPhotoAsk
+      setPendingPhotoAsk(null)
+      setPendingEngineChoice(p)
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: p.mode === 'carousel'
+          ? (count > 1
+              ? `📷 ${count} fotos recebidas! Vou associar uma foto a cada slide, na ordem enviada. Qual qualidade de imagem você prefere?`
+              : '📷 Foto recebida! Vou usar ela como referência visual nos slides. Qual qualidade de imagem você prefere?')
+          : '📷 Foto recebida! Vou usar ela como base do post. Qual qualidade de imagem você prefere?',
+      }])
+    } else if (activePost || hasGeneratedPost) {
+      // Já existe um post ativo (modo edição) — aplica a primeira foto direto como novo fundo,
+      // sem depender do fluxo de regenerate_image do agente.
+      const activeId = useStore.getState().activeTemplateId
+      if (activeId) {
+        const currentTemplate = useStore.getState().templates.find(t => t.id === activeId)
+        const promptFallback = currentTemplate?.imagePrompt
+        setTemplateBackground(activeId, results[0])
+        if (promptFallback) setTemplateImagePrompt(activeId, promptFallback)
+        const base = activeId.replace(/-1x1$|-4x5$|-9x16$|-16x9$/, '')
+        const def = templateRegistry.find(d => d.id === base)
+        def?.getVariants(theme).forEach(v => {
+          if (v.id !== activeId) {
+            setTemplateBackground(v.id, results[0])
+            if (promptFallback) setTemplateImagePrompt(v.id, promptFallback)
+          }
+        })
+      }
+      setPendingRegenImage(null)
+      setUploadedPhotos([])
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: '📷 Foto aplicada como novo fundo do post!',
+      }])
+    } else {
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: count > 1
+          ? `📷 ${count} fotos anexadas — vou usar uma por slide do carrossel, na ordem enviada (ou só a primeira, se for um post único).`
+          : '📷 Foto anexada — vou usar ela como base quando você pedir para gerar o post.',
+      }])
+    }
   }
 
   function toggleMic() {
@@ -502,7 +535,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               }
             })
           }
-          if (uploadedPhoto) setUploadedPhoto(null)
+          if (uploadedPhotos.length) setUploadedPhotos([])
         } catch (e) {
           console.error('Erro ao gerar imagem:', e)
         }
@@ -719,7 +752,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       console.log('[generatePremium] chamando onPremiumGenerated com', slides.length, 'slides')
       onPremiumGenerated?.(slides, generatedCaption)
       setHasGeneratedPost(true)
-      if (uploadedPhoto) setUploadedPhoto(null)
+      if (uploadedPhotos.length) setUploadedPhotos([])
       setMessages(prev => [...prev, {
         role: 'agent',
         content: '✦ Post premium gerado! Faça o download ou publique diretamente.',
@@ -780,8 +813,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       })
 
       const imageResults = await Promise.allSettled(
-        agentSlides.map(slide =>
-          slide.imagePrompt?.trim() ? generateImage(slide.imagePrompt, undefined, undefined, uploadedPhoto ?? undefined) : Promise.resolve('')
+        agentSlides.map((slide, i) =>
+          slide.imagePrompt?.trim() ? generateImage(slide.imagePrompt, undefined, undefined, photoForSlideIndex(uploadedPhotos, i)) : Promise.resolve('')
         )
       )
 
@@ -796,7 +829,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (debit.success) notifyBalanceUpdate()
 
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, resolvedTemplateId)
-      if (uploadedPhoto) setUploadedPhoto(null)
+      if (uploadedPhotos.length) setUploadedPhotos([])
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel com ${slideCount} slides gerado! Use as setas para navegar entre os slides.`
@@ -848,10 +881,19 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const carouselData = await generateCarouselContent(prompt, cappedCount, brandContext, resolvedTemplateId)
       const agentSlides = validateSlides(carouselData.slides).slice(0, cappedCount)
 
-      // Comprime uma única vez e reusa em todas as chamadas do loop abaixo —
-      // sem isso, a foto original (às vezes vários MB de um celular) é reenviada
-      // sem compressão em cada slide e estoura o limite de body (413).
-      const compressedPhoto = uploadedPhoto ? await compressReferenceImage(uploadedPhoto) : null
+      // Comprime cada foto de referência uma única vez e reusa via cache — sem isso,
+      // a foto original (às vezes vários MB de um celular) seria reenviada sem
+      // compressão a cada slide e estouraria o limite de body (413). Com múltiplas
+      // fotos, cada slide recebe a foto correspondente ao seu índice de envio.
+      const compressedPhotoCache = new Map<string, string>()
+      async function getCompressedPhoto(photo: string | undefined): Promise<string | null> {
+        if (!photo) return null
+        const cached = compressedPhotoCache.get(photo)
+        if (cached) return cached
+        const compressed = await compressReferenceImage(photo)
+        compressedPhotoCache.set(photo, compressed)
+        return compressed
+      }
 
       const styleContext = [
         brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
@@ -881,6 +923,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         const firstTextsValue = Object.values(slideTexts).find((v): v is string => typeof v === 'string' && v.trim().length > 0)
         const resolvedSlideTitle = presetSlides?.[i]?.title || slide.title || slideTexts.title || firstTextsValue || ''
         const resolvedSlideBody = presetSlides?.[i]?.body || slide.body || slideTexts.body || ''
+
+        const compressedPhoto = await getCompressedPhoto(photoForSlideIndex(uploadedPhotos, i))
 
         let imageUrl = ''
         for (let attempt = 0; attempt < 2; attempt++) {
@@ -941,7 +985,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (debit.success) notifyBalanceUpdate()
 
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, undefined, 'premium')
-      if (uploadedPhoto) setUploadedPhoto(null)
+      if (uploadedPhotos.length) setUploadedPhotos([])
       setMessages(prev => [...prev, {
         role: 'agent',
         content: `✦ Carrossel premium com ${cappedCount} slides gerado! Cada imagem foi criada com GPT Image 2.`,
@@ -1161,7 +1205,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             setPendingEngineChoice(pending)
             setMessages(prev => [...prev, {
               role: 'agent',
-              content: 'Vou usar a foto que você enviou como referência nos slides. Qual qualidade de imagem você prefere para o carrossel?',
+              content: uploadedPhotos.length > 1
+                ? `Vou usar as ${uploadedPhotos.length} fotos que você enviou, uma por slide, na ordem enviada. Qual qualidade de imagem você prefere para o carrossel?`
+                : 'Vou usar a foto que você enviou como referência nos slides. Qual qualidade de imagem você prefere para o carrossel?',
             }])
           }
         } else if (!uploadedPhoto) {
@@ -1213,7 +1259,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingAmbiguous(null)
     setPendingEngineChoice(null)
     setPendingPhotoAsk(null)
-    setUploadedPhoto(null)
+    setUploadedPhotos([])
     setHasGeneratedPost(false)
     onReset?.()
   }
@@ -1338,7 +1384,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                       }
                     })
                   }
-                  if (uploadedPhoto) setUploadedPhoto(null)
+                  if (uploadedPhotos.length) setUploadedPhotos([])
                   setMessages(prev => [...prev, { role: 'agent', content: uploadedPhoto ? '✦ Foto aplicada como nova imagem!' : '✦ Nova imagem gerada!' }])
                 } catch (e: any) {
                   setMessages(prev => [...prev, { role: 'agent', content: e.message || 'Erro ao gerar imagem.' }])
@@ -1553,16 +1599,31 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       </div>
 
       {/* Input */}
-      {uploadedPhoto && (
+      {uploadedPhotos.length > 0 && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
+          display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
           padding: '8px 16px 0', background: 'var(--bg-base)',
         }}>
-          <img src={uploadedPhoto} alt="Foto anexada" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border)' }} />
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Foto anexada — será usada no post</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {uploadedPhotos.map((photo, i) => (
+              <div key={i} style={{ position: 'relative' }}>
+                <img src={photo} alt={`Foto ${i + 1} anexada`} title={`Foto ${i + 1}`} style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border)' }} />
+                {uploadedPhotos.length > 1 && (
+                  <span style={{
+                    position: 'absolute', bottom: '-4px', right: '-4px',
+                    fontSize: '9px', lineHeight: 1, padding: '1px 3px',
+                    borderRadius: '5px', background: 'var(--accent)', color: 'white',
+                  }}>{i + 1}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {uploadedPhotos.length > 1 ? `${uploadedPhotos.length} fotos anexadas — uma por slide, na ordem` : 'Foto anexada — será usada no post'}
+          </span>
           <button
-            onClick={() => setUploadedPhoto(null)}
-            title="Remover foto"
+            onClick={() => setUploadedPhotos([])}
+            title="Remover fotos"
             style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '14px', padding: '2px 6px' }}
           >
             ×
@@ -1579,6 +1640,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           ref={photoInputRef}
           type="file"
           accept="image/*"
+          multiple
           onChange={handlePhotoUpload}
           style={{ display: 'none' }}
         />
