@@ -51,7 +51,8 @@ Text placement rules:
 - Text in Portuguese (Brazil) as provided above — do NOT translate or change it
 - Typography consistency is critical: use only a single clean sans-serif typeface (like Helvetica, Arial or similar) throughout the entire image. Bold weight for headline, regular weight for subtitle. No decorative fonts, no mixed typefaces.
 - CRITICAL SAFETY MARGIN: absolutely no text may be placed within 100px of any edge (top, bottom, left, right). All text must be fully contained within the central 80% of the image both horizontally and vertically. Text touching or extending beyond this safe zone is a failure.
-- CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.` : ''
+- CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
+- CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.` : ''
 
   const visualStyleDirective = styleForSegment(segment || styleContext)
 
@@ -87,7 +88,8 @@ MANDATORY RULES:
 - CRITICAL TEXT LIMIT: Use NO MAXIMUM 2 lines of headline text and 1 short subtitle. NO bullet points, NO icons with labels, NO lists, NO multiple sections of text. One powerful message only. White space is design.
 - CRITICAL COMPOSITION: One dominant subject. Generous white space. Text placed in lower third or upper third, never center. The image must breathe.
 - CRITICAL SAFETY MARGIN: absolutely no text may be placed within 100px of any edge (top, bottom, left, right). All text must be fully contained within the central 80% of the image both horizontally and vertically. Text touching or extending beyond this safe zone is a failure.
-- CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.${photoIdentityRule}
+- CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
+- CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.${photoIdentityRule}
 ${carouselTextOverlay}
 QUALITY STANDARD: Photorealistic and polished — indistinguishable from a premium photo shoot or agency design.
 
