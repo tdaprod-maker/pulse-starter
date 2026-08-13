@@ -1,4 +1,5 @@
 import Konva from 'konva'
+import { isIOS, openIOSSaveOverlay } from '../components/IOSSaveOverlay'
 
 export interface ExportOptions {
   /** Razão de pixels. Use 2/autoScale para obter 2× a resolução nativa. */
@@ -27,28 +28,24 @@ function dataURLtoBlob(dataURL: string): Blob {
   return new Blob([array], { type: mime })
 }
 
-function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
-}
-
 /** Dispara o download de um dataURL no browser, com suporte nativo a mobile iOS. */
 function download(dataURL: string, fileName: string): void {
+  if (isIOS()) {
+    // iOS Safari ignora o atributo download, e window.open com blob URL é pouco
+    // confiável (principalmente no PWA instalado em modo standalone). Em vez disso,
+    // mostra a imagem em tela cheia dentro do próprio app para salvar via toque e segure.
+    openIOSSaveOverlay([{ url: dataURL, label: fileName }])
+    return
+  }
   const blob = dataURLtoBlob(dataURL)
   const blobURL = URL.createObjectURL(blob)
-
-  if (isIOS()) {
-    // iOS Safari ignora o atributo download; abre em nova aba para salvar via toque longo
-    window.open(blobURL, '_blank')
-    setTimeout(() => URL.revokeObjectURL(blobURL), 60_000)
-  } else {
-    const link = document.createElement('a')
-    link.download = fileName
-    link.href = blobURL
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    setTimeout(() => URL.revokeObjectURL(blobURL), 1_000)
-  }
+  const link = document.createElement('a')
+  link.download = fileName
+  link.href = blobURL
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  setTimeout(() => URL.revokeObjectURL(blobURL), 1_000)
 }
 
 /**

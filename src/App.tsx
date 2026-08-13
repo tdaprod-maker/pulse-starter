@@ -19,6 +19,7 @@ import { IntroPage } from './pages/IntroPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { LinkedInCallbackPage } from './pages/LinkedInCallbackPage'
 import { InstagramCallbackPage } from './pages/InstagramCallbackPage'
+import { IOSSaveOverlay } from './components/IOSSaveOverlay'
 import { supabase } from './lib/supabase'
 import { loadBrandConfig } from './services/brandKit'
 import { defaultTheme } from './themes'
@@ -121,6 +122,7 @@ export default function App() {
     <ThemeProvider initialTheme={brandTheme}>
       <BrowserRouter>
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)' }}>
+          <IOSSaveOverlay />
           <Topbar />
           <Routes>
             <Route path="/" element={<EditorPage />} />

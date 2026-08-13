@@ -5,6 +5,7 @@ import { loadBrandConfig } from '../services/brandKit'
 import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
 import { getInstagramConnection } from '../services/socialConnections'
 import { validatePremiumSlides } from '../services/carouselValidation'
+import { isIOS, openIOSSaveOverlay } from './IOSSaveOverlay'
 
 interface Props {
   slides: PremiumSlide[]
@@ -121,6 +122,10 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
   const [igStatus, setIgStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   function handleDownload(imageUrl: string, label: string) {
+    if (isIOS()) {
+      openIOSSaveOverlay([{ url: imageUrl, label }])
+      return
+    }
     const link = document.createElement('a')
     link.href = imageUrl
     link.download = `pulse-premium-${label.toLowerCase().replace(/[:/]/g, '-')}.png`
@@ -128,6 +133,10 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
   }
 
   function handleDownloadAll() {
+    if (isIOS()) {
+      openIOSSaveOverlay(displaySlides.map(slide => ({ url: slide.image, label: slide.label })))
+      return
+    }
     displaySlides.forEach((slide, i) => {
       setTimeout(() => handleDownload(slide.image, slide.label), i * 800)
     })

@@ -13,6 +13,7 @@ import { calcAutoScale } from '../engine/CanvasEngine'
 import { validateSlides } from '../services/carouselValidation'
 import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
 import { getInstagramConnection } from '../services/socialConnections'
+import { isIOS, openIOSSaveOverlay } from './IOSSaveOverlay'
 
 interface CarouselViewerProps {
   slides: SlideWithImage[]
@@ -337,10 +338,35 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     setTimeout(() => setCopiedCaption(false), 2000)
   }
 
+  // Gera os dataURLs de todos os slides do engine standard (Konva) — usado tanto
+  // para montar o ZIP (desktop) quanto para alimentar o overlay de salvar do iOS,
+  // que mostra as imagens em tela cheia em vez de um .zip (pouco confiável no Safari).
+  async function collectStandardSlideDataURLs(): Promise<{ url: string; label: string }[]> {
+    const images: { url: string; label: string }[] = []
+    for (let i = 0; i < slidesList.length; i++) {
+      const stage = stageRefs.current[i]
+      if (!stage) continue
+      const templateStore = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
+      if (!templateStore) continue
+      const autoScale = calcAutoScale(templateStore)
+      const pixelRatio = 2 / autoScale
+      const dataUrl = stage.toDataURL({ pixelRatio, mimeType: 'image/png' })
+      images.push({ url: dataUrl, label: `Slide ${i + 1}` })
+      await new Promise(r => setTimeout(r, 300))
+    }
+    return images
+  }
+
   async function handleDownloadAll() {
     setExporting(true)
     try {
       if (engine === 'premium') {
+        if (isIOS()) {
+          openIOSSaveOverlay(
+            displayedPremiumSlides.map((s, i) => ({ url: s.imageUrl ?? '', label: `Slide ${i + 1}` }))
+          )
+          return
+        }
         const zip = new JSZip()
         for (let i = 0; i < displayedPremiumSlides.length; i++) {
           const imageUrl = displayedPremiumSlides[i].imageUrl
@@ -358,22 +384,16 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         return
       }
       await new Promise(r => setTimeout(r, 800))
-      const zip = new JSZip()
-      for (let i = 0; i < slidesList.length; i++) {
-        const stage = stageRefs.current[i]
-        if (!stage) continue
-        const templateStore = useStore.getState().templates.find(t => t.id === `carousel-slide-${i}`)
-        if (!templateStore) continue
-        const autoScale = calcAutoScale(templateStore)
-        const pixelRatio = 2 / autoScale
-        const dataUrl: string = await new Promise((resolve) => {
-          const url = stage.toDataURL({ pixelRatio, mimeType: 'image/png' })
-          resolve(url)
-        })
-        const base64 = dataUrl.split(',')[1]
-        zip.file(`slide-${i + 1}.png`, base64, { base64: true })
-        await new Promise(r => setTimeout(r, 300))
+      const slideImages = await collectStandardSlideDataURLs()
+      if (isIOS()) {
+        openIOSSaveOverlay(slideImages)
+        return
       }
+      const zip = new JSZip()
+      slideImages.forEach((img, i) => {
+        const base64 = img.url.split(',')[1]
+        if (base64) zip.file(`slide-${i + 1}.png`, base64, { base64: true })
+      })
       const blob = await zip.generateAsync({ type: 'blob' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -392,6 +412,10 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     if (engine === 'premium') {
       const imageUrl = displayedPremiumSlides[current].imageUrl
       if (!imageUrl) return
+      if (isIOS()) {
+        openIOSSaveOverlay([{ url: imageUrl, label: `Slide ${current + 1}` }])
+        return
+      }
       const a = document.createElement('a')
       a.href = imageUrl
       a.download = `slide-${current + 1}.png`
