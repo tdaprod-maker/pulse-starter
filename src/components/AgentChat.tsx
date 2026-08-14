@@ -808,7 +808,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         return { ...slide, title: preset.title, body: preset.body ?? slide.body, texts }
       })
 
-      // Gera imagens em paralelo via FAL.ai
+      // Gera imagens em paralelo via IA (gpt-image-1) — mas quando o usuário enviou
+      // foto para o slide, ela é usada DIRETO como imagem de fundo (mesmo padrão do
+      // post único em generate()): sem chamar generateImage/IA, sem reinterpretação,
+      // sem risco de alucinação. Só passa pela IA quem não tem foto correspondente.
       const slidesWithImages: SlideWithImage[] = []
       setMessages(prev => {
         const msgs = [...prev]
@@ -817,9 +820,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       })
 
       const imageResults = await Promise.allSettled(
-        agentSlides.map((slide, i) =>
-          slide.imagePrompt?.trim() ? generateImage(slide.imagePrompt, undefined, undefined, photoForSlideIndex(uploadedPhotos, i)) : Promise.resolve('')
-        )
+        agentSlides.map((slide, i) => {
+          const slidePhoto = photoForSlideIndex(uploadedPhotos, i)
+          if (slidePhoto) return Promise.resolve(slidePhoto)
+          return slide.imagePrompt?.trim() ? generateImage(slide.imagePrompt) : Promise.resolve('')
+        })
       )
 
       for (let i = 0; i < agentSlides.length; i++) {
