@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
+import { startCheckout, type CheckoutItem } from '../services/billing'
+
+const PLAN_LABEL: Record<string, string> = { monthly: 'Mensal', annual: 'Anual' }
+const STATUS_LABEL: Record<string, string> = {
+  active: 'Ativa', trialing: 'Em teste', past_due: 'Pagamento pendente',
+  canceled: 'Cancelada', unpaid: 'Não paga', incomplete: 'Incompleta', incomplete_expired: 'Expirada',
+}
 
 export function AccountPage() {
   const [loading, setLoading] = useState(true)
@@ -10,6 +17,11 @@ export function AccountPage() {
   const [brandName, setBrandName] = useState('')
   const [segment, setSegment] = useState('')
   const [tone, setTone] = useState('')
+  const [plan, setPlan] = useState<string | null>(null)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null)
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState<CheckoutItem | null>(null)
+  const [checkoutError, setCheckoutError] = useState('')
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -19,7 +31,9 @@ export function AccountPage() {
 
       const [brand, tokenData] = await Promise.all([
         loadBrandConfig(userEmail),
-        supabase.from('user_tokens').select('tokens_remaining, tokens_used').eq('user_email', userEmail).single()
+        supabase.from('user_tokens')
+          .select('tokens_remaining, tokens_used, plan, subscription_status, current_period_end')
+          .eq('user_email', userEmail).single()
       ])
 
       setBrandName(brand.business_name || brand.brand_name || '')
@@ -27,9 +41,26 @@ export function AccountPage() {
       setTone(brand.tone || '')
       setBalance(tokenData.data?.tokens_remaining ?? 0)
       setUsed(tokenData.data?.tokens_used ?? 0)
+      setPlan(tokenData.data?.plan ?? null)
+      setSubscriptionStatus(tokenData.data?.subscription_status ?? null)
+      setCurrentPeriodEnd(tokenData.data?.current_period_end ?? null)
       setLoading(false)
     })
   }, [])
+
+  async function handleCheckout(item: CheckoutItem) {
+    if (!email || checkoutLoading) return
+    setCheckoutError('')
+    setCheckoutLoading(item)
+    try {
+      await startCheckout(email, item)
+    } catch (e: any) {
+      setCheckoutError(e.message ?? 'Erro ao iniciar checkout.')
+      setCheckoutLoading(null)
+    }
+  }
+
+  const isActiveSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing'
 
   const toneLabel: Record<string, string> = {
     professional: 'Profissional',
@@ -104,6 +135,99 @@ export function AccountPage() {
                 <span style={{ fontSize: '12px', fontWeight: 600, color: item.cost === 0 ? '#22c55e' : 'var(--text-primary)' }}>
                   {item.cost === 0 ? 'Grátis' : `${item.cost} pulse${item.cost > 1 ? 's' : ''}`}
                 </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Plano e assinatura */}
+        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Plano
+          </span>
+
+          {plan && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-surface)', borderRadius: '8px', padding: '12px 16px' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Plano {PLAN_LABEL[plan] ?? plan}
+                </p>
+                {currentPeriodEnd && (
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {subscriptionStatus === 'canceled' ? 'Válido até' : 'Renova em'} {new Date(currentPeriodEnd).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              <span style={{
+                fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '999px',
+                background: isActiveSubscriber ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                color: isActiveSubscriber ? '#22c55e' : 'rgb(239,68,68)',
+              }}>
+                {subscriptionStatus ? (STATUS_LABEL[subscriptionStatus] ?? subscriptionStatus) : '—'}
+              </span>
+            </div>
+          )}
+
+          {!isActiveSubscriber && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                { item: 'monthly' as const, label: 'Plano Mensal', price: 'R$ 47,90/mês', detail: '200 pulses/mês' },
+                { item: 'annual' as const, label: 'Plano Anual', price: 'R$ 39,90/mês', detail: 'R$ 478,80/ano · 200 pulses/mês' },
+              ].map(p => (
+                <div key={p.item} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px 16px' }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{p.label}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{p.price} · {p.detail}</p>
+                  </div>
+                  <button
+                    onClick={() => handleCheckout(p.item)}
+                    disabled={checkoutLoading !== null}
+                    style={{
+                      padding: '9px 16px', borderRadius: '8px', border: 'none', cursor: checkoutLoading ? 'default' : 'pointer',
+                      background: '#3A5AFF', color: '#fff', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit',
+                      opacity: checkoutLoading !== null && checkoutLoading !== p.item ? 0.5 : 1,
+                    }}
+                  >
+                    {checkoutLoading === p.item ? 'Abrindo...' : 'Assinar'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {checkoutError && (
+            <p style={{ margin: 0, fontSize: '12px', color: 'rgb(239,68,68)' }}>{checkoutError}</p>
+          )}
+        </div>
+
+        {/* Recarga avulsa de pulses */}
+        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Recarga avulsa
+          </span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
+            {[
+              { item: 'recharge_100' as const, pulses: 100, price: 'R$ 27,90' },
+              { item: 'recharge_200' as const, pulses: 200, price: 'R$ 49,90' },
+              { item: 'recharge_500' as const, pulses: 500, price: 'R$ 99,90' },
+            ].map(r => (
+              <div key={r.item} style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>{r.pulses} pulses</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{r.price}</p>
+                </div>
+                <button
+                  onClick={() => handleCheckout(r.item)}
+                  disabled={checkoutLoading !== null}
+                  style={{
+                    width: '100%', padding: '9px 16px', borderRadius: '8px', cursor: checkoutLoading ? 'default' : 'pointer',
+                    background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)',
+                    fontSize: '13px', fontWeight: 600, fontFamily: 'inherit',
+                    opacity: checkoutLoading !== null && checkoutLoading !== r.item ? 0.5 : 1,
+                  }}
+                >
+                  {checkoutLoading === r.item ? 'Abrindo...' : 'Comprar'}
+                </button>
               </div>
             ))}
           </div>
