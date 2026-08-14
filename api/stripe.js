@@ -127,6 +127,8 @@ async function handleWebhook(req, res, rawBody) {
   const stripe = new Stripe(secretKey)
   const signature = req.headers['stripe-signature']
 
+  console.log(`[stripe/webhook] rawBody.length=${rawBody.length} stripe-signature presente=${Boolean(signature)}`)
+
   let event
   try {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
