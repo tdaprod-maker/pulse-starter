@@ -88,10 +88,10 @@ async function handleCheckout(req, res, rawBody) {
         ? { customer: existing.stripe_customer_id }
         : { customer_email: email }),
       client_reference_id: email,
-      // Tax: precisa da Stripe Tax ativada + endereço de origem configurado no
-      // Dashboard (Settings → Tax). billing_address_collection garante que o
-      // cálculo automático tenha o país/CEP do cliente.
-      automatic_tax: { enabled: true },
+      // Tax: automatic_tax desativado temporariamente — a conta Stripe ainda
+      // não tem país/dados bancários configurados (CNPJ pendente), então o
+      // Stripe Tax não está disponível. Reativar (automatic_tax: { enabled: true })
+      // assim que a conta estiver com o país configurado em Settings → Tax.
       billing_address_collection: 'required',
       metadata: {
         user_email: email,
