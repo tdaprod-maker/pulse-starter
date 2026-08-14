@@ -1,12 +1,36 @@
 {
   "rewrites": [
     {
+      "source": "/api/instagram-auth",
+      "destination": "/api/instagram?action=auth"
+    },
+    {
+      "source": "/api/instagram-callback",
+      "destination": "/api/instagram?action=callback"
+    },
+    {
+      "source": "/api/instagram-post",
+      "destination": "/api/instagram?action=post"
+    },
+    {
+      "source": "/api/linkedin-auth",
+      "destination": "/api/linkedin?action=auth"
+    },
+    {
+      "source": "/api/linkedin-callback",
+      "destination": "/api/linkedin?action=callback"
+    },
+    {
+      "source": "/api/linkedin-post",
+      "destination": "/api/linkedin?action=post"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
     {
       "source": "/auth/linkedin/callback",
-      "destination": "/api/linkedin-callback"
+      "destination": "/api/linkedin?action=callback"
     },
     {
       "source": "/auth/linkedin/done",
@@ -14,7 +38,7 @@
     },
     {
       "source": "/auth/instagram/callback",
-      "destination": "/api/instagram-callback"
+      "destination": "/api/instagram?action=callback"
     },
     {
       "source": "/auth/instagram/done",
