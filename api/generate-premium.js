@@ -186,7 +186,7 @@ Avoid: ${AVOID_BY_STYLE[resolvedVisualStyle]}.`
       parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="quality"${CRLF}${CRLF}medium`)
 
       const preamble = parts.join(CRLF) + CRLF
-      const imageHeader = `--${boundary}${CRLF}Content-Disposition: form-data; name="image"; filename="reference.png"${CRLF}Content-Type: image/png${CRLF}${CRLF}`
+      const imageHeader = `--${boundary}${CRLF}Content-Disposition: form-data; name="image"; filename="reference.jpg"${CRLF}Content-Type: image/jpeg${CRLF}${CRLF}`
       const epilogue = `${CRLF}--${boundary}--`
 
       const body = Buffer.concat([
@@ -222,9 +222,13 @@ Avoid: ${AVOID_BY_STYLE[resolvedVisualStyle]}.`
           const b64 = Buffer.from(ab).toString('base64')
           return res.status(200).json({ image: `data:image/png;base64,${b64}` })
         }
+        // Resposta ok mas sem imagem — não faz sentido cair pro fallback sem referência
+        return res.status(500).json({ error: 'OpenAI images/edits não retornou imagem' })
       }
-      // Se edits falhou, cai no fallback abaixo
-      console.log('[premium] edits failed, falling back to generations')
+
+      // edits falhou de verdade — propaga o erro real da OpenAI em vez de gerar
+      // uma imagem nova ignorando a foto de referência do usuário
+      return res.status(response.status).json({ error: `OpenAI images/edits error: ${responseText}` })
     }
 
     // Fallback: generations sem referência
