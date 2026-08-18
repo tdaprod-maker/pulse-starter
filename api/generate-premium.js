@@ -142,7 +142,8 @@ Treat this strictly as a targeted photo edit, not a scene generated from a text 
 
   const compositionRules = hasReferencePhoto ? `
 - Preserve the reference photo's existing background, framing, angle, and composition exactly — do not replace, crop, or restyle it
-- Only the added text/logo elements should follow the placement and safe-zone rules below; everything else in the photo stays untouched` : `
+- Only the added text/logo elements should follow the placement and safe-zone rules below; everything else in the photo stays untouched
+- TEXT PRIORITY OVER PHOTO FRAMING: If fitting the text within the safe zone (as specified below in the CRITICAL SAFE ZONE rule) requires reducing, repositioning, or adding letterboxing/padding to the reference photo, DO THIS. The text must NEVER be cut off, cropped, or extend beyond the safe zone — this takes priority over preserving the photo at full frame. It is acceptable and expected to show the photo slightly smaller, with neutral padding (solid color bars matching the photo's dominant tone) above/below or sides, to guarantee 100% of the text fits within the safe zone with proper margins. A photo shown smaller with complete, uncropped text is far better than a full-frame photo with cropped or cut-off text.` : `
 - Clean layout with generous negative space — no clutter
 - Dark or neutral background — no loud gradients
 - CRITICAL: Place all key elements in the CENTER 60% of image width and CENTER 70% of image height only
