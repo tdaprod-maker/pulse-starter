@@ -77,6 +77,7 @@ export default async function handler(req, res) {
   }
 
   const resolvedVisualStyle = visualStyle === 'illustration' || visualStyle === 'typography' ? visualStyle : 'photo'
+  const hasReferencePhoto = !!visualReferences?.length
 
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
@@ -101,7 +102,9 @@ Text placement rules:
 - CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
 - CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.` : ''
 
-  const visualStyleDirective = resolvedVisualStyle === 'illustration'
+  const visualStyleDirective = hasReferencePhoto
+    ? "Match the lighting, color grading, and photographic style already present in the reference photo. Do NOT impose a new visual style, mood, or photographic treatment — the reference photo's existing look is the target, not a starting point to redesign."
+    : resolvedVisualStyle === 'illustration'
     ? illustrationStyleForSegment(segment || styleContext)
     : resolvedVisualStyle === 'typography'
     ? 'minimalist typographic design, generous negative space, no photographic or illustrated elements'
@@ -111,12 +114,43 @@ Text placement rules:
   // de peso possível à preservação de identidade — GPT Image 2 tende a distorcer
   // rostos, duplicar pessoas com o mesmo rosto e criar desproporções quando há
   // foto de referência com pessoas.
-  const photoIdentitySection = visualReferences?.length ? `
+  const photoIdentitySection = hasReferencePhoto ? `
 
 CRITICAL FACE AND IDENTITY PRESERVATION:
 When a reference photo is provided, you MUST preserve the exact facial features, proportions, and identity of every person shown. Do NOT alter, distort, duplicate, or generate variations of any face. Do NOT create multiple people with similar or identical faces unless the reference photo already shows multiple distinct people — in that case, preserve each person's individual distinct features exactly. Do NOT change body proportions, facial structure, or any physical characteristic. The person(s) in the output must be immediately recognizable as the exact same person(s) from the reference photo. Any deviation from the reference photo's human features is a critical failure.` : ''
 
+  // Quando há foto de referência, o prompt de "gerar cena do zero" (VISUAL BRIEF +
+  // VISUAL SUBJECT RULE + regras de composição) faz o GPT Image redesenhar a foto
+  // inteira em vez de usá-la como base — por isso esse bloco é substituído por uma
+  // diretiva de edição que trata a foto como base fixa, só com overlay/ajustes.
+  const referenceBaseDirective = hasReferencePhoto ? `
+
+CRITICAL — THE REFERENCE PHOTO IS THE EXACT VISUAL BASE (read first, overrides any instruction below that implies generating a new scene):
+Use the provided image as the exact visual base for the output. Do NOT redraw, reinterpret, recreate, or regenerate the scene, subject, people, objects, background, framing, angle, or composition. The output must be recognizably the same photo, unchanged in every region not explicitly modified below.
+Only make these changes on top of the untouched base photo:
+- Add the text overlay and/or logo space described below (if any)
+- Subtly adjust lighting, color grading, or atmosphere ONLY if explicitly requested in the brief below
+Treat this strictly as a targeted photo edit, not a scene generated from a text brief. Everything else already in the photo — the people, objects, setting, and framing — must remain exactly as provided.` : ''
+
+  const briefLabel = hasReferencePhoto
+    ? 'EDIT INSTRUCTIONS (what to add or adjust on top of the reference photo — this is NOT a new scene to generate)'
+    : 'VISUAL BRIEF'
+
+  const visualSubjectSection = hasReferencePhoto
+    ? '- N/A — a reference photo is provided as the exact visual base (see the CRITICAL directive above). Do not invent, substitute, or redraw a different subject, person, or scene.'
+    : SUBJECT_RULE_BY_STYLE[resolvedVisualStyle](slideTitle)
+
+  const compositionRules = hasReferencePhoto ? `
+- Preserve the reference photo's existing background, framing, angle, and composition exactly — do not replace, crop, or restyle it
+- Only the added text/logo elements should follow the placement and safe-zone rules below; everything else in the photo stays untouched` : `
+- Clean layout with generous negative space — no clutter
+- Dark or neutral background — no loud gradients
+- CRITICAL: Place all key elements in the CENTER 60% of image width and CENTER 70% of image height only
+- CRITICAL: Outer edges must be empty or background only — no text or subjects near edges
+- CRITICAL COMPOSITION: One dominant subject. Generous white space. Text placed in lower third or upper third, never center. The image must breathe.`
+
   const fullPrompt = `Make an image that nobody would suspect was generated by AI.
+${referenceBaseDirective}
 
 You are a professional social media art director generating a high-quality image.
 
@@ -125,31 +159,27 @@ ${styleContext || 'clean, minimal, professional'}
 
 VISUAL STYLE DIRECTION: ${visualStyleDirective}
 
-VISUAL BRIEF:
+${briefLabel}:
 ${prompt}
 
 VISUAL SUBJECT RULE (most important rule — read carefully):
-${SUBJECT_RULE_BY_STYLE[resolvedVisualStyle](slideTitle)}
+${visualSubjectSection}
 ${photoIdentitySection}
 
 MANDATORY RULES:
-- Clean layout with generous negative space — no clutter
-- Dark or neutral background — no loud gradients
+${compositionRules}
 - NO: neon glows, particle effects, lens flares, holographic elements, robotic hands, AI chip imagery unless explicitly requested
 - NO: generic AI stock imagery (blue brain, neural networks, glowing circuits)
 - If the brand has a defined visual style, replicate it: colors, typography weight, spacing, mood
-- CRITICAL: Place all key elements in the CENTER 60% of image width and CENTER 70% of image height only
-- CRITICAL: Outer edges must be empty or background only — no text or subjects near edges
 - CRITICAL: Do NOT include any logo or brand mark — the logo will be overlaid separately
 - CRITICAL TEXT LIMIT: Use NO MAXIMUM 2 lines of headline text and 1 short subtitle. NO bullet points, NO icons with labels, NO lists, NO multiple sections of text. One powerful message only. White space is design.
-- CRITICAL COMPOSITION: One dominant subject. Generous white space. Text placed in lower third or upper third, never center. The image must breathe.
 - CRITICAL SAFE ZONE (Instagram compliance): For a 1080x1350px (4:5) canvas, keep all text and logo elements within a safe zone of 1012x1230px centered in the image — that means a margin of approximately 34px from left/right edges and 60px from top/bottom edges. Scale this proportionally for other aspect ratios (1:1, 9:16, 16:9): maintain roughly 3% margin on left/right and 4.5% margin on top/bottom relative to canvas dimensions. NEVER place text or logo outside this safe zone. This is mandatory for correct display in Instagram feed and profile grid without cropping.
 - CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
 - CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.
 ${carouselTextOverlay}
-QUALITY STANDARD: ${QUALITY_STANDARD_BY_STYLE[resolvedVisualStyle]}
+QUALITY STANDARD: ${hasReferencePhoto ? 'Polished, professional photo edit — indistinguishable from the original photo with a subtle, high-end text/logo overlay added on top.' : QUALITY_STANDARD_BY_STYLE[resolvedVisualStyle]}
 
-Avoid: ${AVOID_BY_STYLE[resolvedVisualStyle]}.`
+Avoid: ${hasReferencePhoto ? 'redrawing or reinterpreting the scene, replacing the background, altering the subject, generic AI aesthetics, plastic skin, oversaturated colors, fake HDR' : AVOID_BY_STYLE[resolvedVisualStyle]}.`
 
   try {
     // Se tem referência de imagem (base64 ou URL), usa edits
