@@ -50,12 +50,26 @@ export interface Caption {
   hashtags: string
 }
 
+/** Carrossel salvo (tabela `carousels`) pendente de restauração no Editor — usado para carrosséis premium, que abrem no PremiumResultViewer em vez do CarouselPage. */
+export interface PendingCarousel {
+  id: string
+  title: string
+  prompt: string
+  template_id: string
+  slides: string
+  slide_images: string
+  caption: string
+  settings: string
+  created_at: string
+}
+
 interface PulseStore {
   templates: Template[]
   activeTemplateId: string | null
   selectedElementId: string | null
   caption: Caption | null
   pendingPost: PostRecord | null
+  pendingCarousel: PendingCarousel | null
 
   setActiveTemplate: (id: string) => void
   setSelectedElement: (id: string | null) => void
@@ -73,6 +87,7 @@ interface PulseStore {
   setTemplateBackgroundOpacity: (templateId: string, opacity: number) => void
   setCaption: (caption: Caption | null) => void
   setPendingPost: (post: PostRecord | null) => void
+  setPendingCarousel: (carousel: PendingCarousel | null) => void
 }
 
 export const useStore = create<PulseStore>()(
@@ -83,6 +98,7 @@ export const useStore = create<PulseStore>()(
   selectedElementId: null,
   caption: null,
   pendingPost: null,
+  pendingCarousel: null,
 
   setActiveTemplate: (id) => set({ activeTemplateId: id, selectedElementId: null }),
   setSelectedElement: (id) => set({ selectedElementId: id }),
@@ -243,6 +259,7 @@ export const useStore = create<PulseStore>()(
     }),
   setCaption: (caption) => set({ caption }),
   setPendingPost: (post) => set({ pendingPost: post }),
+  setPendingCarousel: (carousel) => set({ pendingCarousel: carousel }),
     }),
     {
       name: 'pulse-store',
@@ -254,7 +271,7 @@ export const useStore = create<PulseStore>()(
       partialize: (state) => ({
         // activeTemplateId não persiste — sempre começa sem template selecionado
         caption: state.caption,
-        // pendingPost não persiste — estado transiente
+        // pendingPost e pendingCarousel não persistem — estado transiente
         templates: state.templates.map(({ backgroundImage: _bg, logoImage: _logo, ...rest }) => rest),
       }),
     }

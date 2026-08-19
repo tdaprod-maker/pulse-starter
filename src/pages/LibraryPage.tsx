@@ -68,8 +68,6 @@ export function LibraryPage() {
   const [loading, setLoading]       = useState(true)
   const [deleting, setDeleting]     = useState<string | null>(null)
   const [selected, setSelected]     = useState<Set<string>>(new Set())
-  const [selectedPost, setSelectedPost] = useState<PostRecord | null>(null)
-  const [activeCarousel, setActiveCarousel] = useState<CarouselRecord | null>(null)
   const [linkedinToken, setLinkedinToken] = useState('')
   const [linkedinSub, setLinkedinSub]     = useState('')
   const [publishingId, setPublishingId]   = useState<string | null>(null)
@@ -176,12 +174,16 @@ export function LibraryPage() {
   }
 
   function handleOpenPost(post: PostRecord) {
-    const isPremium = post.template_id === 'premium-single' || post.template_id === 'premium-carousel'
-    if (isPremium) {
-      setSelectedPost(selectedPost?.id === post.id ? null : post)
-    } else {
-      useStore.getState().setPendingPost(post)
+    useStore.getState().setPendingPost(post)
+    navigate('/')
+  }
+
+  function handleOpenCarousel(carousel: CarouselRecord) {
+    if (carousel.template_id === 'premium-carousel') {
+      useStore.getState().setPendingCarousel(carousel)
       navigate('/')
+    } else {
+      handleRestoreCarousel(carousel)
     }
   }
 
@@ -223,11 +225,6 @@ export function LibraryPage() {
     } finally {
       setPublishingId(null)
     }
-  }
-
-  function getPremiumCaption(post: PostRecord) {
-    try { return (JSON.parse(post.image_prompt ?? '{}')).caption ?? null }
-    catch { return null }
   }
 
   const isPremiumPost = (post: PostRecord) =>
@@ -349,7 +346,7 @@ export function LibraryPage() {
               return (
                 <div
                   key={key}
-                  onClick={() => { if (isPremiumCarousel) setActiveCarousel(carousel) }}
+                  onClick={() => handleOpenCarousel(carousel)}
                   style={{ background: 'var(--bg-panel)', border: `1px solid ${isSelected ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`, borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s', boxShadow: isSelected ? '0 0 0 2px rgba(58,90,255,0.2)' : 'none', position: 'relative' }}
                 >
                   {/* Checkbox */}
@@ -388,14 +385,6 @@ export function LibraryPage() {
                   </div>
                   {/* Actions */}
                   <div style={{ padding: '0 12px 10px', display: 'flex', gap: '5px' }}>
-                    {!isPremiumCarousel && (
-                      <button
-                        onClick={e => { e.stopPropagation(); handleRestoreCarousel(carousel) }}
-                        style={{ flex: 1, fontSize: '11px', padding: '5px', borderRadius: '6px', cursor: 'pointer', background: 'var(--accent)', border: 'none', color: 'white', fontFamily: 'inherit' }}
-                      >
-                        Recarregar
-                      </button>
-                    )}
                     {linkedinToken ? (
                       <button
                         onClick={e => { e.stopPropagation(); handlePublishLinkedIn(carousel) }}
@@ -426,91 +415,7 @@ export function LibraryPage() {
           </div>
         )}
 
-        {/* Painel legenda para post premium selecionado */}
-        {selectedPost && isPremiumPost(selectedPost) && (() => {
-          const cap = getPremiumCaption(selectedPost)
-          return cap ? (
-            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Legenda do Post</span>
-                <button onClick={() => setSelectedPost(null)} style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>Fechar ✕</button>
-              </div>
-              {selectedPost.thumbnail_url && (
-                <img src={selectedPost.thumbnail_url} alt="Post" style={{ width: '200px', borderRadius: '8px', alignSelf: 'center' }} />
-              )}
-              <div>
-                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Instagram</p>
-                <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{cap.instagram}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>LinkedIn</p>
-                <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{cap.linkedin}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Hashtags</p>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{cap.hashtags}</p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => navigator.clipboard.writeText(`${cap.instagram}\n\n${cap.hashtags}`)} style={{ flex: 1, fontSize: '11px', padding: '7px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar Instagram</button>
-                <button onClick={() => navigator.clipboard.writeText(`${cap.linkedin}\n\n${cap.hashtags}`)} style={{ flex: 1, fontSize: '11px', padding: '7px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Copiar LinkedIn</button>
-              </div>
-            </div>
-          ) : null
-        })()}
       </main>
-
-      {/* Modal carrossel premium */}
-      {activeCarousel && (() => {
-        const modalImages = parseJsonArray<string>(activeCarousel.slide_images)
-        const caption = activeCarousel.caption || ''
-        return (
-          <div
-            onClick={() => setActiveCarousel(null)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
-          >
-            <div
-              onClick={e => e.stopPropagation()}
-              style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', maxWidth: '900px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{activeCarousel.title}</p>
-                <button onClick={() => setActiveCarousel(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-                {modalImages.map((img, i) => (
-                  <div key={i} style={{ flexShrink: 0, position: 'relative' }}>
-                    <img src={img} alt={`Slide ${i + 1}`} style={{ height: '320px', borderRadius: '8px', display: 'block' }} />
-                    <button
-                      onClick={() => { const a = document.createElement('a'); a.href = img; a.download = `slide-${i + 1}.png`; a.click() }}
-                      style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.7)', border: 'none', color: 'white', fontSize: '11px', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit' }}
-                    >
-                      Baixar
-                    </button>
-                  </div>
-                ))}
-              </div>
-              {caption && (
-                <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ margin: 0, fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Legenda</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{caption}</p>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(caption)}
-                    style={{ alignSelf: 'flex-start', fontSize: '11px', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'inherit' }}
-                  >
-                    Copiar legenda
-                  </button>
-                </div>
-              )}
-              <button
-                onClick={() => { modalImages.forEach((img, i) => { setTimeout(() => { const a = document.createElement('a'); a.href = img; a.download = `slide-${i + 1}.png`; a.click() }, i * 800) }) }}
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                Baixar todos os slides
-              </button>
-            </div>
-          </div>
-        )
-      })()}
     </div>
   )
 }

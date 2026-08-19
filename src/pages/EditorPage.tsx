@@ -19,7 +19,7 @@ import { TextEditor } from '../components/TextEditor'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
-import { validateSlides } from '../services/carouselValidation'
+import { validateSlides, parseJsonArray } from '../services/carouselValidation'
 
 interface EditingState {
   el: CanvasElement
@@ -100,6 +100,8 @@ export function EditorPage() {
     setTemplateImagePrompt,
     pendingPost,
     setPendingPost,
+    pendingCarousel,
+    setPendingCarousel,
     setCaption,
   } = useStore()
 
@@ -139,6 +141,22 @@ export function EditorPage() {
     const normalizedId = rawId.toLowerCase().trim().replace(/\s+/g, '-')
 
     console.log('[restore] iniciando | template_id:', rawId, '| normalizado:', normalizedId)
+
+    // Posts premium (GPT Image 2) não usam o canvas Konva — reabrem direto no
+    // PremiumResultViewer com a imagem e legenda salvas.
+    if (rawId === 'premium-single') {
+      let parsed: { prompt?: string; caption?: { instagram: string; linkedin: string; hashtags: string } | null } = {}
+      try { parsed = JSON.parse(pendingPost.image_prompt || '{}') } catch { /* image_prompt legado ou vazio */ }
+
+      if (pendingPost.thumbnail_url) {
+        setPremiumSlides([{ image: pendingPost.thumbnail_url, label: '1:1' }])
+        setPremiumCaption(parsed.caption ?? null)
+      } else {
+        console.warn('[restore] post premium sem thumbnail_url, nada para restaurar')
+      }
+      setPendingPost(null)
+      return
+    }
 
     const def = templateRegistry.find((d) =>
       rawId === d.id || rawId.startsWith(d.id) ||
@@ -284,6 +302,26 @@ export function EditorPage() {
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingPost])
+
+  // Restaura carrossel premium (GPT Image 2) vindo da Biblioteca — mesmo motivo
+  // do pendingPost acima: sem canvas Konva, abre direto no PremiumResultViewer.
+  useEffect(() => {
+    if (!pendingCarousel) return
+
+    const images = parseJsonArray<string>(pendingCarousel.slide_images).filter(Boolean)
+    const slides = images.map((image) => ({ image, label: '1:1' }))
+    const caption = pendingCarousel.caption
+      ? { instagram: pendingCarousel.caption, linkedin: pendingCarousel.caption, hashtags: '' }
+      : null
+
+    if (slides.length) {
+      setPremiumSlides(slides)
+      setPremiumCaption(caption)
+    } else {
+      console.warn('[restore] carrossel premium sem slide_images, nada para restaurar')
+    }
+    setPendingCarousel(null)
+  }, [pendingCarousel])
 
   // Cancela a edição ao trocar de template
   useEffect(() => {
