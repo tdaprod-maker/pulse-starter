@@ -202,7 +202,7 @@ body {
   /* Mobile nav menu: full-screen overlay */
   .mobile-nav-menu {
     position: fixed;
-    top: 56px;
+    top: calc(56px + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     bottom: 0;

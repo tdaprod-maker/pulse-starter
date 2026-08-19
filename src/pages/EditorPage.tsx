@@ -149,7 +149,9 @@ export function EditorPage() {
       try { parsed = JSON.parse(pendingPost.image_prompt || '{}') } catch { /* image_prompt legado ou vazio */ }
 
       if (pendingPost.thumbnail_url) {
-        setPremiumSlides([{ image: pendingPost.thumbnail_url, label: '1:1' }])
+        // label vazio (proporção original não é persistida) — o viewer não força
+        // um aspect-ratio fixo nesse caso, evitando cortar a imagem via object-fit: cover.
+        setPremiumSlides([{ image: pendingPost.thumbnail_url, label: '' }])
         setPremiumCaption(parsed.caption ?? null)
       } else {
         console.warn('[restore] post premium sem thumbnail_url, nada para restaurar')
@@ -309,7 +311,9 @@ export function EditorPage() {
     if (!pendingCarousel) return
 
     const images = parseJsonArray<string>(pendingCarousel.slide_images).filter(Boolean)
-    const slides = images.map((image) => ({ image, label: '1:1' }))
+    // label vazio (proporção original não é persistida) — o viewer não força
+    // um aspect-ratio fixo nesse caso, evitando cortar a imagem via object-fit: cover.
+    const slides = images.map((image) => ({ image, label: '' }))
     const caption = pendingCarousel.caption
       ? { instagram: pendingCarousel.caption, linkedin: pendingCarousel.caption, hashtags: '' }
       : null

@@ -95,21 +95,6 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
   const [premiumLogoError, setPremiumLogoError] = useState('')
   const displayedPremiumSlides = premiumLogoActive && premiumSlidesWithLogo ? premiumSlidesWithLogo : originalPremiumSlides
 
-  // Mede a área disponível para a imagem do slide (viewport menos header e
-  // controles) para escalar a imagem inteira visível, sem cortar, sem scroll.
-  const imageAreaRef = useRef<HTMLDivElement>(null)
-  const [imageAreaSize, setImageAreaSize] = useState({ width: 0, height: 0 })
-
-  useEffect(() => {
-    const el = imageAreaRef.current
-    if (!el) return
-    const update = () => setImageAreaSize({ width: el.clientWidth, height: el.clientHeight })
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
   // Cria templates Konva para cada slide
   useEffect(() => {
     if (engine === 'premium') { setReady(true); return }
@@ -441,22 +426,6 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
   // ── Modo premium: render puramente baseado em imagens ──────────────────────
   if (engine === 'premium') {
-    // Escala a imagem para caber inteira na área disponível (viewport menos
-    // header e controles) sem cortar e sem precisar de scroll.
-    const AREA_PADDING = 24
-    const availW = Math.max(imageAreaSize.width - AREA_PADDING * 2, 0)
-    const availH = Math.max(imageAreaSize.height - AREA_PADDING * 2, 0)
-    let boxWidth = availH * (4 / 5)
-    let boxHeight = availH
-    if (availW > 0 && boxWidth > availW) {
-      boxWidth = availW
-      boxHeight = availW * (5 / 4)
-    }
-    const hasMeasuredImageArea = imageAreaSize.width > 0 && imageAreaSize.height > 0
-    const imageBoxStyle = hasMeasuredImageArea
-      ? { width: `${boxWidth}px`, height: `${boxHeight}px`, maxWidth: '100%', maxHeight: '100%' }
-      : { width: '400px', maxWidth: '100%', aspectRatio: '4/5' }
-
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)', overflow: 'hidden' }}>
         {/* Header */}
@@ -482,24 +451,29 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '20px' }}>×</button>
         </div>
 
-        {/* Imagem do slide atual */}
-        <div ref={imageAreaRef} style={{
+        {/* Imagem do slide atual — dimensionada por CSS puro (max-width/max-height +
+            object-fit: contain) para caber inteira na área disponível em qualquer
+            viewport, sem depender de medição via JS nem de uma proporção fixa. */}
+        <div style={{
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '24px', overflow: 'hidden', position: 'relative', minHeight: 0,
         }}>
-          <div style={{ ...imageBoxStyle, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)', flexShrink: 0, opacity: applyingPremiumLogo ? 0.6 : 1, transition: 'opacity 0.15s' }}>
-            {displayedPremiumSlides[current].imageUrl ? (
-              <img
-                src={displayedPremiumSlides[current].imageUrl}
-                alt={displayedPremiumSlides[current].title}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#111' }}
-              />
-            ) : (
-              <div style={{ width: '100%', height: '100%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Slide indisponível</p>
-              </div>
-            )}
-          </div>
+          {displayedPremiumSlides[current].imageUrl ? (
+            <img
+              src={displayedPremiumSlides[current].imageUrl}
+              alt={displayedPremiumSlides[current].title}
+              style={{
+                maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
+                objectFit: 'contain', display: 'block', borderRadius: '12px',
+                boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)',
+                background: '#111', opacity: applyingPremiumLogo ? 0.6 : 1, transition: 'opacity 0.15s',
+              }}
+            />
+          ) : (
+            <div style={{ width: '400px', maxWidth: '100%', aspectRatio: '4/5', borderRadius: '12px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Slide indisponível</p>
+            </div>
+          )}
           {current > 0 && (
             <button onClick={() => { const i = current - 1; setCurrent(i); onSlideChange?.(i) }} style={{
               position: 'absolute', left: '12px',

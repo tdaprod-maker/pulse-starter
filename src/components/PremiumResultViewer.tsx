@@ -261,22 +261,32 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
               maxWidth: displaySlides.length === 1 ? '380px' : '260px',
             }}
           >
-            <div style={{
-              position: 'absolute', top: '8px', left: '8px', zIndex: 2,
-              background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
-              color: '#fff', fontSize: '10px', fontWeight: 600,
-              padding: '2px 6px', borderRadius: '4px',
-            }}>
-              {slide.label}
-            </div>
+            {slide.label && (
+              <div style={{
+                position: 'absolute', top: '8px', left: '8px', zIndex: 2,
+                background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+                color: '#fff', fontSize: '10px', fontWeight: 600,
+                padding: '2px 6px', borderRadius: '4px',
+              }}>
+                {slide.label}
+              </div>
+            )}
 
-            <div style={ASPECT_STYLES[slide.label] ?? {}}>
+            {ASPECT_STYLES[slide.label] ? (
+              <div style={ASPECT_STYLES[slide.label]}>
+                <img
+                  src={slide.image}
+                  alt={slide.label}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+            ) : (
               <img
                 src={slide.image}
                 alt={slide.label}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                style={{ display: 'block', width: '100%', height: 'auto' }}
               />
-            </div>
+            )}
 
             <button
               onClick={() => handleDownload(slide.image, slide.label)}
