@@ -653,7 +653,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
-      content: 'Gerando com GPT Image 2 — pode levar até 60s...',
+      content: 'Gerando com Premium — pode levar até 60s...',
     }])
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -706,7 +706,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       } catch (e: any) {
         clearTimeout(timeoutId)
         if (e.name === 'AbortError') {
-          throw new Error('Tempo limite atingido (55s). GPT Image 2 pode demorar mais do que o plano atual permite — tente novamente ou acesse Posts Premium.')
+          throw new Error('Tempo limite atingido (55s). A geração premium pode demorar mais do que o plano atual permite — tente novamente ou acesse Posts Premium.')
         }
         throw e
       }
@@ -920,7 +920,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           const msgs = [...prev]
           msgs[msgs.length - 1] = {
             role: 'agent',
-            content: `Gerando slide ${i + 1} de ${agentSlides.length} com GPT Image 2...`,
+            content: `Gerando slide ${i + 1} de ${agentSlides.length} com Premium...`,
           }
           return msgs
         })
@@ -998,7 +998,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (uploadedPhotos.length) setUploadedPhotos([])
       setMessages(prev => [...prev, {
         role: 'agent',
-        content: `✦ Carrossel premium com ${cappedCount} slides gerado! Cada imagem foi criada com GPT Image 2.`,
+        content: `✦ Carrossel premium com ${cappedCount} slides gerado! Cada imagem foi criada com Premium.`,
       }])
       setCollapsed(true)
     } catch (e: any) {
@@ -1028,7 +1028,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       if (!isLogoRequest || !premiumSlidesList.length || !onPremiumSlidesUpdate) {
         setMessages(prev => [...prev, userMsg, {
           role: 'agent',
-          content: 'Posts premium gerados com GPT Image 2 não são editáveis pelo agente. Você pode pedir para inserir o logo da sua marca digitando "insira o logo".',
+          content: 'Posts gerados com Premium não são editáveis pelo agente. Você pode pedir para inserir o logo da sua marca digitando "insira o logo".',
         }])
         setInput('')
         return

@@ -48,7 +48,7 @@ export default defineConfig({
       workbox: {
         navigateFallbackDenylist: [/^\/api\//, /^\/auth\/linkedin\//],
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        globIgnores: ['sample/**'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

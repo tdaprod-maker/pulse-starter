@@ -563,7 +563,7 @@ ${cap.hashtags}` : '',
             <div style={{ fontSize: '40px', opacity: 0.5, marginBottom: '8px', color: 'var(--accent)' }}>✦</div>
             <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Posts Premium</p>
             <p style={{ fontSize: '13px', margin: 0, opacity: 0.8, textAlign: 'center', maxWidth: '420px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-              Design completo gerado por GPT Image 2 — texto integrado à imagem, sem templates.
+              Design completo gerado por Premium — texto integrado à imagem, sem templates.
             </p>
           </div>
         )}
@@ -845,7 +845,7 @@ ${cap.hashtags}` : '',
             </button>
           </div>
         </div>
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>⌘ + Enter para gerar · GPT Image 2</p>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>⌘ + Enter para gerar · Premium</p>
       </div>
     </div>
   )

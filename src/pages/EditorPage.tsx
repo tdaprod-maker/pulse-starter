@@ -60,7 +60,7 @@ function GeneratingOverlay({ engine }: { engine: 'standard' | 'premium' }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '48px 24px', width: '100%' }}>
       <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-        {engine === 'premium' ? '✦ Post Premium · GPT Image 2' : '✦ Gerando Post'}
+        {engine === 'premium' ? '✦ Post Premium' : '✦ Gerando Post'}
       </span>
       <div style={{ width: '260px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden', position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '38%', background: 'linear-gradient(90deg, transparent, var(--accent), transparent)', animation: 'generating-scan 1.8s ease-in-out infinite' }} />

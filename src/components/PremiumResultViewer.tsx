@@ -235,7 +235,6 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
           <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-primary)', textTransform: 'uppercase' }}>
             Post Premium
           </span>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>GPT Image 2</span>
         </div>
         <button
           onClick={onClose}

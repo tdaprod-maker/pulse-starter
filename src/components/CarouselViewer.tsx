@@ -470,7 +470,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
               Carrossel Premium — {displayedPremiumSlides.length} slides
             </span>
             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: '#3A5AFF', color: '#fff', fontWeight: 600 }}>
-              GPT Image 2
+              Premium
             </span>
             <span style={{
               fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
