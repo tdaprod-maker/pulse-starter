@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import type Konva from 'konva'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
@@ -78,6 +78,21 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
   }, [])
   const [ready, setReady] = useState(false)
   const stageRefs = useRef<Record<number, Konva.Stage | null>>({})
+
+  // Mede a área disponível para o canvas do slide (mesma lógica do EditorPage)
+  // para escalar o slide inteiro visível na tela, sem cortar nenhuma parte.
+  const canvasAreaRef = useRef<HTMLDivElement>(null)
+  const [canvasAreaSize, setCanvasAreaSize] = useState({ width: 0, height: 0 })
+  useLayoutEffect(() => {
+    const el = canvasAreaRef.current
+    if (!el) return
+    const update = () => setCanvasAreaSize({ width: el.clientWidth, height: el.clientHeight })
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ready])
+
   const { theme } = useTheme()
   const { addTemplate, updateElement, setTemplateBackground, setTemplateLogo, setTemplateLogoStyle } = useStore()
   const slide = slidesList[current]
@@ -645,7 +660,16 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     )
   }
 
-  const canvasScale = Math.min(500 / slideTemplate.width, 600 / slideTemplate.height)
+  // Escala dinâmica baseada na área realmente disponível na tela (não numa
+  // caixa fixa de 500x600), para o slide sempre caber inteiro sem cortar —
+  // mesmo princípio aplicado no fix do CarouselViewer premium.
+  const CANVAS_PADDING = 24
+  const canvasScale = canvasAreaSize.width > 0 && canvasAreaSize.height > 0
+    ? Math.min(
+        (canvasAreaSize.width - CANVAS_PADDING * 2) / slideTemplate.width,
+        (canvasAreaSize.height - CANVAS_PADDING * 2) / slideTemplate.height,
+      )
+    : Math.min(500 / slideTemplate.width, 600 / slideTemplate.height)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)', overflow: 'hidden' }}>
@@ -670,7 +694,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
       </div>
 
       {/* Canvas do slide atual */}
-      <div style={{
+      <div ref={canvasAreaRef} style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '24px', overflow: 'hidden', position: 'relative',
       }}>
