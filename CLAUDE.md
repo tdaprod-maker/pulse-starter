@@ -66,14 +66,21 @@ desatualizados por viés de treino (ex: "2024" em vez do ano corrente).
 
 `buildAntiHallucinationRules(dateCtx)` — regras contra datas desatualizadas, estatísticas
 inventadas, emojis e tiques de escrita de IA (ver `buildAntiSlopRules` abaixo). Presente em
-`agent-chat.js` e `generate-carousel.js`. `generate-post.js` **não tem** essa função — se for
-adicionar regras globais de prompt, considere se `generate-post.js` também precisa.
+`agent-chat.js`, `generate-carousel.js` e `generate-post.js`.
 
-`buildAntiSlopRules()` (só em `generate-carousel.js`) — regras específicas contra tiques de texto
-gerado por IA em legendas: travessão como recurso estilístico, estrutura "não é apenas X, é Y",
-aberturas genéricas, adjetivos de enchimento, ritmo de frase repetitivo, voz passiva. Em
-`agent-chat.js` a mesma lógica está resumida dentro de `buildAntiHallucinationRules` (o arquivo
-não gera legenda final, só o briefing que alimenta os outros endpoints).
+`buildAntiSlopRules()` — regras específicas contra tiques de texto gerado por IA em legendas:
+travessão como recurso estilístico, estrutura "não é apenas X, é Y", aberturas genéricas,
+adjetivos de enchimento, ritmo de frase repetitivo, voz passiva. Presente em `generate-carousel.js`
+e `generate-post.js`. Em `agent-chat.js` a mesma lógica está resumida dentro de
+`buildAntiHallucinationRules` (o arquivo não gera legenda final, só o briefing que alimenta os
+outros endpoints).
+
+**Histórico:** `generate-post.js` (legenda do Standard, posts únicos) ficou sem essas duas funções
+por um tempo depois delas serem adicionadas a `agent-chat.js`/`generate-carousel.js` — cada arquivo
+tem sua cópia local, então adicionar a regra num não propaga pros outros. Resultado: o Standard
+continuou gerando legendas com emoji mesmo depois da proibição "estar implementada". Ao adicionar
+uma regra global de prompt daqui pra frente, edite os **três** arquivos (`agent-chat.js`,
+`generate-carousel.js`, `generate-post.js`) na mesma tarefa, não só o que motivou a mudança.
 
 ### Engine standard vs premium
 `agent-chat.js` sempre retorna `engine: "standard"` no JSON — a escolha entre Standard e Premium é
@@ -142,8 +149,12 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   (ex: `PremiumPage.tsx.bak4`, `PropertiesPanel.tsx.bak`) — são backups manuais do usuário, não
   são importados em lugar nenhum. Não edite nem delete sem perguntar; não confunda com o arquivo
   ativo ao fazer busca por nome.
-- `api/generate-post.js` não compartilha `buildAntiHallucinationRules`/`buildAntiSlopRules` com os
-  outros dois endpoints de geração — é fácil esquecer de atualizá-lo ao mudar uma regra "global".
+- As três funções de regras de prompt (`getCurrentDateContext`, `buildAntiHallucinationRules`,
+  `buildAntiSlopRules`) são cópias locais em cada um dos três arquivos de geração, não um módulo
+  compartilhado — já causou um bug real (regra de "sem emoji" adicionada em dois arquivos, mas
+  esquecida em `generate-post.js`, que continuou gerando legenda com emoji no Standard). Ao mudar
+  uma regra "global" de prompt, grep por `buildAntiHallucinationRules\|buildAntiSlopRules` em
+  `api/*.js` antes de considerar a tarefa terminada.
 - `vercel.json` multiplexa vários endpoints por `?action=`: `instagram.js`, `linkedin.js`,
   `stripe.js`. Ao adicionar uma ação nova a esses arquivos, adicione também o rewrite
   correspondente em `vercel.json` se precisar de uma URL amigável.

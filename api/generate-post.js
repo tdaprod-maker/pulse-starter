@@ -1,3 +1,31 @@
+// Data real do servidor no momento da requisição — injetada nos prompts para
+// impedir que o modelo use anos desatualizados (ex: "2024") por viés de treino.
+function getCurrentDateContext() {
+  const now = new Date()
+  const label = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return { label, year: now.getFullYear() }
+}
+
+function buildAntiHallucinationRules(dateCtx) {
+  return `REGRAS ANTI-ALUCINAÇÃO — OBRIGATÓRIAS:
+- A data atual é ${dateCtx.label}. NUNCA use anos ou datas desatualizadas (ex: 2024, 2025) — sempre use o ano corrente (${dateCtx.year}) ao mencionar urgência temporal, prazos, "novidades de [ano]" ou datas de eventos.
+- NUNCA invente números específicos, percentuais ou estatísticas (ex: "80% mais engajamento", "3x mais confiança") a menos que o usuário tenha fornecido esse dado explicitamente. Prefira linguagem qualitativa quando não houver dado real disponível.
+- NUNCA use emojis nas legendas geradas, em nenhuma circunstância, mesmo que o tom seja casual ou divertido. Emojis em excesso são o principal sinal reconhecível de conteúdo gerado por IA genérica — evite completamente. Escreva com linguagem natural, sem símbolos decorativos.`
+}
+
+// Elimina os tiques mais reconhecíveis de texto gerado por IA — os mesmos que
+// fazem uma legenda "cheirar" a IA mesmo com gancho e CTA corretos.
+function buildAntiSlopRules() {
+  return `REGRAS ANTI-IA-TELL — OBRIGATÓRIAS (elimine tiques clássicos de texto gerado por IA):
+- NUNCA use travessão (—) como recurso de estilo dentro da legenda, para criar pausas dramáticas ou conectar ideias.
+- NUNCA use a estrutura "não é apenas X, é Y" ou variações ("não se trata de X, mas de Y", "mais do que X, é Y").
+- NUNCA abra a legenda com perguntas ou intros genéricas: "Você sabia que...", "Já parou pra pensar...", "Neste post vamos falar sobre...", "Vamos conversar sobre...".
+- NUNCA use adjetivos de enchimento sem contexto concreto que os justifique: "incrível", "revolucionário", "transformador", "poderoso", "essencial", "fundamental".
+- Varie o ritmo das frases — misture frases curtas e longas, não repita a mesma estrutura sintática em sequência, não termine todo parágrafo com uma frase de efeito.
+- Escreva em voz ativa, com um sujeito humano fazendo a ação — nunca objetos ou conceitos abstratos praticando verbos humanos (ex: evite "a solução resolve seu problema", prefira "você resolve isso com...").
+- O texto deve soar como uma pessoa real escrevendo para outra pessoa, não como um anúncio genérico ou um resumo corporativo.`
+}
+
 const TEMPLATE_FIELDS = {
   'sport-arena':        'tag (categoria do evento em maiusculas), title (titulo em maiusculas, 2 linhas com \\n), subtitle (detalhe do evento)',
   'sport-brand':        'brand-label (nome da marca), phrase-line1 (1 palavra em maiusculas), phrase-line2 (1 palavra em maiusculas na cor de destaque), tagline (slogan curto com pontos separadores)',
@@ -37,6 +65,10 @@ function buildPrompt(userInput, brand, forcedTemplate, lastUsedTemplate) {
 
   return `Você é um assistente de design de posts para redes sociais.
 Escolha o template mais adequado para a descrição e gere os textos.
+
+${buildAntiHallucinationRules(getCurrentDateContext())}
+
+${buildAntiSlopRules()}
 ${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
 ${brand?.segment ? `Segmento da marca: ${brand.segment}` : ''}
 ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
@@ -177,6 +209,7 @@ Gere legendas de alta qualidade, distintas e otimizadas para cada rede social. U
 
 REGRAS CRÍTICAS DE QUALIDADE:
 - PROIBIDO começar com: "Você sabia que", "Descubra como", "No mundo atual", "Em um mundo onde", "Hoje vamos falar" — destroem o engajamento
+- PROIBIDO usar emojis em qualquer legenda, em nenhuma circunstância, mesmo em tom descontraído
 - Tom profissional → dados concretos, resultados mensuráveis, linguagem direta
 - Tom descontraído → primeira pessoa, proximidade, como conversa entre amigos
 - Tom inspiracional → emoção, verbos de ação, frases curtas e impactantes
