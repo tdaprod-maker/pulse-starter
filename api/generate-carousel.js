@@ -84,7 +84,8 @@ REGRAS DE TEXTO:
 - Tom direto e alinhado com a marca
 - Títulos sem ponto final
 - Cada slide deve avançar a narrativa do anterior
-caption: legenda para Instagram — primeira linha com GANCHO forte que para o scroll (pergunta, dado surpreendente ou promessa), estrutura em lista ou dicas que gera salvamento, CTA explícito no final ("Salve este post", "Compartilhe com quem precisa"). Emojis moderados (máx. 6). Máximo 2200 caracteres. Inclua 8-10 hashtags estratégicas por nicho no final (nunca genéricas como #marketing #success).
+- NUNCA use emojis nas legendas geradas, em nenhuma circunstância, mesmo que o tom seja casual ou divertido. Emojis em excesso são o principal sinal reconhecível de conteúdo gerado por IA genérica — evite completamente. Escreva com linguagem natural, sem símbolos decorativos.
+caption: legenda para Instagram — primeira linha com GANCHO forte que para o scroll (pergunta, dado surpreendente ou promessa), estrutura em lista ou dicas que gera salvamento, CTA explícito no final ("Salve este post", "Compartilhe com quem precisa"). Sem emojis. Máximo 2200 caracteres. Inclua 8-10 hashtags estratégicas por nicho no final (nunca genéricas como #marketing #success).
 Tema: "${userInput}"
 Responda SOMENTE com JSON válido, sem markdown, com EXATAMENTE ${slideCount} slides:
 {
@@ -167,10 +168,12 @@ ${buildAntiHallucinationRules(getCurrentDateContext())}
 Contexto do post: ${captionPrompt}
 ${brandCtx}
 
+REGRA ABSOLUTA E DEFINITIVA — SEM EMOJIS:
+NUNCA use emojis nas legendas geradas, em nenhuma circunstância, mesmo que o tom seja casual ou divertido. Emojis em excesso são o principal sinal reconhecível de conteúdo gerado por IA genérica — evite completamente. Escreva com linguagem natural, sem símbolos decorativos. Esta regra vale para Instagram e LinkedIn, sem exceção.
+
 REGRAS PARA INSTAGRAM (máximo 2200 caracteres):
 • Primeira linha: GANCHO obrigatório — pergunta provocativa, dado surpreendente ou afirmação contraintuitiva. SEM "Olá!" ou intro genérica. Essa linha aparece antes do "ver mais" e decide se o usuário continua lendo.
 • Estrutura para SALVAMENTO: lista numerada, "X dicas que...", revelação progressiva ou framework com passos. Posts salvos têm alcance orgânico maior.
-• Emojis: máximo 8, apenas onde reforçam o ponto. Nunca decorativos ou em toda linha.
 • Tom: humano, direto, levemente conversacional. Sem linguagem corporativa.
 • CTA final explícito e específico: "Salve este post antes de precisar disso", "Compartilhe com quem precisa ver isso", "Comente: qual é o seu maior desafio com X?"
 • Quebras de linha entre blocos para facilitar leitura rápida.
@@ -180,7 +183,6 @@ REGRAS PARA LINKEDIN (máximo 3000 caracteres):
 • Estrutura: contexto rápido (2-3 linhas) → desenvolvimento com dados, exemplos ou framework → conclusão com aprendizado.
 • Tom: profissional mas humano. Sem buzzwords ("sinergias", "disruptivo", "holístico").
 • Se o contexto do post fornecer dados, porcentagens ou referências concretas, use-os para dar credibilidade. Caso contrário, NÃO invente números — construa a credibilidade com clareza e especificidade qualitativa.
-• Máximo 2-3 emojis ou nenhum.
 • CTA: pergunta aberta para comentários. Ex: "Como você lida com isso na sua empresa?"
 
 REGRAS DE HASHTAGS (estratégicas, nunca genéricas):
@@ -190,8 +192,8 @@ REGRAS DE HASHTAGS (estratégicas, nunca genéricas):
 
 Retorne APENAS JSON válido sem markdown:
 {
-  "instagram": "legenda completa — gancho + estrutura + emojis moderados + CTA — máximo 2200 caracteres",
-  "linkedin": "legenda completa — insight inicial + desenvolvimento com dados + CTA — máximo 3000 caracteres",
+  "instagram": "legenda completa — gancho + estrutura + CTA — sem emojis — máximo 2200 caracteres",
+  "linkedin": "legenda completa — insight inicial + desenvolvimento com dados + CTA — sem emojis — máximo 3000 caracteres",
   "hashtags": "8 a 12 hashtags estratégicas separadas por espaço"
 }`
     try {

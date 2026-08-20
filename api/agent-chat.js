@@ -12,7 +12,8 @@ function getCurrentDateContext() {
 function buildAntiHallucinationRules(dateCtx) {
   return `\n\nREGRAS ANTI-ALUCINAÇÃO — OBRIGATÓRIAS:
 - A data atual é ${dateCtx.label}. NUNCA use anos ou datas desatualizadas (ex: 2024, 2025) — sempre use o ano corrente (${dateCtx.year}) ao mencionar urgência temporal, prazos, "novidades de [ano]" ou datas de eventos.
-- NUNCA invente números específicos, percentuais ou estatísticas (ex: "80% mais engajamento", "3x mais confiança") a menos que o usuário tenha fornecido esse dado explicitamente. Prefira linguagem qualitativa quando não houver dado real disponível.`
+- NUNCA invente números específicos, percentuais ou estatísticas (ex: "80% mais engajamento", "3x mais confiança") a menos que o usuário tenha fornecido esse dado explicitamente. Prefira linguagem qualitativa quando não houver dado real disponível.
+- NUNCA use emojis nas legendas geradas, em nenhuma circunstância, mesmo que o tom seja casual ou divertido. Emojis em excesso são o principal sinal reconhecível de conteúdo gerado por IA genérica — evite completamente. Escreva com linguagem natural, sem símbolos decorativos.`
 }
 
 function buildNicheContext(segment) {
