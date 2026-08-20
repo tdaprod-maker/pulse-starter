@@ -123,6 +123,54 @@ sem cortar, comece checando se `EditorPage.tsx` já resolveu esse problema antes
 cálculo novo. Nunca hardcode uma caixa em pixels (`500x600`, `400x500`, etc.) como scale de canvas
 — ela some funciona no viewport em que foi testada.
 
+## Sistema de templates do Standard: famílias por nicho + capacidades do CanvasEngine
+
+O catálogo original tinha 32 templates genéricos (ver `src/templates/index.ts`). Em vez de
+substituí-los, foram adicionados **10 templates novos organizados em 5 famílias por nicho** (2
+variações cada), registrados junto aos 32 antigos — os antigos continuam funcionando (posts salvos
+que os referenciam não quebram) mas deixaram de ser a escolha automática da IA para seus nichos
+(ver `REGRA PRIORITÁRIA` em `api/generate-post.js`, que agora prioriza as famílias novas e só cai
+nos templates antigos por pedido explícito do usuário pelo nome).
+
+As 5 famílias: `clinic-light`/`clinic-dark` (saúde/odonto/estética), `estate-warm-bottom`/
+`estate-warm-top` (imóveis/construção), `food-vivid`/`food-noir` (food/gastronomia),
+`editorial-dark-pop`/`editorial-light-pop` (moda/tech/negócios), `warm-circle-bold`/
+`warm-circle-soft` (pets/educação/fitness/esportes). Cada família tem paleta e tipografia própria
+(evitando Inter genérico e a paleta bege banida) — ver os comentários no topo de cada
+`variants.ts` para o racional de design.
+
+Isso exigiu três capacidades novas no `CanvasEngine.tsx` (`src/engine/CanvasEngine.tsx`), todas
+aditivas e retrocompatíveis (nenhum dos 32 templates antigos é afetado):
+
+1. **Gradiente real em shapes** — `renderElement` (bloco `el.type === 'shape'`) lê
+   `props.fillLinearGradientColorStops`/`fillRadialGradientColorStops` (+ `StartPoint`/`EndPoint`/
+   `StartRadius`/`EndRadius`) e passa `fillPriority` correspondente pro `<Rect>` do Konva. Sem
+   essas props, comportamento idêntico a antes (fill sólido). Para simular um gradiente de fundo
+   sem foto, adicione um shape full-canvas como `elements[0]` (ver `bgGradient()` em
+   `clinic-dark/variants.ts`) — ele desenha por cima do `background` sólido, antes dos outros
+   elementos. Para um overlay de gradiente sobre foto (em vez do overlay chapado padrão), zere o
+   `overlayOpacity` do template no `CanvasEngine.tsx` (mesmo padrão de override por prefixo já
+   usado ali) e adicione o shape gradiente como `elements[0]` (ver `estate-warm-bottom/variants.ts`
+   + o comentário no `overlayOpacity` do engine).
+
+2. **Flip de texto pra branco quando há foto** — generaliza o padrão que já existia só pra
+   `editorial-card`/`hero-title`. Templates com texto escuro sobre fundo claro (ex:
+   `editorial-light-pop`, `warm-circle-bold/soft`) ficam **ilegíveis** se o usuário adicionar uma
+   foto de fundo, porque o overlay padrão sempre escurece a foto (pensado pra texto branco) — meça
+   o contraste antes de assumir que "funciona com foto" (ver `PHOTO_TEXT_FLIP_PREFIXES` em
+   `CanvasEngine.tsx`). Qualquer template novo com texto escuro sobre fundo claro precisa entrar
+   nessa lista, ou entrar em `PHOTO_TEXT_FLIP_EXCLUDE_IDS` se algum elemento específico (ex: uma
+   palavra de destaque colorida) já tiver contraste garantido mesmo com foto e não deva virar
+   branco.
+
+3. **`TEMPLATE_FIELDS` em `api/generate-post.js` é a fonte de verdade dos IDs de elemento** — cada
+   template novo precisa de uma entrada lá com os nomes de campo exatamente iguais aos `id` dos
+   elementos `text` no `variants.ts` (é assim que `AIPanel.tsx`/`AgentChat.tsx` aplicam
+   `result.texts[fieldId]` no elemento certo via `el.id === fieldId`). Templates novos não precisam
+   entrar no `ACCENT_ELEMENT` (mapa em `AIPanel.tsx`/`AgentChat.tsx`) — isso é opt-in e, se você
+   quer que a família mantenha sua paleta fixa (em vez de ser sobrescrita pelas 3 cores genéricas
+   que a IA sempre escolhe via `accentColor`), é melhor não registrar.
+
 ## Estado (Zustand)
 
 `src/state/useStore.ts` define `Template`, `CanvasElement` e as ações que os manipulam

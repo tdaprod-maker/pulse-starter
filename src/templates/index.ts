@@ -30,6 +30,16 @@ import { makeSplitEditorialVariants }  from './split-editorial/variants'
 import { makeEditorialCoverVariants }  from './editorial-cover/variants'
 import { makeBoldCircleVariants }      from './bold-circle/variants'
 import { makeFoodVerticalVariants }    from './food-vertical/variants'
+import { makeClinicLightVariants }        from './clinic-light/variants'
+import { makeClinicDarkVariants }         from './clinic-dark/variants'
+import { makeEstateWarmBottomVariants }   from './estate-warm-bottom/variants'
+import { makeEstateWarmTopVariants }      from './estate-warm-top/variants'
+import { makeFoodVividVariants }          from './food-vivid/variants'
+import { makeFoodNoirVariants }           from './food-noir/variants'
+import { makeEditorialDarkPopVariants }   from './editorial-dark-pop/variants'
+import { makeEditorialLightPopVariants }  from './editorial-light-pop/variants'
+import { makeWarmCircleBoldVariants }     from './warm-circle-bold/variants'
+import { makeWarmCircleSoftVariants }     from './warm-circle-soft/variants'
 import type { Template } from '../state/useStore'
 import type { Theme } from '../themes'
 
@@ -233,6 +243,67 @@ export const templateRegistry: TemplateDefinition[] = [
     name: 'Card Editorial',
     category: 'instagram-post',
     getVariants: makeEditorialCardVariants,
+  },
+  // ── Famílias por nicho (reformulação do sistema de templates) ────────────
+  {
+    id: 'clinic-light',
+    name: 'Clínica Clara',
+    category: 'instagram-post',
+    getVariants: makeClinicLightVariants,
+  },
+  {
+    id: 'clinic-dark',
+    name: 'Clínica Escura',
+    category: 'instagram-post',
+    getVariants: makeClinicDarkVariants,
+  },
+  {
+    id: 'estate-warm-bottom',
+    name: 'Aspiracional Base',
+    category: 'instagram-post',
+    getVariants: makeEstateWarmBottomVariants,
+  },
+  {
+    id: 'estate-warm-top',
+    name: 'Aspiracional Topo',
+    category: 'instagram-post',
+    getVariants: makeEstateWarmTopVariants,
+  },
+  {
+    id: 'food-vivid',
+    name: 'Apetitosa Vibrante',
+    category: 'instagram-post',
+    getVariants: makeFoodVividVariants,
+  },
+  {
+    id: 'food-noir',
+    name: 'Apetitosa Editorial',
+    category: 'instagram-post',
+    getVariants: makeFoodNoirVariants,
+  },
+  {
+    id: 'editorial-dark-pop',
+    name: 'Editorial Escuro + Pop',
+    category: 'instagram-post',
+    getVariants: makeEditorialDarkPopVariants,
+  },
+  {
+    id: 'editorial-light-pop',
+    name: 'Editorial Claro + Pop',
+    category: 'instagram-post',
+    getVariants: makeEditorialLightPopVariants,
+  },
+  {
+    id: 'warm-circle-bold',
+    name: 'Comunitária Sólida',
+    category: 'instagram-post',
+    getVariants: makeWarmCircleBoldVariants,
+  },
+  {
+    id: 'warm-circle-soft',
+    name: 'Comunitária Suave',
+    category: 'instagram-post',
+    getVariants: makeWarmCircleSoftVariants,
   },
 ]
 

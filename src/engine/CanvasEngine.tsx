@@ -147,11 +147,15 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     }
 
     // ── Overlay opacity por template ───────────────────────────────────────────
+    // estate-warm-bottom/top usam gradiente real (shape dedicado em elements[])
+    // em vez do overlay chapado — por isso opacity 0 aqui, para não somar os dois.
     const overlayOpacity =
       template.id.startsWith('game-day')       ? 0.65
       : template.id.startsWith('editorial-card') ? 0.6
       : template.id.startsWith('hero-title')   ? 0.65
       : template.id.startsWith('food-promo')   ? 0.35
+      : template.id.startsWith('estate-warm-bottom') ? 0
+      : template.id.startsWith('estate-warm-top')    ? 0
       : 0.5
 
     // ── Logo positioning ──────────────────────────────────────────────────────
@@ -388,9 +392,23 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
     // Hero Title com imagem de fundo: subtítulo passa a branco (título já é branco).
     const isHeroWithBg =
       templateId?.startsWith('hero-title') && !!backgroundImage
+    // editorial-light-pop / warm-circle-bold / warm-circle-soft foram desenhados
+    // com texto escuro sobre fundo sólido claro (contraste >8:1 nesse cenário).
+    // Se o usuário adicionar uma foto de fundo, o overlay escurecedor padrão
+    // (pensado para texto branco) derruba esse contraste para ~1:1 — por isso o
+    // texto "de tinta" (não os elementos de destaque/pop) vira branco quando há
+    // foto, replicando o mesmo tratamento já usado em editorial-card/hero-title.
+    const PHOTO_TEXT_FLIP_PREFIXES = ['editorial-light-pop', 'warm-circle-bold', 'warm-circle-soft']
+    const PHOTO_TEXT_FLIP_EXCLUDE_IDS = new Set(['headline-accent'])
+    const needsPhotoTextFlip =
+      !!backgroundImage &&
+      !!templateId &&
+      PHOTO_TEXT_FLIP_PREFIXES.some((p) => templateId.startsWith(p)) &&
+      !PHOTO_TEXT_FLIP_EXCLUDE_IDS.has(el.id)
     const fill =
       (isEditorialWithBg && (el.id === 'title' || el.id === 'body')) ||
-      (isHeroWithBg && el.id === 'subtitle')
+      (isHeroWithBg && el.id === 'subtitle') ||
+      needsPhotoTextFlip
         ? '#FFFFFF'
         : (el.props.fill as string) ?? '#000000'
 
@@ -541,6 +559,16 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
     // Thin shapes (accent bars, brand lines, dividers) have very small click targets.
     // hitFunc extends the hit area vertically without affecting the visual.
     const hitPad = el.height < 24 ? Math.ceil((24 - el.height) / 2) : 0
+
+    // Gradiente real (linear ou radial) — opcional, via props. Coordenadas dos
+    // pontos são relativas ao espaço local do shape (0,0 a width,height), não
+    // afetadas pelo offsetX/offsetY aplicado abaixo para o pivot de rotação.
+    // Sem essas props, o comportamento é idêntico ao anterior (fill sólido).
+    const linearStops = el.props.fillLinearGradientColorStops as (string | number)[] | undefined
+    const radialStops = el.props.fillRadialGradientColorStops as (string | number)[] | undefined
+    const fillPriority: 'color' | 'linear-gradient' | 'radial-gradient' =
+      linearStops ? 'linear-gradient' : radialStops ? 'radial-gradient' : 'color'
+
     return (
       <Rect
         key={el.id}
@@ -552,6 +580,15 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
         width={el.width}
         height={el.height}
         fill={(el.props.fill as string) ?? '#e5e7eb'}
+        fillPriority={fillPriority}
+        fillLinearGradientStartPoint={el.props.fillLinearGradientStartPoint as { x: number; y: number } | undefined}
+        fillLinearGradientEndPoint={el.props.fillLinearGradientEndPoint as { x: number; y: number } | undefined}
+        fillLinearGradientColorStops={linearStops}
+        fillRadialGradientStartPoint={el.props.fillRadialGradientStartPoint as { x: number; y: number } | undefined}
+        fillRadialGradientEndPoint={el.props.fillRadialGradientEndPoint as { x: number; y: number } | undefined}
+        fillRadialGradientStartRadius={el.props.fillRadialGradientStartRadius as number | undefined}
+        fillRadialGradientEndRadius={el.props.fillRadialGradientEndRadius as number | undefined}
+        fillRadialGradientColorStops={radialStops}
         cornerRadius={(el.props.cornerRadius as number) ?? 0}
         opacity={(el.props.opacity as number) ?? 1}
         rotation={(el.props.rotation as number) ?? 0}

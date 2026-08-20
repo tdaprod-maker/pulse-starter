@@ -54,6 +54,17 @@ const TEMPLATE_FIELDS = {
   'tech-news':          'category (categoria em maiusculas), title (headline 2 linhas em maiusculas com \\n), brand (nome da marca)',
   'tech-product':       'tag (categoria em maiusculas), title (nome do produto em maiusculas), subtitle (descricao 8-15 palavras), cta (chamada curta)',
   'tech-minimal':       'phrase (frase impactante em capitalizacao normal)',
+  // ── Famílias por nicho (reformulação do sistema de templates) ──────────────
+  'clinic-light':       'eyebrow (especialidade em maiusculas), headline (titulo direto 3-6 palavras, pode usar \\n), subtitle (frase de apoio 12-20 palavras), cta (chamada curta)',
+  'clinic-dark':        'eyebrow (especialidade em maiusculas), headline (titulo direto 3-6 palavras, pode usar \\n), subtitle (frase de apoio 12-20 palavras), cta (chamada curta)',
+  'estate-warm-bottom': 'eyebrow (status em maiusculas, ex: LANCAMENTO), headline (frase aspiracional 3-6 palavras, pode usar \\n), specs (area/quartos/vagas separados por · , ex: "120m² · 3 suites · 2 vagas"), price (preco formatado, ex: "A partir de R$ 890.000"), cta (chamada curta)',
+  'estate-warm-top':    'eyebrow (nome da empresa em maiusculas), headline (frase institucional 3-6 palavras, pode usar \\n), tagline (frase de apoio 10-16 palavras), cta (chamada curta)',
+  'food-vivid':         'category (nome do prato em maiusculas), dish (nome do prato, pode usar \\n para 2 linhas), price (preco com R$), cta (chamada curta)',
+  'food-noir':          'label (categoria em maiusculas, ex: ALTA GASTRONOMIA), dish (nome do prato, pode usar \\n para 2 linhas), price (preco com R$), cta (chamada curta)',
+  'editorial-dark-pop': 'eyebrow (categoria/segmento em maiusculas), headline (primeira parte curta da frase, 1-3 palavras), headline-accent (segunda parte da frase de impacto, 2-5 palavras), subline (frase de apoio 10-16 palavras), cta (handle ou site)',
+  'editorial-light-pop':'eyebrow (categoria/segmento em maiusculas), headline (primeira parte curta da frase, 1-3 palavras), headline-accent (segunda parte da frase de impacto, 2-5 palavras), subline (frase de apoio 10-16 palavras), cta (handle ou site)',
+  'warm-circle-bold':   'label (categoria em maiusculas), headline (frase energetica 3-6 palavras, pode usar \\n), cta (chamada curta)',
+  'warm-circle-soft':   'label (categoria em maiusculas), headline (frase acolhedora 3-6 palavras, pode usar \\n), cta (chamada curta)',
 }
 
 function buildPrompt(userInput, brand, forcedTemplate, lastUsedTemplate) {
@@ -80,11 +91,11 @@ ${lastUsedTemplate ? `O último template usado foi "${lastUsedTemplate}". É PRO
 
 REGRA CRÍTICA — SEGMENTO DA MARCA vs TEMA DO POST:
 O segmento da marca define APENAS o tom, estilo de escrita e contexto do negócio. O template é escolhido pelo TEMA DO CONTEÚDO do post — não pelo segmento da empresa.
-Exemplos: marca tech postando sobre frango grelhado → "food-editorial". Marca tech abrindo vaga → "job-glass". Marca tech com dado de negócio → "business-statement".
+Exemplos: marca tech postando sobre frango grelhado → "food-vivid" ou "food-noir". Marca tech abrindo vaga → "job-glass". Marca tech com dado de negócio → "business-statement".
 Templates tech-statement, tech-news, tech-product, tech-minimal são EXCLUSIVOS para posts cujo ASSUNTO seja tecnologia, IA, software ou inovação digital — NUNCA porque o segmento da empresa é tech.
 
 VARIAÇÃO PARA CONTEÚDO GENÉRICO DE EMPRESA TECH/IA:
-Para empresa de tecnologia ou IA postando conteúdo motivacional, educativo, institucional, dicas de negócio, produtividade, bastidores ou conquistas que NÃO sejam especificamente sobre um produto tech, notícia tech ou opinião filosófica sobre IA: NÃO use tech-statement nem tech-news. Distribua obrigatoriamente entre: editorial-card, hero-gradient, business-statement (se houver número), infographic-ring (se for lista), business-card, toggle-card.
+Para empresa de tecnologia ou IA postando conteúdo motivacional, educativo, institucional, dicas de negócio, produtividade, bastidores ou conquistas que NÃO sejam especificamente sobre um produto tech, notícia tech ou opinião filosófica sobre IA: NÃO use tech-statement nem tech-news. Prefira "editorial-dark-pop" ou "editorial-light-pop" (ver FAMÍLIAS POR NICHO). Se o conteúdo tiver um número/estatística use "business-statement"; se for uma lista use "infographic-ring"; caso nenhuma dessas se encaixe, use "editorial-card".
 
 TEMPLATES DISPONÍVEIS:
 
@@ -144,6 +155,29 @@ TEMPLATES DISPONÍVEIS:
 - "tech-minimal"    → frase única impactante, fundo sólido, sem imagem. Ideal para citações, pensamentos e declarações marcantes de qualquer segmento
   IMPORTANTE: para o tech-minimal, o texto do campo phrase NUNCA deve estar em caixa alta (caps lock). Use capitalização normal, apenas a primeira letra de cada frase em maiúscula.
 
+FAMÍLIAS POR NICHO (preferidas — ver REGRA PRIORITÁRIA abaixo para quando usar cada uma):
+
+- "clinic-light"  → fundo claro frio, muito espaço em branco, filete fino como única decoração. Sora + DM Sans. Para saúde/odontologia/estética com tom acolhedor/claro.
+  Campos: eyebrow (especialidade em maiúsculas), headline (título direto 3-6 palavras, pode usar \\n), subtitle (frase de apoio 12-20 palavras), cta (chamada curta)
+- "clinic-dark"   → mesmo sistema da clinic-light em fundo escuro com gradiente real sutil. Para saúde/odontologia/estética com tom premium/noturno.
+  Campos: eyebrow (especialidade em maiúsculas), headline (título direto 3-6 palavras, pode usar \\n), subtitle (frase de apoio 12-20 palavras), cta (chamada curta)
+- "estate-warm-bottom" → foto de fundo com gradiente real (não chapado) escurecendo a base, headline serifado itálico, linha de specs + preço. Para imóvel específico/lançamento com preço.
+  Campos: eyebrow (status em maiúsculas, ex: LANÇAMENTO), headline (frase aspiracional 3-6 palavras, pode usar \\n), specs (ex: "120m² · 3 suítes · 2 vagas"), price (ex: "A partir de R$ 890.000"), cta (chamada curta)
+- "estate-warm-top"    → mesmo sistema serifado, gradiente no topo (não na base), foto respira nos 2/3 inferiores. Para conteúdo institucional de construtora/arquitetura sem preço.
+  Campos: eyebrow (nome da empresa em maiúsculas), headline (frase institucional 3-6 palavras, pode usar \\n), tagline (frase de apoio 10-16 palavras), cta (chamada curta)
+- "food-vivid"    → fundo de cor saturada única (coral) com gradiente radial real, prato em destaque, chip de preço. Para delivery/fast-casual/promoção.
+  Campos: category (nome do prato em maiúsculas), dish (nome do prato, pode usar \\n para 2 linhas), price (preço com R$), cta (chamada curta)
+- "food-noir"     → fundo vinho profundo saturado, composição centralizada, acento dourado só em linha/label. Para alta gastronomia/restaurante sofisticado.
+  Campos: label (categoria em maiúsculas, ex: ALTA GASTRONOMIA), dish (nome do prato, pode usar \\n para 2 linhas), price (preço com R$), cta (chamada curta)
+- "editorial-dark-pop"  → fundo preto puro, hierarquia por peso (Sora bold + normal), UMA cor pop (lima elétrico) só na linha de destaque e num ponto decorativo. Para moda/tech/negócios/consultoria com tom escuro/tech.
+  Campos: eyebrow (categoria/segmento em maiúsculas), headline (primeira parte curta, 1-3 palavras), headline-accent (segunda parte da frase, 2-5 palavras — recebe a cor pop), subline (frase de apoio 10-16 palavras), cta (handle ou site)
+- "editorial-light-pop" → mesmo sistema em fundo branco puro, bloco alinhado à direita (não é a dark-pop recolorida), cor pop magenta. Para moda/negócios com tom claro/editorial.
+  Campos: eyebrow (categoria/segmento em maiúsculas), headline (primeira parte curta, 1-3 palavras), headline-accent (segunda parte da frase, 2-5 palavras — recebe a cor pop), subline (frase de apoio 10-16 palavras), cta (handle ou site)
+- "warm-circle-bold" → fundo âmbar saturado, cluster de círculos orgânicos com gradiente real, Plus Jakarta Sans + Lato. Para fitness/esporte com tom energético.
+  Campos: label (categoria em maiúsculas), headline (frase energética 3-6 palavras, pode usar \\n), cta (chamada curta)
+- "warm-circle-soft" → mesmo sistema em pêssego mais claro, cluster de círculos espelhado (canto oposto), acento terracota. Para pets/educação com tom acolhedor.
+  Campos: label (categoria em maiúsculas), headline (frase acolhedora 3-6 palavras, pode usar \\n), cta (chamada curta)
+
 IMPORTANTE PRIORITARIO: Se um template foi pre-selecionado pelo usuario, use OBRIGATORIAMENTE esse template, ignorando todas as regras de selecao automatica.${forcedTemplate ? `\nTEMPLATE OBRIGATORIO: "${forcedTemplate}"\nCAMPOS OBRIGATORIOS PARA ESTE TEMPLATE: ${TEMPLATE_FIELDS[forcedTemplate] ?? 'use os campos mais adequados ao template'}` : ''}
 
 IMPORTANTE: Se o usuário mencionar explicitamente o nome de um template no prompt (por exemplo: "use tech-minimal", "quero no tech statement", "faz no hero title"), use obrigatoriamente esse template, ignorando as regras de seleção automática.
@@ -152,37 +186,38 @@ REGRAS DE SELEÇÃO DE TEMPLATE:
 
 REGRA PRIORITÁRIA — verifique NESTA ORDEM antes de qualquer outra regra:
 1. Conteúdo com NÚMERO/ESTATÍSTICA/META/RESULTADO → sempre "business-statement". NUNCA use tech ou editorial para dado numérico de negócio.
-2. Conteúdo de COMIDA/RESTAURANTE → sempre "food-editorial" ou "food-promo". NUNCA use tech-news, tech-product ou tech-statement para restaurante, prato, cardápio, delivery, gastronomia, bebida ou chef.
-3. Conteúdo de ESPORTE → sempre "sport-arena". NUNCA use tech para esporte.
-4. Conteúdo de EMPREGO/VAGA → sempre "job-glass".
-5. Conteúdo de IMÓVEL → sempre "realty-keys" ou "realty-premium" ou "realty-launch".
-6. Conteúdo sobre PRODUTO ou SERVIÇO de TECNOLOGIA (app, software, agente, plataforma digital) → "tech-product".
-7. Conteúdo de NOTÍCIA ou LANÇAMENTO do setor de TECNOLOGIA/IA → "tech-news".
+2. Conteúdo de SAÚDE/ODONTOLOGIA/ESTÉTICA (clínica, consultório, tratamento, procedimento) → "clinic-light" ou "clinic-dark" (ver FAMÍLIAS POR NICHO acima para escolher a variação). NUNCA use health-split/health-content/health-stats a menos que o usuário peça esse template explicitamente pelo nome.
+3. Conteúdo de COMIDA/RESTAURANTE/GASTRONOMIA → "food-vivid" ou "food-noir". NUNCA use food-editorial/food-promo/tech-news/tech-product/tech-statement para restaurante, prato, cardápio, delivery, gastronomia, bebida ou chef, a menos que o usuário peça esse template explicitamente pelo nome.
+4. Conteúdo de IMÓVEL/CONSTRUÇÃO/ARQUITETURA → "estate-warm-bottom" ou "estate-warm-top". NUNCA use realty-keys/realty-premium/realty-launch a menos que o usuário peça esse template explicitamente pelo nome.
+5. Conteúdo de PETS, EDUCAÇÃO, FITNESS ou ESPORTE (comunidade, aula, adoção, treino, matrícula) → "warm-circle-bold" ou "warm-circle-soft". NUNCA use sport-arena/sport-brand a menos que o usuário peça esse template explicitamente pelo nome.
+6. Conteúdo de EMPREGO/VAGA → sempre "job-glass".
+7. Conteúdo de NOTÍCIA ou LANÇAMENTO do setor de TECNOLOGIA/IA, no formato boletim/manchete → "tech-news".
 8. Frase filosófico-opinativa EXCLUSIVAMENTE sobre IA ou tecnologia, sem produto, sem narrativa, sem contexto de negócio → "tech-statement".
-9. Conteúdo INFORMATIVO com dicas, tutoriais, explicações, artigos ou listas → "editorial-card".
-10. Qualquer outro conteúdo sem regra específica → "hero-title" como padrão.
+9. Conteúdo de MODA, TECNOLOGIA/IA/SOFTWARE (apresentação de produto/serviço), NEGÓCIOS ou CONSULTORIA que não se encaixou nas regras 7-8 → "editorial-dark-pop" ou "editorial-light-pop" (ver FAMÍLIAS POR NICHO acima para escolher a variação).
+10. Conteúdo INFORMATIVO com dicas, tutoriais, explicações, artigos ou listas → "editorial-card".
+11. Qualquer outro conteúdo sem regra específica → "editorial-card" como padrão.
 
-SELEÇÃO DETALHADA POR TEMA (para desempate dentro da mesma categoria):
-- "food-editorial"  → OBRIGATÓRIO para restaurante premium, alta gastronomia, prato especial, menu degustação, chef, experiência gastronômica sofisticada, vinho, harmonização
-- "food-promo"      → OBRIGATÓRIO para qualquer post sobre prato, restaurante, delivery, cardápio, lanchonete, promoção de comida ou bebida, hambúrguer, pizza, sushi, açaí, sobremesa (use food-editorial se o contexto for sofisticado)
-- "sport-arena"     → OBRIGATÓRIO para esporte, time, jogo, partida, campeonato, treino, academia, competição, resultado esportivo, futebol, basquete, corrida, natação
-- "job-glass"       → OBRIGATÓRIO para vaga de emprego, recrutamento, contratação, oportunidade de carreira
-- "health-split"    → clínicas, farmácias, saúde, bem-estar, produto de saúde em destaque
+ESCOLHA ENTRE AS DUAS VARIAÇÕES DE CADA FAMÍLIA POR NICHO — use o tom da marca (Tom de voz, acima) e o subtexto do pedido do usuário, nesta ordem de prioridade:
+- clinic-light (claro/acolhedor) vs clinic-dark (escuro/premium) — tom "descontraído"/"profissional" claro → clinic-light; tom "técnico"/premium ou pedido explícito de estética avançada/clínica de alto padrão → clinic-dark.
+- estate-warm-bottom (imóvel específico, tem preço/specs) vs estate-warm-top (institucional, sem preço) — se o pedido menciona preço, metragem, quartos ou um lançamento específico → estate-warm-bottom; se é sobre a marca/construtora em geral → estate-warm-top.
+- food-vivid (delivery/casual/vibrante) vs food-noir (alta gastronomia/fine dining) — se o pedido menciona delivery, lanche, promoção ou tom descontraído → food-vivid; se menciona alta gastronomia, chef, harmonização ou tom sofisticado → food-noir.
+- editorial-dark-pop (fundo escuro) vs editorial-light-pop (fundo claro) — tom "técnico"/tech/escuro → editorial-dark-pop; tom "descontraído"/moda/editorial claro → editorial-light-pop.
+- warm-circle-bold (fitness/esporte, energia) vs warm-circle-soft (pets/educação, acolhimento) — conteúdo de treino/academia/competição → warm-circle-bold; conteúdo de adoção/curso/aula infantil → warm-circle-soft.
+Se não houver sinal claro em nenhum dos casos acima, prefira a primeira opção listada (a variação mais versátil da família).
+
+SELEÇÃO DETALHADA POR TEMA (para desempate dentro da mesma categoria — templates legado abaixo só devem ser escolhidos automaticamente quando NENHUMA regra da FAMÍLIA POR NICHO acima se aplicar; caso contrário use a família por nicho e ignore estas linhas):
 - "infographic-ring" → infográficos, listas de 4 itens, comparativos, benefícios em lista
-- "realty-keys"     → imobiliárias, corretores, aluguel, venda de imóveis, captação de leads imobiliários
 - "toggle-card"     → listas numeradas, motivos, razões, dicas em formato de lista
-- "home-split"      → móveis planejados, decoração, arquitetura, serviços de ambiente/lar
-- "product-arch"    → produto físico de qualquer segmento (exceto comida) em destaque com fundo limpo
-- "hero-gradient"   → posts emocionais, datas comemorativas, homenagens, celebrações com foto de fundo
-- "editorial-card"  → conteúdo informativo, artigos, dicas, tutoriais, textos com contexto e corpo explicativo
+- "home-split"      → móveis planejados, decoração, serviços de ambiente/lar que não se encaixam em nenhuma família por nicho
+- "product-arch"    → produto físico de qualquer segmento (exceto comida) em destaque com fundo limpo, fora das famílias por nicho
+- "hero-gradient"   → posts emocionais, datas comemorativas, homenagens, celebrações com foto de fundo, fora das famílias por nicho
 - "business-statement" → OBRIGATÓRIO quando o prompt contiver números, porcentagens, estatísticas, metas, resultados ou conquistas de negócios
-- "business-card"   → apresentação de empresa, serviço profissional ou proposta de valor (não-tech)
-- "tech-news"       → EXCLUSIVO para notícias, novidades e lançamentos do setor de TECNOLOGIA, INTELIGÊNCIA ARTIFICIAL, startups tech, software, apps ou inovação digital. NUNCA use para food, saúde, esporte ou serviços gerais
+- "business-card"   → apresentação de empresa, serviço profissional ou proposta de valor que não se encaixa nas famílias editorial-dark-pop/editorial-light-pop
+- "tech-news"       → EXCLUSIVO para notícias, novidades e lançamentos do setor de TECNOLOGIA, INTELIGÊNCIA ARTIFICIAL, startups tech, software, apps ou inovação digital, no formato boletim/manchete. NUNCA use para food, saúde, esporte ou serviços gerais
 - "tech-statement"  → EXCLUSIVO para opiniões filosóficas e declarações puramente sobre IA, automação ou tecnologia digital — sem produto, sem narrativa, sem contexto de negócio. Exemplos válidos: "IA vai substituir empregos", "automação é inevitável". NUNCA use para posts sobre produtividade, liderança, motivação ou negócios em geral.
-- "tech-product"    → EXCLUSIVO para apresentação de produto ou serviço de TECNOLOGIA: apps, ferramentas de IA, software, agentes, plataformas digitais
 - "tech-minimal"    → EXCLUSIVO para: (a) pedido explícito do usuário por estilo minimalista, clean ou fundo preto/sólido, OU (b) prompt com menos de 5 palavras sem nenhum contexto adicional. NUNCA use tech-minimal como substituto de tech-statement para qualquer outro caso.
 
-REGRA DE FALLBACK: Quando nenhuma regra acima se aplicar com clareza, use "hero-title" para posts gerais e "editorial-card" para posts com desenvolvimento textual. NUNCA escolha tech-statement ou tech-minimal por eliminação ou por falta de outra opção.
+REGRA DE FALLBACK: Quando nenhuma regra acima se aplicar com clareza, use "editorial-card" como padrão para qualquer conteúdo. NUNCA escolha tech-statement ou tech-minimal por eliminação ou por falta de outra opção.
 
 REGRAS DE COR (escolha EXATAMENTE uma das três — nenhuma outra é permitida):
 - #3A5AFF (azul)   → tech, negócios, profissional, inovação, produtividade
