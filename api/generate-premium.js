@@ -65,6 +65,46 @@ const AVOID_BY_STYLE = {
   typography: 'photographic elements, realistic people or objects, complex illustrations, busy or noisy backgrounds, stock photo textures, 3D render, gradients or shapes that compete with the text, visual clutter',
 }
 
+// Clichês visuais NOMEADOS por segmento — mais eficazes que termos genéricos
+// ("evite cores neon") porque atacam o exato default que o GPT Image cai quando
+// não é instruído explicitamente a fugir dele para aquele nicho específico.
+function namedClichesForSegment(text) {
+  const t = (text || '').toLowerCase()
+  if (/food|restaurant|gastronom|comida|culin[aá]ria|card[aá]pio|delivery|chef|bebida/.test(t)) {
+    return 'a dish shot centered at a 45-degree angle on a plain white studio background, with artificial steam rising in an identical straight line and cutlery aligned like a stock catalog still'
+  }
+  if (/health|sa[uú]de|cl[ií]nic|medic|farm[aá]c|hospital|dentist|odont|paciente/.test(t)) {
+    return "a doctor in a spotless white coat smiling with arms crossed staring directly at the camera, a stethoscope hung purely as a prop, and a blurred generic clinical-blue background"
+  }
+  if (/tech|\bia\b|intelig[eê]ncia artificial|software|startup|\bai\b|saas|agente/.test(t)) {
+    return 'a glowing blue brain made of neural network nodes connected by light trails, or a white robotic hand touching a floating hologram — the two most recycled stock-image clichés for "AI"'
+  }
+  if (/im[óo]v|constru|realty|real estate|arquitet|imobili[aá]ri/.test(t)) {
+    return 'a generic couple holding hands in front of a house silhouette against an identical orange golden-hour sky, or a shiny gold key being handed over in a stock-photo-of-a-stock-photo pose'
+  }
+  if (/moda|fashion|beleza|beauty|cosm[eé]tic|est[eé]tica/.test(t)) {
+    return 'a diffuse pink-to-lilac glow gradient behind the product or face — the single most recycled cliché in AI-generated beauty/aesthetics content — combined with unrealistic plastic, doll-like skin glow'
+  }
+  return 'a generic handshake between people in suits inside a glass corporate office under cold blue stock-photo lighting, or a floating holographic upward growth chart'
+}
+
+// "Design Read" — nomeia deliberadamente o contexto (segmento, estilo, base) antes
+// de gerar, em vez de deixar o modelo cair no default genérico do nicho em
+// silêncio. Também logado no servidor para dar visibilidade do que foi "lido" em
+// cada geração ao debugar resultados fora do esperado.
+function buildDesignRead(segment, resolvedVisualStyle, hasReferencePhoto) {
+  const segmentLabel = (segment || '').trim() || 'unspecified segment'
+  const styleName = resolvedVisualStyle === 'illustration'
+    ? 'vector illustration'
+    : resolvedVisualStyle === 'typography'
+    ? 'typographic composition'
+    : 'photography'
+  const basis = hasReferencePhoto
+    ? 'preserving the provided reference photo as the exact visual base'
+    : 'generating a fresh scene from the brief'
+  return `Reading this as: a social post for the "${segmentLabel}" segment, ${styleName}, ${basis}. Deliberately avoid this segment's generic AI default — see the named clichés banned below.`
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -78,6 +118,9 @@ export default async function handler(req, res) {
 
   const resolvedVisualStyle = visualStyle === 'illustration' || visualStyle === 'typography' ? visualStyle : 'photo'
   const hasReferencePhoto = !!visualReferences?.length
+
+  const designRead = buildDesignRead(segment || styleContext, resolvedVisualStyle, hasReferencePhoto)
+  console.log('[premium] design read:', designRead)
 
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
@@ -155,6 +198,8 @@ ${referenceBaseDirective}
 
 You are a professional social media art director generating a high-quality image.
 
+DESIGN READ: ${designRead}
+
 BRAND VISUAL STYLE (follow strictly):
 ${styleContext || 'clean, minimal, professional'}
 
@@ -180,7 +225,9 @@ ${compositionRules}
 ${carouselTextOverlay}
 QUALITY STANDARD: ${hasReferencePhoto ? 'Polished, professional photo edit — indistinguishable from the original photo with a subtle, high-end text/logo overlay added on top.' : QUALITY_STANDARD_BY_STYLE[resolvedVisualStyle]}
 
-Avoid: ${hasReferencePhoto ? 'redrawing or reinterpreting the scene, replacing the background, altering the subject, generic AI aesthetics, plastic skin, oversaturated colors, fake HDR' : AVOID_BY_STYLE[resolvedVisualStyle]}.`
+Avoid: ${hasReferencePhoto
+    ? 'redrawing or reinterpreting the scene, replacing the background, altering the subject, generic AI aesthetics, plastic skin, oversaturated colors, fake HDR'
+    : `${AVOID_BY_STYLE[resolvedVisualStyle]}. Specifically, do NOT default to this segment's most recycled visual cliché: ${namedClichesForSegment(segment || styleContext)}`}.`
 
   try {
     // Se tem referência de imagem (base64 ou URL), usa edits

@@ -12,6 +12,19 @@ function buildAntiHallucinationRules(dateCtx) {
 - NUNCA invente números específicos, percentuais ou estatísticas (ex: "80% mais engajamento", "3x mais confiança") a menos que o usuário tenha fornecido esse dado explicitamente. Prefira linguagem qualitativa quando não houver dado real disponível.`
 }
 
+// Elimina os tiques mais reconhecíveis de texto gerado por IA — os mesmos que
+// fazem uma legenda "cheirar" a IA mesmo com gancho e CTA corretos.
+function buildAntiSlopRules() {
+  return `REGRAS ANTI-IA-TELL — OBRIGATÓRIAS (elimine tiques clássicos de texto gerado por IA):
+- NUNCA use travessão (—) como recurso de estilo dentro da legenda, para criar pausas dramáticas ou conectar ideias.
+- NUNCA use a estrutura "não é apenas X, é Y" ou variações ("não se trata de X, mas de Y", "mais do que X, é Y").
+- NUNCA abra a legenda com perguntas ou intros genéricas: "Você sabia que...", "Já parou pra pensar...", "Neste post vamos falar sobre...", "Vamos conversar sobre...".
+- NUNCA use adjetivos de enchimento sem contexto concreto que os justifique: "incrível", "revolucionário", "transformador", "poderoso", "essencial", "fundamental".
+- Varie o ritmo das frases — misture frases curtas e longas, não repita a mesma estrutura sintática em sequência, não termine todo parágrafo com uma frase de efeito.
+- Escreva em voz ativa, com um sujeito humano fazendo a ação — nunca objetos ou conceitos abstratos praticando verbos humanos (ex: evite "a solução resolve seu problema", prefira "você resolve isso com...").
+- O texto deve soar como uma pessoa real escrevendo para outra pessoa, não como um anúncio genérico ou um resumo corporativo.`
+}
+
 const TEMPLATE_FIELDS = {
   'sport-arena':        'tag (categoria do evento em maiusculas), title (titulo em maiusculas, 2 linhas com \\n), subtitle (detalhe do evento)',
   'sport-brand':        'brand-label (nome da marca), phrase-line1 (1 palavra em maiusculas), phrase-line2 (1 palavra em maiusculas na cor de destaque), tagline (slogan curto com pontos separadores)',
@@ -61,6 +74,8 @@ function buildCarouselPrompt(userInput, slideCount, brand, templateId) {
   return `Você é um especialista em criação de carrosséis para Instagram.
 
 ${buildAntiHallucinationRules(getCurrentDateContext())}
+
+${buildAntiSlopRules()}
 ${brand?.businessName ? `\nEmpresa: ${brand.businessName}` : ''}
 ${brand?.segment ? `Segmento: ${brand.segment}` : ''}
 ${toneLabel ? `Tom de voz: ${toneLabel}` : ''}
@@ -164,6 +179,8 @@ export default async function handler(req, res) {
     const prompt = `Você é um especialista em copywriting para redes sociais com foco em engajamento e alcance orgânico.
 
 ${buildAntiHallucinationRules(getCurrentDateContext())}
+
+${buildAntiSlopRules()}
 
 Contexto do post: ${captionPrompt}
 ${brandCtx}
