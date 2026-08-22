@@ -174,7 +174,8 @@ Use the provided image as the exact visual base for the output. Do NOT redraw, r
 Only make these changes on top of the untouched base photo:
 - Add the text overlay and/or logo space described below (if any)
 - Subtly adjust lighting, color grading, or atmosphere ONLY if explicitly requested in the brief below
-Treat this strictly as a targeted photo edit, not a scene generated from a text brief. Everything else already in the photo — the people, objects, setting, and framing — must remain exactly as provided.` : ''
+- THE ONLY EXCEPTION TO EXACT FRAMING: if fitting the mandatory text safe-zone (see CRITICAL SAFE ZONE rule below) requires it, you MAY shrink the photo and add neutral letterboxing/padding (solid color bars matching the photo's dominant tone) around it. This is the single allowed departure from "framing stays exactly as provided" — the photo itself (people, objects, setting, angle, composition) still must not be redrawn, cropped into, or reinterpreted; it is only placed smaller within the canvas, padded, never cropped.
+Treat this strictly as a targeted photo edit, not a scene generated from a text brief. Everything else already in the photo — the people, objects, setting, and framing — must remain exactly as provided, except for letterboxing/padding as described above when required to fit the text safe zone.` : ''
 
   const briefLabel = hasReferencePhoto
     ? 'EDIT INSTRUCTIONS (what to add or adjust on top of the reference photo — this is NOT a new scene to generate)'
