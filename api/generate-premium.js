@@ -160,7 +160,8 @@ Text placement rules:
   const photoIdentitySection = hasReferencePhoto ? `
 
 CRITICAL FACE AND IDENTITY PRESERVATION:
-When a reference photo is provided, you MUST preserve the exact facial features, proportions, and identity of every person shown. Do NOT alter, distort, duplicate, or generate variations of any face. Do NOT create multiple people with similar or identical faces unless the reference photo already shows multiple distinct people — in that case, preserve each person's individual distinct features exactly. Do NOT change body proportions, facial structure, or any physical characteristic. The person(s) in the output must be immediately recognizable as the exact same person(s) from the reference photo. Any deviation from the reference photo's human features is a critical failure.` : ''
+When a reference photo is provided, you MUST preserve the exact facial features, proportions, and identity of every person shown. Do NOT alter, distort, duplicate, or generate variations of any face. Do NOT create multiple people with similar or identical faces unless the reference photo already shows multiple distinct people — in that case, preserve each person's individual distinct features exactly. Do NOT change body proportions, facial structure, or any physical characteristic. The person(s) in the output must be immediately recognizable as the exact same person(s) from the reference photo. Any deviation from the reference photo's human features is a critical failure.
+When the reference photo shows MULTIPLE people, you MUST preserve EACH individual person's exact facial features and identity — not just the most prominent one. Every single face in the group must remain recognizable and unaltered, regardless of how many people are present or their position in the frame.` : ''
 
   // Quando há foto de referência, o prompt de "gerar cena do zero" (VISUAL BRIEF +
   // VISUAL SUBJECT RULE + regras de composição) faz o GPT Image redesenhar a foto
