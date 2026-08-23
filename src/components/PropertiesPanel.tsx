@@ -24,6 +24,18 @@ const FONTS = [
   { value: 'Oswald, sans-serif', label: 'Oswald' },
   { value: 'Raleway, sans-serif', label: 'Raleway' },
   { value: 'Bebas Neue, cursive', label: 'Bebas Neue' },
+  { value: 'Sora, sans-serif', label: 'Sora' },
+  { value: 'DM Sans, sans-serif', label: 'DM Sans' },
+  { value: 'Plus Jakarta Sans, sans-serif', label: 'Plus Jakarta Sans' },
+  { value: 'Lato, sans-serif', label: 'Lato' },
+  { value: 'Cormorant Garamond, serif', label: 'Cormorant Garamond' },
+  { value: 'Manrope, sans-serif', label: 'Manrope' },
+  { value: 'Outfit, sans-serif', label: 'Outfit' },
+  { value: 'Bricolage Grotesque, sans-serif', label: 'Bricolage Grotesque' },
+  { value: 'Syne, sans-serif', label: 'Syne' },
+  { value: 'Unbounded, sans-serif', label: 'Unbounded' },
+  { value: 'Instrument Serif, serif', label: 'Instrument Serif' },
+  { value: 'Fraunces, serif', label: 'Fraunces' },
 ]
 
 const EMOJIS = ['🚀','⚡','🎯','💡','🔥','✅','📈','🏆','💎','🌟','👑','💪','🤝','🎉','📊','🧠','⭐','🙌','👏','💰']

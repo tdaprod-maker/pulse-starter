@@ -19,8 +19,20 @@ const ALIGN_OPTIONS: { value: 'top' | 'center' | 'bottom'; label: string }[] = [
   { value: 'bottom', label: 'Baixo'  },
 ]
 
+// Mesmos defaults por prefixo de `defaultOverlayOpacity` em CanvasEngine.tsx —
+// usado só para exibir o valor correto no slider quando o usuário ainda não ajustou manualmente.
+function getDefaultOverlayOpacity(templateId: string): number {
+  return templateId.startsWith('game-day')            ? 0.45
+    : templateId.startsWith('editorial-card')          ? 0.4
+    : templateId.startsWith('hero-title')              ? 0.45
+    : templateId.startsWith('food-promo')              ? 0.35
+    : templateId.startsWith('estate-warm-bottom')      ? 0
+    : templateId.startsWith('estate-warm-top')         ? 0
+    : 0.35
+}
+
 export function ImagePanel({ template }: ImagePanelProps) {
-  const { setTemplateBackground, setTemplateImageStyle, setTemplateImageOffset, setTemplateBackgroundOpacity } = useStore()
+  const { setTemplateBackground, setTemplateImageStyle, setTemplateImageOffset, setTemplateBackgroundOpacity, setTemplateOverlayOpacity } = useStore()
   const inputRef = useRef<HTMLInputElement>(null)
   const [regenerating, setRegenerating] = useState(false)
   const [editPrompt, setEditPrompt] = useState('')
@@ -141,9 +153,10 @@ export function ImagePanel({ template }: ImagePanelProps) {
     }
   }
 
-  const zoom    = template.backgroundZoom    ?? 100
-  const opacity = template.backgroundOpacity ?? 1
-  const align   = template.backgroundAlign   ?? 'center'
+  const zoom           = template.backgroundZoom    ?? 100
+  const opacity        = template.backgroundOpacity ?? 1
+  const overlayOpacity = template.overlayOpacity ?? getDefaultOverlayOpacity(template.id)
+  const align          = template.backgroundAlign   ?? 'center'
   const imageVisible = opacity > 0
   const defaultOpacity = template.id.startsWith('big-number') ? 0.5 : 1
 
@@ -271,7 +284,7 @@ export function ImagePanel({ template }: ImagePanelProps) {
 
           {/* Hint interação direta */}
           <p style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.5, userSelect: 'none', margin: 0 }}>
-            Arraste a imagem no canvas para reposicionar. Use o scroll do mouse para dar zoom.
+            Arraste a imagem no canvas para reposicionar. Use o slider de Zoom abaixo para ajustar o tamanho.
           </p>
 
           {/* Zoom */}
@@ -304,6 +317,23 @@ export function ImagePanel({ template }: ImagePanelProps) {
               step={0.05}
               value={opacity}
               onChange={(e) => setTemplateBackgroundOpacity(template.id, Number(e.target.value))}
+              style={{ width: '100%', accentColor: 'var(--accent)' }}
+            />
+          </div>
+
+          {/* Escurecimento (overlay sobre a foto, usado para legibilidade do texto) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', userSelect: 'none' }}>Escurecimento</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{Math.round(overlayOpacity * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={overlayOpacity}
+              onChange={(e) => setTemplateOverlayOpacity(template.id, Number(e.target.value))}
               style={{ width: '100%', accentColor: 'var(--accent)' }}
             />
           </div>

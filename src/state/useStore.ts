@@ -21,6 +21,8 @@ export interface Template {
   backgroundOffsetY?: number
   /** Opacidade da imagem de fundo (0.1–1). Default: 1. */
   backgroundOpacity?: number
+  /** Opacidade do overlay escuro sobre a imagem de fundo (0–1), usado para legibilidade de texto. Default: varia por família de template (ver `defaultOverlayOpacity` em CanvasEngine.tsx). */
+  overlayOpacity?: number
   /** Prompt usado para gerar a imagem de fundo via IA (para regeneração). */
   imagePrompt?: string
   /** Data URL do logotipo (PNG com transparência suportado). */
@@ -85,6 +87,7 @@ interface PulseStore {
   setTemplateImagePrompt: (templateId: string, prompt: string) => void
   setTemplateSolidBackground: (templateId: string, color: string) => void
   setTemplateBackgroundOpacity: (templateId: string, opacity: number) => void
+  setTemplateOverlayOpacity: (templateId: string, opacity: number) => void
   setCaption: (caption: Caption | null) => void
   setPendingPost: (post: PostRecord | null) => void
   setPendingCarousel: (carousel: PendingCarousel | null) => void
@@ -253,6 +256,18 @@ export const useStore = create<PulseStore>()(
         templates: state.templates.map((t) =>
           t.id === templateId || t.id.startsWith(prefix)
             ? { ...t, backgroundOpacity: opacity }
+            : t
+        ),
+      }
+    }),
+  setTemplateOverlayOpacity: (templateId, opacity) =>
+    set((state) => {
+      const lastHyphen = templateId.lastIndexOf('-')
+      const prefix = lastHyphen >= 0 ? templateId.substring(0, lastHyphen) : templateId
+      return {
+        templates: state.templates.map((t) =>
+          t.id === templateId || t.id.startsWith(prefix)
+            ? { ...t, overlayOpacity: opacity }
             : t
         ),
       }

@@ -55,7 +55,7 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
   ) {
     const autoScale = scale ?? calcAutoScale(template)
 
-    const { setTemplateImageStyle, setTemplateImageOffset, setTemplateLogoPosition } = useStore()
+    const { setTemplateImageOffset, setTemplateLogoPosition } = useStore()
 
     const [guides, setGuides] = useState<{ x?: number; y?: number }>({})
 
@@ -149,14 +149,17 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
     // ── Overlay opacity por template ───────────────────────────────────────────
     // estate-warm-bottom/top usam gradiente real (shape dedicado em elements[])
     // em vez do overlay chapado — por isso opacity 0 aqui, para não somar os dois.
-    const overlayOpacity =
-      template.id.startsWith('game-day')       ? 0.65
-      : template.id.startsWith('editorial-card') ? 0.6
-      : template.id.startsWith('hero-title')   ? 0.65
+    // `template.overlayOpacity` (controlado pelo slider "Escurecimento" no ImagePanel)
+    // sobrescreve o default por prefixo quando o usuário ajusta manualmente.
+    const defaultOverlayOpacity =
+      template.id.startsWith('game-day')       ? 0.45
+      : template.id.startsWith('editorial-card') ? 0.4
+      : template.id.startsWith('hero-title')   ? 0.45
       : template.id.startsWith('food-promo')   ? 0.35
       : template.id.startsWith('estate-warm-bottom') ? 0
       : template.id.startsWith('estate-warm-top')    ? 0
-      : 0.5
+      : 0.35
+    const overlayOpacity = template.overlayOpacity ?? defaultOverlayOpacity
 
     // ── Logo positioning ──────────────────────────────────────────────────────
     const logoSize   = template.logoSize ?? 160
@@ -183,13 +186,6 @@ export const CanvasEngine = forwardRef<Konva.Stage, CanvasEngineProps>(
           }}
           onTap={(e) => {
             if (e.target === e.target.getStage()) onSelectElement?.(null)
-          }}
-          onWheel={(e) => {
-            if (!template.backgroundImage) return
-            e.evt.preventDefault()
-            const direction = e.evt.deltaY < 0 ? 1 : -1
-            const newZoom = Math.max(50, Math.min(200, bgZoom + direction * 5))
-            setTemplateImageStyle(template.id, newZoom, undefined)
           }}
           onMouseDown={(e) => {
             if (!template.backgroundImage) return
