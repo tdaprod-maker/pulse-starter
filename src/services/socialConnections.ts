@@ -18,6 +18,7 @@ export async function getConnection(email: string, platform: string): Promise<So
     .maybeSingle()
 
   if (error || !data) return null
+  console.log(`[socialConnections] getConnection(${platform}) platform_avatar_url carregado do Supabase:`, (data as SocialConnection).platform_avatar_url ?? '(null)')
   return data as SocialConnection
 }
 
@@ -30,7 +31,8 @@ export async function saveConnection(
   expires_at: string | null,
   platform_avatar_url: string | null = null,
 ): Promise<void> {
-  await supabase.from('social_connections').upsert(
+  console.log(`[socialConnections] saveConnection(${platform}) recebendo platform_avatar_url:`, platform_avatar_url ?? '(null)')
+  const { error } = await supabase.from('social_connections').upsert(
     {
       user_email: email,
       platform,
@@ -44,6 +46,11 @@ export async function saveConnection(
     },
     { onConflict: 'user_email,platform' },
   )
+  if (error) {
+    console.log(`[socialConnections] saveConnection(${platform}) erro no upsert do Supabase:`, error.message)
+  } else {
+    console.log(`[socialConnections] saveConnection(${platform}) upsert concluído com sucesso, platform_avatar_url gravado:`, platform_avatar_url ?? '(null)')
+  }
 }
 
 export async function removeConnection(email: string, platform: string): Promise<void> {
@@ -55,6 +62,7 @@ export async function getInstagramConnection(
 ): Promise<{ access_token: string; ig_user_id: string; username: string; avatar_url: string } | null> {
   const conn = await getConnection(email, 'instagram')
   if (!conn || !conn.is_valid) return null
+  console.log('[socialConnections] getInstagramConnection: platform_avatar_url da linha do Supabase:', conn.platform_avatar_url ?? '(null)')
 
   // Lazy refresh: renova se expira em menos de 7 dias
   if (conn.expires_at) {
@@ -70,6 +78,7 @@ export async function getInstagramConnection(
         const refreshed = await res.json()
         if (refreshed.access_token) {
           await saveConnection(email, 'instagram', refreshed.access_token, conn.platform_user_id, conn.platform_username, refreshed.expires_at, conn.platform_avatar_url)
+          console.log('[socialConnections] getInstagramConnection (pós-refresh de token): avatar_url final retornado ao BrandPage:', conn.platform_avatar_url ?? '(vazio)')
           return { access_token: refreshed.access_token, ig_user_id: conn.platform_user_id, username: conn.platform_username ?? '', avatar_url: conn.platform_avatar_url ?? '' }
         }
       } catch {
@@ -78,5 +87,6 @@ export async function getInstagramConnection(
     }
   }
 
+  console.log('[socialConnections] getInstagramConnection: avatar_url final retornado ao BrandPage:', conn.platform_avatar_url ?? '(vazio)')
   return { access_token: conn.access_token, ig_user_id: conn.platform_user_id, username: conn.platform_username ?? '', avatar_url: conn.platform_avatar_url ?? '' }
 }

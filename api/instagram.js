@@ -104,6 +104,7 @@ async function handleCallback(req, res) {
     const igUserId = String(profileData.id ?? igUserIdFromToken ?? '')
     const username = profileData.username ?? ''
     const avatarUrl = profileData.profile_picture_url ?? ''
+    console.log('[instagram/callback] avatar_url extraído de profileData.profile_picture_url:', avatarUrl || '(vazio)')
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
 
     const params = new URLSearchParams({
@@ -115,6 +116,7 @@ async function handleCallback(req, res) {
       state: state ?? '',
     })
 
+    console.log('[instagram/callback] redirecionando pra done com avatar_url:', params.get('avatar_url') || '(vazio)')
     res.redirect(`${doneBase}?${params.toString()}`)
   } catch (err) {
     console.error('[instagram/callback] oauth erro:', err)

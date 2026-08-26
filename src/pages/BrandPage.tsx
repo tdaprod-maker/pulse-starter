@@ -71,6 +71,7 @@ export function BrandPage() {
         setLinkedinName(li.platform_username ?? '')
       }
       if (ig) {
+        console.log('[BrandPage] carregamento inicial — avatar_url vindo de getInstagramConnection:', ig.avatar_url || '(vazio)')
         setInstagramToken(ig.access_token)
         setInstagramUserId(ig.ig_user_id)
         setInstagramUsername(ig.username)
@@ -94,6 +95,7 @@ export function BrandPage() {
 
       if (event.data?.type === 'instagram_oauth') {
         const { access_token, ig_user_id, username, avatar_url, expires_at } = event.data
+        console.log('[BrandPage] postMessage instagram_oauth recebido — avatar_url:', avatar_url || '(vazio)')
         if (access_token && ig_user_id && userEmail) {
           saveConnection(userEmail, 'instagram', access_token, ig_user_id, username ?? null, expires_at || null, avatar_url || null)
           setInstagramToken(access_token)

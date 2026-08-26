@@ -10,6 +10,8 @@ export function InstagramCallbackPage() {
     const expiresAt = params.get('expires_at')
     const error = params.get('instagram_error')
 
+    console.log('[InstagramCallbackPage] avatar_url recebido na URL de done:', avatarUrl || '(vazio)')
+
     if (accessToken && igUserId) {
       window.opener?.postMessage(
         {
