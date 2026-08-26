@@ -6,6 +6,7 @@ export function InstagramCallbackPage() {
     const accessToken = params.get('access_token')
     const igUserId = params.get('ig_user_id')
     const username = params.get('username')
+    const avatarUrl = params.get('avatar_url')
     const expiresAt = params.get('expires_at')
     const error = params.get('instagram_error')
 
@@ -16,6 +17,7 @@ export function InstagramCallbackPage() {
           access_token: accessToken,
           ig_user_id: igUserId,
           username: username ?? '',
+          avatar_url: avatarUrl ?? '',
           expires_at: expiresAt ?? '',
         },
         window.location.origin,

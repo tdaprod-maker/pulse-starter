@@ -37,6 +37,7 @@ export function BrandPage() {
   const [instagramToken, setInstagramToken] = useState('')
   const [instagramUserId, setInstagramUserId] = useState('')
   const [instagramUsername, setInstagramUsername] = useState('')
+  const [instagramAvatarUrl, setInstagramAvatarUrl] = useState('')
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -73,6 +74,7 @@ export function BrandPage() {
         setInstagramToken(ig.access_token)
         setInstagramUserId(ig.ig_user_id)
         setInstagramUsername(ig.username)
+        setInstagramAvatarUrl(ig.avatar_url)
       }
     })
   }, [])
@@ -91,12 +93,13 @@ export function BrandPage() {
       }
 
       if (event.data?.type === 'instagram_oauth') {
-        const { access_token, ig_user_id, username, expires_at } = event.data
+        const { access_token, ig_user_id, username, avatar_url, expires_at } = event.data
         if (access_token && ig_user_id && userEmail) {
-          saveConnection(userEmail, 'instagram', access_token, ig_user_id, username ?? null, expires_at || null)
+          saveConnection(userEmail, 'instagram', access_token, ig_user_id, username ?? null, expires_at || null, avatar_url || null)
           setInstagramToken(access_token)
           setInstagramUserId(ig_user_id)
           setInstagramUsername(username ?? '')
+          setInstagramAvatarUrl(avatar_url ?? '')
         }
       }
     }
@@ -541,18 +544,26 @@ export function BrandPage() {
               {instagramToken ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ color: 'white', fontSize: '15px' }}>◎</span>
-                    </div>
+                    {instagramAvatarUrl ? (
+                      <img
+                        src={instagramAvatarUrl}
+                        alt={instagramUsername || 'Instagram'}
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border)' }}
+                      />
+                    ) : (
+                      <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: 'white', fontSize: '15px' }}>◎</span>
+                      </div>
+                    )}
                     <div>
                       <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {instagramUsername ? `@${instagramUsername}` : 'Instagram'}
+                        {instagramUsername ? `Conectado como @${instagramUsername}` : 'Instagram'}
                       </p>
                       <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Conectado · ID {instagramUserId}</p>
                     </div>
                   </div>
                   <button
-                    onClick={() => { removeConnection(userEmail, 'instagram'); setInstagramToken(''); setInstagramUserId(''); setInstagramUsername('') }}
+                    onClick={() => { removeConnection(userEmail, 'instagram'); setInstagramToken(''); setInstagramUserId(''); setInstagramUsername(''); setInstagramAvatarUrl('') }}
                     style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', background: 'transparent', border: '1px solid rgba(239,68,68,0.35)', color: 'rgba(239,68,68,0.7)', fontFamily: 'inherit', flexShrink: 0 }}
                   >
                     Desconectar

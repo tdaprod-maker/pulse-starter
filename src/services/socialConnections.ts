@@ -4,6 +4,7 @@ export interface SocialConnection {
   access_token: string
   platform_user_id: string
   platform_username: string | null
+  platform_avatar_url: string | null
   expires_at: string | null
   is_valid: boolean
 }
@@ -11,7 +12,7 @@ export interface SocialConnection {
 export async function getConnection(email: string, platform: string): Promise<SocialConnection | null> {
   const { data, error } = await supabase
     .from('social_connections')
-    .select('access_token, platform_user_id, platform_username, expires_at, is_valid')
+    .select('access_token, platform_user_id, platform_username, platform_avatar_url, expires_at, is_valid')
     .eq('user_email', email)
     .eq('platform', platform)
     .maybeSingle()
@@ -27,6 +28,7 @@ export async function saveConnection(
   platform_user_id: string,
   platform_username: string | null,
   expires_at: string | null,
+  platform_avatar_url: string | null = null,
 ): Promise<void> {
   await supabase.from('social_connections').upsert(
     {
@@ -35,6 +37,7 @@ export async function saveConnection(
       access_token,
       platform_user_id,
       platform_username,
+      platform_avatar_url,
       expires_at,
       is_valid: true,
       updated_at: new Date().toISOString(),
@@ -49,7 +52,7 @@ export async function removeConnection(email: string, platform: string): Promise
 
 export async function getInstagramConnection(
   email: string,
-): Promise<{ access_token: string; ig_user_id: string; username: string } | null> {
+): Promise<{ access_token: string; ig_user_id: string; username: string; avatar_url: string } | null> {
   const conn = await getConnection(email, 'instagram')
   if (!conn || !conn.is_valid) return null
 
@@ -66,8 +69,8 @@ export async function getInstagramConnection(
         })
         const refreshed = await res.json()
         if (refreshed.access_token) {
-          await saveConnection(email, 'instagram', refreshed.access_token, conn.platform_user_id, conn.platform_username, refreshed.expires_at)
-          return { access_token: refreshed.access_token, ig_user_id: conn.platform_user_id, username: conn.platform_username ?? '' }
+          await saveConnection(email, 'instagram', refreshed.access_token, conn.platform_user_id, conn.platform_username, refreshed.expires_at, conn.platform_avatar_url)
+          return { access_token: refreshed.access_token, ig_user_id: conn.platform_user_id, username: conn.platform_username ?? '', avatar_url: conn.platform_avatar_url ?? '' }
         }
       } catch {
         // continua com token atual se refresh falhar
@@ -75,5 +78,5 @@ export async function getInstagramConnection(
     }
   }
 
-  return { access_token: conn.access_token, ig_user_id: conn.platform_user_id, username: conn.platform_username ?? '' }
+  return { access_token: conn.access_token, ig_user_id: conn.platform_user_id, username: conn.platform_username ?? '', avatar_url: conn.platform_avatar_url ?? '' }
 }

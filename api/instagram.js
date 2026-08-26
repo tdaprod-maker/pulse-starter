@@ -94,21 +94,23 @@ async function handleCallback(req, res) {
     const longToken = longData.access_token
     const expiresIn = longData.expires_in ?? 5184000
 
-    // Passo 3: busca ig_user_id e username
+    // Passo 3: busca ig_user_id, username e foto de perfil
     const profileRes = await fetch(
-      `https://graph.instagram.com/me?fields=id,username&access_token=${encodeURIComponent(longToken)}`
+      `https://graph.instagram.com/me?fields=id,username,profile_picture_url&access_token=${encodeURIComponent(longToken)}`
     )
     const profileData = await profileRes.json()
     console.log('[instagram/callback] profile:', JSON.stringify(profileData))
 
     const igUserId = String(profileData.id ?? igUserIdFromToken ?? '')
     const username = profileData.username ?? ''
+    const avatarUrl = profileData.profile_picture_url ?? ''
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
 
     const params = new URLSearchParams({
       access_token: longToken,
       ig_user_id: igUserId,
       username,
+      avatar_url: avatarUrl,
       expires_at: expiresAt,
       state: state ?? '',
     })
