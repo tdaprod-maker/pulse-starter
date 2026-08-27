@@ -24,7 +24,10 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 
 ### Filosofia de edição pós-geração
 - Posts standard: totalmente editáveis via agente (textos, cores, formato, logo, imagem de fundo)
-- Posts premium: apenas logo inserível/removível via agente (imagem gerada não é editável)
+- Posts premium: logo inserível/removível via agente **+ ajustes pontuais na própria imagem gerada**
+  ("escurece o fundo", "texto branco", "mais contraste") — a imagem gerada vira a base do reprocessamento
+  (`editMode: 'adjust'` em `/api/generate-premium`), o texto/composição são preservados, cada ajuste
+  custa 4 pulses e é confirmado individualmente. Vale pro post único e por slide de carrossel Premium.
 - **Sem arrastar elementos no canvas** — toda edição é conversacional via AgentChat
 
 ## Stack
@@ -51,6 +54,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 | Escolha de engine pelo usuário | Agente retorna `engine: "standard"` sempre; usuário escolhe Standard ou Premium via botões; nomes sem mencionar tecnologia |
 | Posts standard (gpt-image-1) | Templates Konva editáveis via agente; seleção por tema do conteúdo; variação entre gerações garantida |
 | Posts premium GPT Image 2 | Fotorrealista; formato definido pelo agente; logo inserível via agente após geração |
+| Ajuste pós-geração Premium | `runPremiumAdjust` no AgentChat: pedido em linguagem natural na imagem já gerada → confirma 4 pulses → `/api/generate-premium` com `editMode: 'adjust'` (prompt curto de preservação, sem safe-zone/overlay/letterbox) usando a imagem como `visualReferences`. Post único + por slide de carrossel Premium (alvo = slide visível no `CarouselViewer`). Viewers ressincronizam via `useEffect([slides])` |
 | Modo edição pós-geração (standard) | Flag `hasGeneratedPost`; mensagens subsequentes vão direto para edit mode; AgentChat detecta do store quando `activePost` prop ainda é null |
 | Agente editor — ações de edição | recolor, rewrite, resize (formato), recolor_background, overlay_opacity, overlay_color, add_logo, remove_logo, resize_logo, move_logo |
 | resize_logo relativo | Agente calcula `currentLogoSize × fator`; `currentLogoSize` passado via `EditContext.logoSize` |
@@ -126,6 +130,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 4. `PremiumResultViewer` exibe imagem com legenda, download e publicação
 5. Logo inserível via chat: "insira o logo" → `overlayLogoOnImage` em todos os slides
 6. Logo removível via chat: restaura slides originais via `originalPremiumSlidesRef`
+7. Ajuste pós-geração via chat: qualquer pedido que não seja de logo → confirma 4 pulses → `runPremiumAdjust` reenvia a imagem gerada como `visualReferences` + `editMode: 'adjust'` → resultado substitui `premiumSlides` (post) ou o slide visível de `carouselSlides` (carrossel Premium)
 
 ### Fluxo de Restauração da Biblioteca (pendingPost)
 1. `PostLibraryPage.handleOpen` → `setPendingPost(post)` → `navigate('/')`
@@ -152,6 +157,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 | **Instagram OAuth multi-tenant** | App Review rejeitado (vídeo incompleto) — reenviado ao Meta em 14/08/2026 com screencast completo do fluxo de ponta a ponta (login, conexão Instagram, geração de post, publicação, confirmação no feed real). Aguardando nova análise (prazo até 20 dias). Enquanto isso, adicionar clientes beta manualmente como Testadores no Meta Developer Portal antes de conseguirem conectar. OAuth tecnicamente funcional; bug de accessToken/igUserId no CaptionPanel/CarouselViewer/PremiumResultViewer já corrigido. |
 | **Testar: texto desconfigurado ao restaurar** | Regressão suspeita; logs de diagnóstico adicionados no pendingPost effect — verificar no console ao restaurar da biblioteca. |
 | **Testar: premium sem logo automático** | Verificar que `generatePremium` não sobrepõe logo automaticamente; testar add/remove logo via chat. |
+| **Testar em produção: ajuste pós-geração Premium** | Fluxo novo (27/08/2026) não testável localmente (`vite` não serve `/api/*`; `gpt-image-2` é pago). Após deploy: (1) gerar post Premium → "escurece o fundo" → confirmar 4 pulses → só o fundo muda, texto/layout preservados, saldo −4; (2) carrossel Premium → navegar até slide 3 → pedir ajuste → msg cita "slide 3", só o slide 3 muda, navegação fica no 3; (3) encadear 2 ajustes seguidos; (4) conferir que o resultado aparece no viewer (sync `useEffect([slides])`). Limitações conhecidas: logo ativo é resetado ao ajustar; thumbnail da Biblioteca não é atualizado. |
 | **Testar: análise de site no onboarding** | `/api/agent-chat { siteUrl }` → fetch + Claude → brand_description preenchido automaticamente. |
 | **Testar: máximo 2 perguntas antes de gerar** | `userMessageCount < 3` → pode perguntar; na 3ª mensagem gera obrigatoriamente. |
 
@@ -319,3 +325,4 @@ Mantém os existentes para o MVP. Com GPT Image 2, templates se tornam menos rel
 23. **Imagens do Standard sempre escuras, slider "Opacidade" só piorava** → overlay preto sobre a foto era hardcoded (`overlayOpacity` até 0.65 no `CanvasEngine.tsx`) e independente do slider, que só controlava a opacidade da própria foto; reduzir opacidade revelava mais do overlay escuro por trás, então "menos opacidade" ficava mais escuro em vez de mais claro. Corrigido: defaults do overlay reduzidos por família de template e novo campo `Template.overlayOpacity` + slider "Escurecimento" no `ImagePanel.tsx` (independente da opacidade da foto)
 24. **Zoom da imagem mudava sozinho ao rolar o mouse no canvas** → `onWheel` no `Stage` do `CanvasEngine.tsx` alterava `backgroundZoom` a cada scroll, interferindo na navegação da página; removido — zoom agora só é alterado pelo slider "Zoom" no `ImagePanel.tsx`
 25. **Seletor de fonte do Standard tinha poucas opções (10)** → `index.html` já carregava 15 fontes do Google Fonts mas o dropdown em `PropertiesPanel.tsx` só expunha 10; adicionadas as que já estavam carregadas (Sora, DM Sans, Plus Jakarta Sans, Lato, Cormorant Garamond) + 7 fontes modernas novas (Manrope, Outfit, Bricolage Grotesque, Syne, Unbounded, Instrument Serif, Fraunces), totalizando 21 opções
+26. **`PremiumResultViewer`/`CarouselViewer` não reagiam a troca de `slides`** (bug latente, exposto ao implementar o ajuste pós-geração Premium em 27/08/2026) → ambos inicializavam `originalSlides`/`originalPremiumSlides` com `useState` sem setter, congelando as imagens no mount; trocar a prop `slides` não atualizava nada. Corrigido com `useEffect([slides])` + guard `didMountRef` que ressincroniza `original*`/`display*` e reseta o estado do logo

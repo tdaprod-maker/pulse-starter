@@ -100,7 +100,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
   // Logo overlay do carrossel premium: os slides originais (sem logo) ficam
   // preservados para permitir reprocessar posição/tamanho sem perder qualidade
   // por overlays acumulados. Aplicado em todos os slides de uma vez.
-  const [originalPremiumSlides] = useState<SlideWithImage[]>(() => validateSlides<SlideWithImage>(slides))
+  const [originalPremiumSlides, setOriginalPremiumSlides] = useState<SlideWithImage[]>(() => validateSlides<SlideWithImage>(slides))
   const [premiumSlidesWithLogo, setPremiumSlidesWithLogo] = useState<SlideWithImage[] | null>(null)
   const [premiumLogoActive, setPremiumLogoActive] = useState(false)
   const [premiumLogoUrl, setPremiumLogoUrl] = useState<string | null>(null)
@@ -109,6 +109,22 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
   const [applyingPremiumLogo, setApplyingPremiumLogo] = useState(false)
   const [premiumLogoError, setPremiumLogoError] = useState('')
   const displayedPremiumSlides = premiumLogoActive && premiumSlidesWithLogo ? premiumSlidesWithLogo : originalPremiumSlides
+
+  // Ressincroniza os slides premium quando o pai os troca (ex.: ajuste pós-geração
+  // de um slide via chat). `originalPremiumSlides` é congelado no mount de
+  // propósito (preserva a versão sem logo para reprocessar overlays), então sem
+  // este efeito o viewer ficaria preso às imagens do mount. Reseta o logo porque
+  // a base mudou e mantém o usuário no slide atual (clamp defensivo).
+  const premiumSlidesDidMountRef = useRef(false)
+  useEffect(() => {
+    if (engine !== 'premium') return
+    if (!premiumSlidesDidMountRef.current) { premiumSlidesDidMountRef.current = true; return }
+    const next = validateSlides<SlideWithImage>(slides)
+    setOriginalPremiumSlides(next)
+    setPremiumSlidesWithLogo(null)
+    setPremiumLogoActive(false)
+    setCurrent(c => Math.min(c, Math.max(0, next.length - 1)))
+  }, [slides, engine])
 
   // Cria templates Konva para cada slide
   useEffect(() => {

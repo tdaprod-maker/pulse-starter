@@ -209,6 +209,40 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
 - `CONTEXT.md` é o documento de produto (modelo de negócio, features implementadas, roadmap) —
   mantenha-o atualizado quando uma feature nova entra em produção, mas não é o lugar para
   convenções de código (isso é aqui).
+- Migrations em `supabase/migrations/` documentam o schema no repo, mas **não rodam sozinhas** —
+  o projeto não tem CI/CD de banco. Ao criar uma migration nova, aplique também via MCP do
+  Supabase (`apply_migration`, project_id `gnqhjcmvyhhodjghpuop`, projeto "Pulse - DATA") ou
+  peça pro usuário rodar manualmente; só criar o arquivo `.sql` no repo não altera produção.
+- Tabela `social_connections`: colunas `access_token`, `platform_user_id`, `platform_username`,
+  `platform_avatar_url`, `expires_at`, `is_valid`. `platform_avatar_url` foi adicionada em
+  26/ago/2026 (migration `20260826190000_add_platform_avatar_url_to_social_connections.sql`) —
+  linhas gravadas **antes** dessa migration ficam com `platform_avatar_url = null` para sempre,
+  porque nada reprocessa conexões antigas automaticamente. Se um campo novo desses não aparecer
+  na UI, confira `updated_at` da linha antes de assumir bug de código: pode ser só uma conexão
+  antiga que precisa ser refeita (desconectar + reconectar) pra popular o campo novo.
+- `api/instagram.js` (`handleCallback`, passo 3) busca `id,username,profile_picture_url` em
+  `graph.instagram.com/me` e repassa `avatar_url` por querystring pro
+  `InstagramCallbackPage.tsx`, que reenvia por `postMessage` pro `BrandPage.tsx`, que persiste via
+  `saveConnection` (`src/services/socialConnections.ts`). Há `console.log` de diagnóstico em cada
+  uma dessas quatro etapas (client e server) — úteis para depurar se um campo nunca chega até a UI;
+  não remover sem necessidade.
+- **Ajuste pós-geração Premium (`editMode: 'adjust'` em `api/generate-premium.js`):** quando o
+  usuário pede um ajuste numa imagem Premium já gerada ("escurece o fundo", "texto branco"),
+  `AgentChat.tsx` (`runPremiumAdjust`) manda a **imagem gerada** como `visualReferences[0]` +
+  `editMode: 'adjust'`. Esse flag troca o `fullPrompt` inteiro por um `adjustPrompt` curto de
+  preservação e **pula de propósito** as seções de safe-zone / `CAROUSEL SLIDE TEXT OVERLAY` /
+  letterboxing / `SUBJECT_RULE_BY_STYLE` — elas foram feitas pra *gerar cena nova* e, numa imagem
+  que já tem texto renderizado, fazem o gpt-image-2 reposicionar/reescrever o texto. Não reintroduza
+  essas regras no caminho de adjust. Custo: `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` (4), tanto pro post
+  único quanto por slide de carrossel. O slide-alvo do carrossel é sempre o `carouselCurrentSlide`
+  visível no `CarouselViewer` (passado via `premiumCarouselCurrentIndex`), nunca inferido por texto.
+- **`PremiumResultViewer` e `CarouselViewer` (ramo `engine === 'premium'`) congelam os slides em
+  `useState` no mount** (`originalSlides` / `originalPremiumSlides`) — é intencional pra preservar a
+  versão sem logo. Mas isso significa que trocar a prop `slides` **não** atualiza a imagem exibida
+  sozinho. Cada viewer tem um `useEffect([slides])` com guard de `didMountRef` que ressincroniza
+  `original*`/`display*` e reseta o estado do logo quando o pai troca os slides (é o que faz o
+  resultado do ajuste aparecer). Se adicionar outro fluxo que muda `premiumSlides`/`carouselSlides`
+  de fora, conte com esse reset de logo.
 
 ## Limites
 
@@ -216,3 +250,11 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
 - Chaves de API (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) só no servidor (`api/*.js`), nunca
   expostas ao client.
 - Rode `npm run build` antes de git push — o deploy é automático no Vercel a cada push em `main`.
+
+## Encerramento de Sessão (automático)
+
+Ao final de qualquer sessão de trabalho, sem precisar que o usuário peça,
+execute a skill session-sync (~/.claude/skills/session-sync/SKILL.md):
+atualize este CLAUDE.md e o CONTEXT.md correspondente em
+~/Library/CloudStorage/GoogleDrive-tdaprod@gmail.com/Meu Drive/Agente17-Contexto/. Se a sessão não teve mudança relevante,
+não faça nada.

@@ -376,6 +376,56 @@ export async function generatePremiumCaption(prompt: string, brand?: BrandContex
   }
 }
 
+/**
+ * Ajuste pós-geração de uma imagem Premium já pronta: manda a imagem gerada como
+ * base (visualReferences) + o pedido do usuário, com editMode: 'adjust' para o
+ * endpoint usar a diretiva minimalista de preservação (sem safe-zone / overlay de
+ * texto / letterboxing). Serve tanto para post único quanto para 1 slide de
+ * carrossel Premium. `size` deve ser um dos formatos aceitos pelo gpt-image-2
+ * ('1024x1024', '1024x1536', '1536x1024') e casar com a orientação da base.
+ */
+export async function adjustPremiumImage(params: {
+  instruction: string
+  baseImage: string
+  size: string
+  segment?: string
+  styleContext?: string
+}): Promise<{ image: string }> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 55000)
+  try {
+    const res = await fetch('/api/generate-premium', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: params.instruction,
+        editMode: 'adjust',
+        visualReferences: [params.baseImage],
+        size: params.size,
+        segment: params.segment,
+        styleContext: params.styleContext,
+        slideIndex: 1,
+        totalSlides: 1,
+      }),
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({})) as { error?: string }
+      throw new Error(err.error ?? `Erro ${res.status} ao ajustar imagem premium`)
+    }
+    const data = await res.json() as { image?: string }
+    if (!data.image) throw new Error('Nenhuma imagem retornada pela API')
+    return { image: data.image }
+  } catch (e: unknown) {
+    clearTimeout(timeoutId)
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new Error('Tempo limite atingido (55s). O ajuste premium pode demorar mais do que o plano atual permite — tente novamente.')
+    }
+    throw e
+  }
+}
+
 export async function breakCarouselIntoSlides(prompt: string, slideCount: number, brand?: BrandContext): Promise<string[]> {
   const brandCtx = brand ? `Marca: ${brand.businessName || ''}, Segmento: ${brand.segment || ''}, Tom: ${brand.tone || ''}` : ''
 

@@ -464,6 +464,10 @@ export function EditorPage() {
             isPremiumActive={!!premiumSlides}
             premiumSlides={premiumSlides ?? undefined}
             onPremiumSlidesUpdate={setPremiumSlides}
+            isPremiumCarouselActive={!!carouselSlides && carouselEngine === 'premium'}
+            premiumCarouselSlides={carouselEngine === 'premium' ? carouselSlides ?? undefined : undefined}
+            premiumCarouselCurrentIndex={carouselCurrentSlide}
+            onCarouselSlidesUpdate={(s) => setCarouselSlides(validateSlides<SlideWithImage>(s))}
             forceCollapsed={canvasExpanded}
             onCollapsedChange={(c) => { if (!c) setCanvasExpanded(false) }}
           />

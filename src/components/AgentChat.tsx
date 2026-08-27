@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
-import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, type AgentMessage, type AgentResponse, type PremiumSlide, type SlideWithImage, type EditContext, type EditAction } from '../services/gemini'
+import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, adjustPremiumImage, type AgentMessage, type AgentResponse, type PremiumSlide, type SlideWithImage, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { overlayLogoOnImage } from '../services/logoOverlay'
@@ -44,7 +44,7 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, forceCollapsed, onCollapsedChange }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, forceCollapsed, onCollapsedChange }: {
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
   onReset?: () => void
@@ -55,6 +55,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   isPremiumActive?: boolean
   premiumSlides?: PremiumSlide[]
   onPremiumSlidesUpdate?: (slides: PremiumSlide[]) => void
+  /** Carrossel Premium (engine === 'premium') ativo no viewer — habilita ajuste pós-geração por slide. */
+  isPremiumCarouselActive?: boolean
+  premiumCarouselSlides?: SlideWithImage[]
+  /** Índice do slide atualmente visível no CarouselViewer — alvo do ajuste. */
+  premiumCarouselCurrentIndex?: number
+  onCarouselSlidesUpdate?: (slides: SlideWithImage[]) => void
   forceCollapsed?: boolean
   onCollapsedChange?: (collapsed: boolean) => void
 } = {}) {
@@ -189,6 +195,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [pendingPremium, setPendingPremium] = useState<{ prompt: string; format?: string } | null>(null)
   const [pendingAmbiguous, setPendingAmbiguous] = useState<AgentResponse | null>(null)
   const [pendingEngineChoice, setPendingEngineChoice] = useState<PendingGeneration | null>(null)
+  // Ajuste pós-geração de imagem Premium aguardando confirmação de custo.
+  // slideIndex null = post único Premium; número = índice do slide do carrossel Premium.
+  const [pendingPremiumAdjust, setPendingPremiumAdjust] = useState<{ instruction: string; slideIndex: number | null } | null>(null)
   const [hasGeneratedPost, setHasGeneratedPost] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -638,6 +647,106 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     })
   }
 
+  // Deriva o size aceito pelo gpt-image-2 e o ratio de crop a partir da imagem
+  // base do ajuste — usa o label do slide quando existe, senão mede a proporção
+  // real da imagem. Garante que o resultado do ajuste casa exatamente com o
+  // formato de origem.
+  function measureForAdjust(imageUrl: string, label: string): Promise<{ size: string; ratio: string }> {
+    const LABEL_RATIO: Record<string, string> = { '9:16': '9/16', '4:5': '4/5', '1:1': '1/1', '16:9': '16/9' }
+    const sizeForRatio = (ratio: string) =>
+      ratio === '1/1' ? '1024x1024' : ratio === '16/9' ? '1536x1024' : '1024x1536'
+    return new Promise(resolve => {
+      const img = new Image()
+      img.onload = () => {
+        let ratio: string
+        if (label && LABEL_RATIO[label]) {
+          ratio = LABEL_RATIO[label]
+        } else {
+          const r = img.width / img.height
+          if (Math.abs(r - 1) < 0.05) ratio = '1/1'
+          else if (r < 1) ratio = r < 0.66 ? '9/16' : '4/5'
+          else ratio = '16/9'
+        }
+        resolve({ size: sizeForRatio(ratio), ratio })
+      }
+      img.onerror = () => resolve({ size: '1024x1536', ratio: '4/5' })
+      img.src = imageUrl
+    })
+  }
+
+  async function runPremiumAdjust(instruction: string, slideIndex: number | null) {
+    setGenerating(true)
+    setMessages(prev => [...prev, { role: 'agent', content: 'Aplicando ajuste com Premium — pode levar até 60s...' }])
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const userEmail = authData.user?.email ?? ''
+      const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+
+      const balance = await getTokenBalance(userEmail)
+      if (balance < PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE) {
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: `Saldo insuficiente. Você tem ${balance} pulses e precisa de ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} para um ajuste premium.`,
+        }])
+        return
+      }
+
+      // Imagem base = versão atualmente no estado do EditorPage (sem logo, salvo
+      // se o caminho de logo-via-chat tiver rodado antes).
+      let baseImage: string | undefined
+      let baseLabel = ''
+      if (slideIndex === null) {
+        const list = validatePremiumSlides<PremiumSlide>(premiumSlides)
+        baseImage = list[0]?.image
+        baseLabel = list[0]?.label ?? ''
+      } else {
+        const list = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])
+        baseImage = list[slideIndex]?.imageUrl
+      }
+      if (!baseImage) {
+        setMessages(prev => [...prev, { role: 'agent', content: 'Não encontrei a imagem para ajustar. Tente gerar novamente.' }])
+        return
+      }
+
+      const compressed = await compressReferenceImage(baseImage)
+      const { size, ratio } = await measureForAdjust(baseImage, baseLabel)
+
+      const styleContext = [
+        brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
+        brandCtx?.visual_style ? `Visual style: ${brandCtx.visual_style}` : '',
+      ].filter(Boolean).join('. ')
+
+      const { image: rawImage } = await adjustPremiumImage({
+        instruction,
+        baseImage: compressed,
+        size,
+        segment: brandCtx?.segment,
+        styleContext,
+      })
+      const adjusted = await cropImageToRatio(rawImage, ratio)
+
+      const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE)
+      if (debit.success) notifyBalanceUpdate()
+
+      if (slideIndex === null) {
+        const list = validatePremiumSlides<PremiumSlide>(premiumSlides)
+        onPremiumSlidesUpdate?.(list.map((s, i) => (i === 0 ? { ...s, image: adjusted } : s)))
+        setMessages(prev => [...prev, { role: 'agent', content: '✦ Ajuste aplicado! Pode pedir outro ajuste se quiser.' }])
+      } else {
+        const list = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])
+        onCarouselSlidesUpdate?.(list.map((s, i) => (i === slideIndex ? { ...s, imageUrl: adjusted } : s)))
+        setMessages(prev => [...prev, { role: 'agent', content: `✦ Slide ${slideIndex + 1} ajustado! Pode pedir outro ajuste se quiser.` }])
+      }
+    } catch (e: unknown) {
+      console.error('[runPremiumAdjust] erro:', e)
+      const msg = e instanceof Error ? e.message : ''
+      setMessages(prev => [...prev, { role: 'agent', content: msg || 'Erro ao aplicar o ajuste. Tente novamente.' }])
+    } finally {
+      setGenerating(false)
+      onGenerated?.()
+    }
+  }
+
   async function generatePremium(prompt: string, format?: string, visualStyle?: VisualStyle) {
     console.log('[generatePremium] iniciando, prompt:', prompt.slice(0, 60))
     console.log('[generatePremium] onPremiumGenerated disponível?', typeof onPremiumGenerated)
@@ -1018,59 +1127,78 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
     console.log('[handleSend] activePost:', !!activePost, '| pendingEngineChoice:', !!pendingEngineChoice, '| pendingAmbiguous:', !!pendingAmbiguous)
 
-    // Posts premium: suporta add_logo e remove_logo via chat
-    if (isPremiumActive) {
+    // Posts/carrosséis Premium ativos: logo via chat (add/remove — só no post
+    // único) + ajuste pós-geração da imagem (post único e por slide de carrossel).
+    if (isPremiumActive || isPremiumCarouselActive) {
       const msgText = input.trim()
       const isRemoveLogo = /\b(remov[ae]?r?|tira[r]?|retira[r]?|exclu[ií]r?|sem)\b.*\b(logo|logotipo)\b/i.test(msgText) || /\b(logo|logotipo)\b.*\b(remov[ae]?r?|tira[r]?|retira[r]?)\b/i.test(msgText)
       const isLogoRequest = /logo|logotipo/i.test(msgText)
       const userMsg: AgentMessage = { role: 'user', content: msgText }
-      const premiumSlidesList = validatePremiumSlides<PremiumSlide>(premiumSlides)
-      if (!isLogoRequest || !premiumSlidesList.length || !onPremiumSlidesUpdate) {
-        setMessages(prev => [...prev, userMsg, {
-          role: 'agent',
-          content: 'Posts gerados com Premium não são editáveis pelo agente. Você pode pedir para inserir o logo da sua marca digitando "insira o logo".',
-        }])
-        setInput('')
-        return
-      }
-      setMessages(prev => [...prev, userMsg])
-      setInput('')
 
-      if (isRemoveLogo) {
-        if (originalPremiumSlidesRef.current) {
-          onPremiumSlidesUpdate(originalPremiumSlidesRef.current)
-          originalPremiumSlidesRef.current = null
-          setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo removido!' }])
-        } else {
-          setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo para remover.' }])
-        }
-        return
-      }
-
-      setLoading(true)
-      try {
-        const { data: authData } = await supabase.auth.getUser()
-        const userEmail = authData.user?.email ?? ''
-        const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
-        if (!brandCtx?.logo_url) {
-          setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca e tente novamente.' }])
+      // ── Logo via chat: apenas no post único Premium. No carrossel Premium o
+      //    controle de logo fica no próprio CarouselViewer. ──
+      if (isPremiumActive && isLogoRequest) {
+        const premiumSlidesList = validatePremiumSlides<PremiumSlide>(premiumSlides)
+        if (!premiumSlidesList.length || !onPremiumSlidesUpdate) {
+          setMessages(prev => [...prev, userMsg, {
+            role: 'agent',
+            content: 'Não consegui aplicar o logo agora. Use o painel do resultado.',
+          }])
+          setInput('')
           return
         }
-        originalPremiumSlidesRef.current = premiumSlidesList
-        const updatedSlides = await Promise.all(
-          premiumSlidesList.map(async slide => ({
-            ...slide,
-            image: await overlayLogoOnImage(slide.image, brandCtx.logo_url!),
-          }))
-        )
-        onPremiumSlidesUpdate(updatedSlides)
-        setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo inserido em todos os formatos!' }])
-      } catch (e) {
-        console.error('[premium add_logo] erro:', e)
-        setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao inserir o logo. Tente novamente.' }])
-      } finally {
-        setLoading(false)
+        setMessages(prev => [...prev, userMsg])
+        setInput('')
+
+        if (isRemoveLogo) {
+          if (originalPremiumSlidesRef.current) {
+            onPremiumSlidesUpdate(originalPremiumSlidesRef.current)
+            originalPremiumSlidesRef.current = null
+            setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo removido!' }])
+          } else {
+            setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo para remover.' }])
+          }
+          return
+        }
+
+        setLoading(true)
+        try {
+          const { data: authData } = await supabase.auth.getUser()
+          const userEmail = authData.user?.email ?? ''
+          const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+          if (!brandCtx?.logo_url) {
+            setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca e tente novamente.' }])
+            return
+          }
+          originalPremiumSlidesRef.current = premiumSlidesList
+          const updatedSlides = await Promise.all(
+            premiumSlidesList.map(async slide => ({
+              ...slide,
+              image: await overlayLogoOnImage(slide.image, brandCtx.logo_url!),
+            }))
+          )
+          onPremiumSlidesUpdate(updatedSlides)
+          setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo inserido em todos os formatos!' }])
+        } catch (e) {
+          console.error('[premium add_logo] erro:', e)
+          setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao inserir o logo. Tente novamente.' }])
+        } finally {
+          setLoading(false)
+        }
+        return
       }
+
+      // ── Ajuste pós-geração da imagem: pede confirmação de custo antes de rodar. ──
+      const slideIndex = isPremiumCarouselActive ? (premiumCarouselCurrentIndex ?? 0) : null
+      setMessages(prev => [...prev, userMsg])
+      setInput('')
+      setPendingPremiumAdjust({ instruction: msgText, slideIndex })
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        content: slideIndex === null
+          ? `Esse ajuste custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses. Confirmar?`
+          : `Ajuste no slide ${slideIndex + 1} — custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses. Confirmar?`,
+      }])
       return
     }
 
@@ -1271,6 +1399,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingAmbiguous(null)
     setPendingEngineChoice(null)
     setPendingPhotoAsk(null)
+    setPendingPremiumAdjust(null)
     setUploadedPhotos([])
     setHasGeneratedPost(false)
     onReset?.()
@@ -1415,6 +1544,36 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             </button>
             <button
               onClick={() => setPendingRegenImage(null)}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+        {pendingPremiumAdjust && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <button
+              onClick={() => {
+                const p = pendingPremiumAdjust
+                setPendingPremiumAdjust(null)
+                runPremiumAdjust(p.instruction, p.slideIndex)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Confirmar · {PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses
+            </button>
+            <button
+              onClick={() => setPendingPremiumAdjust(null)}
               style={{
                 padding: '7px 14px', borderRadius: '8px',
                 border: '1px solid var(--border)', background: 'transparent',

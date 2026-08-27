@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { PremiumSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
@@ -41,9 +41,22 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
 
   // Logo overlay: os slides originais (sem logo) ficam preservados para permitir
   // reprocessar posição/tamanho sem perder qualidade por overlays acumulados.
-  const [originalSlides] = useState(slidesList)
+  const [originalSlides, setOriginalSlides] = useState(slidesList)
   const [displaySlides, setDisplaySlides] = useState(slidesList)
   const [logoActive, setLogoActive] = useState(false)
+
+  // Ressincroniza quando o pai troca `slides` (ex.: ajuste pós-geração da imagem
+  // via chat). `originalSlides`/`displaySlides` são inicializados uma única vez no
+  // mount, então sem este efeito o viewer continuaria mostrando a imagem antiga.
+  // A base mudou → reseta o estado do logo.
+  const didMountRef = useRef(false)
+  useEffect(() => {
+    if (!didMountRef.current) { didMountRef.current = true; return }
+    const next = validatePremiumSlides<PremiumSlide>(slides)
+    setOriginalSlides(next)
+    setDisplaySlides(next)
+    setLogoActive(false)
+  }, [slides])
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPosition, setLogoPosition] = useState<LogoPosition>('bottom-right')
   const [logoSize, setLogoSize] = useState<LogoSize>('medium')
