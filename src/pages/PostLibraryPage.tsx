@@ -74,6 +74,18 @@ export function PostLibraryPage() {
     }
   }
 
+  // Rótulo do card: para posts Premium o `image_prompt` é um JSON
+  // ({"prompt":...,"caption":...}) — nunca exibir cru. Usa a 1ª linha da legenda
+  // do Instagram, com fallback pro prompt de imagem e depois pro template_id.
+  function postCardLabel(post: PostRecord): string {
+    if (post.template_id === 'premium-single' || post.template_id === 'premium-carousel') {
+      const parsed = getParsedPrompt(post)
+      const firstLine = parsed.caption?.instagram?.split('\n').find(l => l.trim())?.trim()
+      return firstLine || parsed.prompt || 'Post Premium'
+    }
+    return post.image_prompt || post.template_id || 'Post gerado'
+  }
+
   const isPremium = (post: PostRecord) =>
     post.template_id === 'premium-single' || post.template_id === 'premium-carousel'
 
@@ -157,7 +169,7 @@ export function PostLibraryPage() {
                 {/* Info */}
                 <div style={{ padding: '10px 12px' }}>
                   <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {post.image_prompt || post.template_id || 'Post gerado'}
+                    {postCardLabel(post)}
                   </p>
                   <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>
                     {post.created_at ? new Date(post.created_at).toLocaleDateString('pt-BR') : ''}

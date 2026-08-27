@@ -4,7 +4,7 @@ import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
 import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, adjustPremiumImage, type AgentMessage, type AgentResponse, type PremiumSlide, type SlideWithImage, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
-import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
+import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail, updateCarouselSlideImages } from '../services/brandKit'
 import { overlayLogoOnImage } from '../services/logoOverlay'
 import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
@@ -44,12 +44,29 @@ function normalizeTemplateId(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, '-')
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, forceCollapsed, onCollapsedChange }: {
+// Distingue um pedido de RECOMPOSIÇÃO PARCIAL ("mantém a pessoa, gera um novo
+// ambiente ao redor") de um AJUSTE PONTUAL ("escurece o fundo"). Só o primeiro
+// deve liberar o modo 'recompose' no endpoint — o segundo continua em 'adjust'
+// (preservação total). Ajustes pontuais de fundo (escurecer/clarear/desfocar/
+// saturar) são explicitamente excluídos mesmo quando citam "fundo"/"cenário".
+function isRecomposeRequest(msg: string): boolean {
+  const t = msg.toLowerCase()
+  const pointwiseBackground = /\b(escure|clarei|ilumin|desfoc|borr|satur|contrast|nitidez|remov|apag|limp)\w*\b[\s\S]*\b(fundo|cen[aá]rio|imagem|foto)\b/.test(t)
+    || /\b(fundo|cen[aá]rio|imagem|foto)\b[\s\S]*\b(mais escur|mais clar|desfocad|borrad|iluminad)\w*/.test(t)
+  if (pointwiseBackground) return false
+  const sceneNoun = '(ambiente|cen[aá]rio|fundo|local|lugar|paisagem|background|entorno|cen[aá]rios)'
+  const changeVerb = '(nov[oa]s?|outr[oa]s?|diferente|troc\\w*|mud\\w*|substitu\\w*|recri\\w*|refa[çz]\\w*|gera\\w*|cri\\w*|coloc\\w*|p[oõ]e\\w*|inser\\w*|adicion\\w*)'
+  const re1 = new RegExp(`${changeVerb}[\\s\\S]{0,40}${sceneNoun}`)
+  const re2 = new RegExp(`${sceneNoun}[\\s\\S]{0,40}${changeVerb}`)
+  return re1.test(t) || re2.test(t)
+}
+
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
   onReset?: () => void
   onCarouselGenerated?: (slides: SlideWithImage[], caption: string, templateId?: string, engine?: string) => void
-  onPremiumGenerated?: (slides: PremiumSlide[], caption: { instagram: string; linkedin: string; hashtags: string } | null) => void
+  onPremiumGenerated?: (slides: PremiumSlide[], caption: { instagram: string; linkedin: string; hashtags: string } | null, libraryId?: string | null) => void
   onActivateEditMode?: () => void
   activePost?: ActivePost
   isPremiumActive?: boolean
@@ -61,6 +78,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   /** Índice do slide atualmente visível no CarouselViewer — alvo do ajuste. */
   premiumCarouselCurrentIndex?: number
   onCarouselSlidesUpdate?: (slides: SlideWithImage[]) => void
+  /** id do post Premium salvo na Biblioteca (geração ou restauração) — usado para
+   *  persistir a versão ajustada no registro existente em vez de deixar o original. */
+  premiumLibraryId?: string | null
+  /** id do carrossel Premium salvo na Biblioteca (só quando restaurado da Biblioteca). */
+  premiumCarouselLibraryId?: string | null
   forceCollapsed?: boolean
   onCollapsedChange?: (collapsed: boolean) => void
 } = {}) {
@@ -197,7 +219,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [pendingEngineChoice, setPendingEngineChoice] = useState<PendingGeneration | null>(null)
   // Ajuste pós-geração de imagem Premium aguardando confirmação de custo.
   // slideIndex null = post único Premium; número = índice do slide do carrossel Premium.
-  const [pendingPremiumAdjust, setPendingPremiumAdjust] = useState<{ instruction: string; slideIndex: number | null } | null>(null)
+  const [pendingPremiumAdjust, setPendingPremiumAdjust] = useState<{ instruction: string; slideIndex: number | null; mode: 'adjust' | 'recompose' } | null>(null)
   const [hasGeneratedPost, setHasGeneratedPost] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -674,9 +696,38 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     })
   }
 
-  async function runPremiumAdjust(instruction: string, slideIndex: number | null) {
+  // Grava a versão ajustada no registro que já existe na Biblioteca, para o
+  // histórico refletir o resultado do ajuste em vez do original. Post único:
+  // sobrescreve a thumbnail (mesmo path determinístico → mesmo URL público).
+  // Carrossel restaurado da Biblioteca: reescreve `carousels.slide_images`.
+  // Retorna true se algo foi persistido. Carrosséis Premium recém-gerados no
+  // Editor ainda não têm registro (o fluxo do Editor não salva carrossel) → false.
+  async function persistAdjustedPremium(userEmail: string, images: string[]): Promise<boolean> {
+    if (!userEmail || !images.length) return false
+    try {
+      if (premiumLibraryId) {
+        const url = await uploadThumbnail(premiumLibraryId, userEmail, images[0])
+        if (url) await updatePostThumbnail(premiumLibraryId, url)
+        return true
+      }
+      if (premiumCarouselLibraryId) {
+        await updateCarouselSlideImages(premiumCarouselLibraryId, images)
+        return true
+      }
+    } catch (e) {
+      console.error('[persistAdjustedPremium] falha ao atualizar a Biblioteca:', e)
+    }
+    return false
+  }
+
+  async function runPremiumAdjust(instruction: string, slideIndex: number | null, mode: 'adjust' | 'recompose' = 'adjust') {
     setGenerating(true)
-    setMessages(prev => [...prev, { role: 'agent', content: 'Aplicando ajuste com Premium — pode levar até 60s...' }])
+    setMessages(prev => [...prev, {
+      role: 'agent',
+      content: mode === 'recompose'
+        ? 'Recompondo o cenário com Premium — pode levar até 60s...'
+        : 'Aplicando ajuste com Premium — pode levar até 60s...',
+    }])
     try {
       const { data: authData } = await supabase.auth.getUser()
       const userEmail = authData.user?.email ?? ''
@@ -722,20 +773,40 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         size,
         segment: brandCtx?.segment,
         styleContext,
+        mode,
       })
       const adjusted = await cropImageToRatio(rawImage, ratio)
 
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE)
       if (debit.success) notifyBalanceUpdate()
 
+      const doneVerb = mode === 'recompose' ? 'Cenário recomposto' : 'Ajuste aplicado'
+
       if (slideIndex === null) {
         const list = validatePremiumSlides<PremiumSlide>(premiumSlides)
-        onPremiumSlidesUpdate?.(list.map((s, i) => (i === 0 ? { ...s, image: adjusted } : s)))
-        setMessages(prev => [...prev, { role: 'agent', content: '✦ Ajuste aplicado! Pode pedir outro ajuste se quiser.' }])
+        const updated = list.map((s, i) => (i === 0 ? { ...s, image: adjusted } : s))
+        onPremiumSlidesUpdate?.(updated)
+        // Persiste a versão ajustada no registro existente da Biblioteca (mesmo
+        // path/URL determinístico da thumbnail — sobrescreve). Sem isso, a
+        // Biblioteca continuaria mostrando o original.
+        const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.image))
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: savedToLibrary
+            ? `✦ ${doneVerb}! Biblioteca atualizada. Pode pedir outro ajuste se quiser.`
+            : `✦ ${doneVerb}! Pode pedir outro ajuste se quiser.`,
+        }])
       } else {
         const list = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])
-        onCarouselSlidesUpdate?.(list.map((s, i) => (i === slideIndex ? { ...s, imageUrl: adjusted } : s)))
-        setMessages(prev => [...prev, { role: 'agent', content: `✦ Slide ${slideIndex + 1} ajustado! Pode pedir outro ajuste se quiser.` }])
+        const updated = list.map((s, i) => (i === slideIndex ? { ...s, imageUrl: adjusted } : s))
+        onCarouselSlidesUpdate?.(updated)
+        const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.imageUrl))
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: savedToLibrary
+            ? `✦ Slide ${slideIndex + 1} — ${doneVerb.toLowerCase()}! Biblioteca atualizada. Pode pedir outro ajuste se quiser.`
+            : `✦ Slide ${slideIndex + 1} — ${doneVerb.toLowerCase()}! Pode pedir outro ajuste se quiser.`,
+        }])
       }
     } catch (e: unknown) {
       console.error('[runPremiumAdjust] erro:', e)
@@ -845,17 +916,18 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }
 
       // Salva na biblioteca
+      let savedPostId: string | null = null
       try {
         if (userEmail) {
-          const postId = await savePost(userEmail, {
+          savedPostId = await savePost(userEmail, {
             template_id: 'premium-single',
             texts: {},
             accent_color: '',
             image_prompt: JSON.stringify({ prompt, caption: generatedCaption }),
           })
-          if (postId && slides[0]) {
-            const thumbUrl = await uploadThumbnail(postId, userEmail, slides[0].image)
-            if (thumbUrl) await updatePostThumbnail(postId, thumbUrl)
+          if (savedPostId && slides[0]) {
+            const thumbUrl = await uploadThumbnail(savedPostId, userEmail, slides[0].image)
+            if (thumbUrl) await updatePostThumbnail(savedPostId, thumbUrl)
           }
         }
       } catch (e) {
@@ -863,7 +935,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }
 
       console.log('[generatePremium] chamando onPremiumGenerated com', slides.length, 'slides')
-      onPremiumGenerated?.(slides, generatedCaption)
+      onPremiumGenerated?.(slides, generatedCaption, savedPostId)
       setHasGeneratedPost(true)
       if (uploadedPhotos.length) setUploadedPhotos([])
       setMessages(prev => [...prev, {
@@ -1190,12 +1262,16 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       // ── Ajuste pós-geração da imagem: pede confirmação de custo antes de rodar. ──
       const slideIndex = isPremiumCarouselActive ? (premiumCarouselCurrentIndex ?? 0) : null
+      const mode: 'adjust' | 'recompose' = isRecomposeRequest(msgText) ? 'recompose' : 'adjust'
       setMessages(prev => [...prev, userMsg])
       setInput('')
-      setPendingPremiumAdjust({ instruction: msgText, slideIndex })
+      setPendingPremiumAdjust({ instruction: msgText, slideIndex, mode })
+      const slideLabel = slideIndex === null ? '' : `no slide ${slideIndex + 1} `
       setMessages(prev => [...prev, {
         role: 'agent',
-        content: slideIndex === null
+        content: mode === 'recompose'
+          ? `Vou recompor o cenário ${slideLabel}mantendo a pessoa da imagem — custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses. Confirmar?`
+          : slideIndex === null
           ? `Esse ajuste custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses. Confirmar?`
           : `Ajuste no slide ${slideIndex + 1} — custa ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses. Confirmar?`,
       }])
@@ -1561,7 +1637,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               onClick={() => {
                 const p = pendingPremiumAdjust
                 setPendingPremiumAdjust(null)
-                runPremiumAdjust(p.instruction, p.slideIndex)
+                runPremiumAdjust(p.instruction, p.slideIndex, p.mode)
               }}
               style={{
                 padding: '7px 14px', borderRadius: '8px', border: 'none',

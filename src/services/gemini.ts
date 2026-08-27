@@ -378,11 +378,16 @@ export async function generatePremiumCaption(prompt: string, brand?: BrandContex
 
 /**
  * Ajuste pós-geração de uma imagem Premium já pronta: manda a imagem gerada como
- * base (visualReferences) + o pedido do usuário, com editMode: 'adjust' para o
- * endpoint usar a diretiva minimalista de preservação (sem safe-zone / overlay de
- * texto / letterboxing). Serve tanto para post único quanto para 1 slide de
- * carrossel Premium. `size` deve ser um dos formatos aceitos pelo gpt-image-2
- * ('1024x1024', '1024x1536', '1536x1024') e casar com a orientação da base.
+ * base (visualReferences) + o pedido do usuário. `mode` controla a diretiva usada
+ * pelo endpoint:
+ * - 'adjust' (default): preservação total — só aplica a mudança pontual pedida
+ *   ("escurece o fundo", "texto branco"). Sem safe-zone / overlay de texto /
+ *   letterboxing.
+ * - 'recompose': mantém a(s) pessoa(s) e o texto embutido, mas recria o
+ *   ambiente/cenário ao redor conforme a instrução.
+ * Serve tanto para post único quanto para 1 slide de carrossel Premium. `size`
+ * deve ser um dos formatos aceitos pelo gpt-image-2 ('1024x1024', '1024x1536',
+ * '1536x1024') e casar com a orientação da base.
  */
 export async function adjustPremiumImage(params: {
   instruction: string
@@ -390,6 +395,7 @@ export async function adjustPremiumImage(params: {
   size: string
   segment?: string
   styleContext?: string
+  mode?: 'adjust' | 'recompose'
 }): Promise<{ image: string }> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 55000)
@@ -399,7 +405,7 @@ export async function adjustPremiumImage(params: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt: params.instruction,
-        editMode: 'adjust',
+        editMode: params.mode ?? 'adjust',
         visualReferences: [params.baseImage],
         size: params.size,
         segment: params.segment,

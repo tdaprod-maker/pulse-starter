@@ -86,6 +86,11 @@ export function EditorPage() {
   const [carouselEngine, setCarouselEngine] = useState<string | undefined>(undefined)
   const [premiumSlides, setPremiumSlides] = useState<PremiumSlide[] | null>(null)
   const [premiumCaption, setPremiumCaption] = useState<{ instagram: string; linkedin: string; hashtags: string } | null>(null)
+  // id do registro salvo na Biblioteca para o Premium atualmente aberto no viewer —
+  // usado pelo AgentChat para persistir a versão ajustada no lugar do original.
+  // Só um dos dois fica preenchido por vez.
+  const [premiumLibraryId, setPremiumLibraryId] = useState<string | null>(null)
+  const [premiumCarouselLibraryId, setPremiumCarouselLibraryId] = useState<string | null>(null)
   const variantRefs = useRef<Record<string, Konva.Stage | null>>({})
 
   const {
@@ -153,6 +158,8 @@ export function EditorPage() {
         // um aspect-ratio fixo nesse caso, evitando cortar a imagem via object-fit: cover.
         setPremiumSlides([{ image: pendingPost.thumbnail_url, label: '' }])
         setPremiumCaption(parsed.caption ?? null)
+        setPremiumLibraryId(pendingPost.id ?? null)
+        setPremiumCarouselLibraryId(null)
       } else {
         console.warn('[restore] post premium sem thumbnail_url, nada para restaurar')
       }
@@ -321,6 +328,8 @@ export function EditorPage() {
     if (slides.length) {
       setPremiumSlides(slides)
       setPremiumCaption(caption)
+      setPremiumCarouselLibraryId(pendingCarousel.id ?? null)
+      setPremiumLibraryId(null)
     } else {
       console.warn('[restore] carrossel premium sem slide_images, nada para restaurar')
     }
@@ -447,6 +456,8 @@ export function EditorPage() {
               setCarouselEngine(undefined)
               setPremiumSlides(null)
               setPremiumCaption(null)
+              setPremiumLibraryId(null)
+              setPremiumCarouselLibraryId(null)
               setEditModeActive(false)
             }}
             onCarouselGenerated={(slides: SlideWithImage[], caption: string, templateId?: string, engine?: string) => {
@@ -454,11 +465,15 @@ export function EditorPage() {
               setCarouselCaption(caption)
               setCarouselTemplateId(templateId)
               setCarouselEngine(engine)
+              // carrossel gerado no Editor ainda não é salvo na Biblioteca
+              setPremiumCarouselLibraryId(null)
             }}
-            onPremiumGenerated={(slides, caption) => {
+            onPremiumGenerated={(slides, caption, libraryId) => {
               console.log('[EditorPage] onPremiumGenerated chamado, slides:', slides.length)
               setPremiumSlides(slides)
               setPremiumCaption(caption)
+              setPremiumLibraryId(libraryId ?? null)
+              setPremiumCarouselLibraryId(null)
             }}
             activePost={editPost}
             isPremiumActive={!!premiumSlides}
@@ -468,6 +483,8 @@ export function EditorPage() {
             premiumCarouselSlides={carouselEngine === 'premium' ? carouselSlides ?? undefined : undefined}
             premiumCarouselCurrentIndex={carouselCurrentSlide}
             onCarouselSlidesUpdate={(s) => setCarouselSlides(validateSlides<SlideWithImage>(s))}
+            premiumLibraryId={premiumLibraryId}
+            premiumCarouselLibraryId={premiumCarouselLibraryId}
             forceCollapsed={canvasExpanded}
             onCollapsedChange={(c) => { if (!c) setCanvasExpanded(false) }}
           />
@@ -490,7 +507,7 @@ export function EditorPage() {
             <PremiumResultViewer
               slides={premiumSlides}
               caption={premiumCaption}
-              onClose={() => { setPremiumSlides(null); setPremiumCaption(null) }}
+              onClose={() => { setPremiumSlides(null); setPremiumCaption(null); setPremiumLibraryId(null); setPremiumCarouselLibraryId(null) }}
             />
           ) : carouselSlides ? (
             <CarouselViewer

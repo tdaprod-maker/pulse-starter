@@ -226,16 +226,41 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   `saveConnection` (`src/services/socialConnections.ts`). Há `console.log` de diagnóstico em cada
   uma dessas quatro etapas (client e server) — úteis para depurar se um campo nunca chega até a UI;
   não remover sem necessidade.
-- **Ajuste pós-geração Premium (`editMode: 'adjust'` em `api/generate-premium.js`):** quando o
-  usuário pede um ajuste numa imagem Premium já gerada ("escurece o fundo", "texto branco"),
-  `AgentChat.tsx` (`runPremiumAdjust`) manda a **imagem gerada** como `visualReferences[0]` +
-  `editMode: 'adjust'`. Esse flag troca o `fullPrompt` inteiro por um `adjustPrompt` curto de
-  preservação e **pula de propósito** as seções de safe-zone / `CAROUSEL SLIDE TEXT OVERLAY` /
+- **Ajuste pós-geração Premium (`editMode` em `api/generate-premium.js`):** quando o
+  usuário pede uma mudança numa imagem Premium já gerada, `AgentChat.tsx` (`runPremiumAdjust`) manda
+  a **imagem gerada** como `visualReferences[0]` + um `editMode`. Há **dois modos**, decididos por
+  `isRecomposeRequest(msg)` em `AgentChat.tsx`:
+  - `editMode: 'adjust'` (default — "escurece o fundo", "texto branco"): troca o `fullPrompt` inteiro
+    por um `adjustPrompt` curto de **preservação total**.
+  - `editMode: 'recompose'` ("mantém a pessoa, gera um novo ambiente ao redor" — a regex casa
+    verbo de troca/criação + `ambiente|cenário|fundo|local|lugar|paisagem|background|entorno`, e
+    **exclui** ajustes pontuais de fundo tipo `escure|clarei|desfoc|satur...` + `fundo`): usa o
+    `recomposePrompt`, que preserva identidade da(s) pessoa(s) + texto já embutido mas **manda
+    recriar o entorno**. A linguagem é deliberadamente enfática ("you MUST replace the entire
+    surrounding environment") porque o gpt-image-2 em `images/edits` tende a só reenquadrar.
+  Os dois modos **pulam de propósito** as seções de safe-zone / `CAROUSEL SLIDE TEXT OVERLAY` /
   letterboxing / `SUBJECT_RULE_BY_STYLE` — elas foram feitas pra *gerar cena nova* e, numa imagem
   que já tem texto renderizado, fazem o gpt-image-2 reposicionar/reescrever o texto. Não reintroduza
-  essas regras no caminho de adjust. Custo: `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` (4), tanto pro post
-  único quanto por slide de carrossel. O slide-alvo do carrossel é sempre o `carouselCurrentSlide`
-  visível no `CarouselViewer` (passado via `premiumCarouselCurrentIndex`), nunca inferido por texto.
+  essas regras em nenhum dos dois caminhos. Custo: `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` (4), tanto
+  pro post único quanto por slide de carrossel. O slide-alvo do carrossel é sempre o
+  `carouselCurrentSlide` visível no `CarouselViewer` (passado via `premiumCarouselCurrentIndex`),
+  nunca inferido por texto.
+- **Persistência do ajuste na Biblioteca:** depois de um ajuste/recompose bem-sucedido,
+  `runPremiumAdjust` chama `persistAdjustedPremium` para **sobrescrever o registro que já existe** na
+  Biblioteca (senão o histórico continuaria mostrando o original). Post único → `uploadThumbnail` +
+  `updatePostThumbnail` no mesmo `premiumLibraryId` (path determinístico `thumbnails/{email}/{id}.jpg`
+  com `upsert` → mesmo URL público, só troca os bytes). Carrossel restaurado da Biblioteca →
+  `updateCarouselSlideImages(premiumCarouselLibraryId, ...)` reescreve `carousels.slide_images`.
+  O id vem do `EditorPage` (`premiumLibraryId` / `premiumCarouselLibraryId`): setado na restauração
+  de `pendingPost`/`pendingCarousel` e, na geração nova, devolvido pelo `generatePremium` via 3º
+  argumento de `onPremiumGenerated`. **Carrossel Premium gerado no fluxo do Editor não tem registro**
+  (só `PremiumPage.saveToLibrary` salva carrossel) → nesse caso `persistAdjustedPremium` retorna
+  `false` e a mensagem do chat omite "Biblioteca atualizada".
+- **Não exibir `image_prompt` cru nos cards:** para posts Premium, `posts.image_prompt` é
+  `JSON.stringify({ prompt, caption })` — renderizar direto vaza `{"prompt":"..."}` na tela.
+  `PostLibraryPage.tsx` e `LibraryPage.tsx` têm `postCardLabel(post)` que, pra Premium, mostra a 1ª
+  linha da legenda do Instagram (fallback: prompt de imagem, depois `template_id`). Qualquer card
+  novo que liste posts deve usar esse helper, não `post.image_prompt` direto.
 - **`PremiumResultViewer` e `CarouselViewer` (ramo `engine === 'premium'`) congelam os slides em
   `useState` no mount** (`originalSlides` / `originalPremiumSlides`) — é intencional pra preservar a
   versão sem logo. Mas isso significa que trocar a prop `slides` **não** atualiza a imagem exibida

@@ -155,3 +155,17 @@ export async function updatePostThumbnail(
     .update({ thumbnail_url: thumbnailUrl })
     .eq('id', postId)
 }
+
+// Sobrescreve as imagens de um carrossel já salvo (tabela `carousels`, coluna
+// `slide_images` — JSON string de data URLs). Usado quando um ajuste pós-geração
+// altera um slide de um carrossel Premium restaurado da Biblioteca, para o
+// registro salvo refletir a versão ajustada em vez da original.
+export async function updateCarouselSlideImages(
+  carouselId: string,
+  slideImages: string[]
+): Promise<void> {
+  await supabase
+    .from('carousels')
+    .update({ slide_images: JSON.stringify(slideImages) })
+    .eq('id', carouselId)
+}
