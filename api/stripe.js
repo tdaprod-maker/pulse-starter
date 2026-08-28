@@ -1,5 +1,9 @@
 import Stripe from 'stripe'
 import { supabaseAdmin } from '../api-lib/supabaseAdmin.js'
+import { ensureUserForCheckout } from '../api-lib/provisionAccount.js'
+import { sendAccessEmail } from '../api-lib/sendEmail.js'
+
+const PLAN_LABEL = { monthly: 'Plano Mensal', annual: 'Plano Anual' }
 
 // Consolida checkout + webhook num único arquivo pra reduzir a contagem de
 // Serverless Functions (limite de 12 no plano Vercel Hobby). Roteia por
@@ -49,11 +53,16 @@ async function handleCheckout(req, res, rawBody) {
     return res.status(400).json({ error: 'Invalid JSON body' })
   }
 
-  const { email, item } = body ?? {}
+  const { email: rawEmail, item, name: rawName } = body ?? {}
 
-  if (!email || typeof email !== 'string') {
+  if (!rawEmail || typeof rawEmail !== 'string') {
     return res.status(400).json({ error: 'email is required' })
   }
+  const email = rawEmail.trim().toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'email inválido' })
+  }
+  const name = typeof rawName === 'string' && rawName.trim() ? rawName.trim().slice(0, 120) : undefined
   if (!item || !PRICE_ENV_BY_ITEM[item]) {
     return res.status(400).json({ error: 'item must be one of: monthly, annual, recharge_100, recharge_200, recharge_500' })
   }
@@ -87,6 +96,9 @@ async function handleCheckout(req, res, rawBody) {
       ...(existing?.stripe_customer_id
         ? { customer: existing.stripe_customer_id }
         : { customer_email: email }),
+      // Recarga (mode: payment) não cria Customer por padrão — força a criação
+      // pra conseguir reusar em compras futuras (o webhook salva o id).
+      ...(isSubscription || existing?.stripe_customer_id ? {} : { customer_creation: 'always' }),
       client_reference_id: email,
       // Tax: automatic_tax desativado temporariamente — a conta Stripe ainda
       // não tem país/dados bancários configurados (CNPJ pendente), então o
@@ -96,19 +108,117 @@ async function handleCheckout(req, res, rawBody) {
       metadata: {
         user_email: email,
         item,
+        ...(name ? { name } : {}),
         ...(isSubscription ? {} : { pulses_amount: String(RECHARGE_PULSES[item]) }),
       },
       ...(isSubscription
-        ? { subscription_data: { metadata: { user_email: email, plan: item } } }
+        ? { subscription_data: { metadata: { user_email: email, plan: item, ...(name ? { name } : {}) } } }
         : {}),
-      success_url: `${siteUrl}/account?checkout=success`,
-      cancel_url: `${siteUrl}/account?checkout=cancel`,
+      // Compra pela LP: o cliente ainda não tem sessão, então manda pra uma
+      // página pública de sucesso que instrui a checar o email. Quem comprou
+      // logado (AccountPage) também cai aqui e tem link pra voltar ao app.
+      success_url: `${siteUrl}/checkout/sucesso`,
+      cancel_url: `${siteUrl}/checkout?canceled=1`,
     })
 
     return res.status(200).json({ url: session.url })
   } catch (err) {
     console.error('[stripe/checkout] erro:', err)
     return res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+}
+
+// Extraído do switch do webhook para poder ser testado isoladamente (mock de
+// `session` + stub de `stripe`). `admin` é o client service-role do Supabase.
+export async function handleCheckoutSessionCompleted({ session, stripe, admin }) {
+  // Prioriza o email que o cliente confirmou no próprio Checkout — é onde ele
+  // recebe email e o que ele associa à compra. metadata/client_reference_id
+  // (vindos da LP) são só fallback.
+  const email = (
+    session.customer_details?.email ||
+    session.metadata?.user_email ||
+    session.client_reference_id ||
+    ''
+  ).trim().toLowerCase()
+  if (!email) {
+    console.error('[stripe/webhook] checkout.session.completed sem email resolvível:', session.id)
+    return
+  }
+
+  // Aquisição via Stripe: quem paga pela LP pode não ter conta no Pulse ainda.
+  // Cria a conta Supabase Auth + garante a linha em user_tokens e pega o link de
+  // acesso ANTES de creditar (credit_pulses / upsert dependem do email existir).
+  const name = session.customer_details?.name || session.metadata?.name || undefined
+  let provision
+  try {
+    provision = await ensureUserForCheckout({ email, name })
+  } catch (err) {
+    console.error('[stripe/webhook] falha ao provisionar conta:', err)
+    provision = { userId: null, isNew: false, actionLink: null }
+  }
+
+  let planLabel
+
+  if (session.mode === 'subscription') {
+    const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+    if (!subscriptionId) return
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const plan = subscription.metadata?.plan === 'annual' ? 'annual' : 'monthly'
+    planLabel = PLAN_LABEL[plan]
+
+    // upsert (não update): a linha pode não existir se a conta acabou de ser
+    // criada ou se o cliente pagou antes de qualquer signup.
+    const { error } = await admin.from('user_tokens').upsert({
+      user_email: email,
+      stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+      stripe_subscription_id: subscriptionId,
+      plan,
+      subscription_status: subscription.status,
+      current_period_end: periodEndOf(subscription),
+      tokens_remaining: 200,
+      pulses_last_credited_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_email' })
+
+    if (error) console.error('[stripe/webhook] erro ao ativar assinatura:', error)
+  } else {
+    const pulsesAmount = parseInt(session.metadata?.pulses_amount ?? '0', 10)
+    const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id
+
+    if (pulsesAmount > 0) {
+      const { error } = await admin.rpc('credit_pulses', { p_email: email, p_amount: pulsesAmount })
+      if (error) console.error('[stripe/webhook] erro ao creditar recarga:', error)
+    }
+    if (customerId) {
+      await admin.from('user_tokens').update({ stripe_customer_id: customerId }).eq('user_email', email)
+    }
+  }
+
+  // Email de acesso — só uma vez por conta. access_email_sent_at é a salvaguarda
+  // contra retries do Stripe além da dedupe de stripe_events. Só marca como
+  // enviado se o envio realmente aconteceu (se o Resend ainda não estiver
+  // configurado, um replay futuro reenvia).
+  try {
+    const { data: tokRow } = await admin
+      .from('user_tokens')
+      .select('access_email_sent_at')
+      .eq('user_email', email)
+      .single()
+    if (!tokRow?.access_email_sent_at) {
+      const emailRes = await sendAccessEmail({
+        to: email,
+        actionLink: provision.actionLink,
+        isNew: provision.isNew,
+        planLabel,
+      })
+      if (emailRes.sent) {
+        await admin.from('user_tokens')
+          .update({ access_email_sent_at: new Date().toISOString() })
+          .eq('user_email', email)
+      }
+    }
+  } catch (err) {
+    console.error('[stripe/webhook] erro ao enviar email de acesso (seguindo):', err)
   }
 }
 
@@ -152,44 +262,7 @@ async function handleWebhook(req, res, rawBody) {
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object
-        const email = session.metadata?.user_email || session.client_reference_id || session.customer_details?.email
-        if (!email) {
-          console.error('[stripe/webhook] checkout.session.completed sem email resolvível:', session.id)
-          break
-        }
-
-        if (session.mode === 'subscription') {
-          const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
-          if (!subscriptionId) break
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-          const plan = subscription.metadata?.plan === 'annual' ? 'annual' : 'monthly'
-
-          const { error } = await admin.from('user_tokens').update({
-            stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
-            stripe_subscription_id: subscriptionId,
-            plan,
-            subscription_status: subscription.status,
-            current_period_end: periodEndOf(subscription),
-            tokens_remaining: 200,
-            pulses_last_credited_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }).eq('user_email', email)
-
-          if (error) console.error('[stripe/webhook] erro ao ativar assinatura:', error)
-        } else {
-          const pulsesAmount = parseInt(session.metadata?.pulses_amount ?? '0', 10)
-          const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id
-
-          if (pulsesAmount > 0) {
-            const { error } = await admin.rpc('credit_pulses', { p_email: email, p_amount: pulsesAmount })
-            if (error) console.error('[stripe/webhook] erro ao creditar recarga:', error)
-          }
-          // Salva o customer mesmo em recarga avulsa, pra reusar em compras futuras
-          if (customerId) {
-            await admin.from('user_tokens').update({ stripe_customer_id: customerId }).eq('user_email', email)
-          }
-        }
+        await handleCheckoutSessionCompleted({ session: event.data.object, stripe, admin })
         break
       }
 

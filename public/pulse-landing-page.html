@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse | O designer de IA da sua marca — Agente 17</title>
+<meta name="description" content="Descreva o post. O Pulse cria a imagem, a legenda e as hashtags com a identidade da sua marca — e publica direto no Instagram ou LinkedIn.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0D11;
+    --surface: #101319;
+    --surface-2: #171B22;
+    --surface-3: #1D222B;
+    --border: #262A35;
+    --border-soft: #1A1D26;
+    --accent: #4359F7;
+    --accent-2: #6087D2;
+    --accent-icon-1: #6696D2;
+    --accent-icon-2: #3666A2;
+    --accent-word-1: #72A2DE;
+    --accent-word-2: #AECCF0;
+    --accent-warm: #FF8A5C;
+    --text: #EDEEF3;
+    --text-muted: #8B8FA0;
+    --text-dim: #565B6C;
+    --maxw: 1140px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent); color: white; }
+  .display { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* ===== TOP LOAD BAR ===== */
+  #loadbar {
+    position: fixed; top: 0; left: 0; height: 2.5px; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    z-index: 999; animation: loadfill 1.1s ease forwards;
+  }
+  @keyframes loadfill { 0% { width: 0%; opacity: 1; } 80% { width: 100%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
+
+  /* ===== NAV ===== */
+  nav { position: sticky; top: 0; z-index: 100; background: rgba(8,9,13,0.82); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border-soft); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 15px 24px; max-width: var(--maxw); margin: 0 auto; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+  .nav-logo-mark { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: flex; align-items: center; justify-content: center; }
+  .nav-links { display: flex; gap: 30px; align-items: center; }
+  .nav-links a { font-size: 14px; color: var(--text-muted); font-weight: 500; transition: color 0.15s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta { background: var(--accent); color: white; padding: 9px 18px; border-radius: 100px; font-size: 13.5px; font-weight: 600; transition: transform 0.15s, box-shadow 0.15s; }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(58,90,255,0.35); }
+  @media (max-width: 900px) { .nav-links { display: none; } }
+
+  /* ===== HERO ===== */
+  .hero-top { max-width: var(--maxw); margin: 0 auto; padding: 72px 24px 0; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 18px; }
+  .eyebrow::before { content: '●'; font-size: 7px; }
+  h1 { font-size: clamp(32px, 4.6vw, 56px); line-height: 1.06; font-weight: 800; letter-spacing: -0.02em; max-width: 780px; margin-bottom: 20px; }
+  h1 em { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; color: var(--accent); }
+  .hero-sub { font-size: 17.5px; color: var(--text-muted); max-width: 520px; margin-bottom: 30px; line-height: 1.6; }
+  .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; padding: 14px 26px; border-radius: 100px; font-weight: 600; font-size: 15px; transition: transform 0.15s, box-shadow 0.15s; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; font-family: inherit; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(58,90,255,0.4); }
+  .btn-secondary { background: transparent; color: var(--text); padding: 14px 26px; border-radius: 100px; font-weight: 600; font-size: 15px; border: 1px solid var(--border); transition: border-color 0.15s, background 0.15s; }
+  .btn-secondary:hover { border-color: var(--text-dim); background: var(--surface); }
+  .hero-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .hero-badge { font-size: 12px; color: var(--text-dim); border: 1px solid var(--border-soft); padding: 6px 12px; border-radius: 100px; display: flex; align-items: center; gap: 6px; }
+  .hero-badge b { color: var(--text); font-weight: 700; }
+
+  /* ===== HERO WIDGET (dashboard-style, signature element) ===== */
+  .hero-widget { max-width: var(--maxw); margin: 44px auto 0; padding: 0 24px; }
+  .widget-shell { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 20px; box-shadow: 0 50px 100px -40px rgba(0,0,0,0.65); display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; }
+
+  .widget-col-left { display: flex; flex-direction: column; gap: 14px; }
+
+  .status-card { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .status-left { display: flex; align-items: center; gap: 10px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ADE80; animation: pulse-dot 2s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,0.5); } 50% { opacity: 0.5; box-shadow: 0 0 0 6px rgba(74,222,128,0); } }
+  .status-title { font-size: 13.5px; font-weight: 700; }
+  .status-sub { font-size: 12px; color: var(--text-dim); }
+  .status-badge { background: rgba(74,222,128,0.12); color: #4ADE80; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat-box { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 12px; padding: 14px; }
+  .stat-num { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
+  .stat-label { font-size: 10.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.3; }
+
+  .chat-area { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 14px; padding: 16px; flex: 1; min-height: 190px; display: flex; flex-direction: column; gap: 9px; }
+  .chat-label { font-size: 11px; color: var(--text-dim); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .msg { max-width: 88%; padding: 10px 14px; border-radius: 13px; font-size: 13px; opacity: 0; transform: translateY(8px); animation: msg-in 0.5s ease forwards; line-height: 1.4; }
+  .msg.agent { background: var(--surface-3); border: 1px solid var(--border-soft); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+  @keyframes msg-in { to { opacity: 1; transform: translateY(0); } }
+
+  /* Instagram-style post preview */
+  .ig-card { background: #000; border: 1px solid var(--border-soft); border-radius: 16px; overflow: hidden; opacity: 0; transform: translateY(10px) scale(0.97); animation: post-in 0.6s ease forwards; }
+  @keyframes post-in { to { opacity: 1; transform: translateY(0) scale(1); } }
+  .ig-header { display: flex; align-items: center; gap: 9px; padding: 11px 13px; }
+  .ig-avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-warm)); flex-shrink: 0; }
+  .ig-username { font-size: 12.5px; font-weight: 700; color: #fff; }
+  .ig-dots { margin-left: auto; color: #888; font-size: 14px; }
+  .ig-image { aspect-ratio: 4/5; position: relative; display: flex; align-items: flex-end; padding: 24px; }
+  .ig-image-text { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; font-size: 22px; color: white; line-height: 1.2; }
+  .ig-actions { display: flex; align-items: center; gap: 14px; padding: 10px 13px 4px; color: #fff; }
+  .ig-likes { padding: 2px 13px 4px; font-size: 12px; color: #ddd; }
+  .ig-likes b { color: #fff; }
+  .ig-caption { padding: 0 13px 13px; font-size: 12px; color: #ddd; line-height: 1.4; }
+  .ig-caption b { color: #fff; }
+
+  @media (max-width: 940px) {
+    .widget-shell { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .stat-box:last-child { grid-column: span 2; }
+  }
+
+  /* ===== MARQUEE ===== */
+  .marquee-wrap { border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); overflow: hidden; margin-top: 64px; padding: 18px 0; background: var(--surface); }
+  .marquee-track { display: flex; gap: 40px; white-space: nowrap; animation: marquee 26s linear infinite; width: max-content; }
+  .marquee-item { font-size: 13.5px; color: var(--text-dim); display: flex; align-items: center; gap: 10px; font-weight: 500; }
+  .marquee-item::before { content: '◆'; color: var(--accent); font-size: 8px; }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
+
+  /* ===== SECTION SHARED ===== */
+  section { padding: 88px 24px; }
+  .section-inner { max-width: var(--maxw); margin: 0 auto; }
+  .section-eyebrow { font-size: 12.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-eyebrow::before { content: '●'; font-size: 7px; }
+  h2 { font-size: clamp(26px, 3.2vw, 38px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 16px; max-width: 680px; }
+  h2 em { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; color: var(--accent); }
+  .section-sub { color: var(--text-muted); font-size: 16px; max-width: 560px; line-height: 1.6; }
+
+  /* ===== PROBLEM ===== */
+  .problem-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border-soft); border: 1px solid var(--border-soft); border-radius: 16px; overflow: hidden; margin-top: 44px; }
+  .problem-card { background: var(--bg); padding: 30px; }
+  .problem-num { font-size: 13px; font-weight: 700; color: var(--text-dim); margin-bottom: 13px; }
+  .problem-card h3 { font-size: 17.5px; font-weight: 700; margin-bottom: 9px; letter-spacing: -0.01em; }
+  .problem-card p { color: var(--text-muted); font-size: 14.5px; line-height: 1.55; }
+  .problem-closing { margin-top: 36px; padding: 26px 30px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; font-size: 16.5px; line-height: 1.5; }
+  .problem-closing strong { color: var(--accent); font-weight: 700; }
+  @media (max-width: 720px) { .problem-grid { grid-template-columns: 1fr; } }
+
+  /* ===== COUNTING STATS ===== */
+  .counter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border-soft); border: 1px solid var(--border-soft); border-radius: 16px; overflow: hidden; margin-top: 44px; }
+  .counter-card { background: var(--bg); padding: 32px 26px; }
+  .counter-num { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; font-size: 42px; color: var(--accent); line-height: 1; margin-bottom: 12px; }
+  .counter-label { font-size: 13.5px; color: var(--text-muted); line-height: 1.5; }
+  @media (max-width: 900px) { .counter-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 500px) { .counter-grid { grid-template-columns: 1fr; } }
+
+  /* ===== HOW IT WORKS ===== */
+  .steps { margin-top: 44px; display: flex; flex-direction: column; }
+  .step { display: grid; grid-template-columns: 84px 1fr; gap: 22px; padding: 26px 0; border-top: 1px solid var(--border-soft); }
+  .step:last-child { border-bottom: 1px solid var(--border-soft); }
+  .step-num { font-family: 'Playfair Display', serif; font-style: italic; font-size: 30px; color: var(--accent); font-weight: 700; }
+  .step-content h3 { font-size: 18.5px; font-weight: 700; margin-bottom: 7px; letter-spacing: -0.01em; }
+  .step-content p { color: var(--text-muted); font-size: 14.5px; max-width: 520px; line-height: 1.6; }
+  @media (max-width: 640px) { .step { grid-template-columns: 48px 1fr; gap: 14px; } .step-num { font-size: 22px; } }
+
+  /* ===== DIFFERENTIATORS ===== */
+  .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; }
+  .diff-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: border-color 0.2s, transform 0.2s; }
+  .diff-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .diff-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(58,90,255,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 15px; font-size: 17px; }
+  .diff-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 7px; letter-spacing: -0.005em; }
+  .diff-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+  @media (max-width: 900px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .diff-grid { grid-template-columns: 1fr; } }
+
+  /* ===== PROOF WIDGET (before pricing) ===== */
+  .proof-widget { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-top: 44px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
+  .proof-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .proof-num { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+  .proof-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .proof-caption { font-size: 14px; color: var(--text-muted); border-left: 1px solid var(--border); padding-left: 24px; max-width: 220px; line-height: 1.5; }
+  @media (max-width: 780px) { .proof-widget { grid-template-columns: 1fr; } .proof-caption { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 20px; max-width: 100%; } }
+  @media (max-width: 480px) { .proof-stats { grid-template-columns: 1fr; gap: 14px; } }
+
+  /* ===== RESULTS ===== */
+  .results-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 44px; }
+  .result-card { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); aspect-ratio: 4/5; position: relative; }
+  .result-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .result-card.featured { position: relative; }
+  .result-metric { position: absolute; bottom: 12px; left: 12px; background: rgba(8,9,13,0.82); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 7px; }
+  .result-metric-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; }
+  .result-metric-text { font-size: 12.5px; font-weight: 700; color: #fff; }
+  .result-metric-sub { font-size: 10px; color: rgba(255,255,255,0.65); font-weight: 500; }
+  .result-tag { font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.05em; }
+  .results-note { margin-top: 18px; font-size: 13px; color: var(--text-dim); }
+  @media (max-width: 900px) { .results-grid { grid-template-columns: 1fr 1fr; } }
+
+  /* ===== PRICING ===== */
+  .pricing-toggle { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 4px; margin-top: 30px; margin-bottom: 36px; }
+  .toggle-btn { padding: 9px 20px; border-radius: 100px; font-size: 13.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; border: none; background: transparent; font-family: inherit; }
+  .toggle-btn.active { background: var(--accent); color: white; }
+  .price-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 38px; max-width: 460px; }
+  .price-card-badge { display: inline-block; background: rgba(255,138,92,0.15); color: var(--accent-warm); font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: 100px; margin-bottom: 16px; }
+  .price-amount { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .price-amount .num { font-size: 44px; font-weight: 800; letter-spacing: -0.02em; }
+  .price-amount .period { font-size: 15px; color: var(--text-muted); }
+  .price-note { font-size: 13px; color: var(--text-dim); margin-bottom: 26px; }
+  .price-features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+  .price-feature { display: flex; gap: 10px; font-size: 14.5px; align-items: flex-start; }
+  .price-feature .check { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+  .addons { margin-top: 52px; }
+  .addons-label { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
+  .addon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .addon-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .addon-amount { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .addon-desc { font-size: 13px; color: var(--text-muted); }
+  @media (max-width: 640px) { .addon-grid { grid-template-columns: 1fr; } }
+
+  /* ===== FAQ ===== */
+  .faq-item { border-top: 1px solid var(--border-soft); }
+  .faq-item:last-child { border-bottom: 1px solid var(--border-soft); }
+  .faq-q { width: 100%; text-align: left; background: none; border: none; color: var(--text); font-family: inherit; font-size: 16px; font-weight: 600; padding: 21px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; gap: 20px; }
+  .faq-icon { font-size: 19px; color: var(--text-dim); transition: transform 0.25s; flex-shrink: 0; }
+  .faq-item.open .faq-icon { transform: rotate(45deg); color: var(--accent); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; color: var(--text-muted); font-size: 14.5px; line-height: 1.6; }
+  .faq-item.open .faq-a { max-height: 220px; padding-bottom: 21px; }
+
+  /* ===== FINAL CTA ===== */
+  .final-cta { background: linear-gradient(135deg, rgba(58,90,255,0.12), rgba(124,111,247,0.08)); border: 1px solid var(--border); border-radius: 24px; padding: 60px 40px; text-align: center; margin: 0 24px; }
+  .final-cta h2 { margin: 0 auto 14px; }
+  .final-cta .section-sub { margin: 0 auto 30px; }
+  .final-cta-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ===== FOOTER ===== */
+  footer { padding: 44px 24px 30px; border-top: 1px solid var(--border-soft); margin-top: 36px; }
+  .footer-inner { max-width: var(--maxw); margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; }
+  .footer-links { display: flex; gap: 22px; }
+  .footer-links a { font-size: 13.5px; color: var(--text-muted); }
+  .footer-links a:hover { color: var(--text); }
+  .footer-tag { font-size: 12.5px; color: var(--text-dim); margin-top: 22px; text-align: center; }
+
+  .fade-in { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) { *, .marquee-track { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="loadbar"></div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <img src="logo-pulse-cropped.png" alt="Pulse" style="height: 30px; width: auto; object-fit: contain;">
+    </div>
+    <div class="nav-links">
+      <a href="#problema">O problema</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#resultados">Resultados</a>
+      <a href="#planos">Planos</a>
+      <a href="#faq">Dúvidas</a>
+    </div>
+    <a href="#planos" class="nav-cta">Começar agora</a>
+  </div>
+</nav>
+
+<div class="hero-top">
+  <div class="eyebrow">Design com IA, sem perder a identidade</div>
+  <h1>O designer que nunca <em>cansa</em> de criar pra sua marca.</h1>
+  <p class="hero-sub">Você descreve o post. O Pulse cria a imagem, escreve a legenda, sugere as hashtags — tudo com a identidade da sua marca — e publica direto no Instagram ou LinkedIn.</p>
+  <div class="hero-ctas">
+    <a href="#planos" class="btn-primary">Quero criar meu primeiro post →</a>
+    <a href="#como-funciona" class="btn-secondary">Ver como funciona</a>
+  </div>
+  <div class="hero-badges">
+    <div class="hero-badge"><b>~2 min</b> do briefing ao post pronto</div>
+    <div class="hero-badge">✓ Publica direto no <b>Instagram e LinkedIn</b></div>
+    <div class="hero-badge"><b>100%</b> com a cor e o tom da sua marca</div>
+  </div>
+</div>
+
+<div class="hero-widget">
+  <div class="widget-shell">
+    <div class="widget-col-left">
+      <div class="status-card">
+        <div class="status-left">
+          <div class="status-dot"></div>
+          <div>
+            <div class="status-title">Post · Feed Instagram</div>
+            <div class="status-sub">Gerado com Premium · agora mesmo</div>
+          </div>
+        </div>
+        <div class="status-badge">Publicado</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num tabular" data-count="31">0</div>
+          <div class="stat-label">posts criados este mês</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num tabular" data-count="92" data-suffix="%">0</div>
+          <div class="stat-label">publicados sem editar</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num tabular"><span data-count="168">0</span>/200</div>
+          <div class="stat-label">pulses usados no mês</div>
+        </div>
+      </div>
+
+      <div class="chat-area">
+        <div class="chat-label">Agente de Design Pulse</div>
+        <div id="chatArea" style="display:flex; flex-direction:column; gap:9px;"></div>
+      </div>
+    </div>
+
+    <a href="https://www.instagram.com/p/DbYYxNykUyx/" target="_blank" rel="noopener" class="ig-card" style="display:block; text-decoration:none;">
+      <div class="ig-header">
+        <div class="ig-avatar"></div>
+        <div class="ig-username">indaia.beisebol.softbol</div>
+        <div class="ig-dots">•••</div>
+      </div>
+      <div class="ig-image">
+        <img src="sample/exemplo com dados.jpg" alt="Post real gerado com o Pulse, 311 curtidas no Instagram" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;">
+        <div class="result-metric" style="position:relative; z-index:2;">
+          <div class="result-metric-dot"></div>
+          <div>
+            <div class="result-metric-text">11,8 mil visualizações</div>
+            <div class="result-metric-sub">publicado direto pelo Pulse — ver no Instagram ↗</div>
+          </div>
+        </div>
+      </div>
+      <div class="ig-actions">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </div>
+      <div class="ig-likes">Curtido por <b>marketing.br</b> e outras <b>310 pessoas</b></div>
+      <div class="ig-caption"><b>indaia.beisebol.softbol</b> Gerado com o Pulse, publicado em minutos — e o alcance fala por si.</div>
+    </a>
+  </div>
+</div>
+
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item">Identidade da sua marca</div>
+    <div class="marquee-item">Legenda gerada automaticamente</div>
+    <div class="marquee-item">Hashtags otimizadas</div>
+    <div class="marquee-item">Publicação direta no Instagram e LinkedIn</div>
+    <div class="marquee-item">Ajustes por conversa, sem editor</div>
+    <div class="marquee-item">Suas próprias fotos, preservadas</div>
+    <div class="marquee-item">Identidade da sua marca</div>
+    <div class="marquee-item">Legenda gerada automaticamente</div>
+    <div class="marquee-item">Hashtags otimizadas</div>
+    <div class="marquee-item">Publicação direta no Instagram e LinkedIn</div>
+    <div class="marquee-item">Ajustes por conversa, sem editor</div>
+    <div class="marquee-item">Suas próprias fotos, preservadas</div>
+  </div>
+</div>
+
+<section id="problema">
+  <div class="section-inner">
+    <div class="section-eyebrow">O problema</div>
+    <h2>Todo mês, o feed fica <em>parado</em>.</h2>
+    <p class="section-sub">Não é falta de conteúdo pra falar. É falta de tempo, de designer, ou de paciência pra abrir mais um editor complicado.</p>
+
+    <div class="problem-grid">
+      <div class="problem-card"><div class="problem-num">01</div><h3>O post que devia sair hoje, não sai.</h3><p>Falta tempo, falta quem desenhe, e a ideia boa fica só na cabeça de alguém do time.</p></div>
+      <div class="problem-card"><div class="problem-num">02</div><h3>Cada post parece de uma marca diferente.</h3><p>Sem padrão de cor, fonte ou tom — o feed não constrói reconhecimento nenhum.</p></div>
+      <div class="problem-card"><div class="problem-num">03</div><h3>A legenda nunca sai igual pro Instagram e pro LinkedIn.</h3><p>Ou fica genérica demais, ou alguém perde meia hora reescrevendo pra cada rede.</p></div>
+      <div class="problem-card"><div class="problem-num">04</div><h3>Agência custa caro. Fazer sozinho, o tempo que falta.</h3><p>E o resultado, na correria, quase sempre fica parecendo genérico — feito por IA, sem cuidado nenhum.</p></div>
+    </div>
+
+    <div class="problem-closing">Criar conteúdo não devia depender de ter um designer no time. <strong>O Pulse existe pra tirar isso das suas costas.</strong></div>
+  </div>
+</section>
+
+<section id="como-funciona">
+  <div class="section-inner">
+    <div class="section-eyebrow">Como funciona</div>
+    <h2>Do briefing ao post publicado, <em>sem sair do chat</em>.</h2>
+    <p class="section-sub">Você conversa com o agente como conversaria com um designer de verdade — ele orienta, cria e ajusta, até o resultado ficar pronto pra publicar.</p>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><div class="step-content"><h3>Descreve o que quer comunicar</h3><p>Conta o tema, a rede social e o objetivo do post — do jeito que você falaria com uma pessoa.</p></div></div>
+      <div class="step"><div class="step-num">02</div><div class="step-content"><h3>O agente orienta antes de gerar</h3><p>Ele conhece o que funciona em cada rede social e avisa quando algo não vai performar bem — antes de gastar seu tempo.</p></div></div>
+      <div class="step"><div class="step-num">03</div><div class="step-content"><h3>Post, legenda e hashtags prontos</h3><p>Com a cor, a fonte e o tom da sua marca aplicados automaticamente — nunca um post genérico.</p></div></div>
+      <div class="step"><div class="step-num">04</div><div class="step-content"><h3>Ajusta só conversando</h3><p>Quer mudar a cor, o texto ou o formato? Peça no chat. Sem editor complicado, sem curva de aprendizado.</p></div></div>
+      <div class="step"><div class="step-num">05</div><div class="step-content"><h3>Publica direto no Instagram ou LinkedIn</h3><p>Sem baixar, sem trocar de aplicativo, sem perder o momento certo de postar.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="numeros">
+  <div class="section-inner">
+    <div class="section-eyebrow">O que muda na prática</div>
+    <h2>Sua produção de conteúdo, <em>em números</em>.</h2>
+
+    <div class="counter-grid">
+      <div class="counter-card"><div class="counter-num"><span data-count="2">0</span> min</div><div class="counter-label">pra criar um post: você descreve, o agente pergunta o que falta, e gera.</div></div>
+      <div class="counter-card"><div class="counter-num"><span data-count="0">0</span></div><div class="counter-label">templates pra aprender a usar. Você conversa, não configura.</div></div>
+      <div class="counter-card"><div class="counter-num"><span data-count="100">0</span>%</div><div class="counter-label">dos posts com a cor, a fonte e o tom da sua marca aplicados.</div></div>
+      <div class="counter-card"><div class="counter-num"><span data-count="2">0</span></div><div class="counter-label">redes sociais publicando direto: Instagram e LinkedIn.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="diferenciais">
+  <div class="section-inner">
+    <div class="section-eyebrow">Diferenciais</div>
+    <h2>Não é só imagem gerada por IA. <em>É sua marca, pronta pra postar.</em></h2>
+
+    <div class="diff-grid">
+      <div class="diff-card"><div class="diff-icon">◆</div><h3>Identidade da sua marca</h3><p>Logo, cores e tom de voz aplicados automaticamente em cada post — nunca sai parecendo template.</p></div>
+      <div class="diff-card"><div class="diff-icon">✎</div><h3>Legenda escrita pra você</h3><p>Cada post sai com legenda pronta, no tom da sua marca — você não escreve nada, só revisa.</p></div>
+      <div class="diff-card"><div class="diff-icon">#</div><h3>Hashtags automáticas</h3><p>Pensadas pro alcance de cada rede, sem você precisar pesquisar quais usar.</p></div>
+      <div class="diff-card"><div class="diff-icon">↗</div><h3>Publicação direta</h3><p>Conecta seu Instagram e LinkedIn e publica sem sair do Pulse — nada de baixar e subir manualmente.</p></div>
+      <div class="diff-card"><div class="diff-icon">≡</div><h3>Legenda por plataforma</h3><p>Texto adaptado pro tom de cada rede — o que funciona no LinkedIn não é o que funciona no Instagram.</p></div>
+      <div class="diff-card"><div class="diff-icon">▣</div><h3>Suas próprias fotos</h3><p>Use imagens reais do seu produto ou equipe como base — o Pulse preserva a identidade, só potencializa o resultado.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="resultados">
+  <div class="section-inner">
+    <div class="section-eyebrow">Resultados reais</div>
+    <h2>Feito com o Pulse, <em>publicado de verdade</em>.</h2>
+    <p class="section-sub">Posts gerados e publicados por clientes que já usam o Pulse no dia a dia.</p>
+
+    <div class="results-grid">
+      <div class="result-card"><img src="sample/exemplo 1.jpg" alt="Post gerado com o Pulse — exemplo 1" loading="lazy"></div>
+      <div class="result-card"><img src="sample/exemplo 2.jpg" alt="Post gerado com o Pulse — exemplo 2" loading="lazy"></div>
+      <div class="result-card"><img src="sample/exemplo 3.jpg" alt="Post gerado com o Pulse — exemplo 3" loading="lazy"></div>
+      <div class="result-card"><img src="sample/exemplo 4.jpg" alt="Post gerado com o Pulse — exemplo 4" loading="lazy"></div>
+      <div class="result-card"><img src="sample/exemplo 5.jpg" alt="Post gerado com o Pulse — exemplo 5" loading="lazy"></div>
+      <div class="result-card"><img src="sample/exemplo 6.jpg" alt="Post gerado com o Pulse — exemplo 6" loading="lazy"></div>
+      <div class="result-card"><img src="sample/exemplo 7.jpg" alt="Post gerado com o Pulse — exemplo 7" loading="lazy"></div>
+    </div>
+    <p class="results-note">Posts reais, criados e publicados por clientes que já usam o Pulse.</p>
+
+    <div class="proof-widget">
+      <div class="proof-stats">
+        <div><div class="proof-num tabular" data-count="31">0</div><div class="proof-label">posts criados no mês</div></div>
+        <div><div class="proof-num tabular" data-count="28">0</div><div class="proof-label">publicados direto pelo Pulse</div></div>
+        <div><div class="proof-num tabular"><span data-count="168">0</span>/200</div><div class="proof-label">pulses usados</div></div>
+      </div>
+      <div class="proof-caption">31 posts criados e publicados, sem abrir um editor de design uma única vez.</div>
+    </div>
+  </div>
+</section>
+
+<section id="planos">
+  <div class="section-inner">
+    <div class="section-eyebrow">Planos</div>
+    <h2>Comece a criar <em>hoje mesmo</em>.</h2>
+    <p class="section-sub">Um plano, sem letra miúda. Créditos suficientes pra postar todo dia útil do mês, sem sentir o limite.</p>
+
+    <div class="pricing-toggle">
+      <button class="toggle-btn active" onclick="setPlan('monthly', this)">Mensal</button>
+      <button class="toggle-btn" onclick="setPlan('annual', this)">Anual — 2 meses grátis</button>
+    </div>
+
+    <div class="price-card">
+      <div class="price-card-badge">Mais escolhido</div>
+      <div class="price-amount"><span class="num" id="priceNum">R$ 47,90</span><span class="period" id="pricePeriod">/mês</span></div>
+      <div class="price-note" id="priceNote">Cobrado mensalmente · cancele quando quiser</div>
+      <div class="price-features">
+        <div class="price-feature"><span class="check">✓</span> 200 pulses por mês — dá pra postar todo dia útil</div>
+        <div class="price-feature"><span class="check">✓</span> Geração Standard e Premium, sua escolha por post</div>
+        <div class="price-feature"><span class="check">✓</span> Legenda e hashtags automáticas em cada post</div>
+        <div class="price-feature"><span class="check">✓</span> Publicação direta no Instagram e LinkedIn</div>
+        <div class="price-feature"><span class="check">✓</span> Identidade da sua marca aplicada automaticamente</div>
+        <div class="price-feature"><span class="check">✓</span> Ajustes ilimitados via chat, sem gastar créditos</div>
+      </div>
+      <a href="/checkout?plan=monthly" id="planCta" class="btn-primary" style="width: 100%; justify-content: center;">Começar agora →</a>
+    </div>
+
+    <div class="addons">
+      <div class="addons-label">Precisa de mais? Compre pulses avulsos, quando quiser.</div>
+      <div class="addon-grid">
+        <a class="addon-card" href="/checkout?plan=recharge_100" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="addon-amount">R$ 27,90</div><div class="addon-desc">100 pulses avulsos</div></a>
+        <a class="addon-card" href="/checkout?plan=recharge_200" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="addon-amount">R$ 49,90</div><div class="addon-desc">200 pulses avulsos</div></a>
+        <a class="addon-card" href="/checkout?plan=recharge_500" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="addon-amount">R$ 99,90</div><div class="addon-desc">500 pulses avulsos</div></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="section-inner">
+    <div class="section-eyebrow">Dúvidas frequentes</div>
+    <h2>O que costuma vir à cabeça <em>antes de começar</em>.</h2>
+
+    <div style="margin-top: 36px;">
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Isso é só um gerador de imagem?<span class="faq-icon">+</span></button><div class="faq-a">Não. O Pulse é um agente de design: ele orienta antes de gerar, escolhe o melhor formato pra sua rede social, cria a imagem, escreve a legenda e sugere as hashtags — tudo com a identidade da sua marca. Um gerador de imagem entrega um arquivo. O Pulse entrega o post pronto.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Preciso saber de design pra usar?<span class="faq-icon">+</span></button><div class="faq-a">Não. Você conversa com o agente como conversaria com uma pessoa. Ele pergunta o que precisa, orienta sobre o que funciona melhor em cada rede, e entrega o resultado pronto — sem editor complicado.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Quantos posts eu consigo fazer por mês?<span class="faq-icon">+</span></button><div class="faq-a">Com os 200 pulses do plano mensal, dá pra criar cerca de 50 posts no modo Standard, ou uma combinação de posts Standard e Premium — o suficiente pra postar todos os dias úteis do mês sem sentir o limite. Se precisar de mais, é só comprar pulses avulsos, sem esperar o próximo ciclo.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">As fotos são minhas ou tudo é gerado por IA?<span class="faq-icon">+</span></button><div class="faq-a">As duas opções funcionam. Você pode enviar fotos reais do seu produto, espaço ou equipe — o Pulse preserva a identidade e só melhora iluminação e composição. Ou pode deixar a IA criar a imagem do zero, a partir da sua descrição.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Que tecnologia de IA vocês usam?<span class="faq-icon">+</span></button><div class="faq-a">Usamos as tecnologias de geração de imagem e texto mais avançadas disponíveis no mercado, sempre atualizadas para entregar a melhor qualidade possível. O que importa pra você é o resultado: posts profissionais, prontos pra publicar — sem precisar entender o que roda por trás.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Posso publicar direto no Instagram e no LinkedIn?<span class="faq-icon">+</span></button><div class="faq-a">Sim. Você conecta suas contas uma vez e publica direto do Pulse, sem precisar baixar a imagem e subir manualmente em outro aplicativo.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">E se eu não gostar do resultado?<span class="faq-icon">+</span></button><div class="faq-a">Você ajusta direto no chat — pede pra mudar cor, texto, formato ou trocar a imagem, sem precisar gerar tudo de novo do zero nem gastar créditos extras à toa.</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="final-cta">
+  <div class="section-eyebrow" style="justify-content: center;">Comece agora</div>
+  <h2 style="margin-left:auto;margin-right:auto;">Sua marca merece mais que <em>posts genéricos</em>.</h2>
+  <p class="section-sub">Crie seu primeiro post agora e veja o resultado antes de decidir.</p>
+  <div class="final-cta-ctas"><a href="#planos" class="btn-primary">Quero começar agora →</a></div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="nav-logo"><img src="logo-pulse-cropped.png" alt="Pulse" style="height: 24px; width: auto; object-fit: contain;"></div>
+    <div class="footer-links">
+      <a href="#">Instagram</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Termos de uso</a>
+      <a href="#">Privacidade</a>
+    </div>
+  </div>
+  <div class="footer-tag" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+    <span style="opacity:0.6;">um produto</span>
+    <a href="https://agente17.com.br" target="_blank" style="display:inline-flex; align-items:center; gap:6px;">
+      <img src="logo-agente17.png" alt="Agente 17" style="height:14px; width:auto; opacity:0.75;">
+    </a>
+  </div>
+</footer>
+
+<script>
+  // Hero chat mockup — looping
+  const sequence = [
+    { type: 'agent', text: 'Olá! Me conta o que você quer comunicar no post de hoje.' },
+    { type: 'user', text: 'post pra instagram sobre nosso aniversário de 5 anos' },
+    { type: 'agent', text: 'Ótimo motivo pra celebrar com o público. Feed ou stories? E qual tom — mais emotivo ou mais institucional?' },
+    { type: 'user', text: 'feed, tom emotivo' }
+  ];
+  const chatArea = document.getElementById('chatArea');
+  let seqIndex = 0;
+  function renderStep() {
+    if (seqIndex >= sequence.length) {
+      setTimeout(() => { chatArea.innerHTML = ''; seqIndex = 0; renderStep(); }, 3600);
+      return;
+    }
+    const step = sequence[seqIndex];
+    const msg = document.createElement('div');
+    msg.className = 'msg ' + step.type;
+    msg.textContent = step.text;
+    chatArea.appendChild(msg);
+    seqIndex++;
+    setTimeout(renderStep, 1150);
+  }
+  renderStep();
+
+  // FAQ toggle
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  }
+
+  // Pricing toggle
+  function setPlan(plan, btn) {
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const num = document.getElementById('priceNum');
+    const note = document.getElementById('priceNote');
+    const cta = document.getElementById('planCta');
+    if (plan === 'annual') {
+      num.textContent = 'R$ 39,90';
+      note.textContent = 'Cobrado R$ 478,80 uma vez por ano · equivale a 2 meses grátis';
+      if (cta) cta.setAttribute('href', '/checkout?plan=annual');
+    } else {
+      num.textContent = 'R$ 47,90';
+      note.textContent = 'Cobrado mensalmente · cancele quando quiser';
+      if (cta) cta.setAttribute('href', '/checkout?plan=monthly');
+    }
+  }
+
+  // Scroll fade-in
+  document.querySelectorAll('section, .final-cta').forEach(el => el.classList.add('fade-in'));
+  const fadeObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+  // Counting numbers on scroll into view
+  function animateCount(el) {
+    const target = parseFloat(el.getAttribute('data-count'));
+    const suffix = el.getAttribute('data-suffix') || '';
+    const duration = 1400;
+    const start = performance.now();
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(target * eased);
+      el.textContent = value + suffix;
+      if (progress < 1) requestAnimationFrame(tick);
+      else el.textContent = target + suffix;
+    }
+    requestAnimationFrame(tick);
+  }
+  const countObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !e.target.dataset.done) {
+        e.target.dataset.done = '1';
+        animateCount(e.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('[data-count]').forEach(el => countObserver.observe(el));
+
+  // Hero widget stats animate immediately on load (already in view)
+  setTimeout(() => {
+    document.querySelectorAll('.widget-shell [data-count]').forEach(el => {
+      if (!el.dataset.done) { el.dataset.done = '1'; animateCount(el); }
+    });
+  }, 500);
+</script>
+
+</body>
+</html>

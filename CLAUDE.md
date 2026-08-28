@@ -16,6 +16,10 @@ negócio e estado de features, veja `CONTEXT.md` — não duplique isso aqui.
   `api/generate-premium.js`) via OpenAI, chamada direta (sem SDK)
 - **Roteamento de API:** `vercel.json` reescreve `/api/instagram-post` etc. para
   `/api/instagram?action=post` — vários endpoints são multiplexados por `action` num único arquivo
+- **Helpers server-side:** `api-lib/*.js` são módulos importados pelas rotas `/api/*` (só rodam no
+  servidor, nunca no client). `supabaseAdmin.js` (client service-role), `provisionAccount.js`
+  (`ensureUserForCheckout`), `sendEmail.js` (Resend via REST, sem SDK — mesmo padrão dos outros
+  clientes de API externa). O Vercel empacota `api-lib/` junto com `api/` automaticamente.
 
 ## Comandos
 
@@ -268,6 +272,22 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   `original*`/`display*` e reseta o estado do logo quando o pai troca os slides (é o que faz o
   resultado do ajuste aparecer). Se adicionar outro fluxo que muda `premiumSlides`/`carouselSlides`
   de fora, conte com esse reset de logo.
+- **Aquisição via LP (checkout → provisionamento → email):** o `checkout.session.completed` do
+  webhook chama `ensureUserForCheckout` (`api-lib/provisionAccount.js`) **antes** de creditar —
+  `credit_pulses`/`upsert` de `user_tokens` dependem do email já existir. A lógica do handler está
+  em `handleCheckoutSessionCompleted({ session, stripe, admin })`, **exportada** de `api/stripe.js`
+  pra poder ser testada com stubs (não há runner; ver `scratchpad/smoke-webhook.mjs` de referência).
+  O email de acesso (`sendAccessEmail`) só marca `user_tokens.access_email_sent_at` se
+  `sendEmail` retornou `{ sent: true }` — sem `RESEND_API_KEY` o envio é no-op e um replay do
+  evento reenvia. `sendEmail` **nunca lança**: o webhook não pode devolver 500 pro Stripe só
+  porque o email falhou (conta e pulses já foram provisionados).
+- **Telas do fluxo de aquisição ficam fora do gate de `appState`** em `src/App.tsx` — `/checkout`,
+  `/checkout/sucesso` e `/definir-senha` são checadas por `window.location.pathname` antes de
+  `if (appState === 'intro')`, igual aos callbacks OAuth (`/auth/*/done`, `/privacy`). Cliente que
+  pagou pela LP ainda não tem sessão nem onboarding — essas telas precisam renderizar sem isso.
+- **`public/sample/` são as imagens da LP** (`public/pulse-landing-page.html`) — JPEGs otimizados
+  (~1200px, ~2MB no total). Os PNGs originais eram ~72MB (um de 24MB/4608×8192) e travavam a LP no
+  mobile. Se trocar/adicionar exemplo, redimensione antes de commitar; não volte pra PNG cru.
 
 ## Limites
 

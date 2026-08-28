@@ -99,7 +99,23 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - Webhook: `bodyParser` desligado, raw body lido manualmente via stream antes de `stripe.webhooks.constructEvent`; log de diagnóstico (`rawBody.length` + presença do header `stripe-signature`) antes da verificação de assinatura
 - Eventos tratados: `checkout.session.completed` (assinatura e recarga avulsa), `invoice.paid` (renovação mensal), `customer.subscription.updated`, `customer.subscription.deleted`
 - **Stripe Tax desativado temporariamente** (`automatic_tax` removido da Checkout Session) — a conta Stripe ainda não tem país configurado (CNPJ/dados bancários pendentes), então o Stripe Tax não está disponível. Reativar assim que a conta tiver o país configurado em Settings → Tax.
-- **Pendente:** testar renovação mensal automática (`invoice.paid` com `billing_reason: subscription_cycle`) em produção com o ciclo completo de um cliente real; cadastrar CNPJ/dados bancários da TDA no Stripe para sair do modo de testes; criar landing page com os fluxos de checkout
+- **Pendente:** testar renovação mensal automática (`invoice.paid` com `billing_reason: subscription_cycle`) em produção com o ciclo completo de um cliente real; cadastrar CNPJ/dados bancários da TDA no Stripe para sair do modo de testes
+
+### Aquisição via LP: checkout → provisionamento de conta → email de acesso ✅ (código pronto; Resend pendente de ativação)
+Fluxo para quem compra pela landing page **sem ter conta no Pulse ainda**:
+1. **LP** (`public/pulse-landing-page.html`) — CTAs linkam para `/checkout?plan=monthly|annual|recharge_100|recharge_200|recharge_500`; o toggle mensal/anual troca o `href` do CTA principal via JS.
+2. **`/checkout`** (`src/pages/CheckoutPage.tsx`) — coleta email (+ nome opcional), chama `startCheckout(email, item, name)` → `POST /api/stripe?action=checkout`. Fora do gate de `appState` no `App.tsx` (como os callbacks OAuth). `success_url` = `/checkout/sucesso`, `cancel_url` = `/checkout?canceled=1`.
+3. **Webhook `checkout.session.completed`** (`handleCheckoutSessionCompleted` em `api/stripe.js`, exportado p/ teste isolado):
+   - Resolve o email por `customer_details.email` → `metadata.user_email` → `client_reference_id`.
+   - `ensureUserForCheckout({ email, name })` (`api-lib/provisionAccount.js`) — cria a conta Supabase Auth já confirmada (idempotente; trata "email já existe"), garante a linha em `user_tokens` e gera um `action_link` de **recovery** com `redirectTo` `${SITE_URL}/definir-senha`. Roda **antes** de creditar (o `credit_pulses`/`upsert` dependem do email existir).
+   - Ativa assinatura (`upsert` em `user_tokens`, `tokens_remaining: 200`) ou credita a recarga (`credit_pulses`).
+   - `sendAccessEmail` (`api-lib/sendEmail.js`, Resend REST direto) — copy diferente p/ conta nova (definir senha) vs. cliente existente (só confirmação). **Só marca `user_tokens.access_email_sent_at` se o envio retornou `sent: true`** — se o Resend não estiver configurado, um replay futuro do evento reenvia.
+4. **`/checkout/sucesso`** (`CheckoutSuccessPage.tsx`) — instrui a checar o email; quem já estava logado vê atalho de volta ao app.
+5. **`/definir-senha`** (`DefinirSenhaPage.tsx`) — abre a partir do link do email (sessão vem no hash da URL, `detectSessionInUrl`), faz `updateUser({ password })` e redireciona pro app. Link expirado → oferece `resetPasswordForEmail`.
+- **Migration:** `20260827230000_add_access_email_sent_at_to_user_tokens.sql` — coluna `access_email_sent_at timestamptz` (já aplicada em produção).
+- **Pendente de config (não é código):**
+  - **Resend** — integração Vercel Marketplace ainda **não instalada** (requer aceite de termos no browser: `https://vercel.com/ricardos-projects-e527cf77/~/integrations/accept-terms/resend?source=cli`, depois `vercel integration add resend/resend-email --no-claim`). Definir `EMAIL_FROM` (ex: `Pulse <onboarding@resend.dev>` até o domínio estar verificado). Sem `RESEND_API_KEY` o webhook credita normalmente e só **não** envia o email (loga e segue).
+  - **Supabase Auth** — adicionar `${SITE_URL}/definir-senha` à allowlist de Redirect URLs (senão o `action_link` cai no Site URL).
 
 ### Migração Gemini → Claude Haiku 4.5
 | Função | Rota Vercel | Status |
@@ -159,7 +175,7 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 | Item | Detalhe |
 |---|---|
 | **Vercel Pro** | $120/mês — resolve timeout do Premium definitivamente (maxDuration até 300s). Fazer upgrade ao fechar primeiro cliente pago. |
-| **Stripe** | ✅ Integração completa e testada — checkout mensal/anual, recargas (100/200/500) e crédito automático via webhook funcionando de ponta a ponta. Pendente: testar renovação mensal automática, cadastrar CNPJ/dados bancários da TDA (Stripe Tax desativado até lá), criar landing page com os fluxos de checkout. |
+| **Stripe** | ✅ Integração completa e testada — checkout mensal/anual, recargas (100/200/500) e crédito automático via webhook funcionando de ponta a ponta. LP + `/checkout` + provisionamento automático de conta + email de acesso pós-pagamento implementados (falta instalar Resend via Marketplace + allowlist do redirect no Supabase Auth). Pendente: testar renovação mensal automática, cadastrar CNPJ/dados bancários da TDA (Stripe Tax desativado até lá). |
 | **Instagram OAuth multi-tenant** | App Review rejeitado (vídeo incompleto) — reenviado ao Meta em 14/08/2026 com screencast completo do fluxo de ponta a ponta (login, conexão Instagram, geração de post, publicação, confirmação no feed real). Aguardando nova análise (prazo até 20 dias). Enquanto isso, adicionar clientes beta manualmente como Testadores no Meta Developer Portal antes de conseguirem conectar. OAuth tecnicamente funcional; bug de accessToken/igUserId no CaptionPanel/CarouselViewer/PremiumResultViewer já corrigido. |
 | **Testar: texto desconfigurado ao restaurar** | Regressão suspeita; logs de diagnóstico adicionados no pendingPost effect — verificar no console ao restaurar da biblioteca. |
 | **Testar: premium sem logo automático** | Verificar que `generatePremium` não sobrepõe logo automaticamente; testar add/remove logo via chat. |
@@ -198,7 +214,8 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - 🔜 Testar renovação mensal automática em produção
 - 🔜 Cadastrar CNPJ/dados bancários da TDA no Stripe (necessário para reativar Stripe Tax e sair do modo de testes)
 - 🔜 Portal do cliente para gerenciar assinatura
-- 🔜 Landing page com os fluxos de checkout
+- ✅ Landing page com os fluxos de checkout (`/checkout` + `/checkout/sucesso` + `/definir-senha`)
+- ✅ Provisionamento automático de conta + email de acesso pós-pagamento (código pronto; falta instalar Resend via Vercel Marketplace + allowlist do redirect no Supabase Auth — ver seção "Aquisição via LP")
 
 ### 2. Vercel Pro 🔜
 - $120/mês; `maxDuration` até 300s — elimina falhas ocasionais no carrossel premium
@@ -240,7 +257,9 @@ Pulse é uma ferramenta web de design de posts para redes sociais com assistênc
 - `api/generate-image-ai.js` — gpt-image-1 (OpenAI); suporte a `aspectRatio`; retorna b64_json
 - `api/linkedin-auth.js` / `api/linkedin-callback.js` / `api/linkedin-post.js` — OAuth LinkedIn
 - `api/instagram-auth.js` / `api/instagram-callback.js` / `api/instagram-post.js` — OAuth Instagram
-- `api/stripe.js` — checkout + webhook consolidados (`?action=checkout|webhook`); crédito automático de pulses no Supabase
+- `api/stripe.js` — checkout + webhook consolidados (`?action=checkout|webhook`); crédito automático de pulses no Supabase; provisiona conta + dispara email de acesso no `checkout.session.completed`
+- `api-lib/provisionAccount.js` — `ensureUserForCheckout` (conta Supabase Auth + linha `user_tokens` + `action_link` de recovery); idempotente
+- `api-lib/sendEmail.js` — `sendEmail`/`sendAccessEmail` via Resend REST; no-op silencioso sem `RESEND_API_KEY`
 - `vercel.json` — rewrites para `/api/*`, `/api/stripe/webhook`, `/api/stripe/checkout`, `/auth/linkedin/*`, `/auth/instagram/*` e `/*`
 
 ---

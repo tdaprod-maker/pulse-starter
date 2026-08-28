@@ -7,6 +7,9 @@ import { TemplatesPage } from './pages/TemplatesPage'
 import { LoginPage } from './pages/LoginPage'
 import { BrandPage } from './pages/BrandPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { DefinirSenhaPage } from './pages/DefinirSenhaPage'
+import { CheckoutPage } from './pages/CheckoutPage'
+import { CheckoutSuccessPage } from './pages/CheckoutSuccessPage'
 import { CarouselPage } from './pages/CarouselPage'
 import { CarouselLibraryPage } from './pages/CarouselLibraryPage'
 import { PostLibraryPage } from './pages/PostLibraryPage'
@@ -102,6 +105,26 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/privacy" element={<PrivacyPage />} />
+      </Routes>
+    </BrowserRouter>
+  )
+
+  // Fluxo de aquisição via Stripe: essas telas precisam funcionar antes de
+  // qualquer sessão/onboarding (cliente que pagou pela LP e ainda não tem conta
+  // configurada), então ficam fora do gate de appState — como os callbacks OAuth.
+  if (window.location.pathname === '/definir-senha') return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/definir-senha" element={<DefinirSenhaPage />} />
+      </Routes>
+    </BrowserRouter>
+  )
+
+  if (window.location.pathname === '/checkout' || window.location.pathname === '/checkout/sucesso') return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/checkout/sucesso" element={<CheckoutSuccessPage />} />
       </Routes>
     </BrowserRouter>
   )

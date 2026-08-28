@@ -1,11 +1,11 @@
 export type CheckoutItem = 'monthly' | 'annual' | 'recharge_100' | 'recharge_200' | 'recharge_500'
 
 /** Cria a Checkout Session na Stripe e redireciona o browser pra ela. */
-export async function startCheckout(email: string, item: CheckoutItem): Promise<void> {
+export async function startCheckout(email: string, item: CheckoutItem, name?: string): Promise<void> {
   const res = await fetch('/api/stripe?action=checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, item }),
+    body: JSON.stringify({ email, item, ...(name ? { name } : {}) }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok || !data.url) {
