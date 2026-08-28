@@ -58,6 +58,21 @@ export async function ensureUserForCheckout({ email, name }) {
     .upsert({ user_email: normalizedEmail }, { onConflict: 'user_email', ignoreDuplicates: true })
   if (upsertErr) console.error('[provisionAccount] upsert user_tokens:', upsertErr)
 
+  // 2b. Se a conta Auth acabou de ser criada, qualquer access_email_sent_at que
+  //     tenha sobrado numa linha de user_tokens pré-existente é lixo de teste
+  //     (não há cascade entre auth.users e user_tokens — apagar o usuário no
+  //     Auth manualmente deixa a linha órfã). Zera pra o email de acesso poder
+  //     ser reenviado. No-op em produção: linha de cliente novo tem esse campo
+  //     nulo, e re-provisão de conta existente cai em isNew === false.
+  if (isNew) {
+    const { error: resetErr } = await admin
+      .from('user_tokens')
+      .update({ access_email_sent_at: null })
+      .eq('user_email', normalizedEmail)
+      .not('access_email_sent_at', 'is', null)
+    if (resetErr) console.error('[provisionAccount] reset access_email_sent_at:', resetErr)
+  }
+
   // 3. Link de acesso: tipo 'recovery' funciona tanto pra conta nova quanto
   //    existente e cai numa sessão onde updateUser({ password }) já vale — é o
   //    que a tela /definir-senha usa.

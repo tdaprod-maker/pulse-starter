@@ -281,6 +281,21 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   `sendEmail` retornou `{ sent: true }` — sem `RESEND_API_KEY` o envio é no-op e um replay do
   evento reenvia. `sendEmail` **nunca lança**: o webhook não pode devolver 500 pro Stripe só
   porque o email falhou (conta e pulses já foram provisionados).
+- **`user_tokens` / `brand_config` não têm FK pra `auth.users`** — são chaveadas por `user_email`
+  (texto), sem coluna `user_id`, então **não existe cascade**: apagar um usuário no Auth (dashboard
+  ou `admin.deleteUser`) deixa a linha em `user_tokens` órfã, com `access_email_sent_at` e
+  assinatura pendurados. Em teste, isso faz o email de acesso **não reenviar** no próximo checkout
+  (o guard `if (!tokRow?.access_email_sent_at)` pula em silêncio). Mitigação no código:
+  `ensureUserForCheckout` zera `access_email_sent_at` quando `isNew === true` (conta Auth recém
+  criada ⇒ flag anterior é lixo). Se precisar limpar à mão: `update user_tokens set
+  access_email_sent_at = null where user_email = '...'` (não delete a linha se ela tiver
+  `stripe_subscription_id` — perde o vínculo da assinatura).
+- **Roteamento no mount do `App.tsx`:** há um `useEffect([])` que, se `getSession()` retorna sessão
+  (e o pathname não é uma das telas standalone), chama `checkAndRoute()` direto — usuário
+  autenticado **não vê mais o intro** nem passa por `signOut → re-login`. Isso reverte de propósito
+  o "vídeo sempre vai pro login" (commit 42cd8c2): era ele que fazia o cliente recém-saído de
+  `/definir-senha` (já autenticado) ser deslogado e ter que logar de novo, e às vezes pular o
+  onboarding. Sem sessão, o fluxo `intro → login` continua igual.
 - **Telas do fluxo de aquisição ficam fora do gate de `appState`** em `src/App.tsx` — `/checkout`,
   `/checkout/sucesso` e `/definir-senha` são checadas por `window.location.pathname` antes de
   `if (appState === 'intro')`, igual aos callbacks OAuth (`/auth/*/done`, `/privacy`). Cliente que

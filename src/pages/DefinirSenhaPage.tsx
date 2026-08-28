@@ -45,7 +45,10 @@ export function DefinirSenhaPage() {
     if (error) { setError(error.message); setLoading(false); return }
     setDone(true)
     setLoading(false)
-    setTimeout(() => { window.location.href = '/' }, 2500)
+    // Não desloga: o cliente já está autenticado depois do updateUser. O reload
+    // pra "/" remonta o App, que no mount detecta a sessão e chama checkAndRoute
+    // — cliente novo (sem brand_config) cai no onboarding, sem re-login.
+    setTimeout(() => { window.location.href = '/' }, 1200)
   }
 
   async function handleRequestLink() {

@@ -85,6 +85,21 @@ export default function App() {
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  // Roteamento no mount: se o usuário já chega autenticado (voltou de
+  // /definir-senha depois de criar a senha, ou refresh com sessão persistida),
+  // roteia direto pelo brand_config em vez de forçar intro → signOut → re-login.
+  // Sem sessão, cai no fluxo normal (intro → login) sem mudança.
+  // As páginas standalone abaixo (callbacks OAuth, /checkout, /definir-senha)
+  // renderizam por conta própria e não devem disparar checkAndRoute aqui.
+  useEffect(() => {
+    const STANDALONE = ['/auth/linkedin/done', '/auth/instagram/done', '/privacy', '/definir-senha', '/checkout', '/checkout/sucesso']
+    if (STANDALONE.includes(window.location.pathname)) return
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user?.email) checkAndRoute()
+    })
+  }, [])
+
   if (window.location.pathname === '/auth/linkedin/done') return (
     <BrowserRouter>
       <Routes>
