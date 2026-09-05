@@ -248,40 +248,50 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   `saveConnection` (`src/services/socialConnections.ts`). Há `console.log` de diagnóstico em cada
   uma dessas quatro etapas (client e server) — úteis para depurar se um campo nunca chega até a UI;
   não remover sem necessidade.
-- **Ajuste pós-geração Premium (`editMode` em `api/generate-premium.js`):** quando o
-  usuário pede uma mudança numa imagem Premium já gerada, `AgentChat.tsx` (`runPremiumAdjust`) manda
-  a **imagem gerada** como `visualReferences[0]` + um `editMode`. Há **dois modos**, decididos por
-  `isRecomposeRequest(msg)` em `AgentChat.tsx`:
-  - `editMode: 'adjust'` (default — "escurece o fundo", "texto branco"): troca o `fullPrompt` inteiro
-    por um `adjustPrompt` curto de **preservação total**.
-  - `editMode: 'recompose'` ("mantém a pessoa, gera um novo ambiente ao redor" — a regex casa
-    verbo de troca/criação + `ambiente|cenário|fundo|local|lugar|paisagem|background|entorno`, e
-    **exclui** ajustes pontuais de fundo tipo `escure|clarei|desfoc|satur...` + `fundo`): usa o
-    `recomposePrompt`, que preserva identidade da(s) pessoa(s) + texto já embutido mas **manda
-    recriar o entorno**. A linguagem é deliberadamente enfática ("you MUST replace the entire
-    surrounding environment") porque o gpt-image-2 em `images/edits` tende a só reenquadrar.
-  Os dois modos **pulam de propósito** as seções de safe-zone / `CAROUSEL SLIDE TEXT OVERLAY` /
-  letterboxing / `SUBJECT_RULE_BY_STYLE` — elas foram feitas pra *gerar cena nova* e, numa imagem
-  que já tem texto renderizado, fazem o gpt-image-2 reposicionar/reescrever o texto. Não reintroduza
-  essas regras incondicionalmente em nenhum dos dois caminhos. Custo: `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE`
-  (4), tanto pro post único quanto por slide de carrossel. O slide-alvo do carrossel é sempre o
-  `carouselCurrentSlide` visível no `CarouselViewer` (passado via `premiumCarouselCurrentIndex`),
-  nunca inferido por texto.
-  - **Terceiro caso — ADICIONAR texto que não existia:** pedir "não mexa em texto nenhum" (o
-    `adjustPrompt` padrão) contradiz um pedido de "escreve 'X' no rodapé", e sem nenhuma regra de
-    safe-zone/tipografia o gpt-image-2 improvisa (fonte serifada, texto cortado nas bordas — bug
-    real). `isAddTextRequest(msg)` em `AgentChat.tsx` detecta esse caso (verbo de
-    adicionar/escrever perto de "texto/frase/legenda", ou perto de uma citação entre aspas) e seta
-    `addingText: true` no payload de `adjustPremiumImage`/`/api/generate-premium`. Nesse caso
-    `generate-premium.js` usa uma variante do `adjustPrompt` que permite adicionar o texto pedido e
-    injeta `buildTextTypographyRules()` (safe-zone, sans-serif único, tamanho mínimo, acentuação —
-    a mesma função usada em `carouselTextOverlay` pra geração normal). Não afeta `recomposePrompt`.
-  - **Post único Premium sem texto mesmo pedindo:** `PremiumPage.tsx` (modo `single`) não passava
-    `slideTitle` pro `generateImage`, então a seção `carouselTextOverlay`/`buildTextTypographyRules`
-    (a única com regra mandatória de texto) nunca ativava fora do carrossel — o texto ficava 100%
-    a critério do modelo dentro do brief livre. Corrigido com `extractQuotedText(prompt)`: se o
-    usuário citar o texto literal entre aspas no brief, ele vira `slideTitle` e ativa as mesmas
-    regras do carrossel. Sem aspas no prompt, comportamento inalterado (sem texto mandatório).
+- **Texto no Premium é SEMPRE overlay de canvas, nunca renderizado pelo gpt-image-2
+  (mudança estrutural, 05/09/2026).** Depois de repetidos casos de texto vazando da
+  safe zone / fonte inconsistente mesmo com várias rodadas de regras de prompt cada
+  vez mais explícitas (safe-zone em %, tipografia única, tamanho mínimo — tudo isso
+  chegou a existir em `api/generate-premium.js` e ainda assim falhava), a conclusão
+  foi que **instrução de prompt para tipografia é estruturalmente não-confiável** no
+  gpt-image-2. A arquitetura mudou: o modelo **nunca mais é instruído a renderizar
+  texto** (regra `CRITICAL — NO TEXT` incondicional no `fullPrompt`, e um
+  `reservedTextSpaceHint` quando há `slideTitle` só pra pedir que a imagem deixe a
+  faixa inferior "limpa" visualmente — nunca pra pedir que escreva algo ali).
+  - **`src/services/textOverlay.ts`** (`overlayTextOnImage`) desenha o headline/subtitle
+    de verdade, depois da geração, num `<canvas>` — mesmo padrão que `logoOverlay.ts`
+    já usava pro logo. Margens de safe-zone (3% lateral / 4.5% vertical) e fonte
+    sans-serif (Helvetica/Arial) são **constantes de código**, não texto de prompt —
+    a garantia agora é matemática (auto-fit reduzindo o tamanho até caber, com
+    truncamento de linhas como último recurso), não uma instrução que o modelo pode
+    ignorar. Chamado de `PremiumPage.tsx` (post único + cada slide do carrossel) e
+    `AgentChat.tsx` (`generatePremium`/`generatePremiumCarousel`), sempre depois do
+    `cropImageToRatio` e antes do overlay de logo.
+  - **Texto literal vem sempre de uma fonte determinística**, nunca do que o modelo
+    "decidiu" escrever: `slideContent` já calculado por `breakCarouselIntoSlides` pro
+    carrossel, ou `extractQuotedText(prompt)` (texto citado entre aspas no brief) pro
+    post único — sem aspas, nenhum texto é forçado na imagem.
+  - **`runPremiumAdjust` em `AgentChat.tsx`** ainda decide `editMode: 'adjust'` vs
+    `'recompose'` via `isRecomposeRequest(msg)` pra ajustes visuais pontuais (cor,
+    luz, fundo) — esses dois modos continuam chamando `/api/generate-premium` com
+    prompts de preservação total (`adjustPrompt`/`recomposePrompt`, sem nenhuma regra
+    de texto, pois nunca adicionam texto). Mas **"adicionar texto" nem chega mais
+    nesse endpoint**: `isAddTextRequest(msg)` detecta o pedido, `extractQuotedText`
+    extrai o texto exato entre aspas (sem aspas, o agente pede pro usuário
+    especificar em vez de adivinhar) e `overlayTextOnImage` desenha direto em cima da
+    imagem atual em memória — zero chamada ao gpt-image-2, instantâneo. Ainda debita
+    `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` por consistência com o resto do fluxo de
+    ajuste, embora tecnicamente não tenha mais custo de API — decisão de produto em
+    aberto se isso deveria virar grátis.
+  - Custo do ajuste visual (não-texto): `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` (4), post
+    único ou por slide de carrossel. O slide-alvo do carrossel é sempre o
+    `carouselCurrentSlide` visível no `CarouselViewer` (passado via
+    `premiumCarouselCurrentIndex`), nunca inferido por texto.
+  - **Se algum caso novo de texto no Premium aparecer no futuro** (ex: editar o texto
+    de um post já salvo na Biblioteca, sem a versão "limpa" em memória), NÃO
+    reintroduza renderização de texto via prompt do gpt-image-2 — é exatamente o
+    padrão que causou o bug recorrente. Prefira sempre computar/obter a imagem base
+    e desenhar por cima via `overlayTextOnImage`.
 - **Persistência do ajuste na Biblioteca:** depois de um ajuste/recompose bem-sucedido,
   `runPremiumAdjust` chama `persistAdjustedPremium` para **sobrescrever o registro que já existe** na
   Biblioteca (senão o histórico continuaria mostrando o original). Post único → `uploadThumbnail` +

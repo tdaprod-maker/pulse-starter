@@ -306,10 +306,6 @@ export async function adjustPremiumImage(params: {
   segment?: string
   styleContext?: string
   mode?: 'adjust' | 'recompose'
-  /** Pedido detectado como "adicionar texto novo" (ver isAddTextRequest em AgentChat.tsx) —
-   *  faz o endpoint trocar a diretiva "não mexa em texto" por uma que injeta as regras
-   *  obrigatórias de safe-zone/tipografia para o texto sendo adicionado. */
-  addingText?: boolean
 }): Promise<{ image: string }> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 55000)
@@ -326,7 +322,6 @@ export async function adjustPremiumImage(params: {
         styleContext: params.styleContext,
         slideIndex: 1,
         totalSlides: 1,
-        addingText: params.addingText ?? false,
       }),
       signal: controller.signal,
     })

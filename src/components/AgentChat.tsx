@@ -6,6 +6,7 @@ import { agentChat, generatePostContent, generateCarouselContent, generatePremiu
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail, updateCarouselSlideImages } from '../services/brandKit'
 import { overlayLogoOnImage } from '../services/logoOverlay'
+import { overlayTextOnImage } from '../services/textOverlay'
 import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
 import { validateSlides, validatePremiumSlides } from '../services/carouselValidation'
@@ -77,6 +78,14 @@ function isAddTextRequest(msg: string): boolean {
   // aspas, sem a palavra "texto"/"frase" por perto. A presença da citação já é o sinal.
   const hasQuote = /["“”'‘’][^"“”'‘’]{2,80}["“”'‘’]/.test(msg)
   return hasQuote && new RegExp(addVerb).test(t)
+}
+
+/** Extrai um texto literal entre aspas (ex: 'adiciona o texto "Compre já"') — usado
+ *  pra saber exatamente o que desenhar via overlayTextOnImage, tanto na geração de
+ *  post único quanto no ajuste "adicionar texto" (ver isAddTextRequest acima). */
+function extractQuotedText(text: string): string | null {
+  const match = text.match(/["“”'‘’]([^"“”'‘’]{2,80})["“”'‘’]/)
+  return match ? match[1].trim() : null
 }
 
 export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
@@ -739,6 +748,59 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   }
 
   async function runPremiumAdjust(instruction: string, slideIndex: number | null, mode: 'adjust' | 'recompose' = 'adjust', addingText: boolean = false) {
+    // "Adicionar texto" nunca mais passa pelo gpt-image-2 — é um overlayTextOnImage
+    // direto na imagem atual (ver ESTRUTURAL em api/generate-premium.js). Precisa do
+    // texto literal entre aspas pra saber exatamente o que desenhar; sem aspas, pede
+    // pro usuário especificar em vez de adivinhar.
+    if (addingText) {
+      const literalText = extractQuotedText(instruction)
+      if (!literalText) {
+        setMessages(prev => [...prev, { role: 'agent', content: 'Pode escrever o texto exato entre aspas? Ex: adiciona o texto "Compre já" no rodapé.' }])
+        return
+      }
+      setGenerating(true)
+      try {
+        const { data: authData } = await supabase.auth.getUser()
+        const userEmail = authData.user?.email ?? ''
+        let baseImage: string | undefined
+        if (slideIndex === null) {
+          baseImage = validatePremiumSlides<PremiumSlide>(premiumSlides)[0]?.image
+        } else {
+          baseImage = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])[slideIndex]?.imageUrl
+        }
+        if (!baseImage) {
+          setMessages(prev => [...prev, { role: 'agent', content: 'Não encontrei a imagem para ajustar. Tente gerar novamente.' }])
+          return
+        }
+        const balance = await getTokenBalance(userEmail)
+        if (balance < PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE) {
+          setMessages(prev => [...prev, { role: 'agent', content: `Saldo insuficiente. Você tem ${balance} pulses e precisa de ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} para adicionar texto.` }])
+          return
+        }
+        const adjusted = await overlayTextOnImage(baseImage, { headline: literalText })
+        const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE)
+        if (debit.success) notifyBalanceUpdate()
+        if (slideIndex === null) {
+          const updated = validatePremiumSlides<PremiumSlide>(premiumSlides).map((s, i) => (i === 0 ? { ...s, image: adjusted } : s))
+          onPremiumSlidesUpdate?.(updated)
+          const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.image))
+          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? '✦ Texto adicionado! Biblioteca atualizada. Pode pedir outro ajuste se quiser.' : '✦ Texto adicionado! Pode pedir outro ajuste se quiser.' }])
+        } else {
+          const updated = validateSlides<SlideWithImage>(premiumCarouselSlides ?? []).map((s, i) => (i === slideIndex ? { ...s, imageUrl: adjusted } : s))
+          onCarouselSlidesUpdate?.(updated)
+          const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.imageUrl))
+          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? `✦ Slide ${slideIndex + 1} — texto adicionado! Biblioteca atualizada.` : `✦ Slide ${slideIndex + 1} — texto adicionado!` }])
+        }
+      } catch (e: unknown) {
+        console.error('[runPremiumAdjust addingText] erro:', e)
+        setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao adicionar o texto. Tente novamente.' }])
+      } finally {
+        setGenerating(false)
+        onGenerated?.()
+      }
+      return
+    }
+
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
@@ -792,7 +854,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         segment: brandCtx?.segment,
         styleContext,
         mode,
-        addingText,
       })
       const adjusted = await cropImageToRatio(rawImage, ratio)
 
@@ -912,9 +973,14 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       // Crop para o formato especificado pelo agente
       const croppedImage = await cropImageToRatio(rawImage, fmt.ratio)
+      // Texto literal citado entre aspas no brief (ex: "com o texto 'Compre já'") é
+      // desenhado depois via canvas — o gpt-image-2 nunca é instruído a renderizá-lo
+      // (ver ESTRUTURAL em api/generate-premium.js). Sem aspas, nenhum texto é forçado.
+      const literalText = extractQuotedText(prompt)
+      const finalImage = literalText ? await overlayTextOnImage(croppedImage, { headline: literalText }) : croppedImage
 
       let slides: PremiumSlide[] = [
-        { image: croppedImage, label: fmt.label },
+        { image: finalImage, label: fmt.label },
       ]
 
       // Debita pulses
@@ -1174,6 +1240,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               const data = await premRes.json() as { image?: string }
               // A API sempre retorna 1024x1536 (2:3) — cropa para o 4:5 real do carrossel
               imageUrl = data.image ? await cropImageToRatio(data.image, '4/5') : ''
+              // Headline/subtitle do slide são sempre desenhados depois via canvas —
+              // nunca pedidos ao gpt-image-2 (ver ESTRUTURAL em api/generate-premium.js).
+              if (imageUrl && resolvedSlideTitle) {
+                imageUrl = await overlayTextOnImage(imageUrl, { headline: resolvedSlideTitle, subtitle: resolvedSlideBody || undefined })
+              }
             } else {
               const err = await premRes.json().catch(() => ({})) as { error?: string }
               console.error(`[generatePremiumCarousel] slide ${i + 1} erro HTTP:`, err)

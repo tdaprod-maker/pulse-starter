@@ -6,6 +6,7 @@ import { debitToken, notifyBalanceUpdate } from '../services/tokens'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail } from '../services/brandKit'
 import { turboPrompt } from '../services/gemini'
 import { validatePremiumSlides } from '../services/carouselValidation'
+import { overlayTextOnImage } from '../services/textOverlay'
 
 const SLIDE_OPTIONS = [3, 4, 5, 6, 7]
 const PULSE_SINGLE = 4
@@ -193,16 +194,19 @@ export function PremiumPage() {
         // já que a imagem bruta gerada pela API vem em 1024x1536 (2:3), que
         // não corresponde a nenhum desses formatos.
         setCurrentStep(1)
-        const verticalPrompt = `Create a professional social media post. Content: ${prompt}. Vertical format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. Use compact font sizes and tight line spacing. No text or elements near edges. No borders, frames or decorative containers. Background only in outer areas.`
         // Se o usuário pediu um texto literal entre aspas (ex: "com o texto 'Compre já'"),
-        // repassa como slideTitle — isso ativa as regras obrigatórias de safe-zone e
-        // tipografia sans-serif no endpoint (antes só o carrossel passava esse campo,
-        // por isso o post único às vezes saía sem texto nenhum).
+        // repassa como slideTitle — isso só avisa o endpoint pra reservar espaço limpo
+        // na imagem (nunca mais pra pedir que o gpt-image-2 escreva o texto: ver
+        // "ESTRUTURAL" em api/generate-premium.js). O texto em si é sempre desenhado
+        // depois via overlayTextOnImage, com safe-zone garantida em código.
         const literalText = extractQuotedText(prompt)
+        const verticalPrompt = `Create a professional social media post. Content: ${prompt}. Vertical format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. Use compact font sizes and tight line spacing. No text or elements near edges. No borders, frames or decorative containers. Background only in outer areas.`
         const verticalImage = await generateImage(verticalPrompt, 1, 1, styleContext, '1024x1536', visualReferences, literalText ?? undefined)
-        generated.push({ image: await cropImageToRatio(verticalImage, '9/16'), label: '9:16' })
-        generated.push({ image: await cropImageToRatio(verticalImage, '4/5'), label: '4:5' })
-        generated.push({ image: await cropImageToRatio(verticalImage, '1/1'), label: '1:1' })
+        for (const ratio of ['9/16', '4/5', '1/1'] as const) {
+          const cropped = await cropImageToRatio(verticalImage, ratio)
+          const withText = literalText ? await overlayTextOnImage(cropped, { headline: literalText }) : cropped
+          generated.push({ image: withText, label: ratio === '9/16' ? '9:16' : ratio === '4/5' ? '4:5' : '1:1' })
+        }
         setSlides([...generated])
       } else {
         setTotalSteps(slideCount)
@@ -229,13 +233,18 @@ export function PremiumPage() {
           ]
           const scene = visualScenes[(i - 2) % visualScenes.length]
 
+          // O texto (slideContent) nunca mais é pedido ao gpt-image-2 pra renderizar —
+          // essas descrições só orientam a composição/mood visual. slideContent é
+          // desenhado depois via overlayTextOnImage (safe-zone garantida em código).
           const slidePromptText = i === 1
-            ? `CAROUSEL COVER SLIDE 1 of ${slideCount}. MANDATORY TEXT TO DISPLAY: "${slideContent}". The headline shown in the image MUST be based strictly on this text — do not invent or replace it. Design: bold full-bleed editorial image, ultra-bold headline maximum 4 words centered, strong visual hook that stops the scroll. Dark background, brand accent color on key word, cinematic directional lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            ? `CAROUSEL COVER SLIDE 1 of ${slideCount}, theme: "${slideContent}". Design: bold full-bleed editorial image with a strong visual hook that stops the scroll, matching the theme above. Dark background, cinematic directional lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. Leave the lower third of the image clean and uncluttered for a text overlay to be added later. No borders or frames.`
             : i === slideCount
-            ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}. This is a CALL TO ACTION slide. The CTA phrase to display is: "${slideContent}". Show this as a bold visual CTA — large action words, a highlighted button or underline on the key phrase. Do NOT write the word "CTA" — just display the action phrase visually. One supporting line maximum 8 words. Dark background, brand accent color on CTA element, cinematic mood. NO robotic hands, NO AI cubes. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
-            : `CAROUSEL SLIDE ${i} of ${slideCount}. THE HEADLINE FOR THIS SLIDE IS EXACTLY: "${slideContent}". Use these words as the main headline — do not substitute, do not invent a different headline, do not use the carousel topic as the headline. Visual scene: ${scene}. Design: the headline IS the specific text provided above, supporting line maximum 8 words complementing it. Dark background, brand accent color on one key word of the headline, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. All text within center 55% width and 60% height. No borders or frames.`
+            ? `CAROUSEL CLOSING SLIDE ${slideCount} of ${slideCount}, a call-to-action slide themed around: "${slideContent}". Show a bold visual composition supporting a CTA that will be overlaid later — e.g. a highlighted button-shaped element or clean focal area. Dark background, cinematic mood. NO robotic hands, NO AI cubes. Vertical 4:5 format. Leave the lower third of the image clean and uncluttered for a text overlay to be added later. No borders or frames.`
+            : `CAROUSEL SLIDE ${i} of ${slideCount}, theme: "${slideContent}". Visual scene: ${scene}. Design: the scene above should visually evoke this theme, supporting a headline that will be overlaid later. Dark background, cinematic lighting. NO robotic hands, NO AI cubes, NO generic tech imagery. Vertical 4:5 format. Leave the lower third of the image clean and uncluttered for a text overlay to be added later. No borders or frames.`
           const image = await generateImage(slidePromptText, i, slideCount, styleContext, '1024x1536', visualReferences, slideContent)
-          generated.push({ image: await cropImageToRatio(image, '4/5'), label: `Slide ${i}` })
+          const cropped = await cropImageToRatio(image, '4/5')
+          const withText = await overlayTextOnImage(cropped, { headline: slideContent })
+          generated.push({ image: withText, label: `Slide ${i}` })
           setSlides([...generated])
         }
       }
