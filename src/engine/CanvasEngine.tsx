@@ -401,10 +401,14 @@ function renderElement(el: CanvasElement, opts: RenderOptions) {
       !!templateId &&
       PHOTO_TEXT_FLIP_PREFIXES.some((p) => templateId.startsWith(p)) &&
       !PHOTO_TEXT_FLIP_EXCLUDE_IDS.has(el.id)
-    const fill =
-      (isEditorialWithBg && (el.id === 'title' || el.id === 'body')) ||
-      (isHeroWithBg && el.id === 'subtitle') ||
-      needsPhotoTextFlip
+    // Se o usuário escolheu a cor manualmente no PropertiesPanel (props.colorOverride),
+    // essa escolha vence o auto-flip de legibilidade acima — sem isso, o color picker
+    // parecia não fazer nada nesses templates com foto de fundo.
+    const fill = el.props.colorOverride
+      ? (el.props.fill as string) ?? '#000000'
+      : (isEditorialWithBg && (el.id === 'title' || el.id === 'body')) ||
+        (isHeroWithBg && el.id === 'subtitle') ||
+        needsPhotoTextFlip
         ? '#FFFFFF'
         : (el.props.fill as string) ?? '#000000'
 

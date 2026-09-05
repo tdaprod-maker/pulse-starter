@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadLogo, uploadMedia } from '../services/brandKit'
-import { analyzeVisualReferences } from '../services/gemini'
+import { analyzeVisualReferences, type VisualReferenceAnalysis } from '../services/gemini'
 import { getNicheQuestions } from '../data/nicheQuestions'
 
 export const SEGMENTS: { label: string; nicheKey: string }[] = [
@@ -73,6 +73,8 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
   const [refImages, setRefImages] = useState<string[]>([])
   const [analyzingRefs, setAnalyzingRefs] = useState(false)
   const [visualStyle, setVisualStyle] = useState<string>('')
+  const [refAnalysis, setRefAnalysis] = useState<VisualReferenceAnalysis | null>(null)
+  const [analyzeError, setAnalyzeError] = useState('')
   const refInputRef = useRef<HTMLInputElement>(null)
   const [colorPrimary, setColorPrimary] = useState('#3A5AFF')
   const [colorSecondary, setColorSecondary] = useState('#000000')
@@ -127,11 +129,16 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
   async function handleAnalyzeRefs() {
     if (!refImages.length) return
     setAnalyzingRefs(true)
+    setAnalyzeError('')
     try {
       const analysis = await analyzeVisualReferences(refImages)
       setVisualStyle(analysis)
-    } catch {
+      setRefAnalysis(JSON.parse(analysis) as VisualReferenceAnalysis)
+    } catch (err) {
+      console.error('[handleAnalyzeRefs] erro:', err)
       setVisualStyle('')
+      setRefAnalysis(null)
+      setAnalyzeError(err instanceof Error ? err.message : 'Não foi possível analisar as referências. Tente novamente.')
     } finally {
       setAnalyzingRefs(false)
     }
@@ -636,9 +643,26 @@ export function OnboardingPage({ onComplete }: { onComplete?: () => void } = {})
                 </button>
               )}
 
+              {analyzeError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{analyzeError}</p>}
+
               {visualStyle && (
-                <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <p style={{ fontSize: '12px', color: 'rgb(34,197,94)', margin: 0, fontWeight: 600 }}>✓ Estilo analisado e salvo</p>
+                  {refAnalysis?.estilo_geral && (
+                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                      <strong>Estilo:</strong> {refAnalysis.estilo_geral}
+                    </p>
+                  )}
+                  {refAnalysis?.cores_predominantes && refAnalysis.cores_predominantes.length > 0 && (
+                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                      <strong>Cores:</strong> {refAnalysis.cores_predominantes.join(', ')}
+                    </p>
+                  )}
+                  {refAnalysis?.composicao && (
+                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                      <strong>Composição:</strong> {refAnalysis.composicao}
+                    </p>
+                  )}
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0' }}>A IA vai usar esse perfil para gerar posts no seu estilo.</p>
                 </div>
               )}

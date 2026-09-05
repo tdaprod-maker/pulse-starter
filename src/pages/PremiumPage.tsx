@@ -11,6 +11,13 @@ const SLIDE_OPTIONS = [3, 4, 5, 6, 7]
 const PULSE_SINGLE = 4
 const PULSE_PER_SLIDE = 2
 
+/** Extrai um texto literal entre aspas do brief do usuário (ex: 'com o texto "Compre já"')
+ *  para repassar como slideTitle ao endpoint — ver uso em handleGenerate (modo single). */
+function extractQuotedText(text: string): string | null {
+  const match = text.match(/["“”'‘’]([^"“”'‘’]{2,80})["“”'‘’]/)
+  return match ? match[1].trim() : null
+}
+
 type Mode = 'single' | 'carousel'
 type Slide = { image: string; label: string; aspectRatio?: string }
 
@@ -187,7 +194,12 @@ export function PremiumPage() {
         // não corresponde a nenhum desses formatos.
         setCurrentStep(1)
         const verticalPrompt = `Create a professional social media post. Content: ${prompt}. Vertical format. CRITICAL LAYOUT RULES: All text and visual elements must be strictly within the CENTER 55% of image width and CENTER 60% of image height. Use compact font sizes and tight line spacing. No text or elements near edges. No borders, frames or decorative containers. Background only in outer areas.`
-        const verticalImage = await generateImage(verticalPrompt, 1, 1, styleContext, '1024x1536', visualReferences)
+        // Se o usuário pediu um texto literal entre aspas (ex: "com o texto 'Compre já'"),
+        // repassa como slideTitle — isso ativa as regras obrigatórias de safe-zone e
+        // tipografia sans-serif no endpoint (antes só o carrossel passava esse campo,
+        // por isso o post único às vezes saía sem texto nenhum).
+        const literalText = extractQuotedText(prompt)
+        const verticalImage = await generateImage(verticalPrompt, 1, 1, styleContext, '1024x1536', visualReferences, literalText ?? undefined)
         generated.push({ image: await cropImageToRatio(verticalImage, '9/16'), label: '9:16' })
         generated.push({ image: await cropImageToRatio(verticalImage, '4/5'), label: '4:5' })
         generated.push({ image: await cropImageToRatio(verticalImage, '1/1'), label: '1:1' })

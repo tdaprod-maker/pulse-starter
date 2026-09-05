@@ -61,6 +61,24 @@ function isRecomposeRequest(msg: string): boolean {
   return re1.test(t) || re2.test(t)
 }
 
+// Detecta pedido de ADICIONAR texto novo à imagem (ex: "adiciona o texto 'Compre já'",
+// "escreve 'Feliz Natal' embaixo", "coloca uma frase no topo"). Diferente de um ajuste
+// de pixel comum, isso precisa das regras de safe-zone/tipografia — sem essa detecção,
+// o adjustPrompt padrão diz explicitamente "não mexa em texto", contradizendo o pedido
+// e deixando o gpt-image-2 sem nenhuma regra a seguir (fonte serifada, texto cortado).
+function isAddTextRequest(msg: string): boolean {
+  const t = msg.toLowerCase()
+  const addVerb = '(adicion\\w*|coloc\\w*|p[oõ]e\\w*|inser\\w*|escrev\\w*|bota\\w*)'
+  const textNoun = '(texto|frase|legenda|t[ií]tulo|palavra|mensagem)'
+  const re1 = new RegExp(`${addVerb}[\\s\\S]{0,30}${textNoun}`)
+  const re2 = new RegExp(`${textNoun}[\\s\\S]{0,30}${addVerb}`)
+  if (re1.test(t) || re2.test(t)) return true
+  // "escreve 'Feliz Natal' no topo" — verbo de escrita/inserção perto de um texto entre
+  // aspas, sem a palavra "texto"/"frase" por perto. A presença da citação já é o sinal.
+  const hasQuote = /["“”'‘’][^"“”'‘’]{2,80}["“”'‘’]/.test(msg)
+  return hasQuote && new RegExp(addVerb).test(t)
+}
+
 export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
@@ -219,7 +237,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const [pendingEngineChoice, setPendingEngineChoice] = useState<PendingGeneration | null>(null)
   // Ajuste pós-geração de imagem Premium aguardando confirmação de custo.
   // slideIndex null = post único Premium; número = índice do slide do carrossel Premium.
-  const [pendingPremiumAdjust, setPendingPremiumAdjust] = useState<{ instruction: string; slideIndex: number | null; mode: 'adjust' | 'recompose' } | null>(null)
+  const [pendingPremiumAdjust, setPendingPremiumAdjust] = useState<{ instruction: string; slideIndex: number | null; mode: 'adjust' | 'recompose'; addingText: boolean } | null>(null)
   const [hasGeneratedPost, setHasGeneratedPost] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -720,7 +738,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     return false
   }
 
-  async function runPremiumAdjust(instruction: string, slideIndex: number | null, mode: 'adjust' | 'recompose' = 'adjust') {
+  async function runPremiumAdjust(instruction: string, slideIndex: number | null, mode: 'adjust' | 'recompose' = 'adjust', addingText: boolean = false) {
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
@@ -774,6 +792,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         segment: brandCtx?.segment,
         styleContext,
         mode,
+        addingText,
       })
       const adjusted = await cropImageToRatio(rawImage, ratio)
 
@@ -1263,9 +1282,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       // ── Ajuste pós-geração da imagem: pede confirmação de custo antes de rodar. ──
       const slideIndex = isPremiumCarouselActive ? (premiumCarouselCurrentIndex ?? 0) : null
       const mode: 'adjust' | 'recompose' = isRecomposeRequest(msgText) ? 'recompose' : 'adjust'
+      const addingText = mode === 'adjust' && isAddTextRequest(msgText)
       setMessages(prev => [...prev, userMsg])
       setInput('')
-      setPendingPremiumAdjust({ instruction: msgText, slideIndex, mode })
+      setPendingPremiumAdjust({ instruction: msgText, slideIndex, mode, addingText })
       const slideLabel = slideIndex === null ? '' : `no slide ${slideIndex + 1} `
       setMessages(prev => [...prev, {
         role: 'agent',
@@ -1637,7 +1657,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               onClick={() => {
                 const p = pendingPremiumAdjust
                 setPendingPremiumAdjust(null)
-                runPremiumAdjust(p.instruction, p.slideIndex, p.mode)
+                runPremiumAdjust(p.instruction, p.slideIndex, p.mode, p.addingText)
               }}
               style={{
                 padding: '7px 14px', borderRadius: '8px', border: 'none',

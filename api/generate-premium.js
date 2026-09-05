@@ -110,7 +110,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody, visualStyle, editMode } = req.body
+  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody, visualStyle, editMode, addingText } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' })
@@ -144,23 +144,36 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'OPENAI_API_KEY not configured' })
   }
 
-  // Presente apenas em slides de carrossel premium
+  // Regras de tipografia/safe-zone compartilhadas por qualquer caminho que precise
+  // renderizar texto de verdade na imagem — geração normal (via carouselTextOverlay
+  // abaixo) e o modo de ajuste quando o pedido é para ADICIONAR texto novo (ver
+  // adjustPrompt mais abaixo). Extraído pra não duplicar essas regras críticas
+  // (safe-zone, tipografia sans-serif única, tamanho mínimo, acentuação) em dois
+  // lugares — um bug real já aconteceu por causa dessa duplicação (ver CLAUDE.md).
+  function buildTextTypographyRules() {
+    return `- Typography must be elegant and modern, matching the brand style
+- Text in Portuguese (Brazil) as provided — do NOT translate or change it
+- Typography consistency is critical: use only a single clean sans-serif typeface (like Helvetica, Arial or similar) throughout the entire image. Bold weight for headline, regular weight for subtitle. No decorative fonts, no mixed typefaces, no serif fonts.
+- CRITICAL SAFE ZONE (Instagram compliance): For a 1080x1350px (4:5) canvas, keep all text and logo elements within a safe zone of 1012x1230px centered in the image — that means a margin of approximately 34px from left/right edges and 60px from top/bottom edges. Scale this proportionally for other aspect ratios (1:1, 9:16, 16:9): maintain roughly 3% margin on left/right and 4.5% margin on top/bottom relative to canvas dimensions. NEVER place text or logo outside this safe zone. This is mandatory for correct display in Instagram feed and profile grid without cropping — text must NEVER be cropped or cut off at the edges.
+- CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
+- CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.`
+  }
+
+  // Presente quando há um título/headline específico a renderizar — slides de
+  // carrossel premium e (desde a correção do bug de "post sem texto") posts únicos
+  // cujo brief contém texto literal a ser exibido (ver PremiumPage.tsx, extração de
+  // texto entre aspas no prompt do usuário).
   const carouselTextOverlay = slideTitle ? `
 
-CAROUSEL SLIDE TEXT OVERLAY — MANDATORY OVERRIDE:
-This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. This requirement takes priority over any conflicting typography guidance above.
+MANDATORY TEXT TO RENDER — OVERRIDE:
+${totalSlides > 1 ? `This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. ` : ''}This requirement takes priority over any conflicting typography guidance above.
 ${slideBody
   ? `Render ONLY this exact text visible in the image: "${slideTitle}" as the headline, and "${slideBody}" as a short supporting subtitle. Nothing else. No bullet points, no icons with labels, no lists, no additional text sections.`
   : `Render ONLY this exact text visible in the image: "${slideTitle}". Nothing else. No subtitles, no bullet points, no icons with labels, no lists, no multiple text sections.`}
 Text placement rules:
 - Position in the lower-center or center zone of the image
 - Ensure high contrast: white text on dark areas, or dark text on light areas, or use a semi-transparent background strip
-- Typography must be elegant and modern, matching the brand style
-- Text in Portuguese (Brazil) as provided above — do NOT translate or change it
-- Typography consistency is critical: use only a single clean sans-serif typeface (like Helvetica, Arial or similar) throughout the entire image. Bold weight for headline, regular weight for subtitle. No decorative fonts, no mixed typefaces.
-- CRITICAL SAFE ZONE (Instagram compliance): For a 1080x1350px (4:5) canvas, keep all text and logo elements within a safe zone of 1012x1230px centered in the image — that means a margin of approximately 34px from left/right edges and 60px from top/bottom edges. Scale this proportionally for other aspect ratios (1:1, 9:16, 16:9): maintain roughly 3% margin on left/right and 4.5% margin on top/bottom relative to canvas dimensions. NEVER place text or logo outside this safe zone. This is mandatory for correct display in Instagram feed and profile grid without cropping.
-- CRITICAL FONT SIZE: All text must be large enough to be read clearly on a mobile phone screen at normal viewing distance. Headline text should be bold and occupy significant visual weight. Never use small, thin, or delicate typography for headlines. Body text should be at minimum 60% the size relative to headline for clear hierarchy.
-- CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.` : ''
+${buildTextTypographyRules()}` : ''
 
   const visualStyleDirective = hasReferencePhoto
     ? "Match the lighting, color grading, and photographic style already present in the reference photo. Do NOT impose a new visual style, mood, or photographic treatment — the reference photo's existing look is the target, not a starting point to redesign."
@@ -251,8 +264,38 @@ Avoid: ${hasReferencePhoto
   // Prompt minimalista para ajuste pós-geração: a imagem recebida já está pronta
   // (com texto embutido) e o único objetivo é aplicar a mudança pedida sem
   // reinterpretar composição, texto, cores ou sujeito. Nenhuma regra de
-  // safe-zone / overlay de texto / letterboxing entra aqui de propósito.
-  const adjustPrompt = `Make an image that nobody would suspect was generated by AI.
+  // safe-zone / overlay de texto / letterboxing entra aqui de propósito — EXCETO
+  // quando o pedido é especificamente para ADICIONAR texto novo (addingText),
+  // caso em que a diretiva "não mexa em texto" contradiria o próprio pedido do
+  // usuário e o gpt-image-2 fica sem nenhuma regra de tipografia/safe-zone pra
+  // seguir, produzindo fonte serifada aleatória e texto cortado nas bordas.
+  const adjustPrompt = addingText ? `Make an image that nobody would suspect was generated by AI.
+
+CRITICAL — THE PROVIDED IMAGE IS THE EXACT VISUAL BASE:
+Use the provided image as the exact base for the output. Do NOT redraw, reinterpret,
+recreate, regenerate, recompose, or restyle it. The output must be recognizably the
+same image, unchanged in every region not covered by the text being added below.
+
+The user is requesting new text to be added on top of this image: ${prompt}
+Add exactly the text requested above, spelled exactly as provided, in the position
+requested (or the lower-third of the image if no position was specified). Preserve
+everything else exactly as is — composition, layout, framing, any text already present
+and its exact wording, position and font, colors, subject, people, background.
+
+MANDATORY RULES FOR THE TEXT BEING ADDED:
+${buildTextTypographyRules()}
+
+Do NOT move, resize, restyle or rephrase any text that was already present in the image.
+Do NOT add any logo or brand mark. Do NOT crop, pad, letterbox or change the aspect ratio.
+${photoIdentitySection}
+
+QUALITY STANDARD: Polished, professional edit — indistinguishable from the original image
+with only the requested text added.
+
+Avoid: redrawing or reinterpreting the scene, changing or repositioning any pre-existing
+text, changing the layout or composition, replacing the background, altering the subject,
+serif or decorative typefaces, text touching or crossing the safe-zone margins, generic AI
+aesthetics, plastic skin, oversaturated colors, fake HDR.` : `Make an image that nobody would suspect was generated by AI.
 
 CRITICAL — THE PROVIDED IMAGE IS THE EXACT VISUAL BASE:
 Use the provided image as the exact base for the output. Do NOT redraw, reinterpret,

@@ -93,8 +93,9 @@ export function PostReviewer({ stageRef, template }: PostReviewerProps) {
         tone: brand?.tone,
       })
       setReview(result)
-    } catch {
-      setError('Não foi possível analisar o post. Tente novamente.')
+    } catch (err) {
+      console.error('[PostReviewer] erro:', err)
+      setError(err instanceof Error ? err.message : 'Não foi possível analisar o post. Tente novamente.')
     } finally {
       setReviewing(false)
     }

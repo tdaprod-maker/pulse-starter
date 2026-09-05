@@ -277,7 +277,7 @@ function TextFieldPanel({ el, templateId }: { el: CanvasElement; templateId: str
         {/* Cor do texto */}
         <ColorSwatch
           color={fill}
-          onChange={(hex) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { fill: hex }) }}
+          onChange={(hex) => { ensureSiblings(templateId); syncElementStyle(templateId, el.id, { fill: hex, colorOverride: true }) }}
           title={`Cor do texto: ${fill.toUpperCase()}`}
         />
       </div>

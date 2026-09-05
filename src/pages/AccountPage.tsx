@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { startCheckout, type CheckoutItem } from '../services/billing'
+import { PULSE_COSTS } from '../services/tokens'
 
 const PLAN_LABEL: Record<string, string> = { monthly: 'Mensal', annual: 'Anual' }
 const STATUS_LABEL: Record<string, string> = {
@@ -124,10 +125,13 @@ export function AccountPage() {
           <div style={{ background: 'var(--bg-surface)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Custo por ação</span>
             {[
-              { label: 'Gerar post com imagem', cost: 2 },
-              { label: 'Slide de carrossel', cost: 1 },
-              { label: 'Editar imagem com IA', cost: 3 },
-              { label: 'Revisar post com IA', cost: 1 },
+              { label: 'Post Standard', cost: PULSE_COSTS.POST },
+              { label: 'Post Premium', cost: PULSE_COSTS.PREMIUM_POST },
+              { label: 'Slide de carrossel Standard', cost: PULSE_COSTS.CAROUSEL_SLIDE },
+              { label: 'Slide de carrossel Premium', cost: PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE },
+              { label: 'Editar imagem com IA', cost: PULSE_COSTS.EDIT_IMAGE },
+              { label: 'Ajuste pós-geração Premium', cost: PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE },
+              { label: 'Revisar post com IA', cost: PULSE_COSTS.REVIEW_POST },
               { label: 'Turbinar prompt', cost: 0 },
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

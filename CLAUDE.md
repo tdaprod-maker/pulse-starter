@@ -11,7 +11,9 @@ negócio e estado de features, veja `CONTEXT.md` — não duplique isso aqui.
 - **Backend:** Vercel Functions (Node.js) em `api/*.js` — uma função por rota, sem framework
 - **Banco/Auth/Storage:** Supabase
 - **Pagamentos:** Stripe (`api/stripe.js`, `bodyParser: false` para o webhook)
-- **IA texto:** Claude Haiku 4.5 via chamada direta à Anthropic Messages API (sem SDK)
+- **IA texto/visão:** Claude Haiku 4.5 via chamada direta à Anthropic Messages API (sem SDK) —
+  inclui análise de imagem (content blocks `type: 'image'`, `source.type: 'base64'`) usada em
+  `api/analyze-references.js` e `api/review-post.js`
 - **IA imagem:** `gpt-image-1` (Standard, `api/generate-image-ai.js`) e GPT Image 2 (Premium,
   `api/generate-premium.js`) via OpenAI, chamada direta (sem SDK)
 - **Roteamento de API:** `vercel.json` reescreve `/api/instagram-post` etc. para
@@ -54,13 +56,15 @@ for (let attempt = 0; attempt < 3; attempt++) {
   }
 }
 ```
-Presente em `agent-chat.js` (2x), `generate-carousel.js`, `generate-post.js`.
+Presente em `agent-chat.js` (2x), `generate-carousel.js`, `generate-post.js`, `analyze-references.js`,
+`review-post.js`.
 
 ### 2. `extractJSON` tolerante a markdown
 A resposta do modelo às vezes vem envolta em ` ```json ` ou com texto antes/depois do objeto.
-`generate-carousel.js` e `generate-post.js` têm uma função `extractJSON(raw)` que tenta, em ordem:
-`JSON.parse` direto → extrair bloco ` ```json...``` ` via regex → extrair o primeiro `{...}` via
-regex → lançar erro. `agent-chat.js` usa a versão mais simples inline:
+`generate-carousel.js`, `generate-post.js`, `analyze-references.js` e `review-post.js` têm uma
+função `extractJSON(raw)` que tenta, em ordem: `JSON.parse` direto → extrair bloco
+` ```json...``` ` via regex → extrair o primeiro `{...}` via regex → lançar erro. `agent-chat.js`
+usa a versão mais simples inline:
 `raw.replace(/\`\`\`json|\`\`\`/g, '').trim()` seguido de `JSON.parse`. Ao criar um endpoint novo
 que fala com um LLM, reuse esse padrão em vez de confiar que a resposta vem em JSON puro.
 
@@ -165,7 +169,11 @@ aditivas e retrocompatíveis (nenhum dos 32 templates antigos é afetado):
    `CanvasEngine.tsx`). Qualquer template novo com texto escuro sobre fundo claro precisa entrar
    nessa lista, ou entrar em `PHOTO_TEXT_FLIP_EXCLUDE_IDS` se algum elemento específico (ex: uma
    palavra de destaque colorida) já tiver contraste garantido mesmo com foto e não deva virar
-   branco.
+   branco. **Override manual do usuário:** se o usuário escolher uma cor de texto pelo
+   `PropertiesPanel` (`ColorSwatch` da aba de texto), `syncElementStyle` grava `props.colorOverride
+   = true` junto com `fill` — `renderElement` em `CanvasEngine.tsx` verifica esse flag primeiro e
+   pula o auto-flip pra branco quando presente, senão a escolha manual do color picker parecia não
+   fazer efeito nesses templates com foto de fundo (bug real, corrigido).
 
 3. **`TEMPLATE_FIELDS` em `api/generate-post.js` é a fonte de verdade dos IDs de elemento** — cada
    template novo precisa de uma entrada lá com os nomes de campo exatamente iguais aos `id` dos
@@ -201,6 +209,16 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   (ex: `PremiumPage.tsx.bak4`, `PropertiesPanel.tsx.bak`) — são backups manuais do usuário, não
   são importados em lugar nenhum. Não edite nem delete sem perguntar; não confunda com o arquivo
   ativo ao fazer busca por nome.
+- **`src/services/gemini.ts` está parcialmente migrado pra Claude Haiku.** `analyzeVisualReferences`
+  e `reviewPost` agora só fazem `fetch` pros endpoints server-side `api/analyze-references.js` e
+  `api/review-post.js` (Claude Haiku 4.5 com content blocks de imagem) — corrigido porque as duas
+  funções chamavam `generativelanguage.googleapis.com` **direto do client** com
+  `VITE_GEMINI_API_KEY` embutida no bundle público, violando a regra de chave só server-side, e um
+  `catch` vazio no chamador escondia qualquer falha (o botão "parecia não fazer nada"). As outras
+  três funções do arquivo (`turboPrompt`, `turboPromptEditor`, `breakCarouselIntoSlides`) **ainda
+  chamam Gemini direto do client** com a mesma chave exposta — não migradas nessa correção
+  (fora do escopo do bug reportado). Ao mexer nelas, considere migrar pro mesmo padrão Claude
+  Haiku server-side antes de estender.
 - As três funções de regras de prompt (`getCurrentDateContext`, `buildAntiHallucinationRules`,
   `buildAntiSlopRules`) são cópias locais em cada um dos três arquivos de geração, não um módulo
   compartilhado — já causou um bug real (regra de "sem emoji" adicionada em dois arquivos, mas
@@ -245,10 +263,25 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   Os dois modos **pulam de propósito** as seções de safe-zone / `CAROUSEL SLIDE TEXT OVERLAY` /
   letterboxing / `SUBJECT_RULE_BY_STYLE` — elas foram feitas pra *gerar cena nova* e, numa imagem
   que já tem texto renderizado, fazem o gpt-image-2 reposicionar/reescrever o texto. Não reintroduza
-  essas regras em nenhum dos dois caminhos. Custo: `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` (4), tanto
-  pro post único quanto por slide de carrossel. O slide-alvo do carrossel é sempre o
+  essas regras incondicionalmente em nenhum dos dois caminhos. Custo: `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE`
+  (4), tanto pro post único quanto por slide de carrossel. O slide-alvo do carrossel é sempre o
   `carouselCurrentSlide` visível no `CarouselViewer` (passado via `premiumCarouselCurrentIndex`),
   nunca inferido por texto.
+  - **Terceiro caso — ADICIONAR texto que não existia:** pedir "não mexa em texto nenhum" (o
+    `adjustPrompt` padrão) contradiz um pedido de "escreve 'X' no rodapé", e sem nenhuma regra de
+    safe-zone/tipografia o gpt-image-2 improvisa (fonte serifada, texto cortado nas bordas — bug
+    real). `isAddTextRequest(msg)` em `AgentChat.tsx` detecta esse caso (verbo de
+    adicionar/escrever perto de "texto/frase/legenda", ou perto de uma citação entre aspas) e seta
+    `addingText: true` no payload de `adjustPremiumImage`/`/api/generate-premium`. Nesse caso
+    `generate-premium.js` usa uma variante do `adjustPrompt` que permite adicionar o texto pedido e
+    injeta `buildTextTypographyRules()` (safe-zone, sans-serif único, tamanho mínimo, acentuação —
+    a mesma função usada em `carouselTextOverlay` pra geração normal). Não afeta `recomposePrompt`.
+  - **Post único Premium sem texto mesmo pedindo:** `PremiumPage.tsx` (modo `single`) não passava
+    `slideTitle` pro `generateImage`, então a seção `carouselTextOverlay`/`buildTextTypographyRules`
+    (a única com regra mandatória de texto) nunca ativava fora do carrossel — o texto ficava 100%
+    a critério do modelo dentro do brief livre. Corrigido com `extractQuotedText(prompt)`: se o
+    usuário citar o texto literal entre aspas no brief, ele vira `slideTitle` e ativa as mesmas
+    regras do carrossel. Sem aspas no prompt, comportamento inalterado (sem texto mandatório).
 - **Persistência do ajuste na Biblioteca:** depois de um ajuste/recompose bem-sucedido,
   `runPremiumAdjust` chama `persistAdjustedPremium` para **sobrescrever o registro que já existe** na
   Biblioteca (senão o histórico continuaria mostrando o original). Post único → `uploadThumbnail` +

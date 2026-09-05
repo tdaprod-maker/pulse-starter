@@ -78,79 +78,34 @@ export async function generatePostContent(userInput: string, brand?: BrandContex
   return res.json() as Promise<AIResponse>
 }
 
+export interface VisualReferenceAnalysis {
+  estilo_geral?: string
+  cores_predominantes?: string[]
+  proporcao_texto_imagem?: string
+  estilo_tipografia?: string
+  tipo_imagem?: string
+  composicao?: string
+  elementos_recorrentes?: string
+  tom_visual?: string
+  tamanho_textos?: string
+  instrucoes_geracao?: string
+}
+
+/** Analisa até 5 imagens de referência via Claude Haiku (server-side, api/analyze-references.js)
+ *  e retorna o perfil visual como string JSON — mesmo formato salvo em brand_config.visual_style
+ *  e usado como contexto bruto nos prompts de geração (ver `brand?.visualStyle` em generate-post.js). */
 export async function analyzeVisualReferences(imageUrls: string[]): Promise<string> {
-  const imageParts = await Promise.all(
-    imageUrls.slice(0, 5).map(async (url) => {
-      const res = await fetch(url)
-      const blob = await res.blob()
-      // Redimensiona para máximo 800px antes de converter
-      const bitmap = await createImageBitmap(blob)
-      const maxSize = 800
-      const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.round(bitmap.width * scale)
-      canvas.height = Math.round(bitmap.height * scale)
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-      const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1]
-      return {
-        inline_data: {
-          mime_type: 'image/jpeg',
-          data: base64,
-        }
-      }
-    })
-  )
-
-  const prompt = `Você é um especialista em design e identidade visual de marcas para redes sociais.
-
-Analise essas ${imageUrls.slice(0, 5).length} imagem(ns) de referência visual e extraia um perfil detalhado e acionável em português.
-
-Responda SOMENTE com JSON válido, sem markdown:
-{
-  "estilo_geral": "descrição precisa do estilo visual (ex: esportivo e dinâmico com muito contraste, minimalista corporativo com espaço negativo, colorido e festivo com elementos gráficos)",
-  "cores_predominantes": ["cor hex ou nome 1", "cor hex ou nome 2", "cor hex ou nome 3"],
-  "proporcao_texto_imagem": "descrição de quanto espaço o texto ocupa vs imagem (ex: texto domina 40% do layout, imagem de fundo com overlay, texto pequeno no rodapé)",
-  "estilo_tipografia": "como os textos aparecem (ex: títulos em caixa alta bold, textos curtos e impactantes, mix de tamanhos grandes e pequenos, serifado elegante)",
-  "tipo_imagem": "que tipo de foto ou visual é usado (ex: atletas em ação com motion blur, produtos em fundo branco, pessoas celebrando, abstratos geométricos, paisagens urbanas)",
-  "composicao": "como os elementos são organizados (ex: título no topo esquerdo com imagem ocupando 70% direito, texto centralizado sobre gradiente escuro, grade de 3 colunas)",
-  "elementos_recorrentes": "elementos visuais que aparecem com frequência (ex: barra colorida lateral, moldura dourada, logo sempre no canto inferior direito, ícones esportivos)",
-  "tom_visual": "sensação emocional transmitida (ex: energia e adrenalina, sofisticação e exclusividade, acolhimento e comunidade, urgência e escassez)",
-  "tamanho_textos": "os títulos são curtos ou longos (ex: títulos de 1-3 palavras em destaque, frases completas de 8-12 palavras, combinação de headline curto com subtítulo longo)",
-  "instrucoes_geracao": "instrução direta e específica de 3-4 linhas para a IA usar ao gerar novos posts neste estilo. Inclua dicas sobre imagePrompt, escolha de template e tom do texto"
-}`
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              ...imageParts,
-              { text: prompt }
-            ]
-          }],
-          generationConfig: {
-            response_mime_type: 'application/json',
-            temperature: 0.3,
-            maxOutputTokens: 1000,
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-      })
-      if (!res.ok) throw new Error(`Erro ${res.status}`)
-      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      if (!text) throw new Error('Resposta vazia')
-      return text
-    } catch (err) {
-      if (attempt === 2) throw err
-    }
+  const res = await fetch('/api/analyze-references', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageUrls: imageUrls.slice(0, 5) }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(body?.error ?? `Erro ${res.status} ao analisar referências`)
   }
-  return '{}'
+  const data = await res.json() as VisualReferenceAnalysis
+  return JSON.stringify(data)
 }
 
 export async function turboPromptEditor(userPrompt: string, brand?: BrandContext): Promise<string> {
@@ -283,6 +238,7 @@ export interface PostReview {
   resumo: string
 }
 
+/** Revisão de design de um post pronto via Claude Haiku (server-side, api/review-post.js). */
 export async function reviewPost(params: {
   imageBase64: string
   titulo: string
@@ -291,62 +247,16 @@ export async function reviewPost(params: {
   segmento?: string
   tone?: string
 }): Promise<PostReview> {
-  const { imageBase64, titulo, legenda, hashtags, segmento, tone } = params
-
-  const prompt = `Você é um especialista em marketing digital e redes sociais para pequenas empresas.
-
-Analise este post para Instagram e dê um feedback simples e encorajador.
-
-Informações do post:
-- Título/texto principal: "${titulo}"
-- Legenda: "${legenda}"
-- Hashtags: "${hashtags}"
-${segmento ? `- Segmento da empresa: ${segmento}` : ''}
-${tone ? `- Tom de voz: ${tone}` : ''}
-
-Analise a imagem e os textos e retorne um JSON com:
-{
-  "score_visual": número de 0 a 10 baseado em: contraste texto/fundo, presença e tamanho do logo, qualidade da imagem, hierarquia visual,
-  "score_legenda": número de 0 a 10 baseado em: clareza da mensagem, presença de CTA, adequação ao segmento, engajamento potencial,
-  "pontos_positivos": ["ponto positivo 1 em linguagem simples", "ponto positivo 2"],
-  "sugestoes": ["sugestão prática 1 em linguagem simples, máximo 15 palavras", "sugestão prática 2", "sugestão prática 3"],
-  "resumo": "frase encorajadora de 1 linha resumindo a avaliação"
-}
-
-Use linguagem simples e encorajadora. O usuário é leigo em design e marketing.
-Responda SOMENTE com JSON válido, sem markdown.`
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt))
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: 'image/jpeg', data: imageBase64.replace(/^data:image\/\w+;base64,/, '') } },
-              { text: prompt }
-            ]
-          }],
-          generationConfig: {
-            response_mime_type: 'application/json',
-            temperature: 0.4,
-            maxOutputTokens: 600,
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-      })
-      if (!res.ok) throw new Error(`Erro ${res.status}`)
-      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      if (!text) throw new Error('Resposta vazia')
-      return JSON.parse(text) as PostReview
-    } catch (err) {
-      if (attempt === 2) throw err
-    }
+  const res = await fetch('/api/review-post', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(body?.error ?? `Erro ${res.status} ao revisar post`)
   }
-  throw new Error('Falha na análise')
+  return res.json() as Promise<PostReview>
 }
 
 export async function generatePremiumCaption(prompt: string, brand?: BrandContext): Promise<{ instagram: string; linkedin: string; hashtags: string }> {
@@ -396,6 +306,10 @@ export async function adjustPremiumImage(params: {
   segment?: string
   styleContext?: string
   mode?: 'adjust' | 'recompose'
+  /** Pedido detectado como "adicionar texto novo" (ver isAddTextRequest em AgentChat.tsx) —
+   *  faz o endpoint trocar a diretiva "não mexa em texto" por uma que injeta as regras
+   *  obrigatórias de safe-zone/tipografia para o texto sendo adicionado. */
+  addingText?: boolean
 }): Promise<{ image: string }> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 55000)
@@ -412,6 +326,7 @@ export async function adjustPremiumImage(params: {
         styleContext: params.styleContext,
         slideIndex: 1,
         totalSlides: 1,
+        addingText: params.addingText ?? false,
       }),
       signal: controller.signal,
     })

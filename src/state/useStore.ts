@@ -174,6 +174,7 @@ export const useStore = create<PulseStore>()(
               const topLevel: Partial<CanvasElement> = {}
               if (props.fontFamily !== undefined) updatedProps.fontFamily = props.fontFamily
               if (props.fill !== undefined) updatedProps.fill = props.fill
+              if (props.colorOverride !== undefined) updatedProps.colorOverride = props.colorOverride
               if (props.rotation !== undefined) updatedProps.rotation = props.rotation
               if (props.textBackground !== undefined) updatedProps.textBackground = props.textBackground
               if (props.fontSize !== undefined) {
