@@ -267,7 +267,14 @@ Fluxo para quem compra pela landing page **sem ter conta no Pulse ainda**:
 
 ---
 
-## Funções Vercel (12 — dentro do limite free)
+## Funções Vercel (12 — NO limite free do Hobby; próxima função nova exige consolidar alguma existente por `?action=` antes de criar arquivo novo)
+
+Tabela corrigida em 05/09/2026 — a versão anterior listava nomes de arquivo antigos
+(`instagram-auth.js`, `instagram-callback.js`, `linkedin-auth.js` etc.) que não existem mais desde
+que esses fluxos foram consolidados em `instagram.js`/`linkedin.js` por `?action=` (ver
+`vercel.json` e a seção de Pegadinhas no CLAUDE.md); a tabela não tinha sido atualizada quando isso
+aconteceu, então o contador de "dentro do limite" já estava desatualizado antes mesmo dos 2
+arquivos novos abaixo.
 
 | Arquivo | Função |
 |---|---|
@@ -277,12 +284,12 @@ Fluxo para quem compra pela landing page **sem ter conta no Pulse ainda**:
 | `api/generate-premium.js` | Post premium (GPT Image 2) |
 | `api/generate-image-ai.js` | Geração de imagem standard (gpt-image-1) |
 | `api/edit-image-ai.js` | Edição de imagem com IA |
-| `api/instagram-auth.js` | Inicia OAuth Instagram |
-| `api/instagram-callback.js` | OAuth callback + refresh lazy (dual-purpose) |
-| `api/instagram-post.js` | Publicação no Instagram |
-| `api/linkedin-auth.js` | Inicia OAuth LinkedIn |
-| `api/linkedin-callback.js` | OAuth callback LinkedIn |
-| `api/linkedin-post.js` | Publicação no LinkedIn |
+| `api/analyze-references.js` | Análise de referências visuais (Claude Haiku vision) — novo, 05/09/2026 |
+| `api/review-post.js` | Revisão de post com IA (Claude Haiku vision) — novo, 05/09/2026 |
+| `api/instagram.js` | OAuth + callback + publicação Instagram, multiplexado por `?action=auth\|callback\|post` |
+| `api/linkedin.js` | OAuth + callback + publicação LinkedIn, multiplexado por `?action=auth\|callback\|post` |
+| `api/stripe.js` | Checkout + webhook Stripe, multiplexado por `?action=checkout\|webhook` |
+| `api/cron/credit-annual-pulses.js` | Cron diário de crédito de pulses anuais (`vercel.json` → `crons`) |
 
 ---
 
