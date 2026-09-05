@@ -14,16 +14,19 @@ export default defineConfig({
       filename: 'sw-v2.js',
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
+        id: '/',
         name: 'Pulse — Designer de Posts com IA',
         short_name: 'Pulse',
         description: 'Crie posts profissionais para redes sociais com assistência de IA',
         theme_color: '#0D0D0D',
         background_color: '#0D0D0D',
         display: 'standalone',
+        display_override: ['standalone', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
         lang: 'pt-BR',
+        categories: ['business', 'productivity', 'graphics'],
         icons: [
           {
             src: 'pwa-192x192.png',
