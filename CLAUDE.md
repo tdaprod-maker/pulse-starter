@@ -249,12 +249,20 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   uma dessas quatro etapas (client e server) — úteis para depurar se um campo nunca chega até a UI;
   não remover sem necessidade.
 - **Texto no Premium é SEMPRE overlay de canvas, nunca renderizado pelo gpt-image-2
-  (mudança estrutural, 05/09/2026).** Depois de repetidos casos de texto vazando da
-  safe zone / fonte inconsistente mesmo com várias rodadas de regras de prompt cada
-  vez mais explícitas (safe-zone em %, tipografia única, tamanho mínimo — tudo isso
-  chegou a existir em `api/generate-premium.js` e ainda assim falhava), a conclusão
-  foi que **instrução de prompt para tipografia é estruturalmente não-confiável** no
-  gpt-image-2. A arquitetura mudou: o modelo **nunca mais é instruído a renderizar
+  (mudança estrutural, 05/09/2026) — decisão de produto explícita do usuário, não só
+  técnica.** O trade-off foi avaliado e aceito conscientemente: perde-se o efeito
+  visual de texto "embutido" na cena (que o gpt-image-2 às vezes conseguia fazer
+  bem), em troca de garantia de que o texto **sempre** fica legível e dentro da
+  safety zone — o usuário confirmou explicitamente que confiabilidade vale mais que
+  esse efeito estético, depois do mesmo bug de texto vazando a safety zone voltar
+  repetidas vezes mesmo com regras de prompt cada vez mais explícitas. **Não reverta
+  essa decisão** (voltar a pedir texto renderizado pelo modelo) sem confirmar de
+  novo com o usuário — não é um detalhe de implementação esquecido, é a correção que
+  resolveu o bug recorrente. Regras de prompt cada vez mais explícitas (safe-zone em
+  %, tipografia única, tamanho mínimo) chegaram a existir em `api/generate-premium.js`
+  e ainda assim falhavam repetidamente — a conclusão foi que **instrução de prompt
+  para tipografia é estruturalmente não-confiável** no gpt-image-2. A arquitetura
+  mudou: o modelo **nunca mais é instruído a renderizar
   texto** (regra `CRITICAL — NO TEXT` incondicional no `fullPrompt`, e um
   `reservedTextSpaceHint` quando há `slideTitle` só pra pedir que a imagem deixe a
   faixa inferior "limpa" visualmente — nunca pra pedir que escreva algo ali).

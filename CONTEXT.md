@@ -206,6 +206,12 @@ Fluxo para quem compra pela landing page **sem ter conta no Pulse ainda**:
 - Logo é o único elemento editável pelo usuário (via agente), sem arrastar no canvas
 - Lançamento beta com 3–5 clientes antes de decisões arquiteturais maiores
 - Templates existentes mantidos para MVP — não investir em novos agora
+- **Texto no Premium: confiabilidade > estética de "texto embutido na cena" (05/09/2026).**
+  Aprovado explicitamente pelo usuário depois do bug de texto vazando a safety zone
+  voltar várias vezes mesmo com regras de prompt reforçadas: texto agora é sempre
+  overlay de canvas (`overlayTextOnImage`), nunca renderizado pelo gpt-image-2 — ver
+  detalhe técnico no item 29 do Histórico de Bugs e em CLAUDE.md. Não reverter para
+  texto renderizado pelo modelo sem reconfirmar essa decisão com o usuário.
 
 ---
 
