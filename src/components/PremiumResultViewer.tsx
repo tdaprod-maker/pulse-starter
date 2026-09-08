@@ -1,15 +1,26 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import type { PremiumSlide } from '../services/gemini'
 import { supabase } from '../lib/supabase'
-import { loadBrandConfig } from '../services/brandKit'
-import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
+import { type LogoPosition, type LogoSize } from '../services/logoOverlay'
 import { getInstagramConnection } from '../services/socialConnections'
 import { validatePremiumSlides } from '../services/carouselValidation'
 import { isIOS, openIOSSaveOverlay } from './IOSSaveOverlay'
+import { ColorSwatch } from './ColorSwatch'
+import {
+  DEFAULT_PREMIUM_LOGO_LAYER, DEFAULT_PREMIUM_TEXT_LAYER,
+  type PremiumLogoLayer, type PremiumTextLayer,
+} from '../services/premiumCompose'
+import type { TextBand, TextScale, TextFontKind } from '../services/textOverlay'
 
 interface Props {
+  /** Slides já compostos (base → texto → logo) pelo EditorPage. O viewer só exibe. */
   slides: PremiumSlide[]
   caption: { instagram: string; linkedin: string; hashtags: string } | null
+  logoLayer?: PremiumLogoLayer
+  textLayer?: PremiumTextLayer
+  logoUrl?: string | null
+  onLogoLayerChange?: (layer: PremiumLogoLayer) => void
+  onTextLayerChange?: (layer: PremiumTextLayer) => void
   onClose: () => void
 }
 
@@ -35,83 +46,67 @@ const SIZE_OPTIONS: { value: LogoSize; label: string }[] = [
   { value: 'large', label: 'Grande' },
 ]
 
-export function PremiumResultViewer({ slides, caption: initialCaption, onClose }: Props) {
-  const slidesList = validatePremiumSlides<PremiumSlide>(slides)
+const TEXT_BAND_OPTIONS: { value: TextBand; label: string }[] = [
+  { value: 'top', label: '⬆ Topo' },
+  { value: 'center', label: '⊙ Centro' },
+  { value: 'bottom', label: '⬇ Base' },
+]
+
+const TEXT_SCALE_OPTIONS: { value: TextScale; label: string }[] = [
+  { value: 'small', label: 'Pequeno' },
+  { value: 'medium', label: 'Médio' },
+  { value: 'large', label: 'Grande' },
+]
+
+const TEXT_FONT_OPTIONS: { value: TextFontKind; label: string }[] = [
+  { value: 'sans', label: 'Sora' },
+  { value: 'serif', label: 'Playfair' },
+]
+
+const chipStyle = (selected: boolean): React.CSSProperties => ({
+  fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
+  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+  ...(selected
+    ? { background: 'var(--accent)', border: 'none', color: 'white' }
+    : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
+})
+
+export function PremiumResultViewer({
+  slides,
+  caption: initialCaption,
+  logoLayer = DEFAULT_PREMIUM_LOGO_LAYER,
+  textLayer = DEFAULT_PREMIUM_TEXT_LAYER,
+  logoUrl = null,
+  onLogoLayerChange,
+  onTextLayerChange,
+  onClose,
+}: Props) {
+  const displaySlides = validatePremiumSlides<PremiumSlide>(slides)
   const [caption, setCaption] = useState(initialCaption)
 
-  // Logo overlay: os slides originais (sem logo) ficam preservados para permitir
-  // reprocessar posição/tamanho sem perder qualidade por overlays acumulados.
-  const [originalSlides, setOriginalSlides] = useState(slidesList)
-  const [displaySlides, setDisplaySlides] = useState(slidesList)
-  const [logoActive, setLogoActive] = useState(false)
-
-  // Ressincroniza quando o pai troca `slides` (ex.: ajuste pós-geração da imagem
-  // via chat). `originalSlides`/`displaySlides` são inicializados uma única vez no
-  // mount, então sem este efeito o viewer continuaria mostrando a imagem antiga.
-  // A base mudou → reseta o estado do logo.
-  const didMountRef = useRef(false)
-  useEffect(() => {
-    if (!didMountRef.current) { didMountRef.current = true; return }
-    const next = validatePremiumSlides<PremiumSlide>(slides)
-    setOriginalSlides(next)
-    setDisplaySlides(next)
-    setLogoActive(false)
-  }, [slides])
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [logoPosition, setLogoPosition] = useState<LogoPosition>('bottom-right')
-  const [logoSize, setLogoSize] = useState<LogoSize>('medium')
-  const [applyingLogo, setApplyingLogo] = useState(false)
   const [logoError, setLogoError] = useState('')
+  const [textDraft, setTextDraft] = useState(textLayer.headline)
+  useEffect(() => { setTextDraft(textLayer.headline) }, [textLayer.headline])
 
-  async function applyLogo(position: LogoPosition, size: LogoSize, urlOverride?: string) {
-    const url = urlOverride ?? logoUrl
-    if (!url) return
-    setApplyingLogo(true)
-    try {
-      const withLogo = await Promise.all(
-        originalSlides.map(async slide => ({
-          ...slide,
-          image: await overlayLogoOnImage(slide.image, url, position, size),
-        }))
-      )
-      setDisplaySlides(withLogo)
-      setLogoActive(true)
-    } finally {
-      setApplyingLogo(false)
-    }
-  }
-
-  async function handleAddLogo() {
+  function addLogo() {
     setLogoError('')
-    let url = logoUrl
-    if (!url) {
-      const { data: authData } = await supabase.auth.getUser()
-      const email = authData.user?.email ?? ''
-      const brandCtx = email ? await loadBrandConfig(email) : null
-      if (!brandCtx?.logo_url) {
-        setLogoError('Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca.')
-        return
-      }
-      url = brandCtx.logo_url
-      setLogoUrl(url)
+    if (!logoUrl) {
+      setLogoError('Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca.')
+      return
     }
-    await applyLogo(logoPosition, logoSize, url)
+    onLogoLayerChange?.({ ...logoLayer, active: true })
   }
 
-  function handleRemoveLogo() {
-    setLogoActive(false)
-    setDisplaySlides(originalSlides)
+  function commitText() {
+    const headline = textDraft.trim()
+    if (!headline) {
+      if (textLayer.active || textLayer.headline) onTextLayerChange?.({ ...textLayer, active: false, headline: '' })
+      return
+    }
+    if (headline === textLayer.headline && textLayer.active) return
+    onTextLayerChange?.({ ...textLayer, active: true, headline })
   }
 
-  function handlePositionChange(position: LogoPosition) {
-    setLogoPosition(position)
-    if (logoActive) applyLogo(position, logoSize)
-  }
-
-  function handleSizeChange(size: LogoSize) {
-    setLogoSize(size)
-    if (logoActive) applyLogo(logoPosition, size)
-  }
   const [captionTab, setCaptionTab] = useState<'instagram' | 'linkedin'>('instagram')
   const [linkedinToken, setLinkedinToken] = useState(localStorage.getItem('linkedin_token') ?? '')
   const [linkedinSub, setLinkedinSub] = useState(localStorage.getItem('linkedin_sub') ?? '')
@@ -238,6 +233,8 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
     }
   }
 
+  const textActive = textLayer.active && textLayer.headline.trim().length > 0
+
   return (
     <div style={{ width: '100%', maxWidth: '860px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
@@ -262,7 +259,7 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
       </div>
 
       {/* Image grid — single format or multiple side by side */}
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap', opacity: applyingLogo ? 0.6 : 1, transition: 'opacity 0.15s' }}>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
         {displaySlides.map((slide, i) => (
           <div
             key={i}
@@ -326,24 +323,22 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
           <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
             Logo da marca
           </span>
-          {!logoActive ? (
+          {!logoLayer.active ? (
             <button
-              onClick={handleAddLogo}
-              disabled={applyingLogo}
+              onClick={addLogo}
               style={{
-                fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingLogo ? 'default' : 'pointer',
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 600, border: 'none',
-                background: 'var(--accent)', color: 'white', opacity: applyingLogo ? 0.6 : 1,
+                background: 'var(--accent)', color: 'white',
               }}
             >
-              {applyingLogo ? 'Aplicando...' : 'Adicionar logo'}
+              Adicionar logo
             </button>
           ) : (
             <button
-              onClick={handleRemoveLogo}
-              disabled={applyingLogo}
+              onClick={() => onLogoLayerChange?.({ ...logoLayer, active: false })}
               style={{
-                fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingLogo ? 'default' : 'pointer',
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 600,
                 border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)',
               }}
@@ -357,7 +352,7 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
           <span style={{ fontSize: '11px', color: 'rgba(239,68,68,0.9)' }}>{logoError}</span>
         )}
 
-        {logoActive && (
+        {logoLayer.active && (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Posição</span>
@@ -365,16 +360,8 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
                 {POSITION_OPTIONS.map(opt => (
                   <button
                     key={opt.value}
-                    onClick={() => handlePositionChange(opt.value)}
-                    disabled={applyingLogo}
-                    style={{
-                      fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
-                      cursor: applyingLogo ? 'default' : 'pointer', fontFamily: 'inherit',
-                      whiteSpace: 'nowrap',
-                      ...(logoPosition === opt.value
-                        ? { background: 'var(--accent)', border: 'none', color: 'white' }
-                        : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
-                    }}
+                    onClick={() => onLogoLayerChange?.({ ...logoLayer, position: opt.value })}
+                    style={chipStyle(logoLayer.position === opt.value)}
                   >
                     {opt.label}
                   </button>
@@ -388,19 +375,117 @@ export function PremiumResultViewer({ slides, caption: initialCaption, onClose }
                 {SIZE_OPTIONS.map(opt => (
                   <button
                     key={opt.value}
-                    onClick={() => handleSizeChange(opt.value)}
-                    disabled={applyingLogo}
-                    style={{
-                      flex: 1, fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
-                      cursor: applyingLogo ? 'default' : 'pointer', fontFamily: 'inherit',
-                      ...(logoSize === opt.value
-                        ? { background: 'var(--accent)', border: 'none', color: 'white' }
-                        : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
-                    }}
+                    onClick={() => onLogoLayerChange?.({ ...logoLayer, size: opt.value })}
+                    style={{ ...chipStyle(logoLayer.size === opt.value), flex: 1 }}
                   >
                     {opt.label}
                   </button>
                 ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Controles de texto (overlay) */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: '10px',
+        background: 'var(--bg-surface)', border: '1px solid var(--border)',
+        borderRadius: '12px', padding: '14px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Texto sobre a imagem
+          </span>
+          {textActive && (
+            <button
+              onClick={() => onTextLayerChange?.({ ...textLayer, active: false })}
+              style={{
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
+                fontFamily: 'inherit', fontWeight: 600,
+                border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)',
+              }}
+            >
+              Remover texto
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <input
+            value={textDraft}
+            onChange={e => setTextDraft(e.target.value)}
+            onBlur={commitText}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitText() } }}
+            placeholder="Escreva o texto e tecle Enter"
+            style={{
+              flex: 1, background: 'var(--bg-base)', border: '1px solid var(--border)',
+              borderRadius: '8px', color: 'var(--text-primary)', fontSize: '12px',
+              padding: '8px 10px', fontFamily: 'inherit', outline: 'none',
+            }}
+          />
+          <button
+            onClick={commitText}
+            style={{
+              fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 600, border: 'none',
+              background: 'var(--accent)', color: 'white', whiteSpace: 'nowrap',
+            }}
+          >
+            {textActive ? 'Atualizar' : 'Adicionar'}
+          </button>
+        </div>
+
+        {textActive && (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Posição</span>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {TEXT_BAND_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onTextLayerChange?.({ ...textLayer, band: opt.value })}
+                    style={chipStyle(textLayer.band === opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Tamanho</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {TEXT_SCALE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onTextLayerChange?.({ ...textLayer, scale: opt.value })}
+                    style={{ ...chipStyle(textLayer.scale === opt.value), flex: 1 }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Fonte</span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {TEXT_FONT_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => onTextLayerChange?.({ ...textLayer, font: opt.value })}
+                      style={chipStyle(textLayer.font === opt.value)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Cor</span>
+                <ColorSwatch color={textLayer.color} onChange={hex => onTextLayerChange?.({ ...textLayer, color: hex })} title="Cor do texto" />
               </div>
             </div>
           </>

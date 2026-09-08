@@ -5,8 +5,12 @@ import { useTheme } from '../contexts/ThemeContext'
 import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, adjustPremiumImage, type AgentMessage, type AgentResponse, type PremiumSlide, type SlideWithImage, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail, updateCarouselSlideImages } from '../services/brandKit'
-import { overlayLogoOnImage } from '../services/logoOverlay'
 import { overlayTextOnImage } from '../services/textOverlay'
+import {
+  composePremiumImage,
+  DEFAULT_PREMIUM_LOGO_LAYER, DEFAULT_PREMIUM_TEXT_LAYER,
+  type PremiumLogoLayer, type PremiumTextLayer,
+} from '../services/premiumCompose'
 import { supabase } from '../lib/supabase'
 import { debitToken, getTokenBalance, notifyBalanceUpdate, PULSE_COSTS } from '../services/tokens'
 import { validateSlides, validatePremiumSlides } from '../services/carouselValidation'
@@ -88,7 +92,7 @@ function extractQuotedText(text: string): string | null {
   return match ? match[1].trim() : null
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, premiumLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumTextLayer = DEFAULT_PREMIUM_TEXT_LAYER, premiumLogoUrl = null, onPremiumLogoUrlChange, onPremiumLogoLayerChange, onPremiumTextLayerChange, premiumCarouselLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumCarouselTextLayers = {}, onPremiumCarouselTextLayerChange, onPremiumCarouselLogoLayerChange, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
   onReset?: () => void
@@ -99,6 +103,26 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   isPremiumActive?: boolean
   premiumSlides?: PremiumSlide[]
   onPremiumSlidesUpdate?: (slides: PremiumSlide[]) => void
+  /** Camadas de overlay do Premium — fonte única no EditorPage. O chat as manipula
+   *  em vez de assar bytes com overlay direto (era o que fazia o logo sumir). */
+  premiumLogoLayer?: PremiumLogoLayer
+  premiumTextLayer?: PremiumTextLayer
+  premiumLogoUrl?: string | null
+  /** Propaga pro EditorPage a URL do logo resolvida do brand kit quando o
+   *  EditorPage ainda não a carregou — sem isso o compose podia receber
+   *  `logoUrl: null` e a camada de logo virava no-op. */
+  onPremiumLogoUrlChange?: (url: string) => void
+  onPremiumLogoLayerChange?: (layer: PremiumLogoLayer) => void
+  onPremiumTextLayerChange?: (layer: PremiumTextLayer) => void
+  /** Carrossel Premium: logo (global) só é editável pelo painel do CarouselViewer;
+   *  o chat só mexe no texto por slide. */
+  premiumCarouselLogoLayer?: PremiumLogoLayer
+  premiumCarouselTextLayers?: Record<number, PremiumTextLayer>
+  onPremiumCarouselTextLayerChange?: (slideIndex: number, layer: PremiumTextLayer) => void
+  /** Só usado pelo chat ao adicionar texto a um carrossel Premium restaurado da
+   *  Biblioteca (logo queimado nos pixels): reativa a camada de logo global pra
+   *  ela sobreviver ao scrim do texto. Edição normal do logo continua no viewer. */
+  onPremiumCarouselLogoLayerChange?: (layer: PremiumLogoLayer) => void
   /** Carrossel Premium (engine === 'premium') ativo no viewer — habilita ajuste pós-geração por slide. */
   isPremiumCarouselActive?: boolean
   premiumCarouselSlides?: SlideWithImage[]
@@ -251,7 +275,6 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastUsedTemplateRef = useRef<string | null>(null)
-  const originalPremiumSlidesRef = useRef<PremiumSlide[] | null>(null)
   const { theme } = useTheme()
   const {
     addTemplate, setActiveTemplate, updateElement, setTemplateBackground,
@@ -748,9 +771,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   }
 
   async function runPremiumAdjust(instruction: string, slideIndex: number | null, mode: 'adjust' | 'recompose' = 'adjust', addingText: boolean = false) {
-    // "Adicionar texto" nunca mais passa pelo gpt-image-2 — é um overlayTextOnImage
-    // direto na imagem atual (ver ESTRUTURAL em api/generate-premium.js). Precisa do
-    // texto literal entre aspas pra saber exatamente o que desenhar; sem aspas, pede
+    // "Adicionar texto" nunca passa pelo gpt-image-2 — vira uma camada de texto no
+    // EditorPage (ver ESTRUTURAL em api/generate-premium.js e a arquitetura de
+    // camadas do Premium). Precisa do texto literal entre aspas; sem aspas, pede
     // pro usuário especificar em vez de adivinhar.
     if (addingText) {
       const literalText = extractQuotedText(instruction)
@@ -777,19 +800,54 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           setMessages(prev => [...prev, { role: 'agent', content: `Saldo insuficiente. Você tem ${balance} pulses e precisa de ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} para adicionar texto.` }])
           return
         }
-        const adjusted = await overlayTextOnImage(baseImage, { headline: literalText })
         const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE)
         if (debit.success) notifyBalanceUpdate()
+
+        // Resolve a URL do logo (estado do EditorPage ou brand kit). Imagens
+        // restauradas da Biblioteca trazem o logo "queimado" nos pixels e a
+        // camada de logo fica inativa — sem reativá-la, o scrim do texto que
+        // vamos desenhar cobre o logo (bug "logo some ao adicionar texto").
+        // composePremiumImage redesenha base → texto → logo, então ativar a
+        // camada re-carimba o logo POR CIMA do scrim (mesma posição/tamanho
+        // default da geração → idêntico ao logo queimado original).
+        let logoUrl = premiumLogoUrl
+        if (!logoUrl) {
+          const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
+          logoUrl = brandCtx?.logo_url ?? null
+          if (logoUrl) onPremiumLogoUrlChange?.(logoUrl)
+        }
+
         if (slideIndex === null) {
-          const updated = validatePremiumSlides<PremiumSlide>(premiumSlides).map((s, i) => (i === 0 ? { ...s, image: adjusted } : s))
-          onPremiumSlidesUpdate?.(updated)
-          const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.image))
-          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? '✦ Texto adicionado! Biblioteca atualizada. Pode pedir outro ajuste se quiser.' : '✦ Texto adicionado! Pode pedir outro ajuste se quiser.' }])
+          const logoLayer: PremiumLogoLayer = logoUrl && !premiumLogoLayer?.active
+            ? { ...(premiumLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER), active: true }
+            : (premiumLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER)
+          if (logoLayer.active && !premiumLogoLayer?.active) onPremiumLogoLayerChange?.(logoLayer)
+
+          const newLayer: PremiumTextLayer = { ...(premiumTextLayer ?? DEFAULT_PREMIUM_TEXT_LAYER), active: true, headline: literalText }
+          onPremiumTextLayerChange?.(newLayer)
+          // Persiste a versão composta no registro da Biblioteca (o efeito de
+          // composição do EditorPage é assíncrono, então compomos aqui pros bytes).
+          const composed = await composePremiumImage(baseImage, { text: newLayer, logo: logoLayer, logoUrl })
+          const savedToLibrary = await persistAdjustedPremium(userEmail, [composed])
+          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? '✦ Texto adicionado! Biblioteca atualizada. Pode ajustar posição, tamanho e cor no painel do resultado.' : '✦ Texto adicionado! Pode ajustar posição, tamanho e cor no painel do resultado.' }])
         } else {
-          const updated = validateSlides<SlideWithImage>(premiumCarouselSlides ?? []).map((s, i) => (i === slideIndex ? { ...s, imageUrl: adjusted } : s))
-          onCarouselSlidesUpdate?.(updated)
-          const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.imageUrl))
-          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? `✦ Slide ${slideIndex + 1} — texto adicionado! Biblioteca atualizada.` : `✦ Slide ${slideIndex + 1} — texto adicionado!` }])
+          const carLogoLayer: PremiumLogoLayer = logoUrl && !premiumCarouselLogoLayer?.active
+            ? { ...(premiumCarouselLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER), active: true }
+            : (premiumCarouselLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER)
+          if (carLogoLayer.active && !premiumCarouselLogoLayer?.active) onPremiumCarouselLogoLayerChange?.(carLogoLayer)
+
+          const prevLayer = premiumCarouselTextLayers?.[slideIndex] ?? DEFAULT_PREMIUM_TEXT_LAYER
+          const newLayer: PremiumTextLayer = { ...prevLayer, active: true, headline: literalText }
+          onPremiumCarouselTextLayerChange?.(slideIndex, newLayer)
+          const allBase = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])
+          const composedAll = await Promise.all(allBase.map(async (s, i) => {
+            const tl = i === slideIndex ? newLayer : (premiumCarouselTextLayers?.[i] ?? null)
+            return s.imageUrl
+              ? await composePremiumImage(s.imageUrl, { text: tl, logo: carLogoLayer, logoUrl })
+              : ''
+          }))
+          const savedToLibrary = await persistAdjustedPremium(userEmail, composedAll)
+          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? `✦ Slide ${slideIndex + 1} — texto adicionado! Biblioteca atualizada.` : `✦ Slide ${slideIndex + 1} — texto adicionado! Ajuste posição/tamanho/cor no painel.` }])
         }
       } catch (e: unknown) {
         console.error('[runPremiumAdjust addingText] erro:', e)
@@ -805,8 +863,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setMessages(prev => [...prev, {
       role: 'agent',
       content: mode === 'recompose'
-        ? 'Recompondo o cenário com Premium — pode levar até 60s...'
-        : 'Aplicando ajuste com Premium — pode levar até 60s...',
+        ? 'Recompondo o cenário com Premium — pode levar alguns instantes...'
+        : 'Aplicando o ajuste com Premium — pode levar alguns instantes...',
     }])
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -862,14 +920,26 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       const doneVerb = mode === 'recompose' ? 'Cenário recomposto' : 'Ajuste aplicado'
 
+      // Restaurado da Biblioteca: logo queimado nos pixels + camada inativa. O
+      // gpt-image-2 devolve a imagem ajustada SEM logo nítido — reativa a camada
+      // pra composePremiumImage re-carimbá-lo (mesmo racional do fluxo "adicionar
+      // texto"). Sem URL de logo na marca, nada muda.
+      const adjLogoUrl = premiumLogoUrl ?? brandCtx?.logo_url ?? null
+      if (adjLogoUrl && adjLogoUrl !== premiumLogoUrl) onPremiumLogoUrlChange?.(adjLogoUrl)
+
       if (slideIndex === null) {
         const list = validatePremiumSlides<PremiumSlide>(premiumSlides)
         const updated = list.map((s, i) => (i === 0 ? { ...s, image: adjusted } : s))
         onPremiumSlidesUpdate?.(updated)
-        // Persiste a versão ajustada no registro existente da Biblioteca (mesmo
-        // path/URL determinístico da thumbnail — sobrescreve). Sem isso, a
-        // Biblioteca continuaria mostrando o original.
-        const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.image))
+        const adjLogoLayer: PremiumLogoLayer = adjLogoUrl && !premiumLogoLayer?.active
+          ? { ...(premiumLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER), active: true }
+          : (premiumLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER)
+        if (adjLogoLayer.active && !premiumLogoLayer?.active) onPremiumLogoLayerChange?.(adjLogoLayer)
+        // Persiste a versão ajustada + camadas de overlay ativas no registro da
+        // Biblioteca (mesmo path/URL determinístico da thumbnail — sobrescreve).
+        // O EditorPage recompõe o display; aqui compomos só pros bytes do save.
+        const composed = await composePremiumImage(adjusted, { text: premiumTextLayer, logo: adjLogoLayer, logoUrl: adjLogoUrl })
+        const savedToLibrary = await persistAdjustedPremium(userEmail, [composed])
         setMessages(prev => [...prev, {
           role: 'agent',
           content: savedToLibrary
@@ -880,7 +950,16 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         const list = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])
         const updated = list.map((s, i) => (i === slideIndex ? { ...s, imageUrl: adjusted } : s))
         onCarouselSlidesUpdate?.(updated)
-        const savedToLibrary = await persistAdjustedPremium(userEmail, updated.map(s => s.imageUrl))
+        const adjCarLogoLayer: PremiumLogoLayer = adjLogoUrl && !premiumCarouselLogoLayer?.active
+          ? { ...(premiumCarouselLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER), active: true }
+          : (premiumCarouselLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER)
+        if (adjCarLogoLayer.active && !premiumCarouselLogoLayer?.active) onPremiumCarouselLogoLayerChange?.(adjCarLogoLayer)
+        const composedAll = await Promise.all(updated.map(async (s, i) =>
+          s.imageUrl
+            ? await composePremiumImage(s.imageUrl, { text: premiumCarouselTextLayers?.[i] ?? null, logo: adjCarLogoLayer, logoUrl: adjLogoUrl })
+            : ''
+        ))
+        const savedToLibrary = await persistAdjustedPremium(userEmail, composedAll)
         setMessages(prev => [...prev, {
           role: 'agent',
           content: savedToLibrary
@@ -913,7 +992,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setGenerating(true)
     setMessages(prev => [...prev, {
       role: 'agent',
-      content: 'Gerando com Premium — pode levar até 60s...',
+      content: 'Gerando com Premium — capricho leva tempo...',
     }])
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -1298,24 +1377,16 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const userMsg: AgentMessage = { role: 'user', content: msgText }
 
       // ── Logo via chat: apenas no post único Premium. No carrossel Premium o
-      //    controle de logo fica no próprio CarouselViewer. ──
+      //    controle de logo fica no próprio CarouselViewer. Agora mexe só na
+      //    camada de logo — o EditorPage recompõe base → texto → logo, então o
+      //    texto adicionado antes NÃO é perdido (era o bug). ──
       if (isPremiumActive && isLogoRequest) {
-        const premiumSlidesList = validatePremiumSlides<PremiumSlide>(premiumSlides)
-        if (!premiumSlidesList.length || !onPremiumSlidesUpdate) {
-          setMessages(prev => [...prev, userMsg, {
-            role: 'agent',
-            content: 'Não consegui aplicar o logo agora. Use o painel do resultado.',
-          }])
-          setInput('')
-          return
-        }
         setMessages(prev => [...prev, userMsg])
         setInput('')
 
         if (isRemoveLogo) {
-          if (originalPremiumSlidesRef.current) {
-            onPremiumSlidesUpdate(originalPremiumSlidesRef.current)
-            originalPremiumSlidesRef.current = null
+          if (premiumLogoLayer?.active) {
+            onPremiumLogoLayerChange?.({ ...premiumLogoLayer, active: false })
             setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo removido!' }])
           } else {
             setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo para remover.' }])
@@ -1323,30 +1394,26 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           return
         }
 
-        setLoading(true)
-        try {
+        if (!onPremiumLogoLayerChange) {
+          setMessages(prev => [...prev, { role: 'agent', content: 'Não consegui aplicar o logo agora. Use o painel do resultado.' }])
+          return
+        }
+        let url = premiumLogoUrl
+        if (!url) {
           const { data: authData } = await supabase.auth.getUser()
           const userEmail = authData.user?.email ?? ''
           const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
-          if (!brandCtx?.logo_url) {
-            setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca e tente novamente.' }])
-            return
-          }
-          originalPremiumSlidesRef.current = premiumSlidesList
-          const updatedSlides = await Promise.all(
-            premiumSlidesList.map(async slide => ({
-              ...slide,
-              image: await overlayLogoOnImage(slide.image, brandCtx.logo_url!),
-            }))
-          )
-          onPremiumSlidesUpdate(updatedSlides)
-          setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo inserido em todos os formatos!' }])
-        } catch (e) {
-          console.error('[premium add_logo] erro:', e)
-          setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao inserir o logo. Tente novamente.' }])
-        } finally {
-          setLoading(false)
+          url = brandCtx?.logo_url ?? null
         }
+        if (!url) {
+          setMessages(prev => [...prev, { role: 'agent', content: 'Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca e tente novamente.' }])
+          return
+        }
+        // Sobe a URL resolvida pro EditorPage caso ele ainda não a tenha — senão
+        // composePremiumImage recebe logoUrl null e a camada não desenha nada.
+        if (url !== premiumLogoUrl) onPremiumLogoUrlChange?.(url)
+        onPremiumLogoLayerChange({ ...(premiumLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER), active: true })
+        setMessages(prev => [...prev, { role: 'agent', content: '✦ Logo inserido em todos os formatos! Ajuste posição e tamanho no painel do resultado.' }])
         return
       }
 

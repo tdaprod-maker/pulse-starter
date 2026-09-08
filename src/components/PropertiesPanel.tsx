@@ -5,6 +5,7 @@ import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
 import { loadBrandConfig } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
+import { ColorSwatch } from './ColorSwatch'
 
 const LABEL_MAP: Record<string, string> = {
   title: 'Título', subtitle: 'Subtítulo', line1: 'Linha 1', line2: 'Linha 2',
@@ -70,28 +71,6 @@ function hexLuminance(hex: string): number {
   const g = parseInt(h.substring(2, 4), 16)
   const b = parseInt(h.substring(4, 6), 16)
   return 0.299 * r + 0.587 * g + 0.114 * b
-}
-
-function ColorSwatch({ color, onChange, title }: { color: string; onChange: (hex: string) => void; title?: string }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  return (
-    <div
-      onClick={() => inputRef.current?.click()}
-      title={title ?? color.toUpperCase()}
-      style={{
-        width: '32px', height: '32px', borderRadius: '8px',
-        background: color, border: '2px solid rgba(255,255,255,0.12)',
-        cursor: 'pointer', flexShrink: 0, position: 'relative',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-        transition: 'transform 0.1s',
-      }}
-      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)'}
-      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'}
-    >
-      <input ref={inputRef} type="color" value={color} onChange={(e) => onChange(e.target.value)}
-        style={{ position: 'absolute', bottom: 0, right: 0, opacity: 0, width: '32px', height: '32px', cursor: 'pointer', border: 'none', padding: 0 }} />
-    </div>
-  )
 }
 
 function EmojiPicker({ onSelect }: { onSelect: (e: string) => void }) {

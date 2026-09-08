@@ -20,6 +20,12 @@ import { generateImage } from '../services/replicate'
 import { loadBrandConfig } from '../services/brandKit'
 import { supabase } from '../lib/supabase'
 import { validateSlides, parseJsonArray } from '../services/carouselValidation'
+import {
+  composePremiumImage,
+  DEFAULT_PREMIUM_LOGO_LAYER, DEFAULT_PREMIUM_TEXT_LAYER,
+  isLogoLayerActive, isTextLayerActive,
+  type PremiumLogoLayer, type PremiumTextLayer,
+} from '../services/premiumCompose'
 
 interface EditingState {
   el: CanvasElement
@@ -84,8 +90,30 @@ export function EditorPage() {
   const [carouselCurrentSlide, setCarouselCurrentSlide] = useState(0)
   const [carouselSelectedElement, setCarouselSelectedElement] = useState<string | null>(null)
   const [carouselEngine, setCarouselEngine] = useState<string | undefined>(undefined)
+  // `premiumSlides` guarda a BASE (imagens da geração / ajuste gpt-image, sem logo
+  // nem overlay de texto manual). As camadas de logo/texto vivem separadas aqui —
+  // esta é a fonte única (antes cada viewer congelava seu próprio estado, o que
+  // fazia o logo sumir quando o texto era adicionado). `premiumComposedSlides` é o
+  // resultado de base → texto → logo, recomposto por efeito e passado aos viewers.
   const [premiumSlides, setPremiumSlides] = useState<PremiumSlide[] | null>(null)
+  const [premiumComposedSlides, setPremiumComposedSlides] = useState<PremiumSlide[] | null>(null)
+  const [premiumLogoLayer, setPremiumLogoLayer] = useState<PremiumLogoLayer>(DEFAULT_PREMIUM_LOGO_LAYER)
+  const [premiumTextLayer, setPremiumTextLayer] = useState<PremiumTextLayer>(DEFAULT_PREMIUM_TEXT_LAYER)
+  const [premiumLogoUrl, setPremiumLogoUrl] = useState<string | null>(null)
+  // Carrossel Premium: logo global, texto por índice de slide.
+  const [premiumCarouselLogoLayer, setPremiumCarouselLogoLayer] = useState<PremiumLogoLayer>(DEFAULT_PREMIUM_LOGO_LAYER)
+  const [premiumCarouselTextLayers, setPremiumCarouselTextLayers] = useState<Record<number, PremiumTextLayer>>({})
+  const [premiumCarouselComposedSlides, setPremiumCarouselComposedSlides] = useState<SlideWithImage[] | null>(null)
   const [premiumCaption, setPremiumCaption] = useState<{ instagram: string; linkedin: string; hashtags: string } | null>(null)
+
+  function resetPremiumLayers() {
+    setPremiumLogoLayer(DEFAULT_PREMIUM_LOGO_LAYER)
+    setPremiumTextLayer(DEFAULT_PREMIUM_TEXT_LAYER)
+    setPremiumCarouselLogoLayer(DEFAULT_PREMIUM_LOGO_LAYER)
+    setPremiumCarouselTextLayers({})
+    setPremiumComposedSlides(null)
+    setPremiumCarouselComposedSlides(null)
+  }
   // id do registro salvo na Biblioteca para o Premium atualmente aberto no viewer —
   // usado pelo AgentChat para persistir a versão ajustada no lugar do original.
   // Só um dos dois fica preenchido por vez.
@@ -160,6 +188,7 @@ export function EditorPage() {
         setPremiumCaption(parsed.caption ?? null)
         setPremiumLibraryId(pendingPost.id ?? null)
         setPremiumCarouselLibraryId(null)
+        resetPremiumLayers()
       } else {
         console.warn('[restore] post premium sem thumbnail_url, nada para restaurar')
       }
@@ -330,6 +359,7 @@ export function EditorPage() {
       setPremiumCaption(caption)
       setPremiumCarouselLibraryId(pendingCarousel.id ?? null)
       setPremiumLibraryId(null)
+      resetPremiumLayers()
     } else {
       console.warn('[restore] carrossel premium sem slide_images, nada para restaurar')
     }
@@ -340,6 +370,72 @@ export function EditorPage() {
   useEffect(() => {
     setEditingState(null)
   }, [activeTemplateId])
+
+  // Logo da marca (url) — usado pelas camadas de overlay do Premium (post único e
+  // carrossel). Recarrega quando uma superfície Premium abre, para não haver janela
+  // em que o painel "Adicionar logo" acha que não há logo por causa de corrida no
+  // carregamento inicial.
+  const premiumSurfaceOpen = !!premiumSlides || carouselEngine === 'premium'
+  useEffect(() => {
+    if (premiumLogoUrl || !premiumSurfaceOpen) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getUser()
+        const email = data.user?.email
+        if (!email) return
+        const brand = await loadBrandConfig(email)
+        if (!cancelled && brand?.logo_url) setPremiumLogoUrl(brand.logo_url)
+      } catch { /* sem logo — camada de logo fica indisponível, sem erro */ }
+    })()
+    return () => { cancelled = true }
+  }, [premiumSurfaceOpen, premiumLogoUrl])
+
+  // Recompõe o post único Premium: base → texto → logo. Camadas inativas = no-op
+  // (composed === base). É o único lugar que compõe a imagem final — os viewers
+  // só exibem `premiumComposedSlides`.
+  useEffect(() => {
+    let cancelled = false
+    if (!premiumSlides) { setPremiumComposedSlides(null); return }
+    const active = isTextLayerActive(premiumTextLayer) || isLogoLayerActive(premiumLogoLayer, premiumLogoUrl)
+    if (!active) { setPremiumComposedSlides(premiumSlides); return }
+    ;(async () => {
+      try {
+        const composed = await Promise.all(premiumSlides.map(async (s) => ({
+          ...s,
+          image: await composePremiumImage(s.image, { text: premiumTextLayer, logo: premiumLogoLayer, logoUrl: premiumLogoUrl }),
+        })))
+        if (!cancelled) setPremiumComposedSlides(composed)
+      } catch {
+        if (!cancelled) setPremiumComposedSlides(premiumSlides)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [premiumSlides, premiumTextLayer, premiumLogoLayer, premiumLogoUrl])
+
+  // Recompõe o carrossel Premium: logo global + texto por slide.
+  useEffect(() => {
+    let cancelled = false
+    const base = carouselEngine === 'premium' ? carouselSlides : null
+    if (!base) { setPremiumCarouselComposedSlides(null); return }
+    const anyText = Object.values(premiumCarouselTextLayers).some(t => isTextLayerActive(t))
+    const active = anyText || isLogoLayerActive(premiumCarouselLogoLayer, premiumLogoUrl)
+    if (!active) { setPremiumCarouselComposedSlides(base); return }
+    ;(async () => {
+      try {
+        const composed = await Promise.all(base.map(async (s, i) => ({
+          ...s,
+          imageUrl: s.imageUrl
+            ? await composePremiumImage(s.imageUrl, { text: premiumCarouselTextLayers[i], logo: premiumCarouselLogoLayer, logoUrl: premiumLogoUrl })
+            : s.imageUrl,
+        })))
+        if (!cancelled) setPremiumCarouselComposedSlides(validateSlides<SlideWithImage>(composed))
+      } catch {
+        if (!cancelled) setPremiumCarouselComposedSlides(base)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [carouselSlides, carouselEngine, premiumCarouselTextLayers, premiumCarouselLogoLayer, premiumLogoUrl])
 
   // Mede o container principal para calcular o scale dinâmico do canvas
   useLayoutEffect(() => {
@@ -458,6 +554,7 @@ export function EditorPage() {
               setPremiumCaption(null)
               setPremiumLibraryId(null)
               setPremiumCarouselLibraryId(null)
+              resetPremiumLayers()
               setEditModeActive(false)
             }}
             onCarouselGenerated={(slides: SlideWithImage[], caption: string, templateId?: string, engine?: string) => {
@@ -465,6 +562,7 @@ export function EditorPage() {
               setCarouselCaption(caption)
               setCarouselTemplateId(templateId)
               setCarouselEngine(engine)
+              resetPremiumLayers()
               // carrossel gerado no Editor ainda não é salvo na Biblioteca
               setPremiumCarouselLibraryId(null)
             }}
@@ -474,11 +572,22 @@ export function EditorPage() {
               setPremiumCaption(caption)
               setPremiumLibraryId(libraryId ?? null)
               setPremiumCarouselLibraryId(null)
+              resetPremiumLayers()
             }}
             activePost={editPost}
             isPremiumActive={!!premiumSlides}
             premiumSlides={premiumSlides ?? undefined}
             onPremiumSlidesUpdate={setPremiumSlides}
+            premiumLogoLayer={premiumLogoLayer}
+            premiumTextLayer={premiumTextLayer}
+            premiumLogoUrl={premiumLogoUrl}
+            onPremiumLogoUrlChange={setPremiumLogoUrl}
+            onPremiumLogoLayerChange={setPremiumLogoLayer}
+            onPremiumTextLayerChange={setPremiumTextLayer}
+            premiumCarouselLogoLayer={premiumCarouselLogoLayer}
+            premiumCarouselTextLayers={premiumCarouselTextLayers}
+            onPremiumCarouselTextLayerChange={(i, layer) => setPremiumCarouselTextLayers(prev => ({ ...prev, [i]: layer }))}
+            onPremiumCarouselLogoLayerChange={setPremiumCarouselLogoLayer}
             isPremiumCarouselActive={!!carouselSlides && carouselEngine === 'premium'}
             premiumCarouselSlides={carouselEngine === 'premium' ? carouselSlides ?? undefined : undefined}
             premiumCarouselCurrentIndex={carouselCurrentSlide}
@@ -505,17 +614,27 @@ export function EditorPage() {
         }}>
           {premiumSlides ? (
             <PremiumResultViewer
-              slides={premiumSlides}
+              slides={premiumComposedSlides ?? premiumSlides}
               caption={premiumCaption}
-              onClose={() => { setPremiumSlides(null); setPremiumCaption(null); setPremiumLibraryId(null); setPremiumCarouselLibraryId(null) }}
+              logoLayer={premiumLogoLayer}
+              textLayer={premiumTextLayer}
+              logoUrl={premiumLogoUrl}
+              onLogoLayerChange={setPremiumLogoLayer}
+              onTextLayerChange={setPremiumTextLayer}
+              onClose={() => { setPremiumSlides(null); setPremiumCaption(null); setPremiumLibraryId(null); setPremiumCarouselLibraryId(null); resetPremiumLayers() }}
             />
           ) : carouselSlides ? (
             <CarouselViewer
-              slides={carouselSlides}
+              slides={carouselEngine === 'premium' ? (premiumCarouselComposedSlides ?? carouselSlides) : carouselSlides}
               caption={carouselCaption}
               templateId={carouselTemplateId}
               engine={carouselEngine}
-              onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselEngine(undefined); setCarouselCurrentSlide(0); setCarouselSelectedElement(null) }}
+              premiumLogoLayer={premiumCarouselLogoLayer}
+              premiumTextLayers={premiumCarouselTextLayers}
+              premiumLogoUrl={premiumLogoUrl}
+              onPremiumLogoLayerChange={setPremiumCarouselLogoLayer}
+              onPremiumTextLayerChange={(i, layer) => setPremiumCarouselTextLayers(prev => ({ ...prev, [i]: layer }))}
+              onClose={() => { setCarouselSlides(null); setCarouselCaption(''); setCarouselTemplateId(undefined); setCarouselEngine(undefined); setCarouselCurrentSlide(0); setCarouselSelectedElement(null); resetPremiumLayers() }}
               onSlideChange={(i) => { setCarouselCurrentSlide(i); setCarouselSelectedElement(null) }}
               onSelectElement={setCarouselSelectedElement}
             />

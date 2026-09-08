@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import type { CSSProperties } from 'react'
 import type Konva from 'konva'
 import { useStore } from '../state/useStore'
 import { templateRegistry } from '../templates/index'
@@ -11,9 +12,15 @@ import { supabase } from '../lib/supabase'
 import { loadBrandConfig } from '../services/brandKit'
 import { calcAutoScale } from '../engine/CanvasEngine'
 import { validateSlides } from '../services/carouselValidation'
-import { overlayLogoOnImage, type LogoPosition, type LogoSize } from '../services/logoOverlay'
+import { type LogoPosition, type LogoSize } from '../services/logoOverlay'
 import { getInstagramConnection } from '../services/socialConnections'
 import { isIOS, openIOSSaveOverlay } from './IOSSaveOverlay'
+import { ColorSwatch } from './ColorSwatch'
+import {
+  DEFAULT_PREMIUM_LOGO_LAYER, DEFAULT_PREMIUM_TEXT_LAYER,
+  type PremiumLogoLayer, type PremiumTextLayer,
+} from '../services/premiumCompose'
+import type { TextBand, TextScale, TextFontKind } from '../services/textOverlay'
 
 interface CarouselViewerProps {
   slides: SlideWithImage[]
@@ -23,6 +30,13 @@ interface CarouselViewerProps {
   onClose: () => void
   onSlideChange?: (index: number) => void
   onSelectElement?: (id: string | null) => void
+  /** Camadas de overlay do carrossel Premium — fonte única no EditorPage. Logo é
+   *  global (todos os slides); texto é por slide (indexado). */
+  premiumLogoLayer?: PremiumLogoLayer
+  premiumTextLayers?: Record<number, PremiumTextLayer>
+  premiumLogoUrl?: string | null
+  onPremiumLogoLayerChange?: (layer: PremiumLogoLayer) => void
+  onPremiumTextLayerChange?: (slideIndex: number, layer: PremiumTextLayer) => void
 }
 
 const LOGO_POSITION_OPTIONS: { value: LogoPosition; label: string }[] = [
@@ -41,6 +55,31 @@ const LOGO_SIZE_OPTIONS: { value: LogoSize; label: string }[] = [
   { value: 'large', label: 'Grande' },
 ]
 
+const TEXT_BAND_OPTIONS: { value: TextBand; label: string }[] = [
+  { value: 'top', label: '⬆ Topo' },
+  { value: 'center', label: '⊙ Centro' },
+  { value: 'bottom', label: '⬇ Base' },
+]
+
+const TEXT_SCALE_OPTIONS: { value: TextScale; label: string }[] = [
+  { value: 'small', label: 'Pequeno' },
+  { value: 'medium', label: 'Médio' },
+  { value: 'large', label: 'Grande' },
+]
+
+const TEXT_FONT_OPTIONS: { value: TextFontKind; label: string }[] = [
+  { value: 'sans', label: 'Sora' },
+  { value: 'serif', label: 'Playfair' },
+]
+
+const premiumChip = (selected: boolean): CSSProperties => ({
+  fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
+  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+  ...(selected
+    ? { background: 'var(--accent)', border: 'none', color: 'white' }
+    : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
+})
+
 const TYPE_LABEL: Record<string, string> = {
   cover: 'CAPA',
   content: 'CONTEÚDO',
@@ -53,7 +92,14 @@ const TYPE_COLOR: Record<string, string> = {
   cta: '#FF6F5E',
 }
 
-export function CarouselViewer({ slides, caption, templateId, engine, onClose, onSlideChange, onSelectElement }: CarouselViewerProps) {
+export function CarouselViewer({
+  slides, caption, templateId, engine, onClose, onSlideChange, onSelectElement,
+  premiumLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER,
+  premiumTextLayers = {},
+  premiumLogoUrl = null,
+  onPremiumLogoLayerChange,
+  onPremiumTextLayerChange,
+}: CarouselViewerProps) {
   const slidesList = validateSlides<SlideWithImage>(slides)
   const [current, setCurrent] = useState(0)
   const [copiedCaption, setCopiedCaption] = useState(false)
@@ -97,34 +143,42 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
   const { addTemplate, updateElement, setTemplateBackground, setTemplateLogo, setTemplateLogoStyle } = useStore()
   const slide = slidesList[current]
 
-  // Logo overlay do carrossel premium: os slides originais (sem logo) ficam
-  // preservados para permitir reprocessar posição/tamanho sem perder qualidade
-  // por overlays acumulados. Aplicado em todos os slides de uma vez.
-  const [originalPremiumSlides, setOriginalPremiumSlides] = useState<SlideWithImage[]>(() => validateSlides<SlideWithImage>(slides))
-  const [premiumSlidesWithLogo, setPremiumSlidesWithLogo] = useState<SlideWithImage[] | null>(null)
-  const [premiumLogoActive, setPremiumLogoActive] = useState(false)
-  const [premiumLogoUrl, setPremiumLogoUrl] = useState<string | null>(null)
-  const [premiumLogoPosition, setPremiumLogoPosition] = useState<LogoPosition>('bottom-right')
-  const [premiumLogoSize, setPremiumLogoSize] = useState<LogoSize>('medium')
-  const [applyingPremiumLogo, setApplyingPremiumLogo] = useState(false)
+  // Carrossel Premium: `slides` já chega composto (base → texto → logo) do
+  // EditorPage — o viewer só exibe. Nenhum estado de camada congelado aqui
+  // (era a origem do bug de "logo some ao adicionar texto").
   const [premiumLogoError, setPremiumLogoError] = useState('')
-  const displayedPremiumSlides = premiumLogoActive && premiumSlidesWithLogo ? premiumSlidesWithLogo : originalPremiumSlides
+  const [textDraft, setTextDraft] = useState('')
 
-  // Ressincroniza os slides premium quando o pai os troca (ex.: ajuste pós-geração
-  // de um slide via chat). `originalPremiumSlides` é congelado no mount de
-  // propósito (preserva a versão sem logo para reprocessar overlays), então sem
-  // este efeito o viewer ficaria preso às imagens do mount. Reseta o logo porque
-  // a base mudou e mantém o usuário no slide atual (clamp defensivo).
-  const premiumSlidesDidMountRef = useRef(false)
+  // Clamp defensivo do slide atual quando o pai troca a quantidade de slides.
   useEffect(() => {
     if (engine !== 'premium') return
-    if (!premiumSlidesDidMountRef.current) { premiumSlidesDidMountRef.current = true; return }
-    const next = validateSlides<SlideWithImage>(slides)
-    setOriginalPremiumSlides(next)
-    setPremiumSlidesWithLogo(null)
-    setPremiumLogoActive(false)
-    setCurrent(c => Math.min(c, Math.max(0, next.length - 1)))
-  }, [slides, engine])
+    setCurrent(c => Math.min(c, Math.max(0, slidesList.length - 1)))
+  }, [slidesList.length, engine])
+
+  const currentTextLayer = premiumTextLayers[current] ?? DEFAULT_PREMIUM_TEXT_LAYER
+  const currentTextActive = currentTextLayer.active && currentTextLayer.headline.trim().length > 0
+  useEffect(() => { setTextDraft(currentTextLayer.headline) }, [current, currentTextLayer.headline])
+
+  function addPremiumLogo() {
+    setPremiumLogoError('')
+    if (!premiumLogoUrl) {
+      setPremiumLogoError('Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca.')
+      return
+    }
+    onPremiumLogoLayerChange?.({ ...premiumLogoLayer, active: true })
+  }
+
+  function commitPremiumText() {
+    const headline = textDraft.trim()
+    if (!headline) {
+      if (currentTextLayer.active || currentTextLayer.headline) {
+        onPremiumTextLayerChange?.(current, { ...currentTextLayer, active: false, headline: '' })
+      }
+      return
+    }
+    if (headline === currentTextLayer.headline && currentTextLayer.active) return
+    onPremiumTextLayerChange?.(current, { ...currentTextLayer, active: true, headline })
+  }
 
   // Cria templates Konva para cada slide
   useEffect(() => {
@@ -194,59 +248,9 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
     })
   }, [templateId])
 
-  async function applyPremiumLogo(position: LogoPosition, size: LogoSize, urlOverride?: string) {
-    const url = urlOverride ?? premiumLogoUrl
-    if (!url) return
-    setApplyingPremiumLogo(true)
-    try {
-      const withLogo = await Promise.all(
-        originalPremiumSlides.map(async s => ({
-          ...s,
-          imageUrl: s.imageUrl ? await overlayLogoOnImage(s.imageUrl, url, position, size) : s.imageUrl,
-        }))
-      )
-      setPremiumSlidesWithLogo(withLogo)
-      setPremiumLogoActive(true)
-    } finally {
-      setApplyingPremiumLogo(false)
-    }
-  }
-
-  async function handleAddPremiumLogo() {
-    setPremiumLogoError('')
-    let url = premiumLogoUrl
-    if (!url) {
-      const { data: authData } = await supabase.auth.getUser()
-      const email = authData.user?.email ?? ''
-      const brandCtx = email ? await loadBrandConfig(email) : null
-      if (!brandCtx?.logo_url) {
-        setPremiumLogoError('Nenhum logo configurado na sua marca. Adicione o logo no painel de configuração da marca.')
-        return
-      }
-      url = brandCtx.logo_url
-      setPremiumLogoUrl(url)
-    }
-    await applyPremiumLogo(premiumLogoPosition, premiumLogoSize, url)
-  }
-
-  function handleRemovePremiumLogo() {
-    setPremiumLogoActive(false)
-    setPremiumSlidesWithLogo(null)
-  }
-
-  function handlePremiumLogoPositionChange(position: LogoPosition) {
-    setPremiumLogoPosition(position)
-    if (premiumLogoActive) applyPremiumLogo(position, premiumLogoSize)
-  }
-
-  function handlePremiumLogoSizeChange(size: LogoSize) {
-    setPremiumLogoSize(size)
-    if (premiumLogoActive) applyPremiumLogo(premiumLogoPosition, size)
-  }
-
   async function getSlideImages(): Promise<string[]> {
     if (engine === 'premium') {
-      return displayedPremiumSlides.map(s => s.imageUrl).filter(Boolean)
+      return slidesList.map(s => s.imageUrl).filter(Boolean)
     }
     await new Promise(r => setTimeout(r, 800))
     const images: string[] = []
@@ -379,13 +383,13 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
       if (engine === 'premium') {
         if (isIOS()) {
           openIOSSaveOverlay(
-            displayedPremiumSlides.map((s, i) => ({ url: s.imageUrl ?? '', label: `Slide ${i + 1}` }))
+            slidesList.map((s, i) => ({ url: s.imageUrl ?? '', label: `Slide ${i + 1}` }))
           )
           return
         }
         const zip = new JSZip()
-        for (let i = 0; i < displayedPremiumSlides.length; i++) {
-          const imageUrl = displayedPremiumSlides[i].imageUrl
+        for (let i = 0; i < slidesList.length; i++) {
+          const imageUrl = slidesList[i].imageUrl
           if (!imageUrl) continue
           const base64 = imageUrl.split(',')[1]
           if (base64) zip.file(`slide-${i + 1}.png`, base64, { base64: true })
@@ -426,7 +430,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
   async function handleDownloadCurrent() {
     if (engine === 'premium') {
-      const imageUrl = displayedPremiumSlides[current].imageUrl
+      const imageUrl = slidesList[current].imageUrl
       if (!imageUrl) return
       if (isIOS()) {
         openIOSSaveOverlay([{ url: imageUrl, label: `Slide ${current + 1}` }])
@@ -467,7 +471,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Carrossel Premium — {displayedPremiumSlides.length} slides
+              Carrossel Premium — {slidesList.length} slides
             </span>
             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: '#3A5AFF', color: '#fff', fontWeight: 600 }}>
               Premium
@@ -489,15 +493,15 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '24px', overflow: 'hidden', position: 'relative', minHeight: 0,
         }}>
-          {displayedPremiumSlides[current].imageUrl ? (
+          {slidesList[current].imageUrl ? (
             <img
-              src={displayedPremiumSlides[current].imageUrl}
-              alt={displayedPremiumSlides[current].title}
+              src={slidesList[current].imageUrl}
+              alt={slidesList[current].title}
               style={{
                 maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
                 objectFit: 'contain', display: 'block', borderRadius: '12px',
                 boxShadow: '0 0 0 1px rgba(91,143,212,0.2), 0 24px 80px rgba(0,0,0,0.6)',
-                background: '#111', opacity: applyingPremiumLogo ? 0.6 : 1, transition: 'opacity 0.15s',
+                background: '#111', opacity: 1,
               }}
             />
           ) : (
@@ -513,7 +517,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
               cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>‹</button>
           )}
-          {current < displayedPremiumSlides.length - 1 && (
+          {current < slidesList.length - 1 && (
             <button onClick={() => { const i = current + 1; setCurrent(i); onSlideChange?.(i) }} style={{
               position: 'absolute', right: '12px',
               background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
@@ -525,7 +529,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
         {/* Miniaturas */}
         <div style={{ display: 'flex', gap: '8px', padding: '0 20px 16px', overflowX: 'auto', flexShrink: 0, justifyContent: 'center' }}>
-          {displayedPremiumSlides.map((s, i) => (
+          {slidesList.map((s, i) => (
             <div key={i} onClick={() => { setCurrent(i); onSlideChange?.(i) }} style={{
               width: '56px', height: '70px', borderRadius: '6px', overflow: 'hidden',
               cursor: 'pointer', flexShrink: 0, position: 'relative',
@@ -544,7 +548,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
 
         {/* Ações */}
         <div style={{ padding: '12px 20px 20px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-          {/* Controles de logo */}
+          {/* Controles de logo (global — todos os slides) */}
           <div style={{
             display: 'flex', flexDirection: 'column', gap: '10px',
             background: 'var(--bg-surface)', border: '1px solid var(--border)',
@@ -554,24 +558,22 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
               <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                 Logo da marca
               </span>
-              {!premiumLogoActive ? (
+              {!premiumLogoLayer.active ? (
                 <button
-                  onClick={handleAddPremiumLogo}
-                  disabled={applyingPremiumLogo}
+                  onClick={addPremiumLogo}
                   style={{
-                    fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingPremiumLogo ? 'default' : 'pointer',
+                    fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
                     fontFamily: 'inherit', fontWeight: 600, border: 'none',
-                    background: 'var(--accent)', color: 'white', opacity: applyingPremiumLogo ? 0.6 : 1,
+                    background: 'var(--accent)', color: 'white',
                   }}
                 >
-                  {applyingPremiumLogo ? 'Aplicando...' : 'Adicionar logo'}
+                  Adicionar logo
                 </button>
               ) : (
                 <button
-                  onClick={handleRemovePremiumLogo}
-                  disabled={applyingPremiumLogo}
+                  onClick={() => onPremiumLogoLayerChange?.({ ...premiumLogoLayer, active: false })}
                   style={{
-                    fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: applyingPremiumLogo ? 'default' : 'pointer',
+                    fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
                     fontFamily: 'inherit', fontWeight: 600,
                     border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)',
                   }}
@@ -585,7 +587,7 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
               <span style={{ fontSize: '11px', color: 'rgba(239,68,68,0.9)' }}>{premiumLogoError}</span>
             )}
 
-            {premiumLogoActive && (
+            {premiumLogoLayer.active && (
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Posição</span>
@@ -593,16 +595,8 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
                     {LOGO_POSITION_OPTIONS.map(opt => (
                       <button
                         key={opt.value}
-                        onClick={() => handlePremiumLogoPositionChange(opt.value)}
-                        disabled={applyingPremiumLogo}
-                        style={{
-                          fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
-                          cursor: applyingPremiumLogo ? 'default' : 'pointer', fontFamily: 'inherit',
-                          whiteSpace: 'nowrap',
-                          ...(premiumLogoPosition === opt.value
-                            ? { background: 'var(--accent)', border: 'none', color: 'white' }
-                            : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
-                        }}
+                        onClick={() => onPremiumLogoLayerChange?.({ ...premiumLogoLayer, position: opt.value })}
+                        style={premiumChip(premiumLogoLayer.position === opt.value)}
                       >
                         {opt.label}
                       </button>
@@ -616,19 +610,117 @@ export function CarouselViewer({ slides, caption, templateId, engine, onClose, o
                     {LOGO_SIZE_OPTIONS.map(opt => (
                       <button
                         key={opt.value}
-                        onClick={() => handlePremiumLogoSizeChange(opt.value)}
-                        disabled={applyingPremiumLogo}
-                        style={{
-                          flex: 1, fontSize: '11px', padding: '5px 10px', borderRadius: '6px',
-                          cursor: applyingPremiumLogo ? 'default' : 'pointer', fontFamily: 'inherit',
-                          ...(premiumLogoSize === opt.value
-                            ? { background: 'var(--accent)', border: 'none', color: 'white' }
-                            : { background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }),
-                        }}
+                        onClick={() => onPremiumLogoLayerChange?.({ ...premiumLogoLayer, size: opt.value })}
+                        style={{ ...premiumChip(premiumLogoLayer.size === opt.value), flex: 1 }}
                       >
                         {opt.label}
                       </button>
                     ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Controles de texto (overlay — por slide) */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: '10px',
+            background: 'var(--bg-surface)', border: '1px solid var(--border)',
+            borderRadius: '10px', padding: '12px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Texto — slide {current + 1}
+              </span>
+              {currentTextActive && (
+                <button
+                  onClick={() => onPremiumTextLayerChange?.(current, { ...currentTextLayer, active: false })}
+                  style={{
+                    fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
+                    fontFamily: 'inherit', fontWeight: 600,
+                    border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)',
+                  }}
+                >
+                  Remover texto
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                value={textDraft}
+                onChange={e => setTextDraft(e.target.value)}
+                onBlur={commitPremiumText}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitPremiumText() } }}
+                placeholder="Escreva o texto e tecle Enter"
+                style={{
+                  flex: 1, background: 'var(--bg-base)', border: '1px solid var(--border)',
+                  borderRadius: '8px', color: 'var(--text-primary)', fontSize: '12px',
+                  padding: '8px 10px', fontFamily: 'inherit', outline: 'none',
+                }}
+              />
+              <button
+                onClick={commitPremiumText}
+                style={{
+                  fontSize: '11px', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
+                  fontFamily: 'inherit', fontWeight: 600, border: 'none',
+                  background: 'var(--accent)', color: 'white', whiteSpace: 'nowrap',
+                }}
+              >
+                {currentTextActive ? 'Atualizar' : 'Adicionar'}
+              </button>
+            </div>
+
+            {currentTextActive && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Posição</span>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {TEXT_BAND_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => onPremiumTextLayerChange?.(current, { ...currentTextLayer, band: opt.value })}
+                        style={premiumChip(currentTextLayer.band === opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Tamanho</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {TEXT_SCALE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => onPremiumTextLayerChange?.(current, { ...currentTextLayer, scale: opt.value })}
+                        style={{ ...premiumChip(currentTextLayer.scale === opt.value), flex: 1 }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Fonte</span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {TEXT_FONT_OPTIONS.map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => onPremiumTextLayerChange?.(current, { ...currentTextLayer, font: opt.value })}
+                          style={premiumChip(currentTextLayer.font === opt.value)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Cor</span>
+                    <ColorSwatch color={currentTextLayer.color} onChange={hex => onPremiumTextLayerChange?.(current, { ...currentTextLayer, color: hex })} title="Cor do texto" />
                   </div>
                 </div>
               </>

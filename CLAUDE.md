@@ -235,6 +235,13 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   o projeto não tem CI/CD de banco. Ao criar uma migration nova, aplique também via MCP do
   Supabase (`apply_migration`, project_id `gnqhjcmvyhhodjghpuop`, projeto "Pulse - DATA") ou
   peça pro usuário rodar manualmente; só criar o arquivo `.sql` no repo não altera produção.
+- **Storage bucket `media` (`storage.objects` RLS):** policies são `INSERT` + `SELECT` (public)
+  + `UPDATE` (`authenticated`, `bucket_id = 'media'`, migration `20260908010000`). A de `UPDATE`
+  foi adicionada porque `uploadThumbnail` usa `upsert: true` — a 1ª gravação num path é `INSERT`
+  (200), a 2ª no MESMO path é `UPDATE` e, sem policy, o Storage devolvia **HTTP 400** (RLS).
+  Só apareceu quando `persistAdjustedPremium` passou a sobrescrever `thumbnails/{email}/{id}.jpg`
+  depois de um ajuste Premium. Não há policy de `DELETE` de propósito (nenhum caminho apaga
+  objetos). Se um upload novo der 400, cheque se a operação é overwrite e se falta policy pro `cmd`.
 - Tabela `social_connections`: colunas `access_token`, `platform_user_id`, `platform_username`,
   `platform_avatar_url`, `expires_at`, `is_valid`. `platform_avatar_url` foi adicionada em
   26/ago/2026 (migration `20260826190000_add_platform_avatar_url_to_social_connections.sql`) —
@@ -268,13 +275,36 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   faixa inferior "limpa" visualmente — nunca pra pedir que escreva algo ali).
   - **`src/services/textOverlay.ts`** (`overlayTextOnImage`) desenha o headline/subtitle
     de verdade, depois da geração, num `<canvas>` — mesmo padrão que `logoOverlay.ts`
-    já usava pro logo. Margens de safe-zone (3% lateral / 4.5% vertical) e fonte
-    sans-serif (Helvetica/Arial) são **constantes de código**, não texto de prompt —
-    a garantia agora é matemática (auto-fit reduzindo o tamanho até caber, com
-    truncamento de linhas como último recurso), não uma instrução que o modelo pode
-    ignorar. Chamado de `PremiumPage.tsx` (post único + cada slide do carrossel) e
-    `AgentChat.tsx` (`generatePremium`/`generatePremiumCarousel`), sempre depois do
-    `cropImageToRatio` e antes do overlay de logo.
+    já usava pro logo. Margens de safe-zone (3% lateral / 4.5% vertical) são
+    **constantes de código**, não texto de prompt — a garantia é matemática (auto-fit
+    reduzindo o tamanho até caber, com truncamento de linhas como último recurso), não
+    uma instrução que o modelo pode ignorar. Desde 05/set a assinatura aceita
+    `band` (`'top'|'center'|'bottom'`), `scale` (`'small'|'medium'|'large'`), `color`
+    e `font` (`'sans'`→Sora, `'serif'`→Playfair Display) — todos opcionais, defaults
+    retrocompatíveis com as chamadas de geração. A fonte deixou de ser Helvetica/Arial
+    genérica: default agora é **Sora 700** (as duas famílias já vêm do `index.html`);
+    `ensureFontLoaded` aguarda `document.fonts.load` antes de desenhar, senão a
+    primeira renderização sai no fallback. Chamado de `PremiumPage.tsx` (post único +
+    cada slide do carrossel, na geração) e — via `composePremiumImage` — pelo
+    `EditorPage` na composição de camadas.
+  - **Composição de camadas do Premium (05/set, arquitetura nova):**
+    `src/services/premiumCompose.ts` define `PremiumLogoLayer` / `PremiumTextLayer` e
+    `composePremiumImage(base, { text, logo, logoUrl })` que aplica **base → texto →
+    logo** nessa ordem (logo por último de propósito: fica *sobre* o scrim do texto,
+    nunca soterrado). O `EditorPage` é a **fonte única** dessas camadas
+    (`premiumLogoLayer`/`premiumTextLayer` pro post único; `premiumCarouselLogoLayer`
+    global + `premiumCarouselTextLayers` por índice pro carrossel) e é o **único**
+    lugar que compõe — dois `useEffect` recompõem `premiumComposedSlides` /
+    `premiumCarouselComposedSlides` e os viewers só exibem. Isso substituiu o modelo
+    antigo em que cada viewer congelava seu próprio estado de logo em `useState` e um
+    `useEffect([slides])` resetava esse estado — era exatamente isso que fazia **o
+    logo sumir quando o usuário pedia pra adicionar texto** (o overlay de texto vinha
+    da base sem logo e o reset descartava a versão com logo). Os painéis de logo/texto
+    do `PremiumResultViewer` e do `CarouselViewer` agora só chamam callbacks pra cima;
+    o chat (`AgentChat`: "adiciona logo", "adiciona o texto '...'") também só mexe nas
+    camadas via callback, nunca mais assa bytes com overlay direto. Para persistir na
+    Biblioteca, `runPremiumAdjust` compõe localmente (`composePremiumImage`) só pra
+    obter os bytes finais — o display fica por conta do efeito do `EditorPage`.
   - **Texto literal vem sempre de uma fonte determinística**, nunca do que o modelo
     "decidiu" escrever: `slideContent` já calculado por `breakCarouselIntoSlides` pro
     carrossel, ou `extractQuotedText(prompt)` (texto citado entre aspas no brief) pro
@@ -286,10 +316,14 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
     de texto, pois nunca adicionam texto). Mas **"adicionar texto" nem chega mais
     nesse endpoint**: `isAddTextRequest(msg)` detecta o pedido, `extractQuotedText`
     extrai o texto exato entre aspas (sem aspas, o agente pede pro usuário
-    especificar em vez de adivinhar) e `overlayTextOnImage` desenha direto em cima da
-    imagem atual em memória — zero chamada ao gpt-image-2, instantâneo. Ainda debita
-    `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` por consistência com o resto do fluxo de
-    ajuste, embora tecnicamente não tenha mais custo de API — decisão de produto em
+    especificar em vez de adivinhar) e o resultado vira a **camada de texto** do
+    `EditorPage` (`onPremiumTextLayerChange` / `onPremiumCarouselTextLayerChange`) —
+    zero chamada ao gpt-image-2, instantâneo, e o logo já aplicado é preservado
+    porque a composição refaz base → texto → logo. Depois de inserido, o usuário
+    ajusta posição (topo/centro/base), tamanho, cor e fonte (Sora/Playfair) no painel
+    "Texto sobre a imagem" do viewer — mesmo padrão dos controles de logo. Ainda
+    debita `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` por consistência com o resto do fluxo
+    de ajuste, embora tecnicamente não tenha mais custo de API — decisão de produto em
     aberto se isso deveria virar grátis.
   - Custo do ajuste visual (não-texto): `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` (4), post
     único ou por slide de carrossel. O slide-alvo do carrossel é sempre o
@@ -299,10 +333,40 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
     de um post já salvo na Biblioteca, sem a versão "limpa" em memória), NÃO
     reintroduza renderização de texto via prompt do gpt-image-2 — é exatamente o
     padrão que causou o bug recorrente. Prefira sempre computar/obter a imagem base
-    e desenhar por cima via `overlayTextOnImage`.
-- **Persistência do ajuste na Biblioteca:** depois de um ajuste/recompose bem-sucedido,
+    e passar por `composePremiumImage` (ou `overlayTextOnImage` direto na geração).
+  - **Logo "queimado" em imagem restaurada da Biblioteca vs. camada de logo (08/set).**
+    A arquitetura de camadas (Opção B) só resolve o caso 100% gerado no Editor. Posts
+    Premium **restaurados da Biblioteca** (e os gerados pela `PremiumPage`) têm o logo
+    *nos pixels* do `thumbnail_url` — `premiumLogoLayer` volta inativo no restore. Ao
+    adicionar texto por chat, o scrim de `overlayTextOnImage` cobre esse logo
+    queimado ("logo some ao adicionar texto", de novo). Fix: `runPremiumAdjust`
+    (ramos `addingText` e ajuste normal) resolve a URL do logo (`premiumLogoUrl` →
+    brand kit → `onPremiumLogoUrlChange`) e, se a camada estiver inativa mas houver
+    URL, **reativa** a camada (`onPremiumLogoLayerChange` / `onPremiumCarouselLogoLayerChange`).
+    `composePremiumImage` então redesenha `base → texto → logo` e re-carimba o logo
+    *por cima* do scrim. Como `PremiumPage.overlayLogo` queima o logo na MESMA posição
+    e tamanho do `DEFAULT_PREMIUM_LOGO_LAYER` (bottom-right, `0.20·W`), o re-carimbo é
+    visualmente idêntico. Efeito colateral aceito: post Premium salvo *sem* logo, ao
+    receber texto/ajuste por chat, ganha o logo da marca (Premium = branded).
+  - **`overlayTextOnImage`: safe-zone vertical é matemática, não aproximação (08/set).**
+    O loop de encaixe antigo limitava só `blockHeight ≤ 0.32·H − 1.5·marginY` e
+    ignorava o offset de início do desenho (`~0.85·headlineSize + 0.5·marginY` na base).
+    Com headline **+ subtitle** (que o carrossel Premium sempre passa) o bloco vazava a
+    margem inferior em `~0.2–0.35·headlineSize` + descenders. Agora `firstBaselineY()`
+    replica *exatamente* o `y` que o renderer usa por band, e o loop encolhe até
+    `renderedBottom() ≤ safeBottom` **e** `renderedTop() ≥ safeTop` — a mesma
+    geometria testada e desenhada. Fallback: se nem no `MIN_FONT_SIZE` couber (canvas
+    pequeno + 3+2 linhas), corta linhas (subtitle→headline) até caber. Verificado por
+    simulação (`scratchpad/sim-textoverlay.mjs`, não versionado): 0 violações em 6048
+    casos (8 headlines × 4 subtitles × 7 tamanhos de canvas × 3 bands × 3 scales × 3
+    modelos de largura); a lógica antiga tinha 193 no subset bottom/medium. Ao mexer
+    no `y` de qualquer band, ajuste `firstBaselineY()` na mesma edição — os dois têm
+    que continuar idênticos ou a garantia quebra.
+- **Persistência do ajuste na Biblioteca:** depois de um ajuste/recompose/overlay bem-sucedido,
   `runPremiumAdjust` chama `persistAdjustedPremium` para **sobrescrever o registro que já existe** na
-  Biblioteca (senão o histórico continuaria mostrando o original). Post único → `uploadThumbnail` +
+  Biblioteca (senão o histórico continuaria mostrando o original). Desde 05/set os bytes salvos
+  passam por `composePremiumImage` primeiro, pra a Biblioteca guardar a imagem **com** as camadas de
+  texto/logo ativas (não só a base). Post único → `uploadThumbnail` +
   `updatePostThumbnail` no mesmo `premiumLibraryId` (path determinístico `thumbnails/{email}/{id}.jpg`
   com `upsert` → mesmo URL público, só troca os bytes). Carrossel restaurado da Biblioteca →
   `updateCarouselSlideImages(premiumCarouselLibraryId, ...)` reescreve `carousels.slide_images`.
@@ -316,13 +380,13 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   `PostLibraryPage.tsx` e `LibraryPage.tsx` têm `postCardLabel(post)` que, pra Premium, mostra a 1ª
   linha da legenda do Instagram (fallback: prompt de imagem, depois `template_id`). Qualquer card
   novo que liste posts deve usar esse helper, não `post.image_prompt` direto.
-- **`PremiumResultViewer` e `CarouselViewer` (ramo `engine === 'premium'`) congelam os slides em
-  `useState` no mount** (`originalSlides` / `originalPremiumSlides`) — é intencional pra preservar a
-  versão sem logo. Mas isso significa que trocar a prop `slides` **não** atualiza a imagem exibida
-  sozinho. Cada viewer tem um `useEffect([slides])` com guard de `didMountRef` que ressincroniza
-  `original*`/`display*` e reseta o estado do logo quando o pai troca os slides (é o que faz o
-  resultado do ajuste aparecer). Se adicionar outro fluxo que muda `premiumSlides`/`carouselSlides`
-  de fora, conte com esse reset de logo.
+- **`PremiumResultViewer` e `CarouselViewer` (ramo `engine === 'premium'`) NÃO têm mais estado de
+  camada congelado** (05/set). Antes cada um congelava `originalSlides`/`originalPremiumSlides` em
+  `useState` no mount + um `useEffect([slides])` com `didMountRef` que ressincronizava e **resetava o
+  logo** — isso era a origem do bug "logo some ao adicionar texto". Agora o `EditorPage` compõe
+  `base → texto → logo` num só lugar e os viewers só exibem a prop `slides` já composta (ver a
+  entrada de composição de camadas do Premium acima). Ao mexer nesses viewers: os painéis de
+  logo/texto só emitem callbacks pra cima, nenhuma composição de imagem acontece dentro deles.
 - **Aquisição via LP (checkout → provisionamento → email):** o `checkout.session.completed` do
   webhook chama `ensureUserForCheckout` (`api-lib/provisionAccount.js`) **antes** de creditar —
   `credit_pulses`/`upsert` de `user_tokens` dependem do email já existir. A lógica do handler está
