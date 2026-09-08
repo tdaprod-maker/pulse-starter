@@ -727,6 +727,27 @@ export function CarouselViewer({
                     <ColorSwatch color={currentTextLayer.color} onChange={hex => onPremiumTextLayerChange?.(current, { ...currentTextLayer, color: hex })} title="Cor do texto" />
                   </div>
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Destaque (trecho + cor)</span>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <input
+                      value={currentTextLayer.highlightText ?? ''}
+                      onChange={e => onPremiumTextLayerChange?.(current, { ...currentTextLayer, highlightText: e.target.value })}
+                      placeholder="Palavra ou frase do texto acima"
+                      style={{
+                        flex: 1, background: 'var(--bg-base)', border: '1px solid var(--border)',
+                        borderRadius: '8px', color: 'var(--text-primary)', fontSize: '12px',
+                        padding: '6px 10px', fontFamily: 'inherit', outline: 'none',
+                      }}
+                    />
+                    <ColorSwatch
+                      color={currentTextLayer.highlightColor ?? '#4A90D9'}
+                      onChange={hex => onPremiumTextLayerChange?.(current, { ...currentTextLayer, highlightColor: hex })}
+                      title="Cor do destaque"
+                    />
+                  </div>
+                </div>
               </>
             )}
           </div>

@@ -1,5 +1,5 @@
 import { overlayLogoOnImage, type LogoPosition, type LogoSize } from './logoOverlay'
-import { overlayTextOnImage, type TextBand, type TextScale, type TextFontKind } from './textOverlay'
+import { overlayTextOnImage, type TextBand, type TextScale, type TextFontKind, type TextRun, type StyledLine, type TextContent } from './textOverlay'
 
 /** Camada de logo do Premium. Vive no EditorPage (fonte única) — nunca mais em
  *  estado local congelado dentro de um viewer. */
@@ -19,6 +19,11 @@ export interface PremiumTextLayer {
   scale: TextScale
   color: string
   font: TextFontKind
+  /** Fase 3 (UI opção A): trecho literal do headline a colorir + a cor. Só afeta
+   *  o render quando os DOIS estão setados e o trecho é achado no headline —
+   *  senão o headline continua sendo uma string simples (comportamento Fase 2). */
+  highlightText?: string
+  highlightColor?: string
 }
 
 export const DEFAULT_PREMIUM_LOGO_LAYER: PremiumLogoLayer = {
@@ -34,6 +39,40 @@ export const DEFAULT_PREMIUM_TEXT_LAYER: PremiumTextLayer = {
   scale: 'medium',
   color: '#FFFFFF',
   font: 'sans',
+  highlightText: '',
+  highlightColor: '#4A90D9',
+}
+
+/** Monta o headline como StyledLine[] com o trecho `hlText` (case-insensitive,
+ *  1ª ocorrência por linha) num run de cor `hlColor`. Se faltar um dos dois, o
+ *  trecho não aparecer, ou o match não cair em fronteira de palavra, devolve a
+ *  string original (o overlay segue no caminho simples da Fase 2). Respeita `\n`.
+ *
+ *  O match precisa ser word-aligned porque o tokenizer do overlay normaliza
+ *  whitespace para 1 espaço entre tokens — um match no MEIO de uma palavra
+ *  ("SULT" em "RESULTADOS") introduziria espaços e mudaria a métrica, quebrando
+ *  a neutralidade que garante a safe-zone. Destaque é para palavras/frases. */
+export function buildHighlightedHeadline(headline: string, hlText?: string, hlColor?: string): TextContent {
+  const needle = hlText?.trim()
+  if (!needle || !hlColor) return headline
+  let matched = false
+  const lines: StyledLine[] = headline.split('\n').map(raw => {
+    const idx = raw.toLowerCase().indexOf(needle.toLowerCase())
+    if (idx < 0) return raw
+    const end = idx + needle.length
+    const boundaryBefore = idx === 0 || /\s/.test(raw[idx - 1])
+    const boundaryAfter = end === raw.length || /\s/.test(raw[end])
+    if (!boundaryBefore || !boundaryAfter) return raw
+    matched = true
+    const runs: TextRun[] = []
+    const before = raw.slice(0, idx)
+    const after = raw.slice(end)
+    if (before) runs.push({ text: before })
+    runs.push({ text: raw.slice(idx, end), color: hlColor })
+    if (after) runs.push({ text: after })
+    return runs
+  })
+  return matched ? lines : headline
 }
 
 export function isTextLayerActive(layer: PremiumTextLayer | null | undefined): boolean {
@@ -60,7 +99,7 @@ export async function composePremiumImage(
   if (isTextLayerActive(opts.text)) {
     const t = opts.text as PremiumTextLayer
     out = await overlayTextOnImage(out, {
-      headline: t.headline,
+      headline: buildHighlightedHeadline(t.headline, t.highlightText, t.highlightColor),
       subtitle: t.subtitle?.trim() || undefined,
       band: t.band,
       scale: t.scale,

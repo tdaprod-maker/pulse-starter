@@ -362,6 +362,34 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
     modelos de largura); a lógica antiga tinha 193 no subset bottom/medium. Ao mexer
     no `y` de qualquer band, ajuste `firstBaselineY()` na mesma edição — os dois têm
     que continuar idênticos ou a garantia quebra.
+  - **Medição vertical por `TextMetrics` real, não constante calibrada (08/set, "Fase 2").**
+    `ASCENT_RATIO`/`DESCENT_RATIO`/`lineHeight = size*1.25` (fixos, calibrados na Sora)
+    saíram. `inkExtent()` usa `ctx.measureText(line).actualBoundingBoxAscent/Descent` —
+    tinta real por fonte E por conteúdo. `firstBaselineY`/`renderedTop`/`renderedBottom`/
+    `lineHeight` consomem esses valores; fallback pras razões só se a API faltar
+    (nunca em Chrome/Safari atuais). `ctx.textBaseline='alphabetic'` é setado **antes**
+    de qualquer `measureText` (a bbox é relativa à baseline). `FONT_WEIGHTS` por família
+    (Anton/Bebas/Archivo em 400, sem faux-bold) pra `measureText` bater com o desenho.
+    `INK_PAD=3`/`TOP_PAD=4` absorvem ~1.5px de antialias. Verificado em `sim-textoverlay-v2.mjs`
+    (não versionado): 36.288 casos (6 fontes × sweep × métrica perturbada ±6%), 0 violações,
+    folga mínima +1.5px base / +2.5px topo.
+  - **Texto estruturado em runs coloridos (08/set, "Fase 3").** `overlayTextOnImage`
+    aceita `headline`/`subtitle` como `TextContent = string | StyledLine[]`, onde
+    `StyledLine = string | TextRun[]` e `TextRun = { text; color? }`. **Só COR varia
+    por run** — peso continua sendo do bloco (`FONT_WEIGHTS`). Como o peso é uniforme,
+    `wrapTokenLine`/`toRenderLine`/`inkExtent` rodam no **texto achatado** (`RenderLine.flat`)
+    — largura, ascent/descent e nº de linhas saem idênticos aos de uma string simples
+    (validado em `scratchpad/sim-runs-neutrality.mjs`, 972 casos, 0 divergências → a
+    garantia de safe-zone da Fase 2 transfere sem reexecução). Runs só mudam o desenho:
+    `drawFittedBlock` usa o caminho **centrado byte-idêntico à Fase 2** para linha sem
+    cor de run, e alinhamento à esquerda + avanço por run (troca de `fillStyle`) quando
+    há cor. `premiumCompose.buildHighlightedHeadline(headline, hlText, hlColor)` (UI opção
+    A) monta o `StyledLine[]` a partir de um trecho literal — **match só em fronteira de
+    palavra** (mid-word introduziria espaços e quebraria a neutralidade). Sem os dois
+    campos de highlight → string simples → caminho Fase 2. **Ao evoluir o overlay: peso
+    por run e drag NÃO existem ainda** (Fase 3.1+); a geometria vertical (`firstBaselineY`/
+    `renderedTop`/`renderedBottom`) segue intocada desde a Fase 2 — não mexer sem
+    re-rodar as duas simulações.
 - **Persistência do ajuste na Biblioteca:** depois de um ajuste/recompose/overlay bem-sucedido,
   `runPremiumAdjust` chama `persistAdjustedPremium` para **sobrescrever o registro que já existe** na
   Biblioteca (senão o histórico continuaria mostrando o original). Desde 05/set os bytes salvos

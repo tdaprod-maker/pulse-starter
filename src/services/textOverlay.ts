@@ -2,15 +2,27 @@ export type TextBand = 'top' | 'center' | 'bottom'
 export type TextScale = 'small' | 'medium' | 'large'
 export type TextFontKind = 'sans' | 'serif' | 'anton' | 'archivo' | 'bebas' | 'oswald'
 
+/** Um trecho de texto com cor própria dentro de uma linha. Fase 3: só COR varia
+ *  por run — peso continua sendo do bloco inteiro (ver FONT_WEIGHTS). Como o peso
+ *  é uniforme, a medição de largura/tinta não muda: measureText independe de cor.
+ *  Runs só afetam onde o fillStyle troca no desenho. */
+export interface TextRun { text: string; color?: string }
+/** Uma linha lógica: string (comportamento atual, auto-quebra) ou runs coloridos. */
+export type StyledLine = string | TextRun[]
+/** Conteúdo de um bloco (headline ou subtitle): string (uso atual — uma linha
+ *  lógica auto-quebrada) ou StyledLine[] (quebras de linha explícitas + runs). */
+export type TextContent = string | StyledLine[]
+
 export interface TextOverlayOptions {
-  headline: string
-  subtitle?: string
+  headline: TextContent
+  subtitle?: TextContent
   /** Faixa vertical onde o texto é ancorado. Default 'bottom' (retrocompatível
    *  com as chamadas de geração, que sempre desenharam na base). */
   band?: TextBand
   /** Multiplicador do tamanho de fonte base (img.width * 0.085). Default 'medium'. */
   scale?: TextScale
-  /** Cor do headline (hex). Subtitle usa a mesma cor com alpha reduzido. Default '#FFFFFF'. */
+  /** Cor do headline (hex). Subtitle usa a mesma cor com alpha reduzido. Default '#FFFFFF'.
+   *  Runs sem `color` herdam esta. */
   color?: string
   /** Família tipográfica — 'sans'→Sora, 'serif'→Playfair Display, 'anton'/'archivo'/
    *  'bebas'/'oswald' → famílias impact/condensadas. Default 'sans'. */
@@ -141,27 +153,92 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean)
-  if (!words.length) return []
-  const lines: string[] = []
-  let current = words[0]
-  for (const word of words.slice(1)) {
-    const test = `${current} ${word}`
-    if (ctx.measureText(test).width <= maxWidth) {
-      current = test
+// ─────────────────────────── conteúdo estruturado ───────────────────────────
+// Fase 3: o texto de um bloco pode vir como StyledLine[] (quebras explícitas +
+// runs coloridos). Como só a COR varia por run (peso é do bloco), toda a medição
+// — largura, ascent/descent, lineHeight — roda no TEXTO ACHATADO da sub-linha,
+// exatamente como na Fase 2. Runs só mudam onde o fillStyle troca no desenho.
+// Consequência: para uma string simples o resultado é byte-idêntico à Fase 2.
+
+type NormLine = TextRun[]
+
+function normalizeContent(c: TextContent | undefined): NormLine[] {
+  if (c == null) return []
+  if (typeof c === 'string') {
+    const t = c.trim()
+    return t ? [[{ text: t }]] : []
+  }
+  const out: NormLine[] = []
+  for (const line of c) {
+    if (typeof line === 'string') {
+      const t = line.trim()
+      if (t) out.push([{ text: t }])
     } else {
-      lines.push(current)
-      current = word
+      const runs = line.filter(r => r && typeof r.text === 'string' && r.text.length > 0)
+      if (runs.length) out.push(runs.map(r => ({ text: r.text, color: r.color })))
     }
   }
-  lines.push(current)
-  return lines
+  return out
+}
+
+interface WordTok { text: string; color?: string }
+/** Tokeniza uma linha lógica em palavras (whitespace vira 1 espaço entre tokens —
+ *  mesma normalização que o wrapText da Fase 2). Cada palavra carrega a cor do run. */
+function lineToTokens(line: NormLine): WordTok[] {
+  const toks: WordTok[] = []
+  for (const run of line) {
+    for (const w of run.text.split(/\s+/)) {
+      if (w) toks.push({ text: w, color: run.color })
+    }
+  }
+  return toks
+}
+
+interface RenderRun { text: string; color?: string; width: number }
+interface RenderLine {
+  runs: RenderRun[]
+  /** largura renderizada real da linha inteira (measureText do texto achatado) */
+  width: number
+  /** texto achatado — entrada de inkExtent (idêntico ao que a Fase 2 media) */
+  flat: string
+}
+
+/** Coalesce tokens de cor igual num RenderLine. `ctx.font` já deve estar setado. */
+function toRenderLine(ctx: CanvasRenderingContext2D, toks: WordTok[]): RenderLine {
+  const runs: RenderRun[] = []
+  for (const tok of toks) {
+    const last = runs[runs.length - 1]
+    if (last && last.color === tok.color) last.text += ` ${tok.text}`
+    else runs.push({ text: tok.text, color: tok.color, width: 0 })
+  }
+  for (const r of runs) r.width = ctx.measureText(r.text).width
+  const flat = runs.map(r => r.text).join(' ')
+  return { runs, width: ctx.measureText(flat).width, flat }
+}
+
+/** Greedy-wrap dos tokens de UMA linha lógica em ≥1 RenderLine. Decisão de quebra
+ *  medida no texto achatado (`${cur} ${word}`) — idêntica ao wrapText da Fase 2. */
+function wrapTokenLine(ctx: CanvasRenderingContext2D, toks: WordTok[], maxWidth: number): RenderLine[] {
+  if (!toks.length) return []
+  const out: RenderLine[] = []
+  let cur: WordTok[] = [toks[0]]
+  let curText = toks[0].text
+  for (const tok of toks.slice(1)) {
+    const test = `${curText} ${tok.text}`
+    if (ctx.measureText(test).width <= maxWidth) {
+      cur.push(tok); curText = test
+    } else {
+      out.push(toRenderLine(ctx, cur))
+      cur = [tok]; curText = tok.text
+    }
+  }
+  out.push(toRenderLine(ctx, cur))
+  return out
 }
 
 interface FittedText {
   size: number
-  lines: string[]
+  lines: RenderLine[]
   /** avanço entre baselines — derivado da tinta real (ver LINE_LEADING) */
   lineHeight: number
   /** tinta real acima da baseline (máx. entre linhas), medida via TextMetrics */
@@ -170,41 +247,85 @@ interface FittedText {
   descent: number
 }
 
-/** Máximo tamanho de fonte ≤ `startSize` em que `text` cabe em ≤ `maxLines` linhas
- *  dentro de `maxWidth`; se nem no MIN_FONT_SIZE couber, corta linhas excedentes.
- *  ascent/descent/lineHeight saem de medição real (`inkExtent`) na fonte escolhida. */
-function fitText(
+function measure(ctx: CanvasRenderingContext2D, lines: RenderLine[], size: number) {
+  const { ascent, descent } = inkExtent(ctx, lines.map(l => l.flat), size)
+  return { ascent, descent, lineHeight: Math.round((ascent + descent) * LINE_LEADING) }
+}
+
+/** Máximo tamanho de fonte ≤ `startSize` em que as linhas lógicas de `blockLines`
+ *  cabem em ≤ `maxLines` linhas renderizadas dentro de `maxWidth`; se nem no
+ *  MIN_FONT_SIZE couber, corta linhas excedentes. ascent/descent/lineHeight saem
+ *  de medição real (`inkExtent`) no texto achatado — igual à Fase 2. */
+function fitBlock(
   ctx: CanvasRenderingContext2D,
-  text: string,
+  blockLines: NormLine[],
   maxWidth: number,
   startSize: number,
   weight: string,
   maxLines: number,
   fontStack: string,
 ): FittedText {
+  const tokLines = blockLines.map(lineToTokens)
   let size = startSize
-  let lines: string[] | undefined
+  let lines: RenderLine[] | undefined
   while (size > MIN_FONT_SIZE) {
     ctx.font = `${weight} ${size}px ${fontStack}`
-    const wrapped = wrapText(ctx, text, maxWidth)
+    const wrapped = tokLines.flatMap(tl => wrapTokenLine(ctx, tl, maxWidth))
     if (wrapped.length <= maxLines) { lines = wrapped; break }
     size -= 2
   }
   if (!lines) {
     size = MIN_FONT_SIZE
     ctx.font = `${weight} ${size}px ${fontStack}`
-    lines = wrapText(ctx, text, maxWidth).slice(0, maxLines)
+    lines = tokLines.flatMap(tl => wrapTokenLine(ctx, tl, maxWidth)).slice(0, maxLines)
   }
-  const { ascent, descent } = inkExtent(ctx, lines, size)
-  return { size, lines, ascent, descent, lineHeight: Math.round((ascent + descent) * LINE_LEADING) }
+  return { size, lines, ...measure(ctx, lines, size) }
 }
 
 /** Re-mede ascent/descent/lineHeight de um bloco depois que suas linhas mudaram
  *  (corte no passo 2). Remover linha só pode manter ou reduzir a tinta do bloco. */
 function remeasure(ctx: CanvasRenderingContext2D, fitted: FittedText, weight: string, fontStack: string): FittedText {
   ctx.font = `${weight} ${fitted.size}px ${fontStack}`
-  const { ascent, descent } = inkExtent(ctx, fitted.lines, fitted.size)
-  return { ...fitted, ascent, descent, lineHeight: Math.round((ascent + descent) * LINE_LEADING) }
+  return { ...fitted, ...measure(ctx, fitted.lines, fitted.size) }
+}
+
+/** Desenha um bloco já ajustado a partir da baseline `startY`. Linha sem cor de
+ *  run → caminho centrado IDÊNTICO à Fase 2 (byte a byte para string simples).
+ *  Linha com runs coloridos → alinhamento à esquerda, avança x por run. Retorna
+ *  o y após a última linha. */
+function drawFittedBlock(
+  ctx: CanvasRenderingContext2D,
+  block: FittedText,
+  centerX: number,
+  startY: number,
+  weight: string,
+  blockColor: string,
+  safeWidth: number,
+  fontStack: string,
+): number {
+  ctx.font = `${weight} ${block.size}px ${fontStack}`
+  const spaceW = ctx.measureText(' ').width || block.size * 0.28
+  let y = startY
+  for (const line of block.lines) {
+    const plain = line.runs.length === 1 && !line.runs[0].color
+    if (plain) {
+      ctx.textAlign = 'center'
+      ctx.fillStyle = blockColor
+      ctx.fillText(line.runs[0].text, centerX, y, safeWidth)
+    } else {
+      ctx.textAlign = 'left'
+      const scale = line.width > safeWidth ? safeWidth / line.width : 1
+      let x = centerX - (line.width * scale) / 2
+      for (let i = 0; i < line.runs.length; i++) {
+        const r = line.runs[i]
+        ctx.fillStyle = r.color ?? blockColor
+        ctx.fillText(r.text, x, y, r.width * scale)
+        x += (r.width + (i < line.runs.length - 1 ? spaceW : 0)) * scale
+      }
+    }
+    y += block.lineHeight
+  }
+  return y
 }
 
 /**
@@ -216,8 +337,10 @@ function remeasure(ctx: CanvasRenderingContext2D, fitted: FittedText, weight: st
  */
 export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions): Promise<string> {
   return new Promise((resolve) => {
-    const headline = opts.headline?.trim()
-    if (!headline) { resolve(imageBase64); return }
+    const headlineLines = normalizeContent(opts.headline)
+    if (!headlineLines.length) { resolve(imageBase64); return }
+    const subtitleLines = normalizeContent(opts.subtitle)
+    const hasSubtitle = subtitleLines.length > 0
 
     const band: TextBand = opts.band ?? 'bottom'
     const fontKind: TextFontKind = opts.font ?? 'sans'
@@ -247,7 +370,6 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
           const marginX = img.width * SAFE_MARGIN_X_RATIO
           const marginY = img.height * SAFE_MARGIN_Y_RATIO
           const safeWidth = img.width - marginX * 2
-          const subtitle = opts.subtitle?.trim()
 
           const startHeadlineSize = Math.round(img.width * 0.085 * scaleMult)
           await ensureFontLoaded(fontKind, [startHeadlineSize, Math.round(startHeadlineSize * 0.5)])
@@ -260,14 +382,14 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
           const stripYForFit = img.height - img.height * STRIP_RATIO
 
           let headlineSize = startHeadlineSize
-          let fittedHeadline = fitText(ctx, headline, safeWidth, headlineSize, weights.head, MAX_HEADLINE_LINES, fontStack)
-          let fittedSubtitle = subtitle
-            ? fitText(ctx, subtitle, safeWidth, Math.round(fittedHeadline.size * 0.5), weights.sub, MAX_SUBTITLE_LINES, fontStack)
+          let fittedHeadline = fitBlock(ctx, headlineLines, safeWidth, headlineSize, weights.head, MAX_HEADLINE_LINES, fontStack)
+          let fittedSubtitle = hasSubtitle
+            ? fitBlock(ctx, subtitleLines, safeWidth, Math.round(fittedHeadline.size * 0.5), weights.sub, MAX_SUBTITLE_LINES, fontStack)
             : null
 
           // Recalculado a cada iteração — o gap depende do lineHeight ATUAL do
           // headline, que encolhe junto (antes ficava congelado no valor inicial).
-          const currentGap = () => (subtitle ? Math.round(fittedHeadline.lineHeight * 0.35) : 0)
+          const currentGap = () => (hasSubtitle ? Math.round(fittedHeadline.lineHeight * 0.35) : 0)
 
           const blockHeight = () =>
             fittedHeadline.lines.length * fittedHeadline.lineHeight +
@@ -307,9 +429,9 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
             (renderedBottom() > safeBottom || renderedTop() < safeTop)
           ) {
             headlineSize -= 2
-            fittedHeadline = fitText(ctx, headline, safeWidth, headlineSize, weights.head, MAX_HEADLINE_LINES, fontStack)
-            fittedSubtitle = subtitle
-              ? fitText(ctx, subtitle, safeWidth, Math.round(fittedHeadline.size * 0.5), weights.sub, MAX_SUBTITLE_LINES, fontStack)
+            fittedHeadline = fitBlock(ctx, headlineLines, safeWidth, headlineSize, weights.head, MAX_HEADLINE_LINES, fontStack)
+            fittedSubtitle = hasSubtitle
+              ? fitBlock(ctx, subtitleLines, safeWidth, Math.round(fittedHeadline.size * 0.5), weights.sub, MAX_SUBTITLE_LINES, fontStack)
               : null
           }
 
@@ -383,21 +505,11 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
             y = plateY + platePadY + fittedHeadline.ascent
           }
 
-          ctx.fillStyle = headlineColor
-          ctx.font = `${weights.head} ${fittedHeadline.size}px ${fontStack}`
-          for (const line of fittedHeadline.lines) {
-            ctx.fillText(line, centerX, y, safeWidth)
-            y += fittedHeadline.lineHeight
-          }
+          y = drawFittedBlock(ctx, fittedHeadline, centerX, y, weights.head, headlineColor, safeWidth, fontStack)
 
           if (fittedSubtitle) {
             y += gap
-            ctx.font = `${weights.sub} ${fittedSubtitle.size}px ${fontStack}`
-            ctx.fillStyle = subtitleColor
-            for (const line of fittedSubtitle.lines) {
-              ctx.fillText(line, centerX, y, safeWidth)
-              y += fittedSubtitle.lineHeight
-            }
+            drawFittedBlock(ctx, fittedSubtitle, centerX, y, weights.sub, subtitleColor, safeWidth, fontStack)
           }
 
           resolve(canvas.toDataURL('image/png'))
