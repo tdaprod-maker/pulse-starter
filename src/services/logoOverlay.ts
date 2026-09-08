@@ -51,7 +51,7 @@ export function overlayLogoOnImage(
             x = (img.width - logoW) / 2; y = (img.height - logoH) / 2
             break
           case 'top-center':
-            x = (img.width - logoW) / 2; y = img.height / 3 - logoH / 2
+            x = (img.width - logoW) / 2; y = margin
             break
           case 'bottom-right':
           default:
