@@ -176,6 +176,54 @@ Fluxo para quem compra pela landing page **sem ter conta no Pulse ainda**:
 
 ---
 
+## Status da Última Sessão (08/09/2026) — bug logo + texto + RLS no Premium
+
+**RESOLVIDO — commit `cd2a5f0` (em `main`, deployado; migration aplicada em prod via MCP):**
+
+1. **Logo desaparecia ao adicionar texto em posts Premium restaurados da Biblioteca.**
+   Causa: o `thumbnail_url` salvo tem o logo *nos pixels* e `premiumLogoLayer` volta
+   inativo no restore — o scrim de `overlayTextOnImage` cobria o logo queimado.
+   Fix: `runPremiumAdjust` (ramos "adicionar texto" e ajuste normal) resolve
+   `premiumLogoUrl` (estado do EditorPage → brand kit, propagado por
+   `onPremiumLogoUrlChange`) + reativa a camada de logo quando inativa mas há URL +
+   `composePremiumImage` recompõe `base → texto → logo`, re-carimbando o logo por
+   cima do scrim (mesma posição/tamanho da geração → visualmente idêntico). Props
+   novas em `AgentChat`: `onPremiumLogoUrlChange`, `onPremiumCarouselLogoLayerChange`.
+
+2. **Texto saía da safety area.** Causa: bug de geometria em `textOverlay.ts` — o
+   loop de encaixe limitava só o `blockHeight` e ignorava o offset de início do
+   desenho (`~0.85·headlineSize + 0.5·marginY`); headline **+ subtitle** (carrossel
+   Premium) vazava a margem inferior. Fix matemático real: `firstBaselineY()` replica
+   a fórmula exata do `y` do renderer por band e o loop encolhe até
+   `renderedBottom() ≤ safeBottom` **e** `renderedTop() ≥ safeTop` (mesma geometria
+   testada e desenhada); corta linhas se nem no `MIN_FONT_SIZE` couber. **Verificado
+   por simulação: 6048 casos, 0 violações** (lógica antiga: 193 no subset bottom/medium).
+
+3. **Erro HTTP 400 no upload de thumbnail.** Não era das mudanças — `storage.objects`
+   do bucket `media` só tinha policy de `INSERT`/`SELECT`. `uploadThumbnail` usa
+   `upsert: true`; a 2ª gravação no mesmo path é `UPDATE` e era negada por RLS.
+   Fix: migration `20260908010000_add_media_update_rls_policy.sql` (aplicada em prod).
+
+**TESTADO EM PRODUÇÃO PELO USUÁRIO (08/09/2026):** resultado **melhorou
+significativamente** — os 3 bugs estão funcionalmente resolvidos. Porém **restam
+ajustes finos** de acabamento que só dá para definir com **análise visual
+(screenshots)**. Provável (não confirmado sem ver as imagens): posicionamento /
+tamanho / estética do texto ou do logo.
+
+**PRÓXIMO PASSO:** o usuário vai abrir **outra conversa no Claude.ai** (fora do
+Claude Code) para enviar os screenshots do resultado atual, discutir os ajustes
+finos e voltar com instruções específicas. **Não mexer no overlay de texto/logo do
+Premium até essas instruções chegarem.**
+
+**Comando pronto para colar na próxima sessão do Claude Code:**
+
+> Leia o CONTEXT.md — a correção do bug de logo+texto+RLS (commit cd2a5f0) foi
+> validada como funcional em produção, mas há ajustes finos pendentes de definição
+> após análise visual em outra conversa. Aguarde instruções específicas antes de
+> qualquer alteração.
+
+---
+
 ## Pendentes Críticos (afetam UX em produção)
 
 | Item | Detalhe |
@@ -186,6 +234,7 @@ Fluxo para quem compra pela landing page **sem ter conta no Pulse ainda**:
 | **Testar: texto desconfigurado ao restaurar** | Regressão suspeita; logs de diagnóstico adicionados no pendingPost effect — verificar no console ao restaurar da biblioteca. |
 | **Testar: premium sem logo automático** | Verificar que `generatePremium` não sobrepõe logo automaticamente; testar add/remove logo via chat. |
 | **Testar em produção: ajuste/recompose pós-geração Premium** | Fluxo não testável localmente (`vite` não serve `/api/*`; `gpt-image-2` é pago). Após deploy: (1) gerar post Premium → "escurece o fundo" → confirmar 4 pulses → só o fundo muda, texto/layout/pessoa preservados, saldo −4; (2) mesmo post → "usa a foto como referência da pessoa mas gera um novo ambiente ao redor" → msg de confirmação diz "recompor o cenário" → pessoa e texto preservados, cenário novo de fato (não só reenquadrado); (3) carrossel Premium → navegar até slide 3 → pedir ajuste → msg cita "slide 3", só o slide 3 muda, navegação fica no 3; (4) encadear 2 edições seguidas; (5) abrir a Biblioteca depois → card sem JSON bruto, thumbnail = versão editada; (6) conferir que o resultado aparece no viewer. (7) aplicar logo → depois "adiciona o texto 'Promoção'" → **o logo continua visível** (não é mais resetado); mexer em posição/tamanho/cor do texto no painel e ver a imagem recompor. (8) **restaurar** um post Premium com logo da Biblioteca → "adiciona o texto 'X'" → logo NÃO some (é re-carimbado por cima do scrim — fix 08/set); a 2ª gravação da thumbnail no mesmo path precisa da policy RLS de UPDATE no bucket `media` (migration `20260908010000`) senão dá 400. (9) `overlayTextOnImage` com headline+subtitle (carrossel) → texto nunca ultrapassa a margem de 4.5% (fix de geometria 08/set, verificado por simulação). |
+| **Ajustes finos do overlay texto/logo Premium (aguardando screenshots)** | Bug logo+texto+RLS (commit `cd2a5f0`) validado como funcional em prod pelo usuário, mas o acabamento visual (posição/tamanho/estética de texto e logo) ainda precisa de refino. Definição virá de outra conversa no Claude.ai com prints. **Não alterar o overlay Premium até instruções específicas.** Ver "Status da Última Sessão" acima. |
 | **Testar: análise de site no onboarding** | `/api/agent-chat { siteUrl }` → fetch + Claude → brand_description preenchido automaticamente. |
 | **Testar: máximo 2 perguntas antes de gerar** | `userMessageCount < 3` → pode perguntar; na 3ª mensagem gera obrigatoriamente. |
 
