@@ -1,6 +1,6 @@
 export type TextBand = 'top' | 'center' | 'bottom'
 export type TextScale = 'small' | 'medium' | 'large'
-export type TextFontKind = 'sans' | 'serif'
+export type TextFontKind = 'sans' | 'serif' | 'anton' | 'archivo' | 'bebas' | 'oswald'
 
 export interface TextOverlayOptions {
   headline: string
@@ -12,8 +12,8 @@ export interface TextOverlayOptions {
   scale?: TextScale
   /** Cor do headline (hex). Subtitle usa a mesma cor com alpha reduzido. Default '#FFFFFF'. */
   color?: string
-  /** Família tipográfica com caráter — 'sans' → Sora, 'serif' → Playfair Display.
-   *  Substitui a Helvetica/Arial genérica de antes. Default 'sans'. */
+  /** Família tipográfica — 'sans'→Sora, 'serif'→Playfair Display, 'anton'/'archivo'/
+   *  'bebas'/'oswald' → famílias impact/condensadas. Default 'sans'. */
   font?: TextFontKind
 }
 
@@ -27,22 +27,87 @@ const MIN_FONT_SIZE = 22
 const MAX_HEADLINE_LINES = 3
 const MAX_SUBTITLE_LINES = 2
 
-// Sora e Playfair Display já são carregadas no index.html (Google Fonts). O fallback
-// existe só para o caso de a folha de fonte não ter chegado — mas ensureFontLoaded()
-// abaixo aguarda o carregamento antes de desenhar no canvas, então na prática a
-// primeira renderização já sai na fonte certa.
+// Todas carregadas no index.html (Google Fonts). O fallback existe só para o caso
+// de a folha de fonte não ter chegado — mas ensureFontLoaded() abaixo aguarda o
+// carregamento antes de desenhar no canvas, então na prática a primeira
+// renderização já sai na fonte certa.
 const FONT_STACKS: Record<TextFontKind, string> = {
   sans: '"Sora", "Helvetica Neue", Helvetica, Arial, sans-serif',
   serif: '"Playfair Display", Georgia, "Times New Roman", serif',
+  anton: '"Anton", "Impact", "Haettenschweiler", "Arial Narrow Bold", sans-serif',
+  archivo: '"Archivo Black", "Arial Black", "Helvetica Neue", Arial, sans-serif',
+  bebas: '"Bebas Neue", "Oswald", "Impact", "Arial Narrow", sans-serif',
+  oswald: '"Oswald", "Impact", "Arial Narrow", sans-serif',
 }
 const FONT_FAMILY_FOR_LOAD: Record<TextFontKind, string> = {
   sans: '"Sora"',
   serif: '"Playfair Display"',
+  anton: '"Anton"',
+  archivo: '"Archivo Black"',
+  bebas: '"Bebas Neue"',
+  oswald: '"Oswald"',
+}
+// Peso do headline / subtitle por família. Anton, Archivo Black e Bebas Neue só
+// têm um peso (400) — pedir 700 nelas dispara faux-bold (borra a fonte já pesada)
+// e desalinha a medição do measureText do desenho real. Sora/Playfair mantêm o
+// que já estava validado.
+const FONT_WEIGHTS: Record<TextFontKind, { head: string; sub: string }> = {
+  sans: { head: '700', sub: '500' },
+  serif: { head: '700', sub: '500' },
+  anton: { head: '400', sub: '400' },
+  archivo: { head: '400', sub: '400' },
+  bebas: { head: '400', sub: '400' },
+  oswald: { head: '700', sub: '400' },
 }
 const SCALE_MULTIPLIER: Record<TextScale, number> = {
   small: 0.74,
   medium: 1,
   large: 1.3,
+}
+
+// Entre baselines = (tinta real ascender+descender) × isto. Substitui o antigo
+// `size * 1.25` fixo — agora o espaçamento acompanha a fonte real (condensadas
+// apertam, serifadas com descender fundo abrem), medido, não estimado.
+const LINE_LEADING = 1.28
+// Folga (px) nas checagens de safe-zone, contra antialias sangrando além da bbox
+// geométrica medida. Simulação: com 1.5px de sangramento no pior caso de 36k
+// combinações (fonte × conteúdo × canvas × band × scale × ±6% de métrica), sobra
+// ~1.5px dos dois lados.
+const INK_PAD = 3
+// Borda de cima da band 'top' é limite duro (marginY), sem faixa de manobra como
+// a base. Baseline 1px a mais que INK_PAD → topo do glifo cai com folga real
+// abaixo de marginY mesmo no pior caso.
+const TOP_PAD = INK_PAD + 1
+// Só usados quando `TextMetrics.actualBoundingBox*` não existe (browser antigo /
+// canvas sem suporte) ou devolve algo degenerado. Em produção (Chrome/Safari
+// atuais) a medição real sempre vence e estes nunca entram.
+const FALLBACK_ASCENT_RATIO = 0.95
+const FALLBACK_DESCENT_RATIO = 0.32
+
+/** Extensão REAL de tinta acima/abaixo da baseline alfabética, medida com
+ *  `ctx.measureText(...).actualBoundingBoxAscent/Descent` na fonte atual do ctx —
+ *  por fonte E por conteúdo, sem constante calibrada. `ctx.textBaseline` precisa
+ *  estar em 'alphabetic'. Toma o máximo entre as linhas do bloco. */
+function inkExtent(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  size: number,
+): { ascent: number; descent: number; measured: boolean } {
+  let ascent = 0
+  let descent = 0
+  let measured = false
+  for (const line of lines) {
+    const m = ctx.measureText(line)
+    if (Number.isFinite(m.actualBoundingBoxAscent) && Number.isFinite(m.actualBoundingBoxDescent)) {
+      measured = true
+      if (m.actualBoundingBoxAscent > ascent) ascent = m.actualBoundingBoxAscent
+      if (m.actualBoundingBoxDescent > descent) descent = m.actualBoundingBoxDescent
+    }
+  }
+  if (!measured || ascent + descent < size * 0.25) {
+    return { ascent: size * FALLBACK_ASCENT_RATIO, descent: size * FALLBACK_DESCENT_RATIO, measured: false }
+  }
+  return { ascent, descent, measured: true }
 }
 
 /** `ctx.fillText` desenha na fonte de fallback se a web font ainda não terminou de
@@ -53,10 +118,12 @@ async function ensureFontLoaded(kind: TextFontKind, sizes: number[]): Promise<vo
     const fonts = (document as unknown as { fonts?: { load: (f: string) => Promise<unknown>; ready: Promise<unknown> } }).fonts
     if (!fonts?.load) return
     const fam = FONT_FAMILY_FOR_LOAD[kind]
+    const weights = FONT_WEIGHTS[kind]
     const specs = new Set<string>()
     for (const s of sizes) {
-      specs.add(`700 ${Math.max(MIN_FONT_SIZE, Math.round(s))}px ${fam}`)
-      specs.add(`500 ${Math.max(MIN_FONT_SIZE, Math.round(s))}px ${fam}`)
+      const px = Math.max(MIN_FONT_SIZE, Math.round(s))
+      specs.add(`${weights.head} ${px}px ${fam}`)
+      specs.add(`${weights.sub} ${px}px ${fam}`)
     }
     await Promise.all([...specs].map(spec => fonts.load(spec).catch(() => undefined)))
     await fonts.ready
@@ -92,29 +159,52 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines
 }
 
-/** Reduz o tamanho de fonte até o texto caber em no máximo `maxLines` linhas dentro
- *  de `maxWidth`, parando em MIN_FONT_SIZE mesmo que ainda não caiba perfeitamente
- *  (nesse caso corta linhas excedentes — nunca deixa o texto vazar da safe zone). */
+interface FittedText {
+  size: number
+  lines: string[]
+  /** avanço entre baselines — derivado da tinta real (ver LINE_LEADING) */
+  lineHeight: number
+  /** tinta real acima da baseline (máx. entre linhas), medida via TextMetrics */
+  ascent: number
+  /** tinta real abaixo da baseline (máx. entre linhas), medida via TextMetrics */
+  descent: number
+}
+
+/** Máximo tamanho de fonte ≤ `startSize` em que `text` cabe em ≤ `maxLines` linhas
+ *  dentro de `maxWidth`; se nem no MIN_FONT_SIZE couber, corta linhas excedentes.
+ *  ascent/descent/lineHeight saem de medição real (`inkExtent`) na fonte escolhida. */
 function fitText(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
   startSize: number,
-  bold: boolean,
+  weight: string,
   maxLines: number,
   fontStack: string,
-): { size: number; lines: string[]; lineHeight: number } {
+): FittedText {
   let size = startSize
+  let lines: string[] | undefined
   while (size > MIN_FONT_SIZE) {
-    ctx.font = `${bold ? '700 ' : '500 '}${size}px ${fontStack}`
-    const lines = wrapText(ctx, text, maxWidth)
-    if (lines.length <= maxLines) {
-      return { size, lines, lineHeight: Math.round(size * 1.25) }
-    }
+    ctx.font = `${weight} ${size}px ${fontStack}`
+    const wrapped = wrapText(ctx, text, maxWidth)
+    if (wrapped.length <= maxLines) { lines = wrapped; break }
     size -= 2
   }
-  ctx.font = `${bold ? '700 ' : '500 '}${MIN_FONT_SIZE}px ${fontStack}`
-  return { size: MIN_FONT_SIZE, lines: wrapText(ctx, text, maxWidth).slice(0, maxLines), lineHeight: Math.round(MIN_FONT_SIZE * 1.25) }
+  if (!lines) {
+    size = MIN_FONT_SIZE
+    ctx.font = `${weight} ${size}px ${fontStack}`
+    lines = wrapText(ctx, text, maxWidth).slice(0, maxLines)
+  }
+  const { ascent, descent } = inkExtent(ctx, lines, size)
+  return { size, lines, ascent, descent, lineHeight: Math.round((ascent + descent) * LINE_LEADING) }
+}
+
+/** Re-mede ascent/descent/lineHeight de um bloco depois que suas linhas mudaram
+ *  (corte no passo 2). Remover linha só pode manter ou reduzir a tinta do bloco. */
+function remeasure(ctx: CanvasRenderingContext2D, fitted: FittedText, weight: string, fontStack: string): FittedText {
+  ctx.font = `${weight} ${fitted.size}px ${fontStack}`
+  const { ascent, descent } = inkExtent(ctx, fitted.lines, fitted.size)
+  return { ...fitted, ascent, descent, lineHeight: Math.round((ascent + descent) * LINE_LEADING) }
 }
 
 /**
@@ -132,6 +222,7 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
     const band: TextBand = opts.band ?? 'bottom'
     const fontKind: TextFontKind = opts.font ?? 'sans'
     const fontStack = FONT_STACKS[fontKind]
+    const weights = FONT_WEIGHTS[fontKind]
     const scaleMult = SCALE_MULTIPLIER[opts.scale ?? 'medium']
     const headlineColor = opts.color?.trim() || '#FFFFFF'
     const subtitleColor = hexToRgba(headlineColor, 0.92)
@@ -147,6 +238,11 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
           const ctx = canvas.getContext('2d')
           if (!ctx) { resolve(imageBase64); return }
           ctx.drawImage(img, 0, 0)
+          // 'alphabetic' ANTES de qualquer measureText: actualBoundingBoxAscent/
+          // Descent são relativos à baseline implícita pelo textBaseline — tem que
+          // ser a mesma que o fillText usa lá embaixo, senão a medida não bate.
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'alphabetic'
 
           const marginX = img.width * SAFE_MARGIN_X_RATIO
           const marginY = img.height * SAFE_MARGIN_Y_RATIO
@@ -162,19 +258,11 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
           // teste "cabe na safe zone" bate com o desenho real.
           const STRIP_RATIO = 0.32
           const stripYForFit = img.height - img.height * STRIP_RATIO
-          // Distâncias baseline↔tinta da Sora (em frações do size), com folga:
-          // ASCENT cobre ascender + diacríticos PT (Ã, Õ, É); DESCENT o descender.
-          const ASCENT_RATIO = 0.93
-          const DESCENT_RATIO = 0.30
-          // Deslocamento vertical do desenho (baseline da 1ª linha) por band.
-          // 'top' usa o ascender inteiro pra que o topo do glifo caia EM marginY,
-          // não acima; 'bottom'/'center' mantêm o respiro visual de antes (0.85).
-          const drawAscent = (size: number) => (band === 'top' ? size * (ASCENT_RATIO + 0.03) : size * 0.85)
 
           let headlineSize = startHeadlineSize
-          let fittedHeadline = fitText(ctx, headline, safeWidth, headlineSize, true, MAX_HEADLINE_LINES, fontStack)
+          let fittedHeadline = fitText(ctx, headline, safeWidth, headlineSize, weights.head, MAX_HEADLINE_LINES, fontStack)
           let fittedSubtitle = subtitle
-            ? fitText(ctx, subtitle, safeWidth, Math.round(fittedHeadline.size * 0.5), false, MAX_SUBTITLE_LINES, fontStack)
+            ? fitText(ctx, subtitle, safeWidth, Math.round(fittedHeadline.size * 0.5), weights.sub, MAX_SUBTITLE_LINES, fontStack)
             : null
 
           // Recalculado a cada iteração — o gap depende do lineHeight ATUAL do
@@ -186,28 +274,26 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
             currentGap() +
             (fittedSubtitle ? fittedSubtitle.lines.length * fittedSubtitle.lineHeight : 0)
 
-          // Baseline da PRIMEIRA linha — idêntico ao `y` inicial do renderer para
-          // cada band. Sem replicar isso aqui, o loop de encaixe ignorava o offset
-          // de partida (~0.85*headlineSize + 0.5*marginY na base) e o bloco
-          // headline+subtitle vazava a margem inferior (bug real: legendas de
-          // carrossel Premium, que passam subtitle, saíam da safe zone).
+          // Y da baseline da PRIMEIRA linha — mesma fórmula que o renderer usa.
+          // O offset até o topo do bloco é `fittedHeadline.ascent` (tinta real
+          // medida), não mais `~0.85*size` estimado. 'top' soma INK_PAD pra o
+          // topo do glifo cair logo ABAIXO de marginY, nunca em cima.
           const firstBaselineY = () => {
-            const asc = drawAscent(fittedHeadline.size)
+            const asc = fittedHeadline.ascent
             if (band === 'bottom') return stripYForFit + marginY * 0.5 + asc
-            if (band === 'top') return marginY + asc
+            if (band === 'top') return marginY + asc + TOP_PAD
             const platePadY = marginY * 0.7
             const plateH = blockHeight() + platePadY * 2
             return (img.height - plateH) / 2 + platePadY + asc
           }
-          // Pixel de tinta mais BAIXO do bloco inteiro (última linha = subtitle se
-          // houver): baseline da última linha + descender.
+          // Pixel de tinta mais BAIXO do bloco: baseline da última linha (headline
+          // ou subtitle) + descender REAL medido dela.
           const renderedBottom = () => {
-            const lastLH = fittedSubtitle ? fittedSubtitle.lineHeight : fittedHeadline.lineHeight
-            const lastSize = fittedSubtitle ? fittedSubtitle.size : fittedHeadline.size
-            return firstBaselineY() + blockHeight() - lastLH + lastSize * DESCENT_RATIO
+            const last = fittedSubtitle ?? fittedHeadline
+            return firstBaselineY() + blockHeight() - last.lineHeight + last.descent + INK_PAD
           }
-          // Pixel de tinta mais ALTO (topo da 1ª linha = baseline − ascender).
-          const renderedTop = () => firstBaselineY() - fittedHeadline.size * ASCENT_RATIO
+          // Pixel de tinta mais ALTO = baseline da 1ª linha − ascender REAL medido.
+          const renderedTop = () => firstBaselineY() - fittedHeadline.ascent - INK_PAD
 
           const safeBottom = img.height - marginY
           const safeTop = marginY
@@ -221,23 +307,27 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
             (renderedBottom() > safeBottom || renderedTop() < safeTop)
           ) {
             headlineSize -= 2
-            fittedHeadline = fitText(ctx, headline, safeWidth, headlineSize, true, MAX_HEADLINE_LINES, fontStack)
+            fittedHeadline = fitText(ctx, headline, safeWidth, headlineSize, weights.head, MAX_HEADLINE_LINES, fontStack)
             fittedSubtitle = subtitle
-              ? fitText(ctx, subtitle, safeWidth, Math.round(fittedHeadline.size * 0.5), false, MAX_SUBTITLE_LINES, fontStack)
+              ? fitText(ctx, subtitle, safeWidth, Math.round(fittedHeadline.size * 0.5), weights.sub, MAX_SUBTITLE_LINES, fontStack)
               : null
           }
 
           // 2) Se mesmo no MIN_FONT_SIZE o bloco ainda vaza (canvas pequeno +
           //    headline 3 linhas + subtitle 2 linhas não cabem nos ~32% da faixa),
-          //    corta linhas — subtitle primeiro, depois headline — até caber.
-          //    Sempre sobra ≥ 1 linha de headline. Garante o invariante por
-          //    construção mesmo no pior caso.
-          while (renderedBottom() > safeBottom) {
+          //    corta linhas — subtitle primeiro, depois headline — até caber nos
+          //    DOIS limites. Checar renderedTop() também é essencial na band
+          //    'center': lá o bloco é centrado, e caber embaixo NÃO garante caber
+          //    em cima (o topo precisa de bound ~0.28*(asc+desc) mais apertado).
+          //    Sempre sobra ≥ 1 linha de headline.
+          while (renderedBottom() > safeBottom || renderedTop() < safeTop) {
             if (fittedSubtitle && fittedSubtitle.lines.length > 0) {
-              fittedSubtitle = { ...fittedSubtitle, lines: fittedSubtitle.lines.slice(0, -1) }
-              if (fittedSubtitle.lines.length === 0) fittedSubtitle = null
+              const trimmed = fittedSubtitle.lines.slice(0, -1)
+              fittedSubtitle = trimmed.length
+                ? remeasure(ctx, { ...fittedSubtitle, lines: trimmed }, weights.sub, fontStack)
+                : null
             } else if (fittedHeadline.lines.length > 1) {
-              fittedHeadline = { ...fittedHeadline, lines: fittedHeadline.lines.slice(0, -1) }
+              fittedHeadline = remeasure(ctx, { ...fittedHeadline, lines: fittedHeadline.lines.slice(0, -1) }, weights.head, fontStack)
             } else {
               break
             }
@@ -257,9 +347,9 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
             grad.addColorStop(1, 'rgba(0,0,0,0.75)')
             ctx.fillStyle = grad
             ctx.fillRect(0, stripY, img.width, stripHeight)
-            // Começa no topo da faixa (+ respiro): o loop de encaixe já garantiu
-            // que renderedBottom() <= safeBottom com ESTE mesmo y.
-            y = stripY + marginY * 0.5 + drawAscent(fittedHeadline.size)
+            // Idêntico a firstBaselineY() do loop de encaixe (ascent = tinta real
+            // medida). O loop ja garantiu renderedBottom() <= safeBottom com este y.
+            y = stripY + marginY * 0.5 + fittedHeadline.ascent
           } else if (band === 'top') {
             const stripHeight = img.height * 0.32
             const grad = ctx.createLinearGradient(0, 0, 0, stripHeight)
@@ -268,10 +358,10 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
             grad.addColorStop(1, 'rgba(0,0,0,0)')
             ctx.fillStyle = grad
             ctx.fillRect(0, 0, img.width, stripHeight)
-            // Igual a firstBaselineY() do loop de encaixe. Baseline = marginY +
-            // ascender inteiro → topo do glifo cai EM marginY (era marginY*0.9 +
-            // 0.85: o topo do glifo passava acima da margem em headlines grandes).
-            y = marginY + drawAscent(fittedHeadline.size)
+            // Igual a firstBaselineY() do loop de encaixe: baseline = marginY +
+            // ascender REAL medido + TOP_PAD → topo do glifo cai abaixo de marginY
+            // com folga real, nunca acima.
+            y = marginY + fittedHeadline.ascent + TOP_PAD
           } else {
             // center: placa de contraste atrás do bloco (sem scrim de tela cheia).
             const platePadX = marginX * 0.8
@@ -290,13 +380,11 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
             ctx.arcTo(plateX, plateY, plateX + plateW, plateY, radius)
             ctx.closePath()
             ctx.fill()
-            y = plateY + platePadY + drawAscent(fittedHeadline.size)
+            y = plateY + platePadY + fittedHeadline.ascent
           }
 
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'alphabetic'
           ctx.fillStyle = headlineColor
-          ctx.font = `700 ${fittedHeadline.size}px ${fontStack}`
+          ctx.font = `${weights.head} ${fittedHeadline.size}px ${fontStack}`
           for (const line of fittedHeadline.lines) {
             ctx.fillText(line, centerX, y, safeWidth)
             y += fittedHeadline.lineHeight
@@ -304,7 +392,7 @@ export function overlayTextOnImage(imageBase64: string, opts: TextOverlayOptions
 
           if (fittedSubtitle) {
             y += gap
-            ctx.font = `500 ${fittedSubtitle.size}px ${fontStack}`
+            ctx.font = `${weights.sub} ${fittedSubtitle.size}px ${fontStack}`
             ctx.fillStyle = subtitleColor
             for (const line of fittedSubtitle.lines) {
               ctx.fillText(line, centerX, y, safeWidth)

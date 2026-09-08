@@ -70,6 +70,10 @@ const TEXT_SCALE_OPTIONS: { value: TextScale; label: string }[] = [
 const TEXT_FONT_OPTIONS: { value: TextFontKind; label: string }[] = [
   { value: 'sans', label: 'Sora' },
   { value: 'serif', label: 'Playfair' },
+  { value: 'anton', label: 'Anton' },
+  { value: 'archivo', label: 'Archivo Black' },
+  { value: 'bebas', label: 'Bebas Neue' },
+  { value: 'oswald', label: 'Oswald' },
 ]
 
 const premiumChip = (selected: boolean): CSSProperties => ({
