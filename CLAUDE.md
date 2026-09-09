@@ -349,7 +349,17 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   - **`runPremiumAdjust` em `AgentChat.tsx`** decide `editMode: 'adjust'` vs
     `'recompose'` via `isRecomposeRequest(msg)` pra ajustes visuais pontuais (cor,
     luz, fundo) — esses dois modos chamam `/api/generate-premium` com prompts de
-    preservação total (`adjustPrompt`/`recomposePrompt`, sem regra de texto).
+    preservação total (`adjustPrompt`/`recomposePrompt`). **Desde 09/09/2026 o ramo
+    `adjustPrompt` normal (não-`addingText`) TAMBÉM inclui `buildTextTypographyRules()`
+    + um bloco `PRESERVE THE EXACT ORIGINAL FRAMING` (não ampliar / não cortar / não
+    reenquadrar).** Motivo (teste real): um pedido de ajuste geral tipo "destacar mais
+    o texto" deixou o texto quase vazando a safe-zone e a foto levemente ampliada — a
+    promessa do modelo de "preservar o resto em edições" não bastava. Como o payload
+    de ajuste não manda `slideTitle`/`slideBody`, o servidor não sabe se há texto →
+    as regras entram sempre (são auto-condicionais), com um guard de que aqui elas
+    governam só POSIÇÃO/legibilidade do texto existente, nunca conteúdo/tamanho (senão
+    apagariam um headline+subtítulo válido). `recomposePrompt` segue sem isso de
+    propósito (ali o reenquadramento do cenário é o objetivo).
     **Desde a reversão de 09/09, "adicionar texto" (`isAddTextRequest(msg)`) volta a
     chamar o mesmo endpoint** com `addingText: true` — o `adjustPrompt` troca pra
     variante que injeta `buildTextTypographyRules()` (headline 1 linha ≤ ~25 chars,
