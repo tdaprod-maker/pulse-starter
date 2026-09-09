@@ -47,8 +47,11 @@ function illustrationStyleForSegment(text) {
 // Nota (09/09/2026): reversão parcial da decisão de 05/09. O gpt-image-2 volta a
 // renderizar texto literal quando há `slideTitle`, mas sob regras MAIS rígidas que
 // o original (headline de 1 linha ≤ ~25 chars, sem subtítulo salvo pedido
-// explícito, safe-zone ~6%/8%). `textOverlay.ts`/`premiumCompose.ts` continuam no
-// código como ferramenta de overlay manual pós-geração, não mais no caminho padrão.
+// explícito). `textOverlay.ts`/`premiumCompose.ts` continuam no código como
+// ferramenta de overlay manual pós-geração, não mais no caminho padrão.
+// Nota (safe-zone, 09/09/2026): a margem única ~6%/8% foi trocada por margens
+// medidas de layouts de referência reais, POR proporção (1:1 10/9/9 · 4:5 10/8/13
+// · 9:16 15/9/9, lateral/topo/base em %). Ver buildTextTypographyRules().
 const SUBJECT_RULE_BY_STYLE = {
   photo: (slideTitle) => `- If the brief describes a real person, food dish, physical product, animal, or real location: that subject MUST be rendered as the PHOTOREALISTIC main visual element. The person or subject is the hero of the image. Render them realistically, prominently, clearly.${slideTitle ? ' Typography is essential — see CAROUSEL SLIDE TEXT OVERLAY section below.' : ' Typography is secondary — one minimal text overlay at most.'}
 - If the brief is purely informational or typographic (no specific visual subject described): create a strong typographic composition with large, bold text as the focal point.`,
@@ -157,16 +160,24 @@ export default async function handler(req, res) {
   //
   // Reversão parcial (09/09/2026) da decisão "texto sempre via overlay de canvas"
   // (4dcf72f). O modelo volta a renderizar texto, mas com dois tetos MAIS rígidos
-  // que o original: (1) safe-zone ~6%/8% em vez de ~3%/4.5% — folga extra, não o
-  // mínimo; (2) headline de UMA linha, ~25 caracteres no máximo (teto validado em
-  // scripts/test-model-text.mjs, 0 vazamentos visíveis nos 12 casos), sem subtítulo
-  // salvo quando `slideBody` é explicitamente passado.
+  // que o original: (1) safe-zone por proporção, medida de layouts de referência
+  // reais (1:1 10/9/9 · 4:5 10/8/13 · 9:16 15/9/9 — lateral/topo/base em %), bem
+  // acima do ~3%/4.5% original; (2) headline de UMA linha, ~25 caracteres no
+  // máximo (teto validado em scripts/test-model-text.mjs, 0 vazamentos visíveis
+  // nos 12 casos), sem subtítulo salvo quando `slideBody` é explicitamente passado.
+  // Regra adicional: texto nunca sobre o rosto de uma pessoa (ver abaixo).
   function buildTextTypographyRules() {
     return `- Typography must be elegant and modern, matching the brand style
 - Text in Portuguese (Brazil) as provided — do NOT translate or change it
 - Typography consistency is critical: use only a single clean sans-serif typeface (like Helvetica, Arial or similar) throughout the entire image. Bold weight for the headline, regular weight for the subtitle when one is explicitly provided. No decorative fonts, no mixed typefaces, no serif fonts.
 - CRITICAL TEXT LIMIT: render the headline on ONE single line only — never wrap it to a second line. Keep it short, about 25 characters or fewer. Do NOT render a subtitle or any supporting line unless one is explicitly provided below. NO bullet points, NO icons with labels, NO lists, NO multiple sections of text, NO decorative badges, shapes, ribbons or underlines around the text. One powerful line only. White space is design.
-- CRITICAL SAFE ZONE (Instagram compliance): For a 1080x1350px (4:5) canvas, keep ALL text and logo elements within a safe zone of 950x1134px centered in the image — that means a margin of approximately 65px from left/right edges and 108px from top/bottom edges. Scale this proportionally for other aspect ratios (1:1, 9:16, 16:9): maintain roughly 6% margin on left/right and 8% margin on top/bottom relative to canvas dimensions. NEVER place text or logo outside this safe zone, and leave visibly generous empty margin between the text and every edge — err well inside the safe zone, do not push text up against its boundary. This is mandatory for correct display in Instagram feed and profile grid without cropping — text must NEVER be cropped or cut off at the edges.
+- CRITICAL SAFE ZONE (Instagram compliance) — these margins were measured from real reference layouts and differ by aspect ratio. Keep ALL text and logo elements inside the following margins, expressed as a percentage of the canvas width (left/right) and height (top/bottom):
+  * 1:1 square (e.g. 1080x1080): at least 10% left, 10% right, 9% top, 9% bottom
+  * 4:5 portrait feed (e.g. 1080x1350): at least 10% left, 10% right, 8% top, 13% bottom
+  * 9:16 stories/reels (e.g. 1080x1920): at least 15% left, 15% right, 9% top, 9% bottom
+  * 16:9 or any other ratio: at least 12% on every edge
+  These are MINIMUMS, not targets — err well inside the safe zone and leave visibly generous empty margin between the text and every edge; never let text sit up against the safe-zone boundary. NEVER place text or logo outside this safe zone. This is mandatory for correct display in the Instagram feed and profile grid without cropping — text must NEVER be cropped, cut off, or touch any edge.
+- CRITICAL — TEXT NEVER OVER A FACE: when the image contains one or more people, the rendered text must NOT overlap, touch, or cross any person's face or head. Position the headline in clear space (background, sky, wall, floor, or an empty area of the frame) with obvious separation from every face. If the text would only fit across a face, make the subject smaller or shift the composition so there is empty room for it — a smaller subject with unobstructed text is correct; text crossing a face is a critical failure.
 - CRITICAL FONT SIZE: The headline must be large enough to be read clearly on a mobile phone screen at normal viewing distance — bold, occupying significant visual weight. Never use small, thin, or delicate typography for the headline. If a subtitle is explicitly provided, it must be between 55% and 70% of the headline size for clear hierarchy.
 - CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.`
   }
@@ -400,7 +411,7 @@ aesthetics, stock photo feeling.`
       const parts = []
       
       // model
-      parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="model"${CRLF}${CRLF}gpt-image-2`)
+      parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="model"${CRLF}${CRLF}gpt-image-2.5-flare`)
       // prompt
       parts.push(`--${boundary}${CRLF}Content-Disposition: form-data; name="prompt"${CRLF}${CRLF}${finalPrompt}`)
       // n
@@ -464,7 +475,7 @@ aesthetics, stock photo feeling.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-2',
+        model: 'gpt-image-2.5-flare',
         prompt: finalPrompt,
         n: 1,
         size: size || '1024x1024',

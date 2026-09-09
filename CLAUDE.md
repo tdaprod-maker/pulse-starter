@@ -14,8 +14,11 @@ negócio e estado de features, veja `CONTEXT.md` — não duplique isso aqui.
 - **IA texto/visão:** Claude Haiku 4.5 via chamada direta à Anthropic Messages API (sem SDK) —
   inclui análise de imagem (content blocks `type: 'image'`, `source.type: 'base64'`) usada em
   `api/analyze-references.js` e `api/review-post.js`
-- **IA imagem:** `gpt-image-1` (Standard, `api/generate-image-ai.js`) e GPT Image 2 (Premium,
-  `api/generate-premium.js`) via OpenAI, chamada direta (sem SDK)
+- **IA imagem:** `gpt-image-1` (Standard, `api/generate-image-ai.js`) e `gpt-image-2.5-flare`
+  (Premium, `api/generate-premium.js` — todas as chamadas: `generations` e `edits`) via OpenAI,
+  chamada direta (sem SDK). O Premium usava `gpt-image-2` até 09/09/2026; o swap para o
+  `2.5-flare` não exigiu mudança de schema (mesmos params `model`/`prompt`/`n`/`size`/`quality`,
+  mesmo envelope de resposta). Rate card de tokens idêntico ($5/$8/$30 por 1M in-text/in-img/out-img).
 - **Roteamento de API:** `vercel.json` reescreve `/api/instagram-post` etc. para
   `/api/instagram?action=post` — vários endpoints são multiplexados por `action` num único arquivo
 - **Helpers server-side:** `api-lib/*.js` são módulos importados pelas rotas `/api/*` (só rodam no
@@ -256,7 +259,9 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   uma dessas quatro etapas (client e server) — úteis para depurar se um campo nunca chega até a UI;
   não remover sem necessidade.
 - **Texto no Premium: decisão de 05/09 (texto sempre via overlay de canvas) foi
-  REVERTIDA PARCIALMENTE em 09/09/2026 — o gpt-image-2 volta a renderizar o texto.**
+  REVERTIDA PARCIALMENTE em 09/09/2026 — o modelo volta a renderizar o texto.**
+  (O modelo do Premium é `gpt-image-2.5-flare` desde 09/09/2026 — antes `gpt-image-2`;
+  as menções a "gpt-image-2" abaixo são históricas, o comportamento descrito vale igual.)
   Motivo da reversão: o resultado visual do overlay de canvas ficou aquém do esperado
   na avaliação com o usuário (texto "colado por cima", sem integração com a cena; a
   confiabilidade matemática da safe-zone não compensou a perda de qualidade estética).
@@ -264,13 +269,21 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   **Novo estado (o que vale agora):**
   - `api/generate-premium.js` volta a instruir o modelo a renderizar texto quando há
     `slideTitle` (`buildTextTypographyRules()` + bloco `MANDATORY TEXT TO RENDER —
-    OVERRIDE` em `carouselTextOverlay`), mas com **dois tetos MAIS rígidos que a
-    versão original de antes de 05/09**: (1) **safe zone ~6% lateral / 8% vertical**
-    (era ~3% / 4.5%) — folga extra, não o mínimo; (2) **headline de 1 linha, ~25
+    OVERRIDE` em `carouselTextOverlay`), mas com **tetos MAIS rígidos que a
+    versão original de antes de 05/09**: (1) **safe zone POR PROPORÇÃO** (09/09/2026),
+    medida de layouts de referência reais — não mais a margem única ~6%/8% (que já
+    era mais folgada que o ~3%/4.5% original). Valores (lateral / topo / base, % das
+    dimensões do canvas): **1:1 → 10% / 9% / 9%**; **4:5 → 10% / 8% / 13%**;
+    **9:16 → 15% / 9% / 9%**; **16:9 ou outras → 12% em todas as bordas** (fallback
+    conservador, sem medição). São MÍNIMOS, não alvos. (2) **headline de 1 linha, ~25
     caracteres no máximo** (teto validado em `scripts/test-model-text.mjs`), **sem
-    subtítulo** salvo quando `slideBody` é explicitamente passado. As regras são fonte
-    única em `buildTextTypographyRules()`, consumida pelo bloco inline de `MANDATORY
-    RULES` e por `carouselTextOverlay`.
+    subtítulo** salvo quando `slideBody` é explicitamente passado. (3) **texto NUNCA
+    sobre o rosto/cabeça de uma pessoa** (09/09/2026) — regra `CRITICAL — TEXT NEVER
+    OVER A FACE`: posiciona o headline em espaço livre; se só couber cruzando um
+    rosto, encolhe o sujeito ou recompõe. As regras são fonte única em
+    `buildTextTypographyRules()`, consumida pelo bloco inline de `MANDATORY RULES`,
+    por `carouselTextOverlay` e pela variante `addingText` do `adjustPrompt`. Ao
+    mudar qualquer uma delas, é só nessa função — os 3 caminhos herdam.
   - `adjustPremiumImage` (`src/services/gemini.ts`) reganhou o param `addingText`; o
     ramo `addingText` de `runPremiumAdjust` (`AgentChat.tsx`) volta a chamar
     `/api/generate-premium` (variante `addingText` do `adjustPrompt`, com as regras de
@@ -340,7 +353,8 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
     **Desde a reversão de 09/09, "adicionar texto" (`isAddTextRequest(msg)`) volta a
     chamar o mesmo endpoint** com `addingText: true` — o `adjustPrompt` troca pra
     variante que injeta `buildTextTypographyRules()` (headline 1 linha ≤ ~25 chars,
-    safe zone 6%/8%). `extractQuotedText` ainda exige o texto entre aspas (sem aspas,
+    safe zone por proporção 1:1 10/9/9 · 4:5 10/8/13 · 9:16 15/9/9, texto nunca
+    sobre rosto). `extractQuotedText` ainda exige o texto entre aspas (sem aspas,
     o agente pede pro usuário especificar). O ramo `addingText` cai no fluxo normal de
     ajuste, então a reativação de logo do `cd2a5f0` (resolver `premiumLogoUrl` +
     reativar `premiumLogoLayer` + `composePremiumImage` pros bytes) é reusada. Debita
