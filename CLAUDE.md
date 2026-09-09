@@ -255,26 +255,48 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   `saveConnection` (`src/services/socialConnections.ts`). Há `console.log` de diagnóstico em cada
   uma dessas quatro etapas (client e server) — úteis para depurar se um campo nunca chega até a UI;
   não remover sem necessidade.
-- **Texto no Premium é SEMPRE overlay de canvas, nunca renderizado pelo gpt-image-2
-  (mudança estrutural, 05/09/2026) — decisão de produto explícita do usuário, não só
-  técnica.** O trade-off foi avaliado e aceito conscientemente: perde-se o efeito
-  visual de texto "embutido" na cena (que o gpt-image-2 às vezes conseguia fazer
-  bem), em troca de garantia de que o texto **sempre** fica legível e dentro da
-  safety zone — o usuário confirmou explicitamente que confiabilidade vale mais que
-  esse efeito estético, depois do mesmo bug de texto vazando a safety zone voltar
-  repetidas vezes mesmo com regras de prompt cada vez mais explícitas. **Não reverta
-  essa decisão** (voltar a pedir texto renderizado pelo modelo) sem confirmar de
-  novo com o usuário — não é um detalhe de implementação esquecido, é a correção que
-  resolveu o bug recorrente. Regras de prompt cada vez mais explícitas (safe-zone em
-  %, tipografia única, tamanho mínimo) chegaram a existir em `api/generate-premium.js`
-  e ainda assim falhavam repetidamente — a conclusão foi que **instrução de prompt
-  para tipografia é estruturalmente não-confiável** no gpt-image-2. A arquitetura
-  mudou: o modelo **nunca mais é instruído a renderizar
-  texto** (regra `CRITICAL — NO TEXT` incondicional no `fullPrompt`, e um
-  `reservedTextSpaceHint` quando há `slideTitle` só pra pedir que a imagem deixe a
-  faixa inferior "limpa" visualmente — nunca pra pedir que escreva algo ali).
+- **Texto no Premium: decisão de 05/09 (texto sempre via overlay de canvas) foi
+  REVERTIDA PARCIALMENTE em 09/09/2026 — o gpt-image-2 volta a renderizar o texto.**
+  Motivo da reversão: o resultado visual do overlay de canvas ficou aquém do esperado
+  na avaliação com o usuário (texto "colado por cima", sem integração com a cena; a
+  confiabilidade matemática da safe-zone não compensou a perda de qualidade estética).
+  Decisão de produto explícita do usuário — não é implementação esquecida.
+  **Novo estado (o que vale agora):**
+  - `api/generate-premium.js` volta a instruir o modelo a renderizar texto quando há
+    `slideTitle` (`buildTextTypographyRules()` + bloco `MANDATORY TEXT TO RENDER —
+    OVERRIDE` em `carouselTextOverlay`), mas com **dois tetos MAIS rígidos que a
+    versão original de antes de 05/09**: (1) **safe zone ~6% lateral / 8% vertical**
+    (era ~3% / 4.5%) — folga extra, não o mínimo; (2) **headline de 1 linha, ~25
+    caracteres no máximo** (teto validado em `scripts/test-model-text.mjs`), **sem
+    subtítulo** salvo quando `slideBody` é explicitamente passado. As regras são fonte
+    única em `buildTextTypographyRules()`, consumida pelo bloco inline de `MANDATORY
+    RULES` e por `carouselTextOverlay`.
+  - `adjustPremiumImage` (`src/services/gemini.ts`) reganhou o param `addingText`; o
+    ramo `addingText` de `runPremiumAdjust` (`AgentChat.tsx`) volta a chamar
+    `/api/generate-premium` (variante `addingText` do `adjustPrompt`, com as regras de
+    tipografia), **não mais** montando camada de texto no `EditorPage`. A lógica de
+    logo do `cd2a5f0` (resolver `premiumLogoUrl` + reativar `premiumLogoLayer` +
+    `composePremiumImage` pros bytes da Biblioteca) fica intacta — o `addingText`
+    reusa o mesmo fluxo do ajuste normal.
+  - `PremiumPage.tsx` (rota `/premium`, sem link na UI — órfã, ver Pendentes
+    Não-Críticos do CONTEXT.md) volta a pedir o texto ao modelo pelas strings de
+    prompt (`MANDATORY TEXT TO DISPLAY` / `THE HEADLINE FOR THIS SLIDE IS EXACTLY`),
+    com os mesmos tetos rígidos embutidos. Ela usa `generateImage` →
+    `/api/generate-image-ai` (gpt-image-1 Standard), **não** `/api/generate-premium` —
+    por isso as regras foram espelhadas inline, não herdadas de
+    `buildTextTypographyRules()`.
+  - **`textOverlay.ts` / `premiumCompose.ts` continuam no código**, agora só como
+    ferramenta de overlay/edição de texto **manual pós-geração** (painéis "Texto
+    sobre a imagem" do `PremiumResultViewer` / `CarouselViewer`, compostos pelo
+    `EditorPage`) — não são mais o caminho automático de geração. Podem ser removidos
+    numa limpeza futura, a decidir. As sub-notas abaixo descrevem essa maquinaria
+    (medição de safe-zone, runs coloridos etc.) — ainda vale para o uso manual, mas
+    não é mais o que roda na geração.
+  - **Antes de reverter esta reversão** (voltar a texto sempre via overlay, ou o
+    contrário), confirme com o usuário — os dois lados desta decisão já foram
+    avaliados e trocados uma vez.
   - **`src/services/textOverlay.ts`** (`overlayTextOnImage`) desenha o headline/subtitle
-    de verdade, depois da geração, num `<canvas>` — mesmo padrão que `logoOverlay.ts`
+    num `<canvas>` — mesmo padrão que `logoOverlay.ts`
     já usava pro logo. Margens de safe-zone (3% lateral / 4.5% vertical) são
     **constantes de código**, não texto de prompt — a garantia é matemática (auto-fit
     reduzindo o tamanho até caber, com truncamento de linhas como último recurso), não
@@ -308,43 +330,46 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   - **Texto literal vem sempre de uma fonte determinística**, nunca do que o modelo
     "decidiu" escrever: `slideContent` já calculado por `breakCarouselIntoSlides` pro
     carrossel, ou `extractQuotedText(prompt)` (texto citado entre aspas no brief) pro
-    post único — sem aspas, nenhum texto é forçado na imagem.
-  - **`runPremiumAdjust` em `AgentChat.tsx`** ainda decide `editMode: 'adjust'` vs
+    post único — sem aspas, nenhum texto é forçado na imagem. Desde a reversão de
+    09/09 esse texto vai pro modelo como `slideTitle`/`slideBody` (não mais pra um
+    overlay de canvas).
+  - **`runPremiumAdjust` em `AgentChat.tsx`** decide `editMode: 'adjust'` vs
     `'recompose'` via `isRecomposeRequest(msg)` pra ajustes visuais pontuais (cor,
-    luz, fundo) — esses dois modos continuam chamando `/api/generate-premium` com
-    prompts de preservação total (`adjustPrompt`/`recomposePrompt`, sem nenhuma regra
-    de texto, pois nunca adicionam texto). Mas **"adicionar texto" nem chega mais
-    nesse endpoint**: `isAddTextRequest(msg)` detecta o pedido, `extractQuotedText`
-    extrai o texto exato entre aspas (sem aspas, o agente pede pro usuário
-    especificar em vez de adivinhar) e o resultado vira a **camada de texto** do
-    `EditorPage` (`onPremiumTextLayerChange` / `onPremiumCarouselTextLayerChange`) —
-    zero chamada ao gpt-image-2, instantâneo, e o logo já aplicado é preservado
-    porque a composição refaz base → texto → logo. Depois de inserido, o usuário
-    ajusta posição (topo/centro/base), tamanho, cor e fonte (Sora/Playfair) no painel
-    "Texto sobre a imagem" do viewer — mesmo padrão dos controles de logo. Ainda
-    debita `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` por consistência com o resto do fluxo
-    de ajuste, embora tecnicamente não tenha mais custo de API — decisão de produto em
-    aberto se isso deveria virar grátis.
+    luz, fundo) — esses dois modos chamam `/api/generate-premium` com prompts de
+    preservação total (`adjustPrompt`/`recomposePrompt`, sem regra de texto).
+    **Desde a reversão de 09/09, "adicionar texto" (`isAddTextRequest(msg)`) volta a
+    chamar o mesmo endpoint** com `addingText: true` — o `adjustPrompt` troca pra
+    variante que injeta `buildTextTypographyRules()` (headline 1 linha ≤ ~25 chars,
+    safe zone 6%/8%). `extractQuotedText` ainda exige o texto entre aspas (sem aspas,
+    o agente pede pro usuário especificar). O ramo `addingText` cai no fluxo normal de
+    ajuste, então a reativação de logo do `cd2a5f0` (resolver `premiumLogoUrl` +
+    reativar `premiumLogoLayer` + `composePremiumImage` pros bytes) é reusada. Debita
+    `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` — e agora tem custo real de API de novo.
+    (Os props `onPremiumTextLayerChange` / `onPremiumCarouselTextLayerChange` deixaram
+    de ser passados pro `AgentChat` — quem edita a camada de texto manual são só os
+    painéis dos viewers.)
   - Custo do ajuste visual (não-texto): `PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE` (4), post
     único ou por slide de carrossel. O slide-alvo do carrossel é sempre o
     `carouselCurrentSlide` visível no `CarouselViewer` (passado via
     `premiumCarouselCurrentIndex`), nunca inferido por texto.
-  - **Se algum caso novo de texto no Premium aparecer no futuro** (ex: editar o texto
-    de um post já salvo na Biblioteca, sem a versão "limpa" em memória), NÃO
-    reintroduza renderização de texto via prompt do gpt-image-2 — é exatamente o
-    padrão que causou o bug recorrente. Prefira sempre computar/obter a imagem base
-    e passar por `composePremiumImage` (ou `overlayTextOnImage` direto na geração).
+  - **Overlay de texto manual (`composePremiumImage` / `overlayTextOnImage`) continua
+    disponível** pros painéis "Texto sobre a imagem" dos viewers e pra editar texto de
+    um post restaurado da Biblioteca sem a base "limpa" — só não é mais o caminho de
+    geração. Histórico: entre 05/09 e 09/09 essa foi a **única** via de texto no
+    Premium ("NÃO reintroduza texto via prompt do gpt-image-2"); a reversão de 09/09
+    desfez isso porque o resultado visual do overlay decepcionou na avaliação.
   - **Logo "queimado" em imagem restaurada da Biblioteca vs. camada de logo (08/set).**
     A arquitetura de camadas (Opção B) só resolve o caso 100% gerado no Editor. Posts
     Premium **restaurados da Biblioteca** (e os gerados pela `PremiumPage`) têm o logo
     *nos pixels* do `thumbnail_url` — `premiumLogoLayer` volta inativo no restore. Ao
-    adicionar texto por chat, o scrim de `overlayTextOnImage` cobre esse logo
-    queimado ("logo some ao adicionar texto", de novo). Fix: `runPremiumAdjust`
-    (ramos `addingText` e ajuste normal) resolve a URL do logo (`premiumLogoUrl` →
+    passar essa imagem pelo gpt-image-2 (ajuste ou "adicionar texto"), o modelo
+    devolve a imagem **sem** o logo nítido ("logo some ao adicionar texto", de novo).
+    Fix: `runPremiumAdjust` (ramos `addingText` e ajuste normal — que hoje são o mesmo
+    fluxo) resolve a URL do logo (`premiumLogoUrl` →
     brand kit → `onPremiumLogoUrlChange`) e, se a camada estiver inativa mas houver
     URL, **reativa** a camada (`onPremiumLogoLayerChange` / `onPremiumCarouselLogoLayerChange`).
     `composePremiumImage` então redesenha `base → texto → logo` e re-carimba o logo
-    *por cima* do scrim. Como `PremiumPage.overlayLogo` queima o logo na MESMA posição
+    *por cima*. Como `PremiumPage.overlayLogo` queima o logo na MESMA posição
     e tamanho do `DEFAULT_PREMIUM_LOGO_LAYER` (bottom-right, `0.20·W`), o re-carimbo é
     visualmente idêntico. Efeito colateral aceito: post Premium salvo *sem* logo, ao
     receber texto/ajuste por chat, ganha o logo da marca (Premium = branded).

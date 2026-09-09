@@ -583,10 +583,8 @@ export function EditorPage() {
             premiumLogoUrl={premiumLogoUrl}
             onPremiumLogoUrlChange={setPremiumLogoUrl}
             onPremiumLogoLayerChange={setPremiumLogoLayer}
-            onPremiumTextLayerChange={setPremiumTextLayer}
             premiumCarouselLogoLayer={premiumCarouselLogoLayer}
             premiumCarouselTextLayers={premiumCarouselTextLayers}
-            onPremiumCarouselTextLayerChange={(i, layer) => setPremiumCarouselTextLayers(prev => ({ ...prev, [i]: layer }))}
             onPremiumCarouselLogoLayerChange={setPremiumCarouselLogoLayer}
             isPremiumCarouselActive={!!carouselSlides && carouselEngine === 'premium'}
             premiumCarouselSlides={carouselEngine === 'premium' ? carouselSlides ?? undefined : undefined}

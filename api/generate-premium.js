@@ -44,17 +44,18 @@ function illustrationStyleForSegment(text) {
 // prompt mudam bastante entre foto realista, ilustração vetorial e composição
 // tipográfica pura, então cada um tem seu próprio bloco em vez de forçar as
 // mesmas instruções fotográficas em todos os casos.
-// Nota (05/09/2026): nenhum estilo pede mais tipografia ao modelo — texto é sempre
-// overlay de canvas depois (ver reservedTextSpaceHint/textOverlay.ts). O estilo
-// "typography" ainda existe como opção de composição (fundo minimalista sem foto/
-// ilustração, pra receber um overlay de texto grande e centralizado por cima).
+// Nota (09/09/2026): reversão parcial da decisão de 05/09. O gpt-image-2 volta a
+// renderizar texto literal quando há `slideTitle`, mas sob regras MAIS rígidas que
+// o original (headline de 1 linha ≤ ~25 chars, sem subtítulo salvo pedido
+// explícito, safe-zone ~6%/8%). `textOverlay.ts`/`premiumCompose.ts` continuam no
+// código como ferramenta de overlay manual pós-geração, não mais no caminho padrão.
 const SUBJECT_RULE_BY_STYLE = {
-  photo: () => `- If the brief describes a real person, food dish, physical product, animal, or real location: that subject MUST be rendered as the PHOTOREALISTIC main visual element. The person or subject is the hero of the image. Render them realistically, prominently, clearly. Do not render any typography — text is added programmatically after generation.
-- If the brief is purely informational (no specific visual subject described): create a clean, minimal background composition — no text, the typography comes later as an overlay.`,
-  illustration: () => `- Render the subject described in the VISUAL BRIEF as a professional vector illustration / flat design graphic — NOT a photograph. Use clean geometric shapes, bold flat colors, confident line work, and simple gradients if any. Style reference: modern SaaS/editorial flat illustration systems (e.g. Stripe, Notion, premium design agency work).
-- No photographic textures, no photorealistic skin/materials, no 3D render, no photo-collage. Keep a single consistent illustration style throughout the image. Do not render any typography — text is added programmatically after generation.`,
-  typography: () => `- Do NOT render any photographic or illustrated subject, and do NOT render any text yourself — this is a minimalist background composition meant to receive a bold text overlay programmatically after generation. No people, no products, no photographic background, no complex illustration.
-- Background must be a simple solid color, subtle gradient, or minimal geometric shape/pattern with generous empty space in the center/lower area, so the text overlaid later has a clean, uncluttered area to sit on.`,
+  photo: (slideTitle) => `- If the brief describes a real person, food dish, physical product, animal, or real location: that subject MUST be rendered as the PHOTOREALISTIC main visual element. The person or subject is the hero of the image. Render them realistically, prominently, clearly.${slideTitle ? ' Typography is essential — see CAROUSEL SLIDE TEXT OVERLAY section below.' : ' Typography is secondary — one minimal text overlay at most.'}
+- If the brief is purely informational or typographic (no specific visual subject described): create a strong typographic composition with large, bold text as the focal point.`,
+  illustration: (slideTitle) => `- Render the subject described in the VISUAL BRIEF as a professional vector illustration / flat design graphic — NOT a photograph. Use clean geometric shapes, bold flat colors, confident line work, and simple gradients if any. Style reference: modern SaaS/editorial flat illustration systems (e.g. Stripe, Notion, premium design agency work).
+- No photographic textures, no photorealistic skin/materials, no 3D render, no photo-collage. Keep a single consistent illustration style throughout the image.${slideTitle ? ' Typography is essential — see CAROUSEL SLIDE TEXT OVERLAY section below.' : ' Typography is secondary — one minimal text overlay at most.'}`,
+  typography: () => `- Do NOT render any photographic or illustrated subject. This is a purely typographic composition — large, bold text IS the entire visual. No people, no products, no photographic background, no complex illustration.
+- Background must be a simple solid color, subtle gradient, or minimal geometric shape/pattern that supports the text without competing with it. Typography is always the primary and essential element, regardless of slide title presence.`,
 }
 
 const QUALITY_STANDARD_BY_STYLE = {
@@ -114,7 +115,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody, visualStyle, editMode } = req.body
+  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody, visualStyle, editMode, addingText } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' })
@@ -148,25 +149,44 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'OPENAI_API_KEY not configured' })
   }
 
-  // ESTRUTURAL (05/09/2026): o gpt-image-2 nunca mais é instruído a renderizar texto
-  // literal. Depois de repetidos casos de texto vazando da safe zone / fonte
-  // inconsistente mesmo com regras explícitas de prompt (safe-zone em %, tipografia
-  // única, tamanho mínimo — tudo isso ainda existia aqui antes), a conclusão é que
-  // instrução de prompt pra tipografia é estruturalmente não-confiável nesse modelo.
-  // Texto agora é SEMPRE desenhado depois, via canvas (`overlayTextOnImage` em
-  // src/services/textOverlay.ts — mesmo padrão que `overlayLogoOnImage` já usava pro
-  // logo), com margens de safe-zone garantidas em código, não em instrução que o
-  // modelo pode ignorar. Este endpoint só pede uma coisa: não desenhe texto nenhum,
-  // e deixe um respiro visual onde o texto vai entrar depois.
-  const reservedTextSpaceHint = slideTitle ? `
+  // Regras de tipografia/safe-zone compartilhadas por qualquer caminho que renderize
+  // texto de verdade na imagem — geração normal (via carouselTextOverlay abaixo) e o
+  // modo de ajuste quando o pedido é ADICIONAR texto novo (ver adjustPrompt). Fonte
+  // única de propósito: um bug real já aconteceu por essas regras divergirem entre
+  // duas cópias.
+  //
+  // Reversão parcial (09/09/2026) da decisão "texto sempre via overlay de canvas"
+  // (4dcf72f). O modelo volta a renderizar texto, mas com dois tetos MAIS rígidos
+  // que o original: (1) safe-zone ~6%/8% em vez de ~3%/4.5% — folga extra, não o
+  // mínimo; (2) headline de UMA linha, ~25 caracteres no máximo (teto validado em
+  // scripts/test-model-text.mjs, 0 vazamentos visíveis nos 12 casos), sem subtítulo
+  // salvo quando `slideBody` é explicitamente passado.
+  function buildTextTypographyRules() {
+    return `- Typography must be elegant and modern, matching the brand style
+- Text in Portuguese (Brazil) as provided — do NOT translate or change it
+- Typography consistency is critical: use only a single clean sans-serif typeface (like Helvetica, Arial or similar) throughout the entire image. Bold weight for the headline, regular weight for the subtitle when one is explicitly provided. No decorative fonts, no mixed typefaces, no serif fonts.
+- CRITICAL TEXT LIMIT: render the headline on ONE single line only — never wrap it to a second line. Keep it short, about 25 characters or fewer. Do NOT render a subtitle or any supporting line unless one is explicitly provided below. NO bullet points, NO icons with labels, NO lists, NO multiple sections of text, NO decorative badges, shapes, ribbons or underlines around the text. One powerful line only. White space is design.
+- CRITICAL SAFE ZONE (Instagram compliance): For a 1080x1350px (4:5) canvas, keep ALL text and logo elements within a safe zone of 950x1134px centered in the image — that means a margin of approximately 65px from left/right edges and 108px from top/bottom edges. Scale this proportionally for other aspect ratios (1:1, 9:16, 16:9): maintain roughly 6% margin on left/right and 8% margin on top/bottom relative to canvas dimensions. NEVER place text or logo outside this safe zone, and leave visibly generous empty margin between the text and every edge — err well inside the safe zone, do not push text up against its boundary. This is mandatory for correct display in Instagram feed and profile grid without cropping — text must NEVER be cropped or cut off at the edges.
+- CRITICAL FONT SIZE: The headline must be large enough to be read clearly on a mobile phone screen at normal viewing distance — bold, occupying significant visual weight. Never use small, thin, or delicate typography for the headline. If a subtitle is explicitly provided, it must be between 55% and 70% of the headline size for clear hierarchy.
+- CRITICAL SPELLING ACCURACY: reproduce the text EXACTLY character by character as provided, including all accents (á, é, í, ó, ú, â, ê, ô, ã, õ, ç) and diacritics. Double-check Portuguese special characters before finalizing — common errors include confusing ã with ãi, é with ê, ó with õ. The text must be spelled perfectly matching the input, letter by letter.`
+  }
 
-RESERVED TEXT SPACE — DO NOT RENDER TEXT:
-Do NOT render any text, letters, words, numbers, or typography anywhere in this image.
-A headline${slideBody ? ' and short subtitle' : ''} will be added programmatically on top
-after generation, positioned in the lower third of the image. Keep that lower-third region
-visually clean and uncluttered (simple background, no busy patterns or small objects
-overlapping it) so the text overlaid later stays legible. The rest of the composition can be
-as detailed as the brief requires.` : ''
+  // Presente quando há um título/headline específico a renderizar — slides de
+  // carrossel premium e (desde a correção do bug de "post sem texto") posts únicos
+  // cujo brief contém texto literal a ser exibido (ver PremiumPage.tsx / AgentChat,
+  // extração de texto entre aspas no prompt do usuário).
+  const carouselTextOverlay = slideTitle ? `
+
+MANDATORY TEXT TO RENDER — OVERRIDE:
+${totalSlides > 1 ? `This image is slide ${slideIndex} of ${totalSlides} in an Instagram carousel. ` : ''}This requirement takes priority over any conflicting typography guidance above.
+${slideBody
+  ? `Render ONLY this exact text visible in the image: "${slideTitle}" as a single-line headline, and "${slideBody}" as one short supporting subtitle line directly under it. Nothing else. No bullet points, no icons with labels, no lists, no additional text sections, no decorative shapes around the text.`
+  : `Render ONLY this exact text visible in the image: "${slideTitle}" as a single-line headline. Nothing else — no subtitle, no supporting line, no bullet points, no icons with labels, no lists, no multiple text sections, no decorative shapes around the text.`}
+The headline MUST fit on ONE line (about 25 characters or fewer) — never wrap it.
+Text placement rules:
+- Position the text block in the lower-center or center zone of the image, kept well inside the safe zone with generous empty margin to every edge
+- Ensure high contrast: white text on dark areas, or dark text on light areas, or use a semi-transparent background strip
+${buildTextTypographyRules()}` : ''
 
   const visualStyleDirective = hasReferencePhoto
     ? "Match the lighting, color grading, and photographic style already present in the reference photo. Do NOT impose a new visual style, mood, or photographic treatment — the reference photo's existing look is the target, not a starting point to redesign."
@@ -193,9 +213,12 @@ When the reference photo shows MULTIPLE people, you MUST preserve EACH individua
   const referenceBaseDirective = hasReferencePhoto ? `
 
 CRITICAL — THE REFERENCE PHOTO IS THE EXACT VISUAL BASE (read first, overrides any instruction below that implies generating a new scene):
-Use the provided image as the exact visual base for the output. Do NOT redraw, reinterpret, recreate, or regenerate the scene, subject, people, objects, background, framing, angle, or composition. The output must be recognizably the same photo, unchanged in every region not explicitly modified below, and keep the exact original framing/aspect ratio — do not crop, pad, or letterbox it.
-Only make this change on top of the untouched base photo: subtly adjust lighting, color grading, or atmosphere ONLY if explicitly requested in the brief below. No text or logo of any kind — those are added programmatically after generation, never by you.
-Treat this strictly as a targeted photo edit, not a scene generated from a text brief. Everything else already in the photo — the people, objects, setting, and framing — must remain exactly as provided.` : ''
+Use the provided image as the exact visual base for the output. Do NOT redraw, reinterpret, recreate, or regenerate the scene, subject, people, objects, background, framing, angle, or composition. The output must be recognizably the same photo, unchanged in every region not explicitly modified below.
+Only make these changes on top of the untouched base photo:
+- Add the text overlay and/or logo space described below (if any)
+- Subtly adjust lighting, color grading, or atmosphere ONLY if explicitly requested in the brief below
+- THE ONLY EXCEPTION TO EXACT FRAMING: if fitting the mandatory text safe-zone (see CRITICAL SAFE ZONE rule below) requires it, you MAY shrink the photo and add neutral letterboxing/padding (solid color bars matching the photo's dominant tone) around it. This is the single allowed departure from "framing stays exactly as provided" — the photo itself (people, objects, setting, angle, composition) still must not be redrawn, cropped into, or reinterpreted; it is only placed smaller within the canvas, padded, never cropped.
+Treat this strictly as a targeted photo edit, not a scene generated from a text brief. Everything else already in the photo — the people, objects, setting, and framing — must remain exactly as provided, except for letterboxing/padding as described above when required to fit the text safe zone.` : ''
 
   const briefLabel = hasReferencePhoto
     ? 'EDIT INSTRUCTIONS (what to add or adjust on top of the reference photo — this is NOT a new scene to generate)'
@@ -203,10 +226,12 @@ Treat this strictly as a targeted photo edit, not a scene generated from a text 
 
   const visualSubjectSection = hasReferencePhoto
     ? '- N/A — a reference photo is provided as the exact visual base (see the CRITICAL directive above). Do not invent, substitute, or redraw a different subject, person, or scene.'
-    : SUBJECT_RULE_BY_STYLE[resolvedVisualStyle]()
+    : SUBJECT_RULE_BY_STYLE[resolvedVisualStyle](slideTitle)
 
   const compositionRules = hasReferencePhoto ? `
-- Preserve the reference photo's existing background, framing, angle, and composition exactly — do not replace, crop, restyle, pad or letterbox it` : `
+- Preserve the reference photo's existing background, framing, angle, and composition exactly — do not replace, crop, or restyle it
+- Only the added text/logo elements should follow the placement and safe-zone rules below; everything else in the photo stays untouched
+- TEXT PRIORITY OVER PHOTO FRAMING: If fitting the text within the safe zone (as specified below in the CRITICAL SAFE ZONE rule) requires reducing, repositioning, or adding letterboxing/padding to the reference photo, DO THIS. The text must NEVER be cut off, cropped, or extend beyond the safe zone — this takes priority over preserving the photo at full frame. It is acceptable and expected to show the photo slightly smaller, with neutral padding (solid color bars matching the photo's dominant tone) above/below or sides, to guarantee 100% of the text fits within the safe zone with proper margins. A photo shown smaller with complete, uncropped text is far better than a full-frame photo with cropped or cut-off text.` : `
 - Clean layout with generous negative space — no clutter
 - Dark or neutral background — no loud gradients
 - CRITICAL: Place all key elements in the CENTER 60% of image width and CENTER 70% of image height only
@@ -238,22 +263,51 @@ ${compositionRules}
 - NO: generic AI stock imagery (blue brain, neural networks, glowing circuits)
 - If the brand has a defined visual style, replicate it: colors, typography weight, spacing, mood
 - CRITICAL: Do NOT include any logo or brand mark — the logo will be overlaid separately
-- CRITICAL — NO TEXT: Do NOT render any text, letters, numbers, words, captions, or typography anywhere in the image, even if the brief above mentions specific phrases, headlines, taglines, prices, or calls to action — treat any such mentions only as context for the mood/theme of the scene, never as something to letter into the image. All on-image text is added programmatically after generation, never by you. This applies even when no explicit "no text" reminder appears elsewhere in this prompt.
-${reservedTextSpaceHint}
+- Any text rendered in the image MUST follow every typography rule below without exception (these apply even if you would otherwise add only incidental text):
+${buildTextTypographyRules()}
+${carouselTextOverlay}
 QUALITY STANDARD: ${hasReferencePhoto ? 'Polished, professional photo edit — indistinguishable from the original photo with a subtle, high-end text/logo overlay added on top.' : QUALITY_STANDARD_BY_STYLE[resolvedVisualStyle]}
 
 Avoid: ${hasReferencePhoto
     ? 'redrawing or reinterpreting the scene, replacing the background, altering the subject, generic AI aesthetics, plastic skin, oversaturated colors, fake HDR'
     : `${AVOID_BY_STYLE[resolvedVisualStyle]}. Specifically, do NOT default to this segment's most recycled visual cliché: ${namedClichesForSegment(segment || styleContext)}`}.`
 
-  // Prompt minimalista para ajuste pós-geração: a imagem recebida já está pronta e o
-  // único objetivo é aplicar a mudança pedida sem reinterpretar composição, cores ou
-  // sujeito. Nenhuma regra de safe-zone/tipografia entra aqui — desde a correção
-  // estrutural de 05/09/2026, "adicionar texto" nem chega mais nesse endpoint: vira
-  // um `overlayTextOnImage` direto no client (ver AgentChat.tsx, isAddTextRequest),
-  // sem chamada ao gpt-image-2. Este prompt só cobre ajustes visuais pontuais
-  // (cor, luz, fundo) — por isso ainda diz pra não mexer em texto nenhum.
-  const adjustPrompt = `Make an image that nobody would suspect was generated by AI.
+  // Prompt minimalista para ajuste pós-geração: a imagem recebida já está pronta
+  // (com texto embutido) e o único objetivo é aplicar a mudança pedida sem
+  // reinterpretar composição, texto, cores ou sujeito. Nenhuma regra de
+  // safe-zone / overlay de texto / letterboxing entra aqui de propósito — EXCETO
+  // quando o pedido é especificamente para ADICIONAR texto novo (addingText),
+  // caso em que a diretiva "não mexa em texto" contradiria o próprio pedido do
+  // usuário e o gpt-image-2 fica sem nenhuma regra de tipografia/safe-zone pra
+  // seguir, produzindo fonte serifada aleatória e texto cortado nas bordas.
+  const adjustPrompt = addingText ? `Make an image that nobody would suspect was generated by AI.
+
+CRITICAL — THE PROVIDED IMAGE IS THE EXACT VISUAL BASE:
+Use the provided image as the exact base for the output. Do NOT redraw, reinterpret,
+recreate, regenerate, recompose, or restyle it. The output must be recognizably the
+same image, unchanged in every region not covered by the text being added below.
+
+The user is requesting new text to be added on top of this image: ${prompt}
+Add exactly the text requested above, spelled exactly as provided, as a single-line
+headline (about 25 characters or fewer, never wrapped to a second line), in the position
+requested (or the lower-third of the image if no position was specified). Preserve
+everything else exactly as is — composition, layout, framing, any text already present
+and its exact wording, position and font, colors, subject, people, background.
+
+MANDATORY RULES FOR THE TEXT BEING ADDED:
+${buildTextTypographyRules()}
+
+Do NOT move, resize, restyle or rephrase any text that was already present in the image.
+Do NOT add any logo or brand mark. Do NOT crop, pad, letterbox or change the aspect ratio.
+${photoIdentitySection}
+
+QUALITY STANDARD: Polished, professional edit — indistinguishable from the original image
+with only the requested text added.
+
+Avoid: redrawing or reinterpreting the scene, changing or repositioning any pre-existing
+text, changing the layout or composition, replacing the background, altering the subject,
+serif or decorative typefaces, text touching or crossing the safe-zone margins, generic AI
+aesthetics, plastic skin, oversaturated colors, fake HDR.` : `Make an image that nobody would suspect was generated by AI.
 
 CRITICAL — THE PROVIDED IMAGE IS THE EXACT VISUAL BASE:
 Use the provided image as the exact base for the output. Do NOT redraw, reinterpret,

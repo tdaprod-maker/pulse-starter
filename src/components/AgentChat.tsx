@@ -5,7 +5,6 @@ import { useTheme } from '../contexts/ThemeContext'
 import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, adjustPremiumImage, type AgentMessage, type AgentResponse, type PremiumSlide, type SlideWithImage, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
 import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail, updateCarouselSlideImages } from '../services/brandKit'
-import { overlayTextOnImage } from '../services/textOverlay'
 import {
   composePremiumImage,
   DEFAULT_PREMIUM_LOGO_LAYER, DEFAULT_PREMIUM_TEXT_LAYER,
@@ -85,14 +84,14 @@ function isAddTextRequest(msg: string): boolean {
 }
 
 /** Extrai um texto literal entre aspas (ex: 'adiciona o texto "Compre já"') — usado
- *  pra saber exatamente o que desenhar via overlayTextOnImage, tanto na geração de
+ *  pra repassar o texto exato ao gpt-image-2 como slideTitle, tanto na geração de
  *  post único quanto no ajuste "adicionar texto" (ver isAddTextRequest acima). */
 function extractQuotedText(text: string): string | null {
   const match = text.match(/["“”'‘’]([^"“”'‘’]{2,80})["“”'‘’]/)
   return match ? match[1].trim() : null
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, premiumLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumTextLayer = DEFAULT_PREMIUM_TEXT_LAYER, premiumLogoUrl = null, onPremiumLogoUrlChange, onPremiumLogoLayerChange, onPremiumTextLayerChange, premiumCarouselLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumCarouselTextLayers = {}, onPremiumCarouselTextLayerChange, onPremiumCarouselLogoLayerChange, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, premiumLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumTextLayer = DEFAULT_PREMIUM_TEXT_LAYER, premiumLogoUrl = null, onPremiumLogoUrlChange, onPremiumLogoLayerChange, premiumCarouselLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumCarouselTextLayers = {}, onPremiumCarouselLogoLayerChange, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
   onReset?: () => void
@@ -103,8 +102,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   isPremiumActive?: boolean
   premiumSlides?: PremiumSlide[]
   onPremiumSlidesUpdate?: (slides: PremiumSlide[]) => void
-  /** Camadas de overlay do Premium — fonte única no EditorPage. O chat as manipula
-   *  em vez de assar bytes com overlay direto (era o que fazia o logo sumir). */
+  /** Camadas de overlay do Premium — fonte única no EditorPage. Desde a reversão
+   *  parcial (09/09) o chat só LÊ `premiumTextLayer`/`premiumCarouselTextLayers`
+   *  (pra o `composePremiumImage` do ajuste re-carimbar o overlay manual, se
+   *  houver); quem edita o texto são os painéis dos viewers, não mais o chat. */
   premiumLogoLayer?: PremiumLogoLayer
   premiumTextLayer?: PremiumTextLayer
   premiumLogoUrl?: string | null
@@ -113,12 +114,9 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
    *  `logoUrl: null` e a camada de logo virava no-op. */
   onPremiumLogoUrlChange?: (url: string) => void
   onPremiumLogoLayerChange?: (layer: PremiumLogoLayer) => void
-  onPremiumTextLayerChange?: (layer: PremiumTextLayer) => void
-  /** Carrossel Premium: logo (global) só é editável pelo painel do CarouselViewer;
-   *  o chat só mexe no texto por slide. */
+  /** Carrossel Premium: logo (global) só é editável pelo painel do CarouselViewer. */
   premiumCarouselLogoLayer?: PremiumLogoLayer
   premiumCarouselTextLayers?: Record<number, PremiumTextLayer>
-  onPremiumCarouselTextLayerChange?: (slideIndex: number, layer: PremiumTextLayer) => void
   /** Só usado pelo chat ao adicionar texto a um carrossel Premium restaurado da
    *  Biblioteca (logo queimado nos pixels): reativa a camada de logo global pra
    *  ela sobreviver ao scrim do texto. Edição normal do logo continua no viewer. */
@@ -771,91 +769,16 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   }
 
   async function runPremiumAdjust(instruction: string, slideIndex: number | null, mode: 'adjust' | 'recompose' = 'adjust', addingText: boolean = false) {
-    // "Adicionar texto" nunca passa pelo gpt-image-2 — vira uma camada de texto no
-    // EditorPage (ver ESTRUTURAL em api/generate-premium.js e a arquitetura de
-    // camadas do Premium). Precisa do texto literal entre aspas; sem aspas, pede
-    // pro usuário especificar em vez de adivinhar.
-    if (addingText) {
-      const literalText = extractQuotedText(instruction)
-      if (!literalText) {
-        setMessages(prev => [...prev, { role: 'agent', content: 'Pode escrever o texto exato entre aspas? Ex: adiciona o texto "Compre já" no rodapé.' }])
-        return
-      }
-      setGenerating(true)
-      try {
-        const { data: authData } = await supabase.auth.getUser()
-        const userEmail = authData.user?.email ?? ''
-        let baseImage: string | undefined
-        if (slideIndex === null) {
-          baseImage = validatePremiumSlides<PremiumSlide>(premiumSlides)[0]?.image
-        } else {
-          baseImage = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])[slideIndex]?.imageUrl
-        }
-        if (!baseImage) {
-          setMessages(prev => [...prev, { role: 'agent', content: 'Não encontrei a imagem para ajustar. Tente gerar novamente.' }])
-          return
-        }
-        const balance = await getTokenBalance(userEmail)
-        if (balance < PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE) {
-          setMessages(prev => [...prev, { role: 'agent', content: `Saldo insuficiente. Você tem ${balance} pulses e precisa de ${PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} para adicionar texto.` }])
-          return
-        }
-        const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE)
-        if (debit.success) notifyBalanceUpdate()
-
-        // Resolve a URL do logo (estado do EditorPage ou brand kit). Imagens
-        // restauradas da Biblioteca trazem o logo "queimado" nos pixels e a
-        // camada de logo fica inativa — sem reativá-la, o scrim do texto que
-        // vamos desenhar cobre o logo (bug "logo some ao adicionar texto").
-        // composePremiumImage redesenha base → texto → logo, então ativar a
-        // camada re-carimba o logo POR CIMA do scrim (mesma posição/tamanho
-        // default da geração → idêntico ao logo queimado original).
-        let logoUrl = premiumLogoUrl
-        if (!logoUrl) {
-          const brandCtx = userEmail ? await loadBrandConfig(userEmail) : null
-          logoUrl = brandCtx?.logo_url ?? null
-          if (logoUrl) onPremiumLogoUrlChange?.(logoUrl)
-        }
-
-        if (slideIndex === null) {
-          const logoLayer: PremiumLogoLayer = logoUrl && !premiumLogoLayer?.active
-            ? { ...(premiumLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER), active: true }
-            : (premiumLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER)
-          if (logoLayer.active && !premiumLogoLayer?.active) onPremiumLogoLayerChange?.(logoLayer)
-
-          const newLayer: PremiumTextLayer = { ...(premiumTextLayer ?? DEFAULT_PREMIUM_TEXT_LAYER), active: true, headline: literalText }
-          onPremiumTextLayerChange?.(newLayer)
-          // Persiste a versão composta no registro da Biblioteca (o efeito de
-          // composição do EditorPage é assíncrono, então compomos aqui pros bytes).
-          const composed = await composePremiumImage(baseImage, { text: newLayer, logo: logoLayer, logoUrl })
-          const savedToLibrary = await persistAdjustedPremium(userEmail, [composed])
-          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? '✦ Texto adicionado! Biblioteca atualizada. Pode ajustar posição, tamanho e cor no painel do resultado.' : '✦ Texto adicionado! Pode ajustar posição, tamanho e cor no painel do resultado.' }])
-        } else {
-          const carLogoLayer: PremiumLogoLayer = logoUrl && !premiumCarouselLogoLayer?.active
-            ? { ...(premiumCarouselLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER), active: true }
-            : (premiumCarouselLogoLayer ?? DEFAULT_PREMIUM_LOGO_LAYER)
-          if (carLogoLayer.active && !premiumCarouselLogoLayer?.active) onPremiumCarouselLogoLayerChange?.(carLogoLayer)
-
-          const prevLayer = premiumCarouselTextLayers?.[slideIndex] ?? DEFAULT_PREMIUM_TEXT_LAYER
-          const newLayer: PremiumTextLayer = { ...prevLayer, active: true, headline: literalText }
-          onPremiumCarouselTextLayerChange?.(slideIndex, newLayer)
-          const allBase = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])
-          const composedAll = await Promise.all(allBase.map(async (s, i) => {
-            const tl = i === slideIndex ? newLayer : (premiumCarouselTextLayers?.[i] ?? null)
-            return s.imageUrl
-              ? await composePremiumImage(s.imageUrl, { text: tl, logo: carLogoLayer, logoUrl })
-              : ''
-          }))
-          const savedToLibrary = await persistAdjustedPremium(userEmail, composedAll)
-          setMessages(prev => [...prev, { role: 'agent', content: savedToLibrary ? `✦ Slide ${slideIndex + 1} — texto adicionado! Biblioteca atualizada.` : `✦ Slide ${slideIndex + 1} — texto adicionado! Ajuste posição/tamanho/cor no painel.` }])
-        }
-      } catch (e: unknown) {
-        console.error('[runPremiumAdjust addingText] erro:', e)
-        setMessages(prev => [...prev, { role: 'agent', content: 'Erro ao adicionar o texto. Tente novamente.' }])
-      } finally {
-        setGenerating(false)
-        onGenerated?.()
-      }
+    // Reversão parcial (09/09/2026): "adicionar texto" volta a passar pelo
+    // gpt-image-2 (variante `addingText` do adjustPrompt no endpoint, com as regras
+    // de tipografia/safe-zone rígidas — headline de 1 linha ≤ ~25 chars, margem
+    // ~6%/8%), em vez de virar uma camada de texto no EditorPage. A camada de LOGO
+    // continua sendo reativada no fluxo abaixo (lacuna cd2a5f0 #1): o compose final
+    // re-carimba o logo por cima da imagem que o modelo devolveu. `textOverlay.ts`/
+    // `premiumCompose.ts` seguem no código como ferramenta de overlay manual
+    // pós-geração (painéis dos viewers), fora do caminho padrão.
+    if (addingText && !extractQuotedText(instruction)) {
+      setMessages(prev => [...prev, { role: 'agent', content: 'Pode escrever o texto exato entre aspas? Ex: adiciona o texto "Compre já" no rodapé.' }])
       return
     }
 
@@ -864,6 +787,8 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       role: 'agent',
       content: mode === 'recompose'
         ? 'Recompondo o cenário com Premium — pode levar alguns instantes...'
+        : addingText
+        ? 'Adicionando o texto com Premium — pode levar alguns instantes...'
         : 'Aplicando o ajuste com Premium — pode levar alguns instantes...',
     }])
     try {
@@ -912,13 +837,14 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         segment: brandCtx?.segment,
         styleContext,
         mode,
+        addingText,
       })
       const adjusted = await cropImageToRatio(rawImage, ratio)
 
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE)
       if (debit.success) notifyBalanceUpdate()
 
-      const doneVerb = mode === 'recompose' ? 'Cenário recomposto' : 'Ajuste aplicado'
+      const doneVerb = mode === 'recompose' ? 'Cenário recomposto' : addingText ? 'Texto adicionado' : 'Ajuste aplicado'
 
       // Restaurado da Biblioteca: logo queimado nos pixels + camada inativa. O
       // gpt-image-2 devolve a imagem ajustada SEM logo nítido — reativa a camada
@@ -1018,6 +944,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       const compressedPhoto = uploadedPhoto ? await compressReferenceImage(uploadedPhoto) : null
 
+      // Texto literal citado entre aspas no brief (ex: "com o texto 'Compre já'") é
+      // repassado como slideTitle — reativa as regras de tipografia/safe-zone rígidas
+      // no endpoint (reversão parcial 09/09: o modelo volta a renderizar o texto).
+      // Sem aspas, nenhum texto é forçado.
+      const literalText = extractQuotedText(prompt)
+
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 55000)
 
@@ -1029,6 +961,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt, slideIndex: 1, totalSlides: 1, styleContext, segment: brandCtx?.segment, size: fmt.size,
+            ...(literalText ? { slideTitle: literalText } : {}),
             ...(visualStyle ? { visualStyle } : {}),
             ...(compressedPhoto ? { visualReferences: [compressedPhoto] } : {}),
           }),
@@ -1050,16 +983,13 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         throw e
       }
 
-      // Crop para o formato especificado pelo agente
+      // Crop para o formato especificado pelo agente. O texto (quando há) é
+      // renderizado pelo próprio gpt-image-2 via slideTitle — sem overlay de canvas
+      // pós-geração (reversão parcial 09/09).
       const croppedImage = await cropImageToRatio(rawImage, fmt.ratio)
-      // Texto literal citado entre aspas no brief (ex: "com o texto 'Compre já'") é
-      // desenhado depois via canvas — o gpt-image-2 nunca é instruído a renderizá-lo
-      // (ver ESTRUTURAL em api/generate-premium.js). Sem aspas, nenhum texto é forçado.
-      const literalText = extractQuotedText(prompt)
-      const finalImage = literalText ? await overlayTextOnImage(croppedImage, { headline: literalText }) : croppedImage
 
       let slides: PremiumSlide[] = [
-        { image: finalImage, label: fmt.label },
+        { image: croppedImage, label: fmt.label },
       ]
 
       // Debita pulses
@@ -1317,13 +1247,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
             clearTimeout(timeoutId)
             if (premRes.ok) {
               const data = await premRes.json() as { image?: string }
-              // A API sempre retorna 1024x1536 (2:3) — cropa para o 4:5 real do carrossel
+              // A API sempre retorna 1024x1536 (2:3) — cropa para o 4:5 real do carrossel.
+              // Headline/subtitle já vêm renderizados pelo gpt-image-2 via slideTitle/
+              // slideBody (reversão parcial 09/09) — sem overlay de canvas pós-geração.
               imageUrl = data.image ? await cropImageToRatio(data.image, '4/5') : ''
-              // Headline/subtitle do slide são sempre desenhados depois via canvas —
-              // nunca pedidos ao gpt-image-2 (ver ESTRUTURAL em api/generate-premium.js).
-              if (imageUrl && resolvedSlideTitle) {
-                imageUrl = await overlayTextOnImage(imageUrl, { headline: resolvedSlideTitle, subtitle: resolvedSlideBody || undefined })
-              }
             } else {
               const err = await premRes.json().catch(() => ({})) as { error?: string }
               console.error(`[generatePremiumCarousel] slide ${i + 1} erro HTTP:`, err)

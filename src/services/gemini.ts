@@ -292,7 +292,9 @@ export async function generatePremiumCaption(prompt: string, brand?: BrandContex
  * pelo endpoint:
  * - 'adjust' (default): preservação total — só aplica a mudança pontual pedida
  *   ("escurece o fundo", "texto branco"). Sem safe-zone / overlay de texto /
- *   letterboxing.
+ *   letterboxing — EXCETO quando `addingText` é true (pedido de ADICIONAR texto
+ *   novo), caso em que o endpoint injeta as regras de tipografia/safe-zone
+ *   rígidas (headline de 1 linha ≤ ~25 chars, margem ~6%/8%).
  * - 'recompose': mantém a(s) pessoa(s) e o texto embutido, mas recria o
  *   ambiente/cenário ao redor conforme a instrução.
  * Serve tanto para post único quanto para 1 slide de carrossel Premium. `size`
@@ -306,6 +308,9 @@ export async function adjustPremiumImage(params: {
   segment?: string
   styleContext?: string
   mode?: 'adjust' | 'recompose'
+  /** Quando true, o pedido é ADICIONAR texto novo à imagem — o endpoint troca o
+   *  adjustPrompt de preservação total pela variante com regras de tipografia. */
+  addingText?: boolean
 }): Promise<{ image: string }> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 55000)
@@ -316,6 +321,7 @@ export async function adjustPremiumImage(params: {
       body: JSON.stringify({
         prompt: params.instruction,
         editMode: params.mode ?? 'adjust',
+        addingText: params.addingText ?? false,
         visualReferences: [params.baseImage],
         size: params.size,
         segment: params.segment,
