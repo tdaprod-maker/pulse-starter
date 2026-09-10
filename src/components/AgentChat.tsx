@@ -91,6 +91,17 @@ function extractQuotedText(text: string): string | null {
   return match ? match[1].trim() : null
 }
 
+/** Replay cumulativo: junta as instruções já confirmadas de um slot + a nova numa
+ *  única instrução pro modelo. UMA entrada → devolve verbatim, pra a 1ª edição de
+ *  cada slot ser byte-idêntica ao comportamento antigo (sem risco de regressão pra
+ *  quem edita uma vez só, que é o caso comum). Cadeias longas (6+) viram uma lista
+ *  grande e a fidelidade do modelo pode cair — limitação aceita, sem cap. */
+function buildCumulativeInstruction(entries: { instruction: string }[]): string {
+  if (entries.length <= 1) return entries[0]?.instruction ?? ''
+  const list = entries.map((e, i) => `${i + 1}. ${e.instruction.trim()}`).join('\n')
+  return `Apply ALL of the following adjustments to the image, together and in this order. The final result must reflect every one of them at once, not only the last:\n${list}`
+}
+
 export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, premiumLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumTextLayer = DEFAULT_PREMIUM_TEXT_LAYER, premiumLogoUrl = null, onPremiumLogoUrlChange, onPremiumLogoLayerChange, premiumCarouselLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumCarouselTextLayers = {}, onPremiumCarouselLogoLayerChange, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, premiumBaseFromLibrary, forceCollapsed, onCollapsedChange }: {
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
@@ -275,6 +286,17 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   // Ajuste pós-geração de imagem Premium aguardando confirmação de custo.
   // slideIndex null = post único Premium; número = índice do slide do carrossel Premium.
   const [pendingPremiumAdjust, setPendingPremiumAdjust] = useState<{ instruction: string; slideIndex: number | null; mode: 'adjust' | 'recompose'; addingText: boolean } | null>(null)
+  // Replay cumulativo do ajuste Premium (BUG 1 — drift de enquadramento em edições
+  // em cadeia): cada ajuste confirmado é reaplicado SEMPRE a partir da imagem-base
+  // pristina do slot (não do resultado da edição anterior), com todas as instruções
+  // já confirmadas concatenadas numa única chamada ao modelo. Isso zera o acúmulo de
+  // zoom/deslocamento em posts gerados do zero e reduz de N pra 1 hop em posts
+  // restaurados da Biblioteca (cujo "original" já é a thumbnail composta).
+  // Chaveado por slot: 'single' pro post único, String(slideIndex) por slide do
+  // carrossel. Limpo por completo a cada imagem Premium nova (gerada ou restaurada)
+  // — ver resetPremiumAdjustReplay abaixo — pra não vazar entre posts.
+  const [premiumAdjustOriginal, setPremiumAdjustOriginal] = useState<Record<string, { image: string; label: string }>>({})
+  const [premiumAdjustLog, setPremiumAdjustLog] = useState<Record<string, { instruction: string; mode: 'adjust' | 'recompose'; addingText: boolean }[]>>({})
   const [hasGeneratedPost, setHasGeneratedPost] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -293,6 +315,21 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   useEffect(() => {
     if (forceCollapsed) setCollapsed(true)
   }, [forceCollapsed])
+
+  // Zera o replay cumulativo do ajuste Premium. Chamado nos 4 caminhos que trocam a
+  // imagem Premium aberta no viewer: geração de post único, geração de carrossel,
+  // restauração da Biblioteca (single OU carrossel) e "Criar novo post". A
+  // restauração de post único também remonta o AgentChat (agentChatKey no
+  // EditorPage), mas a de carrossel NÃO — por isso o efeito abaixo, keyed nos ids
+  // de Biblioteca, é a rede de segurança; os resets explícitos nos geradores cobrem
+  // o caso de savePost falhar e o id continuar null entre dois posts.
+  function resetPremiumAdjustReplay() {
+    setPremiumAdjustOriginal({})
+    setPremiumAdjustLog({})
+  }
+  useEffect(() => {
+    resetPremiumAdjustReplay()
+  }, [premiumLibraryId, premiumCarouselLibraryId])
 
   async function applyEditActions(actions: EditAction[]) {
     const activeId = useStore.getState().activeTemplateId
@@ -858,25 +895,48 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         return
       }
 
-      // Imagem base = versão atualmente no estado do EditorPage (sem logo, salvo
-      // se o caminho de logo-via-chat tiver rodado antes).
-      let baseImage: string | undefined
-      let baseLabel = ''
+      // Imagem base do estado atual (sem logo, salvo se o caminho de logo-via-chat
+      // tiver rodado antes). Na 1ª edição de cada slot ela É a pristina.
+      let currentBaseImage: string | undefined
+      let currentBaseLabel = ''
       if (slideIndex === null) {
         const list = validatePremiumSlides<PremiumSlide>(premiumSlides)
-        baseImage = list[0]?.image
-        baseLabel = list[0]?.label ?? ''
+        currentBaseImage = list[0]?.image
+        currentBaseLabel = list[0]?.label ?? ''
       } else {
         const list = validateSlides<SlideWithImage>(premiumCarouselSlides ?? [])
-        baseImage = list[slideIndex]?.imageUrl
+        currentBaseImage = list[slideIndex]?.imageUrl
       }
-      if (!baseImage) {
+      if (!currentBaseImage) {
         setMessages(prev => [...prev, { role: 'agent', content: 'Não encontrei a imagem para ajustar. Tente gerar novamente.' }])
         return
       }
 
-      const compressed = await compressReferenceImage(baseImage)
-      const { size, ratio } = await measureForAdjust(baseImage, baseLabel)
+      // ── Replay cumulativo ──────────────────────────────────────────────────────
+      // A base enviada ao modelo é SEMPRE a pristina do slot (capturada na 1ª
+      // edição), nunca o resultado da edição anterior — isso zera o drift de
+      // enquadramento em cadeia. As instruções já confirmadas são reaplicadas todas
+      // juntas, numa única chamada.
+      const slotKey = slideIndex === null ? 'single' : String(slideIndex)
+      const original = premiumAdjustOriginal[slotKey] ?? { image: currentBaseImage, label: currentBaseLabel }
+      if (!premiumAdjustOriginal[slotKey]) {
+        setPremiumAdjustOriginal(prev => ({ ...prev, [slotKey]: original }))
+      }
+      const priorEntries = premiumAdjustLog[slotKey] ?? []
+      const newEntry = { instruction, mode, addingText }
+      const allEntries = [...priorEntries, newEntry]
+      // Política de mistura de modos (o endpoint só aceita um editMode por chamada):
+      // qualquer recompose no log → recompose; senão adjust. addingText NÃO é um
+      // modo — as instruções de add-text entram no texto combinado e o flag fica
+      // ligado no adjust (senão o adjustPrompt padrão proíbe mexer em texto e
+      // contradiz o pedido). Sob recompose o flag fica desligado (o prompt de
+      // recompose já cuida de preservar texto).
+      const effectiveMode: 'adjust' | 'recompose' = allEntries.some(e => e.mode === 'recompose') ? 'recompose' : 'adjust'
+      const effectiveAddingText = effectiveMode === 'adjust' && allEntries.some(e => e.addingText)
+      const combinedInstruction = buildCumulativeInstruction(allEntries)
+
+      const compressed = await compressReferenceImage(original.image)
+      const { size, ratio } = await measureForAdjust(original.image, original.label)
 
       const styleContext = [
         brandCtx?.segment ? `Segment: ${brandCtx.segment}` : '',
@@ -884,15 +944,19 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       ].filter(Boolean).join('. ')
 
       const { image: rawImage } = await adjustPremiumImage({
-        instruction,
+        instruction: combinedInstruction,
         baseImage: compressed,
         size,
         segment: brandCtx?.segment,
         styleContext,
-        mode,
-        addingText,
+        mode: effectiveMode,
+        addingText: effectiveAddingText,
       })
       const adjusted = await cropImageToRatio(rawImage, ratio)
+
+      // Só registra a instrução no log DEPOIS do sucesso do modelo — se a chamada
+      // falhar, o débito e o append não acontecem e a cadeia fica no estado anterior.
+      setPremiumAdjustLog(prev => ({ ...prev, [slotKey]: [...(prev[slotKey] ?? []), newEntry] }))
 
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE)
       if (debit.success) notifyBalanceUpdate()
@@ -1088,6 +1152,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }
 
       console.log('[generatePremium] chamando onPremiumGenerated com', slides.length, 'slides')
+      // Imagem Premium nova → zera o replay cumulativo (o efeito keyed em
+      // premiumLibraryId também zera, mas não dispara se savePost falhou e o id
+      // continua null entre dois posts).
+      resetPremiumAdjustReplay()
       onPremiumGenerated?.(slides, generatedCaption, savedPostId)
       setHasGeneratedPost(true)
       if (uploadedPhotos.length) setUploadedPhotos([])
@@ -1330,6 +1398,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount)
       if (debit.success) notifyBalanceUpdate()
 
+      resetPremiumAdjustReplay()
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, undefined, 'premium')
       if (uploadedPhotos.length) setUploadedPhotos([])
       setMessages(prev => [...prev, {
@@ -1622,6 +1691,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingPremiumAdjust(null)
     setUploadedPhotos([])
     setHasGeneratedPost(false)
+    resetPremiumAdjustReplay()
     onReset?.()
   }
 
