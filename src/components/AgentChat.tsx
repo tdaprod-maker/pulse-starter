@@ -741,6 +741,10 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const ctx = canvas.getContext('2d')!
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
       try {
+        // PNG lossless de propósito: esta imagem continua no pipeline de edição
+        // (compressReferenceImage re-encoda pro modelo, composePremiumImage sobrepõe
+        // camadas). A conversão pra JPEG — que corta os 5-26 MB — acontece só na
+        // fronteira de armazenamento, em uploadThumbnail (reencodeThumbnailToJpeg).
         return canvas.toDataURL('image/png')
       } catch (err) {
         console.error('[cropImageToRatio] canvas tainted:', err)
@@ -798,12 +802,18 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     try {
       if (premiumLibraryId) {
         const url = await uploadThumbnail(premiumLibraryId, userEmail, images[0])
-        if (url) await updatePostThumbnail(premiumLibraryId, url)
+        // Só reporta sucesso se o upload realmente devolveu uma URL. Antes o
+        // `return true` era incondicional: um upload que falhava soft (null) fazia
+        // o chat dizer "Biblioteca atualizada" sem ter gravado nada.
+        if (!url) return false
+        await updatePostThumbnail(premiumLibraryId, url)
         return true
       }
       if (premiumCarouselLibraryId) {
-        await updateCarouselSlideImages(premiumCarouselLibraryId, images)
-        return true
+        // Mesmo tratamento do branch de post único: updateCarouselSlideImages
+        // engolia o erro do Supabase e retornava void, fazendo isto retornar true
+        // sem ter gravado. Agora só reporta sucesso se a escrita confirmou.
+        return await updateCarouselSlideImages(premiumCarouselLibraryId, images)
       }
     } catch (e) {
       console.error('[persistAdjustedPremium] falha ao atualizar a Biblioteca:', e)
