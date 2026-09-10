@@ -669,79 +669,101 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     }
   }
 
+  // Carrega uma imagem para uso em <canvas> sem cair em "canvas tainted":
+  //  - `crossOrigin='anonymous'` ANTES do `src` — obrigatório para `toDataURL()`
+  //    quando a imagem é de outra origem (ex.: thumbnail_url do Supabase Storage
+  //    num post restaurado da Biblioteca). Sem isso o canvas fica contaminado e
+  //    `toDataURL()` lança `SecurityError`. No-op para data: URL.
+  //  - cache-bust em URLs http(s): um <img> de display já pode ter cacheado a
+  //    MESMA URL sem CORS, e o browser serviria essa resposta (tainted) para o
+  //    load com crossOrigin. `?cors=1` força uma entrada de cache separada.
+  //  - REJEITA em erro de carregamento em vez de deixar a Promise pendente para
+  //    sempre (era isso que travava o fluxo de ajuste no spinner "gerando...").
+  function loadImageForCanvas(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error('Não consegui carregar a imagem base para edição.'))
+      img.src = /^https?:/i.test(url)
+        ? url + (url.includes('?') ? '&' : '?') + 'cors=1'
+        : url
+    })
+  }
+
   // Fotos de referência vindas de celular podem chegar com vários MB — sem
   // isso, o payload de /api/generate-premium estoura o limite de body da
   // função serverless (413) já no primeiro slide do carrossel.
   function compressReferenceImage(dataUrl: string, maxDim = 1024, quality = 0.82): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image()
-      img.onload = () => {
-        const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
-        const width = Math.round(img.width * scale)
-        const height = Math.round(img.height * scale)
-        const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(img, 0, 0, width, height)
-        resolve(canvas.toDataURL('image/jpeg', quality))
+    return loadImageForCanvas(dataUrl).then((img) => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+      const width = Math.round(img.width * scale)
+      const height = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      try {
+        return canvas.toDataURL('image/jpeg', quality)
+      } catch (err) {
+        // Canvas tainted: imagem de outra origem sem CORS aprovado. Propaga um
+        // erro claro (o catch de runPremiumAdjust mostra a mensagem e libera o
+        // spinner) em vez de deixar a Promise pendente.
+        console.error('[compressReferenceImage] canvas tainted:', err)
+        throw new Error('A imagem base bloqueou a edição por CORS (canvas protegido). Recarregue a página e tente de novo.')
       }
-      img.onerror = reject
-      img.src = dataUrl
     })
   }
 
   function cropImageToRatio(imageUrl: string, ratio: string): Promise<string> {
-    return new Promise(resolve => {
-      const img = new Image()
-      img.onload = () => {
-        const [rw, rh] = ratio.split('/').map(Number)
-        const targetRatio = rw / rh
-        const srcRatio = img.width / img.height
-        let sx = 0, sy = 0, sw = img.width, sh = img.height
-        if (srcRatio > targetRatio) {
-          sw = Math.round(img.height * targetRatio)
-          sx = Math.round((img.width - sw) / 2)
-        } else {
-          sh = Math.round(img.width / targetRatio)
-          sy = Math.round((img.height - sh) / 2)
-        }
-        const canvas = document.createElement('canvas')
-        canvas.width = rw * 512
-        canvas.height = rh * 512
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
-        resolve(canvas.toDataURL('image/png'))
+    return loadImageForCanvas(imageUrl).then((img) => {
+      const [rw, rh] = ratio.split('/').map(Number)
+      const targetRatio = rw / rh
+      const srcRatio = img.width / img.height
+      let sx = 0, sy = 0, sw = img.width, sh = img.height
+      if (srcRatio > targetRatio) {
+        sw = Math.round(img.height * targetRatio)
+        sx = Math.round((img.width - sw) / 2)
+      } else {
+        sh = Math.round(img.width / targetRatio)
+        sy = Math.round((img.height - sh) / 2)
       }
-      img.src = imageUrl
+      const canvas = document.createElement('canvas')
+      canvas.width = rw * 512
+      canvas.height = rh * 512
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+      try {
+        return canvas.toDataURL('image/png')
+      } catch (err) {
+        console.error('[cropImageToRatio] canvas tainted:', err)
+        throw new Error('A imagem bloqueou o recorte por CORS (canvas protegido). Recarregue a página e tente de novo.')
+      }
     })
   }
 
-  // Deriva o size aceito pelo gpt-image-2 e o ratio de crop a partir da imagem
-  // base do ajuste — usa o label do slide quando existe, senão mede a proporção
-  // real da imagem. Garante que o resultado do ajuste casa exatamente com o
-  // formato de origem.
+  // Deriva o size aceito pelo modelo de imagem e o ratio de crop a partir da
+  // imagem base do ajuste — usa o label do slide quando existe, senão mede a
+  // proporção real da imagem. Garante que o resultado do ajuste casa exatamente
+  // com o formato de origem. Não desenha em canvas, mas usa o mesmo loader por
+  // consistência (crossOrigin + cache-bust); em falha de load cai no default.
   function measureForAdjust(imageUrl: string, label: string): Promise<{ size: string; ratio: string }> {
     const LABEL_RATIO: Record<string, string> = { '9:16': '9/16', '4:5': '4/5', '1:1': '1/1', '16:9': '16/9' }
     const sizeForRatio = (ratio: string) =>
       ratio === '1/1' ? '1024x1024' : ratio === '16/9' ? '1536x1024' : '1024x1536'
-    return new Promise(resolve => {
-      const img = new Image()
-      img.onload = () => {
-        let ratio: string
-        if (label && LABEL_RATIO[label]) {
-          ratio = LABEL_RATIO[label]
-        } else {
-          const r = img.width / img.height
-          if (Math.abs(r - 1) < 0.05) ratio = '1/1'
-          else if (r < 1) ratio = r < 0.66 ? '9/16' : '4/5'
-          else ratio = '16/9'
-        }
-        resolve({ size: sizeForRatio(ratio), ratio })
+    return loadImageForCanvas(imageUrl).then((img) => {
+      let ratio: string
+      if (label && LABEL_RATIO[label]) {
+        ratio = LABEL_RATIO[label]
+      } else {
+        const r = img.width / img.height
+        if (Math.abs(r - 1) < 0.05) ratio = '1/1'
+        else if (r < 1) ratio = r < 0.66 ? '9/16' : '4/5'
+        else ratio = '16/9'
       }
-      img.onerror = () => resolve({ size: '1024x1536', ratio: '4/5' })
-      img.src = imageUrl
-    })
+      return { size: sizeForRatio(ratio), ratio }
+    }).catch(() => ({ size: '1024x1536', ratio: '4/5' }))
   }
 
   // Grava a versão ajustada no registro que já existe na Biblioteca, para o

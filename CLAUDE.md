@@ -245,6 +245,21 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
   Só apareceu quando `persistAdjustedPremium` passou a sobrescrever `thumbnails/{email}/{id}.jpg`
   depois de um ajuste Premium. Não há policy de `DELETE` de propósito (nenhum caminho apaga
   objetos). Se um upload novo der 400, cheque se a operação é overwrite e se falta policy pro `cmd`.
+- **Canvas tainted ao editar post Premium RESTAURADO da Biblioteca (`SecurityError` em `toDataURL`).**
+  Post gerado na hora tem a base como data URL em `premiumSlides[0].image`; **restaurado**, a base é
+  a `thumbnail_url` (URL cross-origin do Supabase Storage — `EditorPage.tsx` restore de `premium-single`).
+  Os helpers de canvas do `AgentChat.tsx` (`compressReferenceImage`, `cropImageToRatio`,
+  `measureForAdjust`) rodam antes de `composePremiumImage` e precisam de `img.crossOrigin='anonymous'`
+  ANTES do `src` — hoje via o helper compartilhado `loadImageForCanvas(url)`, que também: (a) faz
+  cache-bust `?cors=1` em URLs http(s) (um `<img>` de display sem `crossOrigin` cacheia a resposta
+  sem-CORS e o load do canvas herda o cache tainted — por isso os `<img>` de `PremiumResultViewer` e
+  `CarouselViewer` ramo premium também têm `crossOrigin="anonymous"`); (b) **rejeita** em erro de load,
+  e o `toDataURL()` está em `try/catch` que lança `Error` — antes o throw acontecia dentro de
+  `img.onload` e a Promise ficava pendente pra sempre (spinner "gerando..." infinito, pior que erro
+  visível). O bucket `media` já serve `access-control-allow-origin: *` — nada a mudar no Supabase.
+  **Não é** relacionado ao swap `gpt-image-2` → `gpt-image-2.5-flare` (server-side; `/api/generate-premium`
+  devolve data URL). Qualquer novo helper que desenhe URL remota em `<canvas>` deve usar
+  `loadImageForCanvas`, não `new Image()` cru.
 - Tabela `social_connections`: colunas `access_token`, `platform_user_id`, `platform_username`,
   `platform_avatar_url`, `expires_at`, `is_valid`. `platform_avatar_url` foi adicionada em
   26/ago/2026 (migration `20260826190000_add_platform_avatar_url_to_social_connections.sql`) —

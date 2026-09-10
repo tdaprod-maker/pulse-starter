@@ -288,9 +288,14 @@ export function PremiumResultViewer({
 
             {ASPECT_STYLES[slide.label] ? (
               <div style={ASPECT_STYLES[slide.label]}>
+                {/* crossOrigin: a mesma URL é depois desenhada em <canvas> no
+                    ajuste (composePremiumImage/compressReferenceImage). Sem isso,
+                    o browser cacheia a resposta sem CORS e o load com crossOrigin
+                    do canvas herda o cache tainted → toDataURL() lança. */}
                 <img
                   src={slide.image}
                   alt={slide.label}
+                  crossOrigin="anonymous"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               </div>
@@ -298,6 +303,7 @@ export function PremiumResultViewer({
               <img
                 src={slide.image}
                 alt={slide.label}
+                crossOrigin="anonymous"
                 style={{ display: 'block', width: '100%', height: 'auto' }}
               />
             )}

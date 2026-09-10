@@ -498,9 +498,14 @@ export function CarouselViewer({
           padding: '24px', overflow: 'hidden', position: 'relative', minHeight: 0,
         }}>
           {slidesList[current].imageUrl ? (
+            /* crossOrigin: essa URL é depois desenhada em <canvas> no ajuste
+               premium (composePremiumImage). Sem crossOrigin aqui, o cache sem
+               CORS desta <img> de display contamina o load do canvas e
+               toDataURL() lança SecurityError. */
             <img
               src={slidesList[current].imageUrl}
               alt={slidesList[current].title}
+              crossOrigin="anonymous"
               style={{
                 maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
                 objectFit: 'contain', display: 'block', borderRadius: '12px',
@@ -540,7 +545,7 @@ export function CarouselViewer({
               border: i === current ? '2px solid var(--accent)' : '2px solid transparent',
               background: '#111',
             }}>
-              {s.imageUrl && <img src={s.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              {s.imageUrl && <img src={s.imageUrl} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               <div style={{
                 position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
