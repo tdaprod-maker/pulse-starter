@@ -113,12 +113,44 @@ function buildDesignRead(segment, resolvedVisualStyle, hasReferencePhoto) {
   return `Reading this as: a social post for the "${segmentLabel}" segment, ${styleName}, ${basis}. Deliberately avoid this segment's generic AI default — see the named clichés banned below.`
 }
 
+// BURACO 4: o modelo só gera em 1024x1024 / 1024x1536 / 1536x1024, mas o post final
+// pode ser 4:5 ou 9:16 — o cliente faz um center-crop pós-geração (cropImageToRatio).
+// Esse crop remove ~8% de duas bordas e pode comer a margem de safe-zone que o modelo
+// respeitou no frame que ele viu. Aqui calculamos quanto será cortado e avisamos o
+// modelo pra compor com essa folga extra. `size` = frame gerado; `outputRatio` (ex:
+// "4/5") = proporção final. Vazio quando as proporções batem (1:1) ou faltam dados.
+function cropInsetNote(size, outputRatio) {
+  if (!size || !outputRatio) return ''
+  const [w, h] = String(size).split('x').map(Number)
+  const [rw, rh] = String(outputRatio).split('/').map(Number)
+  if (!w || !h || !rw || !rh) return ''
+  const genRatio = w / h
+  const targetRatio = rw / rh
+  if (Math.abs(genRatio - targetRatio) < 0.01) return ''
+  let pct, edges, verbose
+  if (genRatio > targetRatio) {
+    const keptW = h * targetRatio
+    pct = Math.round(((w - keptW) / 2 / w) * 100)
+    edges = 'the left and right edges'
+    verbose = 'left and right'
+  } else {
+    const keptH = w / targetRatio
+    pct = Math.round(((h - keptH) / 2 / h) * 100)
+    edges = 'the top and bottom edges'
+    verbose = 'top and bottom'
+  }
+  if (pct < 1) return ''
+  return `
+
+IMPORTANT — POST-CROP: after you generate it, this image is centre-cropped to a ${rw}:${rh} aspect ratio for publishing, which permanently removes the outer ${pct}% of ${edges}. Compose as if those ${pct}% strips are already gone: keep ALL text — and the entire safe-zone margin — at least ${pct}% further inside on the ${verbose} than the safe-zone rule alone would require. Nothing important (no text, no faces, no key subject detail) may sit in those outer ${pct}% strips on the ${verbose}.`
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody, visualStyle, editMode, addingText } = req.body
+  const { prompt, slideIndex, totalSlides, styleContext, segment, size, visualReferences, slideTitle, slideBody, visualStyle, editMode, addingText, outputRatio } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' })
@@ -126,6 +158,9 @@ export default async function handler(req, res) {
 
   const resolvedVisualStyle = visualStyle === 'illustration' || visualStyle === 'typography' ? visualStyle : 'photo'
   const hasReferencePhoto = !!visualReferences?.length
+  // BURACO 4: aviso sobre o center-crop client-side pós-geração (vazio se não houver
+  // mismatch de proporção). Entra em todos os prompts que renderizam/movem texto.
+  const cropNote = cropInsetNote(size, outputRatio)
 
   // Ajuste pós-geração: a imagem já renderizada (com texto embutido) é a base e o
   // pedido é uma alteração pontual ("escurece o fundo"). O prompt normal de
@@ -217,32 +252,37 @@ CRITICAL FACE AND IDENTITY PRESERVATION:
 When a reference photo is provided, you MUST preserve the exact facial features, proportions, and identity of every person shown. Do NOT alter, distort, duplicate, or generate variations of any face. Do NOT create multiple people with similar or identical faces unless the reference photo already shows multiple distinct people — in that case, preserve each person's individual distinct features exactly. Do NOT change body proportions, facial structure, or any physical characteristic. The person(s) in the output must be immediately recognizable as the exact same person(s) from the reference photo. Any deviation from the reference photo's human features is a critical failure.
 When the reference photo shows MULTIPLE people, you MUST preserve EACH individual person's exact facial features and identity — not just the most prominent one. Every single face in the group must remain recognizable and unaltered, regardless of how many people are present or their position in the frame.` : ''
 
-  // Quando há foto de referência, o prompt de "gerar cena do zero" (VISUAL BRIEF +
-  // VISUAL SUBJECT RULE + regras de composição) faz o GPT Image redesenhar a foto
-  // inteira em vez de usá-la como base — por isso esse bloco é substituído por uma
-  // diretiva de edição que trata a foto como base fixa, só com overlay/ajustes.
+  // Com foto de referência o endpoint roda `images/edits`. Esse modelo NÃO obedece
+  // "encolha a foto + letterboxe pra abrir espaço" (op incomum, ele resiste) — mas
+  // OBEDECE "recomponha o enquadramento / feche o crop / desloque o sujeito". Então
+  // a defesa da safe zone aqui é REENQUADRAR a foto (buraco 2), não letterbox
+  // (buraco 1, removido). Trade-off aceito pelo produto: a foto pode voltar com
+  // crop mais fechado / sujeito deslocado; o que é preservado é o CONTEÚDO
+  // (pessoas, produto, local, luz, cor, identidade), não o enquadramento original.
   const referenceBaseDirective = hasReferencePhoto ? `
 
-CRITICAL — THE REFERENCE PHOTO IS THE EXACT VISUAL BASE (read first, overrides any instruction below that implies generating a new scene):
-Use the provided image as the exact visual base for the output. Do NOT redraw, reinterpret, recreate, or regenerate the scene, subject, people, objects, background, framing, angle, or composition. The output must be recognizably the same photo, unchanged in every region not explicitly modified below.
-Only make these changes on top of the untouched base photo:
-- Add the text overlay and/or logo space described below (if any)
-- Subtly adjust lighting, color grading, or atmosphere ONLY if explicitly requested in the brief below
-- THE ONLY EXCEPTION TO EXACT FRAMING: if fitting the mandatory text safe-zone (see CRITICAL SAFE ZONE rule below) requires it, you MAY shrink the photo and add neutral letterboxing/padding (solid color bars matching the photo's dominant tone) around it. This is the single allowed departure from "framing stays exactly as provided" — the photo itself (people, objects, setting, angle, composition) still must not be redrawn, cropped into, or reinterpreted; it is only placed smaller within the canvas, padded, never cropped.
-Treat this strictly as a targeted photo edit, not a scene generated from a text brief. Everything else already in the photo — the people, objects, setting, and framing — must remain exactly as provided, except for letterboxing/padding as described above when required to fit the text safe zone.` : ''
+CRITICAL — THE REFERENCE PHOTO IS THE SOURCE OF THE SUBJECT AND THE LOOK (read first, overrides any instruction below that implies inventing a new scene):
+The provided image defines WHAT is in the picture and HOW it looks. You MUST preserve exactly, with no deviation:
+- every person's identity, face, features, proportions, hair, skin tone, expression, age and clothing (see the identity rule below)
+- the specific subject / product / animal / location shown — never substitute it for a different one
+- the lighting direction and quality, the colour grading, and the overall photographic treatment
+You MAY and SHOULD recompose the FRAMING so the layout works: crop into the photo, zoom, move the subject off-centre, tighten or widen the shot, shift the horizon — whatever it takes to leave a clean, uncluttered area for the headline inside the text safe zone. Reframing this exact shot is expected and allowed; changing who or what is in it, their appearance, the setting, or the light is a critical failure.
+Do NOT add letterboxing, padding, or solid bars around the whole photo to "make room" — recompose the shot itself so the room is already there. Treat this like a director reframing existing footage for a title card, not like generating a new scene from text.` : ''
 
   const briefLabel = hasReferencePhoto
     ? 'EDIT INSTRUCTIONS (what to add or adjust on top of the reference photo — this is NOT a new scene to generate)'
     : 'VISUAL BRIEF'
 
   const visualSubjectSection = hasReferencePhoto
-    ? '- N/A — a reference photo is provided as the exact visual base (see the CRITICAL directive above). Do not invent, substitute, or redraw a different subject, person, or scene.'
+    ? '- The reference photo defines the subject and the look (see the CRITICAL directive above). Do NOT invent, substitute, or redraw a different subject, person, or scene. You MAY recompose the framing of that same subject — crop in, zoom, move it off-centre — to open a clean area for the text.'
     : SUBJECT_RULE_BY_STYLE[resolvedVisualStyle](slideTitle)
 
   const compositionRules = hasReferencePhoto ? `
-- Preserve the reference photo's existing background, framing, angle, and composition exactly — do not replace, crop, or restyle it
-- Only the added text/logo elements should follow the placement and safe-zone rules below; everything else in the photo stays untouched
-- TEXT PRIORITY OVER PHOTO FRAMING: If fitting the text within the safe zone (as specified below in the CRITICAL SAFE ZONE rule) requires reducing, repositioning, or adding letterboxing/padding to the reference photo, DO THIS. The text must NEVER be cut off, cropped, or extend beyond the safe zone — this takes priority over preserving the photo at full frame. It is acceptable and expected to show the photo slightly smaller, with neutral padding (solid color bars matching the photo's dominant tone) above/below or sides, to guarantee 100% of the text fits within the safe zone with proper margins. A photo shown smaller with complete, uncropped text is far better than a full-frame photo with cropped or cut-off text.` : `
+- Preserve the reference photo's subject, setting, lighting and colour treatment exactly; you MAY recompose its framing (crop in, zoom, shift the subject) to make room for the text — see the CRITICAL directive above
+- CRITICAL: recompose so the subject and every important visual element sit within the CENTER 60% of image width and CENTER 70% of image height. The outer margins stay clean — background, out-of-focus area, or plain surface only — no subject, no important detail near the edges
+- CRITICAL: put the headline in the lower third (or the upper third), fully inside the text safe zone, over a clean area — background, wall, sky, floor, or an out-of-focus region. NEVER over a person's face or head, NEVER over busy photographic detail
+- FALLBACK — only when the subject genuinely fills the whole frame and cannot be reframed to free a clean text area: lay a solid or near-solid colour band (the photo's dominant tone, or the brand colour) across the third where the text goes, kept fully inside the safe zone, and place the headline on that band. Always prefer reframing the shot over adding the band.
+- The headline must NEVER be cut off, cropped, or cross the safe-zone margins — guaranteeing that is more important than keeping the photo at its original framing` : `
 - Clean layout with generous negative space — no clutter
 - Dark or neutral background — no loud gradients
 - CRITICAL: Place all key elements in the CENTER 60% of image width and CENTER 70% of image height only
@@ -275,27 +315,27 @@ ${compositionRules}
 - If the brand has a defined visual style, replicate it: colors, typography weight, spacing, mood
 - CRITICAL: Do NOT include any logo or brand mark — the logo will be overlaid separately
 - Any text rendered in the image MUST follow every typography rule below without exception (these apply even if you would otherwise add only incidental text):
-${buildTextTypographyRules()}
+${buildTextTypographyRules()}${cropNote}
 ${carouselTextOverlay}
-QUALITY STANDARD: ${hasReferencePhoto ? 'Polished, professional photo edit — indistinguishable from the original photo with a subtle, high-end text/logo overlay added on top.' : QUALITY_STANDARD_BY_STYLE[resolvedVisualStyle]}
+QUALITY STANDARD: ${hasReferencePhoto ? 'Polished and professional — reads as one real photograph of the exact same subject, setting and lighting as the reference, recomposed for the layout, with a clean high-end headline sitting well inside the safe zone.' : QUALITY_STANDARD_BY_STYLE[resolvedVisualStyle]}
 
 Avoid: ${hasReferencePhoto
-    ? 'redrawing or reinterpreting the scene, replacing the background, altering the subject, generic AI aesthetics, plastic skin, oversaturated colors, fake HDR'
+    ? "substituting the subject or scene for a different one, changing any person's identity or appearance, replacing the setting, restyling the lighting or colour treatment, letterboxing or padding the photo, text outside the safe zone, text over a face or over busy detail, generic AI aesthetics, plastic skin, oversaturated colours, fake HDR"
     : `${AVOID_BY_STYLE[resolvedVisualStyle]}. Specifically, do NOT default to this segment's most recycled visual cliché: ${namedClichesForSegment(segment || styleContext)}`}.`
 
   // Prompt para ajuste pós-geração: a imagem recebida já está pronta (com texto
   // embutido) e o objetivo é aplicar a mudança pedida sem reinterpretar
   // composição, texto, cores ou sujeito.
-  // Os DOIS ramos (addingText e ajuste normal) agora incluem buildTextTypographyRules()
-  // + uma diretiva forte de "não reenquadrar / não ampliar / não cortar". Motivo
-  // (09/09/2026, teste real): um pedido de ajuste geral ("destacar mais o texto"),
-  // fora do ramo addingText, deixou o texto quase vazando a safe-zone E a foto
-  // levemente ampliada/recomposta — a promessa do modelo de "preservar o resto da
-  // imagem em edições" não basta. Como o payload de ajuste não manda
-  // slideTitle/slideBody, o servidor não sabe se a imagem tem texto — então as
-  // regras entram sempre (são auto-condicionais: "Any text rendered in the image
-  // MUST follow every typography rule..."), com um guard explícito de que aqui elas
-  // governam só POSIÇÃO/legibilidade do texto existente, não o conteúdo/tamanho.
+  // Os DOIS ramos (addingText e ajuste normal) incluem buildTextTypographyRules()
+  // + "não reenquadrar / não ampliar / não cortar a FOTO". Motivo (09/09/2026,
+  // teste real): um pedido de ajuste geral ("destacar mais o texto") deixou o texto
+  // quase vazando a safe-zone E a foto levemente ampliada.
+  // BURACO 3 (10/09/2026): o "preserve tudo exatamente" brigava com "traga o texto
+  // pra dentro da safe zone" quando o texto já nascia fora (comum no caminho com
+  // foto). Resolvido com prioridade explícita — SE o texto já está fora da safe
+  // zone/sobre rosto, corrigir POSIÇÃO e TAMANHO **do texto** vence a preservação;
+  // isso é uma edição só-do-texto e NÃO autoriza reenquadrar/cortar/letterboxar a
+  // foto (coisas diferentes). Texto já dentro da safe zone: não encostar.
   const adjustPrompt = addingText ? `Make an image that nobody would suspect was generated by AI.
 
 CRITICAL — THE PROVIDED IMAGE IS THE EXACT VISUAL BASE:
@@ -311,13 +351,17 @@ everything else exactly as is — composition, layout, framing, any text already
 and its exact wording, position and font, colors, subject, people, background.
 
 MANDATORY RULES FOR THE TEXT BEING ADDED:
-${buildTextTypographyRules()}
+${buildTextTypographyRules()}${cropNote}
 
-Do NOT move, resize, restyle or rephrase any text that was already present in the image.
+Do NOT rephrase, translate or restyle any text that was already present, and do NOT change
+its wording. Keep pre-existing text where it is UNLESS it is outside the safe zone, crossing
+a margin, or over a face — in that case move it (and the added text) fully inside the safe
+zone and clear of every face; this is a text-only correction and must not reframe, crop or
+letterbox the photo.
 Do NOT add any logo or brand mark. If a logo or brand mark is ALREADY present in the
 provided image, keep it identical — exact same size, exact same position — and never
 enlarge, move, redraw, restyle or duplicate it. Do NOT crop, pad, letterbox or change the
-aspect ratio.
+aspect ratio of the photo.
 ${photoIdentitySection}
 
 QUALITY STANDARD: Polished, professional edit — indistinguishable from the original image
@@ -334,40 +378,52 @@ Use the provided image as the exact base for the output. Do NOT redraw, reinterp
 recreate, regenerate, recompose, or restyle it. The output must be recognizably the
 same image, unchanged in every region not covered by the specific adjustment below.
 
-CRITICAL — PRESERVE THE EXACT ORIGINAL FRAMING (the image-edit model tends to subtly zoom
-in or re-crop even when told to preserve the scene — this is a known failure and must NOT
-happen here): keep the EXACT framing, scale, zoom level, crop and centering of the provided
-image. Do NOT enlarge, zoom in, zoom out, crop, re-crop, re-center, pan, pad, letterbox, or
-change the aspect ratio. The subject, the background and any text must each stay at the exact
-same position and size they already have. The photo must not grow, shrink, or shift even
-slightly.
+CRITICAL — PRESERVE THE EXACT ORIGINAL FRAMING OF THE PHOTO (the image-edit model tends to
+subtly zoom in or re-crop even when told to preserve the scene — this is a known failure and
+must NOT happen here): keep the EXACT framing, scale, zoom level, crop and centering of the
+provided image. Do NOT enlarge, zoom in, zoom out, crop, re-crop, re-center, pan, pad,
+letterbox, or change the aspect ratio. The subject, the background and the photo framing must
+stay exactly as they already are — the photo must not grow, shrink, or shift even slightly.
+(The POSITION of any text is governed separately, in the TEXT block below — that is a
+different thing from reframing the photo.)
 
 Apply ONLY this specific change to the image: ${prompt}. Preserve everything else exactly
-as is — composition, layout, framing, every piece of text and its exact wording, position
-and font, colors, subject, people, background — except for the specific adjustment requested.
+as is — composition, layout, framing, colors, subject, people, background, and every piece of
+text's exact wording and font — except for the specific adjustment requested and any text
+safe-zone correction described below.
 
-Do NOT add, remove, move, resize, restyle or rephrase any text. Do NOT add any logo or brand
-mark. If a logo or brand mark is ALREADY present in the provided image, keep it identical —
-exact same size, exact same position — and never enlarge, move, redraw, restyle or duplicate
-it. Do NOT crop, pad, letterbox or change the aspect ratio.
+Do NOT add, remove, rephrase, translate or restyle any text, and do NOT change its wording or
+length. Do NOT add any logo or brand mark. If a logo or brand mark is ALREADY present in the
+provided image, keep it identical — exact same size, exact same position — and never enlarge,
+move, redraw, restyle or duplicate it. Do NOT crop, pad, letterbox or change the aspect ratio
+of the photo.
 ${photoIdentitySection}
 
-TEXT ALREADY IN THE IMAGE — the text currently visible in the image is correct as it is: do
-NOT add, remove, shorten, lengthen, rewrite, translate or restyle it. The rules below govern
-ONLY its placement and legibility, never its wording or length. If the requested adjustment
-(for example "make the text stand out more") would push any text toward an edge, keep it
-inside the safe zone instead — text must never approach or cross the safe-zone margins, and
-must never sit over a person's face or head:
-${buildTextTypographyRules()}
+TEXT ALREADY IN THE IMAGE — its wording is correct: do NOT add, remove, shorten, lengthen,
+rewrite, translate or restyle it. Its POSITION and SIZE follow this priority:
+- If every piece of text is already fully inside the text safe zone and clear of every face:
+  leave it exactly where and what size it is. Do not nudge it.
+- If any text is already outside the safe zone, touching an edge, crossing the safe-zone
+  margins, or sitting over a person's face or head: you MUST move it, and resize it if
+  needed, to bring it fully inside the safe zone and clear of every face. This position
+  correction OVERRIDES "keep everything exactly as is" — but it applies to the TEXT ONLY.
+  Moving or resizing text is NOT the same as reframing the photo: the photo's subject,
+  background, framing, scale and crop still must not change at all. Do not zoom, pan, crop,
+  pad or letterbox the image to fix the text — just relocate the text within the existing
+  frame.
+The rules below define where the safe zone is and the typography the corrected text must keep:
+${buildTextTypographyRules()}${cropNote}
 
 QUALITY STANDARD: Polished, professional edit — indistinguishable from the original image
-with only the requested adjustment applied, at the exact same framing.
+with only the requested adjustment applied (plus any text moved inside the safe zone), at the
+exact same photo framing.
 
 Avoid: redrawing or reinterpreting the scene, zooming or re-cropping the image, enlarging or
-shifting the subject or the framing, changing or repositioning any text, enlarging / moving /
-redrawing / duplicating a logo already in the image, text approaching or crossing the
-safe-zone margins, text over a face, changing the layout or composition, replacing the
-background, altering the subject, generic AI aesthetics, plastic skin, oversaturated colors,
+shifting the subject or the photo framing, rephrasing or restyling any text, moving text that
+is already correctly inside the safe zone, enlarging / moving / redrawing / duplicating a logo
+already in the image, leaving text across or outside the safe-zone margins, text over a face,
+changing the layout or composition, replacing the background, altering the subject, generic AI
+aesthetics, plastic skin, oversaturated colors,
 fake HDR.`
 
   // Recomposição parcial: mantém a(s) pessoa(s) e o texto já embutido na imagem,

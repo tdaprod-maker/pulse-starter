@@ -305,6 +305,10 @@ export async function adjustPremiumImage(params: {
   instruction: string
   baseImage: string
   size: string
+  /** Proporção final do post (ex: '4/5'). O endpoint só gera 1:1 / 2:3 / 3:2 e o
+   *  cliente faz center-crop pós-geração; passar isto deixa o endpoint avisar o
+   *  modelo pra compor o texto com a folga do crop (buraco 4). */
+  outputRatio?: string
   segment?: string
   styleContext?: string
   mode?: 'adjust' | 'recompose'
@@ -324,6 +328,7 @@ export async function adjustPremiumImage(params: {
         addingText: params.addingText ?? false,
         visualReferences: [params.baseImage],
         size: params.size,
+        ...(params.outputRatio ? { outputRatio: params.outputRatio } : {}),
         segment: params.segment,
         styleContext: params.styleContext,
         slideIndex: 1,

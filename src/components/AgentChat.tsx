@@ -947,6 +947,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
         instruction: combinedInstruction,
         baseImage: compressed,
         size,
+        outputRatio: ratio,
         segment: brandCtx?.segment,
         styleContext,
         mode: effectiveMode,
@@ -1084,6 +1085,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt, slideIndex: 1, totalSlides: 1, styleContext, segment: brandCtx?.segment, size: fmt.size,
+            outputRatio: fmt.ratio,
             ...(literalText ? { slideTitle: literalText } : {}),
             ...(visualStyle ? { visualStyle } : {}),
             ...(compressedPhoto ? { visualReferences: [compressedPhoto] } : {}),
@@ -1364,6 +1366,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
                 totalSlides: agentSlides.length,
                 styleContext,
                 size: '1024x1536',
+                outputRatio: '4/5',
                 slideTitle: resolvedSlideTitle,
                 slideBody: resolvedSlideBody,
                 ...(visualStyle ? { visualStyle } : {}),
