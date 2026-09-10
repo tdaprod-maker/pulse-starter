@@ -105,6 +105,10 @@ export function EditorPage() {
   const [premiumCarouselTextLayers, setPremiumCarouselTextLayers] = useState<Record<number, PremiumTextLayer>>({})
   const [premiumCarouselComposedSlides, setPremiumCarouselComposedSlides] = useState<SlideWithImage[] | null>(null)
   const [premiumCaption, setPremiumCaption] = useState<{ instagram: string; linkedin: string; hashtags: string } | null>(null)
+  // true só quando o Premium aberto no viewer foi RESTAURADO da Biblioteca — aí o
+  // logo já está queimado nos pixels da thumbnail salva e o AgentChat não deve
+  // recarimbar um logo por cima ao ajustar (senão fica logo duplo no canto).
+  const [premiumBaseFromLibrary, setPremiumBaseFromLibrary] = useState(false)
 
   function resetPremiumLayers() {
     setPremiumLogoLayer(DEFAULT_PREMIUM_LOGO_LAYER)
@@ -113,6 +117,7 @@ export function EditorPage() {
     setPremiumCarouselTextLayers({})
     setPremiumComposedSlides(null)
     setPremiumCarouselComposedSlides(null)
+    setPremiumBaseFromLibrary(false)
   }
   // id do registro salvo na Biblioteca para o Premium atualmente aberto no viewer —
   // usado pelo AgentChat para persistir a versão ajustada no lugar do original.
@@ -189,6 +194,7 @@ export function EditorPage() {
         setPremiumLibraryId(pendingPost.id ?? null)
         setPremiumCarouselLibraryId(null)
         resetPremiumLayers()
+        setPremiumBaseFromLibrary(true)
       } else {
         console.warn('[restore] post premium sem thumbnail_url, nada para restaurar')
       }
@@ -360,6 +366,7 @@ export function EditorPage() {
       setPremiumCarouselLibraryId(pendingCarousel.id ?? null)
       setPremiumLibraryId(null)
       resetPremiumLayers()
+      setPremiumBaseFromLibrary(true)
     } else {
       console.warn('[restore] carrossel premium sem slide_images, nada para restaurar')
     }
@@ -592,6 +599,7 @@ export function EditorPage() {
             onCarouselSlidesUpdate={(s) => setCarouselSlides(validateSlides<SlideWithImage>(s))}
             premiumLibraryId={premiumLibraryId}
             premiumCarouselLibraryId={premiumCarouselLibraryId}
+            premiumBaseFromLibrary={premiumBaseFromLibrary}
             forceCollapsed={canvasExpanded}
             onCollapsedChange={(c) => { if (!c) setCanvasExpanded(false) }}
           />

@@ -91,7 +91,7 @@ function extractQuotedText(text: string): string | null {
   return match ? match[1].trim() : null
 }
 
-export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, premiumLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumTextLayer = DEFAULT_PREMIUM_TEXT_LAYER, premiumLogoUrl = null, onPremiumLogoUrlChange, onPremiumLogoLayerChange, premiumCarouselLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumCarouselTextLayers = {}, onPremiumCarouselLogoLayerChange, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, forceCollapsed, onCollapsedChange }: {
+export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenerated, onPremiumGenerated, onActivateEditMode, activePost, isPremiumActive, premiumSlides, onPremiumSlidesUpdate, premiumLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumTextLayer = DEFAULT_PREMIUM_TEXT_LAYER, premiumLogoUrl = null, onPremiumLogoUrlChange, onPremiumLogoLayerChange, premiumCarouselLogoLayer = DEFAULT_PREMIUM_LOGO_LAYER, premiumCarouselTextLayers = {}, onPremiumCarouselLogoLayerChange, isPremiumCarouselActive, premiumCarouselSlides, premiumCarouselCurrentIndex, onCarouselSlidesUpdate, premiumLibraryId, premiumCarouselLibraryId, premiumBaseFromLibrary, forceCollapsed, onCollapsedChange }: {
   onGenerating?: (engine?: 'standard' | 'premium') => void
   onGenerated?: () => void
   onReset?: () => void
@@ -132,6 +132,12 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   premiumLibraryId?: string | null
   /** id do carrossel Premium salvo na Biblioteca (só quando restaurado da Biblioteca). */
   premiumCarouselLibraryId?: string | null
+  /** true quando a imagem base aberta no viewer veio de um post/carrossel Premium
+   *  RESTAURADO da Biblioteca — nesse caso o logo já está queimado nos pixels da
+   *  thumbnail salva. `runPremiumAdjust` então NÃO faz o auto-stamp do logo (não
+   *  resolve URL da marca, não reativa a camada, não recompõe o logo por cima),
+   *  senão o ajuste renderiza dois logos sobrepostos no canto. */
+  premiumBaseFromLibrary?: boolean
   forceCollapsed?: boolean
   onCollapsedChange?: (collapsed: boolean) => void
 } = {}) {
@@ -750,8 +756,23 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   // consistência (crossOrigin + cache-bust); em falha de load cai no default.
   function measureForAdjust(imageUrl: string, label: string): Promise<{ size: string; ratio: string }> {
     const LABEL_RATIO: Record<string, string> = { '9:16': '9/16', '4:5': '4/5', '1:1': '1/1', '16:9': '16/9' }
-    const sizeForRatio = (ratio: string) =>
-      ratio === '1/1' ? '1024x1024' : ratio === '16/9' ? '1536x1024' : '1024x1536'
+    // O endpoint de imagem só aceita 3 tamanhos: 1024x1024 (1:1), 1024x1536 (2:3 ≈
+    // 0.667, retrato) e 1536x1024 (3:2 = 1.5, paisagem). Escolhemos o de proporção
+    // MAIS PRÓXIMA da real pra `cropImageToRatio` cortar o mínimo depois:
+    //   1:1 → 1024x1024 (exato)     16:9 (1.78) → 1536x1024 (1.5, mais perto que 1.0)
+    //   4:5 (0.80)  → 1024x1536 (0.667: |0.80-0.667|=0.13 < |0.80-1.0|=0.20)
+    //   9:16 (0.5625) → 1024x1536 (0.667: |0.5625-0.667|=0.10 << |0.5625-1.0|=0.44)
+    // 4:5 e 9:16 caem os dois em 1024x1536 porque não há tamanho de API mais perto —
+    // o crop residual (≈8% topo+base no 4:5, ≈8% laterais no 9:16) é inerente a essa
+    // limitação, não um bug de mapeamento. Zerar isso exige manter a imagem no
+    // ratio nativo do modelo ao longo da cadeia de edições (fora do escopo aqui).
+    const SIZE_FOR_RATIO: Record<string, string> = {
+      '1/1': '1024x1024',
+      '16/9': '1536x1024',
+      '4/5': '1024x1536',
+      '9/16': '1024x1536',
+    }
+    const sizeForRatio = (ratio: string) => SIZE_FOR_RATIO[ratio] ?? '1024x1536'
     return loadImageForCanvas(imageUrl).then((img) => {
       let ratio: string
       if (label && LABEL_RATIO[label]) {
@@ -868,11 +889,17 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       const doneVerb = mode === 'recompose' ? 'Cenário recomposto' : addingText ? 'Texto adicionado' : 'Ajuste aplicado'
 
-      // Restaurado da Biblioteca: logo queimado nos pixels + camada inativa. O
-      // gpt-image-2 devolve a imagem ajustada SEM logo nítido — reativa a camada
-      // pra composePremiumImage re-carimbá-lo (mesmo racional do fluxo "adicionar
-      // texto"). Sem URL de logo na marca, nada muda.
-      const adjLogoUrl = premiumLogoUrl ?? brandCtx?.logo_url ?? null
+      // Double-stamp: um post restaurado da Biblioteca já tem o logo QUEIMADO nos
+      // pixels da base (a thumbnail salva é a imagem composta). Resolver a URL da
+      // marca + reativar a camada + recarimbar aqui produziria DOIS logos no canto
+      // (o queimado, que o modelo ainda redesenha/desloca a cada rodada, + o stamp
+      // novo). Nesse fluxo não fazemos o auto-stamp; só respeitamos uma camada que
+      // o usuário tenha ativado à mão nesta sessão (aí a URL já está resolvida em
+      // premiumLogoUrl). Fora do restore, comportamento inalterado.
+      const activeLayerForSlide = slideIndex === null ? premiumLogoLayer : premiumCarouselLogoLayer
+      const adjLogoUrl = premiumBaseFromLibrary
+        ? (activeLayerForSlide?.active ? (premiumLogoUrl ?? null) : null)
+        : (premiumLogoUrl ?? brandCtx?.logo_url ?? null)
       if (adjLogoUrl && adjLogoUrl !== premiumLogoUrl) onPremiumLogoUrlChange?.(adjLogoUrl)
 
       if (slideIndex === null) {
