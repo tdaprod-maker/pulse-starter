@@ -7,22 +7,22 @@ const SIZE_RATIO: Record<LogoSize, number> = {
   large: 0.28,
 }
 
-// Safe zone por proporção — os MESMOS mínimos que api/generate-premium.js impõe ao
-// modelo ("Keep ALL text and logo elements inside..."), medidos de layouts reais.
-// `side` é % da largura; `top`/`bottom` são % da altura. Antes daqui saía um 4%
-// fixo em todas as bordas, o que deixava o logo bem fora dessa safe zone (ex.: 4:5
-// pede 10% lateral / 13% base). Ver CLAUDE.md, "safe zone do texto Premium por
-// proporção".
-function safeZoneMargins(width: number, height: number): { side: number; top: number; bottom: number } {
-  const r = width / height
-  if (Math.abs(r - 1) < 0.05) return { side: 0.10, top: 0.09, bottom: 0.09 } // 1:1
-  if (r < 1) {
-    return r < 0.66
-      ? { side: 0.15, top: 0.09, bottom: 0.09 } // 9:16
-      : { side: 0.10, top: 0.08, bottom: 0.13 } // 4:5
-  }
-  return { side: 0.12, top: 0.12, bottom: 0.12 } // 16:9 ou qualquer outra
-}
+// Margem do logo — DESACOPLADA da safe zone de texto. O logo é um selo de marca no
+// canto: só precisa não encostar na borda. A safe zone por proporção (10/8/13 etc.)
+// continua valendo, mas só pra headline/subtitle no api/generate-premium.js — ela
+// existe pra o texto não ser cortado pela UI/grid do Instagram, o que não se aplica
+// a um watermark de canto.
+//
+// Valor: 4% da largura da imagem, uniforme nas 4 bordas (= ~43px num canvas de
+// 1080px de largura, ~77px em 1920px). É o valor que vigorou até o commit 05a9df6
+// sem nenhuma reclamação de posição do logo — este bloco é um revert literal desse
+// estado, depois que o 05a9df6 (que passou a ancorar o logo na safe zone de texto)
+// jogou todo logo 54-153px pra dentro e fez o selo "flutuar". Dentro da faixa 3-5%:
+// 3% (~32px) fica colado demais e pode colidir com o respiro interno do próprio
+// logo; 5% (~54px) já recomeça a destacar o selo do canto. 4% é o meio e o
+// conhecido-bom. Não varia por aspect-ratio de propósito — um selo de canto quer
+// um gap de pixel consistente, não um recuo proporcional a cada eixo.
+const LOGO_MARGIN_RATIO = 0.04
 
 export function overlayLogoOnImage(
   imageBase64: string,
@@ -43,10 +43,10 @@ export function overlayLogoOnImage(
         const ctx = canvas.getContext('2d')!
         ctx.drawImage(img, 0, 0)
 
-        const mz = safeZoneMargins(img.width, img.height)
-        const sideMargin = img.width * mz.side
-        const topMargin = img.height * mz.top
-        const bottomMargin = img.height * mz.bottom
+        const margin = img.width * LOGO_MARGIN_RATIO
+        const sideMargin = margin
+        const topMargin = margin
+        const bottomMargin = margin
         const maxLogoW = img.width * SIZE_RATIO[size]
         const ratio = logo.naturalWidth / logo.naturalHeight
         const logoW = Math.min(maxLogoW, logo.naturalWidth)

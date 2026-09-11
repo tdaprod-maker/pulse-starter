@@ -510,6 +510,73 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
 - **`public/sample/` são as imagens da LP** (`public/pulse-landing-page.html`) — JPEGs otimizados
   (~1200px, ~2MB no total). Os PNGs originais eram ~72MB (um de 24MB/4608×8192) e travavam a LP no
   mobile. Se trocar/adicionar exemplo, redimensione antes de commitar; não volte pra PNG cru.
+- **Sessão 10/09/2026 — Premium: 4 fixes + replay cumulativo + margem do logo.** Commits em `main`:
+  - `05a9df6` **BUG "logo vaza / duplica em edições em cadeia":** (1) `adjustPrompt` (as 2 variantes)
+    ganha "preserve um logo JÁ presente na imagem idêntico, nunca amplie/mova/redesenhe/duplique";
+    (2) guard de double-stamp — nova prop `premiumBaseFromLibrary` (EditorPage → AgentChat), `true`
+    só em post/carrossel Premium **restaurado da Biblioteca** (logo queimado nos pixels); nesse
+    fluxo `runPremiumAdjust` NÃO resolve URL de marca / NÃO reativa a camada / NÃO recarimba (só
+    respeita camada que o usuário ativou à mão); (3) `sizeForRatio` (AgentChat) vira mapa explícito
+    documentado — **sem** mudança de comportamento (4:5 e 9:16 caem em `1024x1536` por ser o mais
+    próximo dos 3 tamanhos da API).
+  - `beefe07` **BUG "Biblioteca mostra a 1ª versão do post Premium após editar":** a raiz era a URL
+    determinística de `getPublicUrl` (path `thumbnails/{email}/{id}.jpg` + `upsert` → mesma string
+    sempre) + `Cache-Control` → todo `<img src={thumbnail_url}>` servia a cópia cacheada. Fix em
+    `uploadThumbnail` (`brandKit.ts`): retorno com `?v={Date.now()}` (cache-bust) + `cacheControl:
+    '31536000'` (seguro porque a URL é versionada) + **reencode PNG→JPEG q0.92** (`reencodeThumbnailToJpeg`)
+    antes do upload — o `cropImageToRatio`/overlay emitem PNG de canvas de 5-26 MB; JPEG corta ~90%
+    e alinha o `contentType`. `cropImageToRatio` em si continua PNG (pipeline de edição em memória).
+    `persistAdjustedPremium` deixa de retornar `true` incondicional: post → `false` se `uploadThumbnail`
+    devolveu `null`; carrossel → `updateCarouselSlideImages` agora é `Promise<boolean>` (true só com
+    `error == null` E linha afetada via `.select('id')`). Verificado via MCP Supabase: a policy RLS
+    de UPDATE no bucket existe; `posts` **não tem** coluna `updated_at`.
+  - `d239bfc` **feat replay cumulativo do ajuste Premium (BUG "drift de enquadramento em cadeia"):**
+    cada edição de texto em cadeia usava a saída da edição anterior como base → ~0,5-1% de zoom por
+    rodada acumulava. Agora `runPremiumAdjust` reaplica **sempre a partir da imagem pristina do slot**
+    + todas as instruções já confirmadas concatenadas numa **única** chamada ao modelo. Estado novo
+    em `AgentChat`: `premiumAdjustOriginal` / `premiumAdjustLog` (`Record<slotKey, …>`, `slotKey =
+    slideIndex ?? 'single'`). `buildCumulativeInstruction`: 1 entrada → verbatim (round-1
+    **byte-idêntico** ao comportamento antigo, zero regressão pra quem edita 1×); 2+ → lista numerada.
+    Política de mistura de modos (endpoint aceita 1 `editMode`): qualquer `recompose` no log →
+    `recompose`; senão `adjust`; `addingText` NÃO é modo — entra no texto combinado e o **flag**
+    `addingText` fica ligado no `adjust` (senão o `adjustPrompt` proíbe mexer em texto e contradiz o
+    pedido), desligado sob `recompose`. `resetPremiumAdjustReplay` via `useEffect([premiumLibraryId,
+    premiumCarouselLibraryId])` + resets explícitos em `generatePremium` / `generatePremiumCarousel`
+    / `handleReset` (cobre os 4 caminhos, inclusive restauração de carrossel que NÃO remonta o
+    AgentChat). `size`/`ratio` passam a sair da pristina → 1 crop a partir do original, não N.
+    **Limitações aceitas (documentadas no código):** `recompose` + `addingText` no mesmo log pode não
+    renderizar o texto; cadeias 6+ viram lista longa sem cap; posts restaurados da Biblioteca não
+    têm original limpo → reduz de N pra 1 hop, não zera.
+  - `b132b6b` **BUG "texto Premium fora da safety area no caminho COM foto de referência":** 4 buracos.
+    **B2:** `compositionRules` (ramo `hasReferencePhoto`) troca "TEXT PRIORITY OVER PHOTO FRAMING +
+    letterboxe se precisar" (mecanismo que o `images/edits` não cumpre) pela **gaiola central 60/70%**
+    do caminho sem-foto; `referenceBaseDirective` deixa de prometer "framing exato" e passa a
+    instruir **REENQUADRAR a foto** (crop/zoom/deslocar sujeito) pra abrir espaço — preservando
+    sujeito, cenário, luz, cor, identidade. Trade-off aceito: a foto pode voltar com crop mais
+    fechado. **B1:** toda linguagem de letterbox/padding removida de `referenceBaseDirective` /
+    `compositionRules`. **B3:** contradição no `adjustPrompt` normal resolvida — SE o texto já está
+    fora da safe zone / sobre rosto, corrigir POSIÇÃO e TAMANHO **do texto** vence "preserve exato";
+    NÃO autoriza reenquadrar/cortar/letterboxar a FOTO (coisas diferentes). Tweak paralelo na
+    variante `addingText`. **B4:** o center-crop client-side (`cropImageToRatio`, ~8% de 2 bordas no
+    4:5 e 9:16) podia comer a margem conquistada; cliente passa `outputRatio` em `generatePremium` /
+    `generatePremiumCarousel` / `adjustPremiumImage`, o endpoint calcula `cropInsetNote` e injeta em
+    `fullPrompt` + `adjustPrompt` (as 2 variantes) um aviso `POST-CROP` pro modelo compor com ~8% de
+    folga. `cropImageToRatio` não muda. **B5 (na fila, fora de escopo):** `recomposePrompt` não tem
+    `buildTextTypographyRules()` nem regra de rosto.
+  - **`logoOverlay.ts` — margem do logo DESACOPLADA da safe zone de texto (revert do `05a9df6`).**
+    O `05a9df6` fez o logo herdar a safe zone por proporção (10/8/13 etc.), que é **regra de
+    headline** (Instagram não cortar o texto) — pra um selo de canto ela jogava o logo 54-153px pra
+    dentro e o fazia "flutuar". Auditoria isolada (`scripts/audit-logo-anchors.mjs`, zero custo de
+    API: transpila o `logoOverlay.ts` real via o pacote `typescript`, shims de Image/canvas, mede a
+    bbox do logo pixel a pixel nas 7 âncoras × 4 formatos) confirmou 56/56 batendo com a safe zone —
+    ou seja, a geometria estava certa, a **régua** é que era errada. Agora `logoOverlay.ts` usa
+    `LOGO_MARGIN_RATIO = 0.04` (4% da largura, uniforme nas 4 bordas ≈ 43px @1080w / 77px @1920w) —
+    revert literal do estado pré-`05a9df6`. A safe zone por proporção continua valendo só pra
+    headline/subtitle no `api/generate-premium.js`. **PENDENTE:** essa mudança do `logoOverlay.ts` +
+    o script `scripts/audit-logo-anchors.mjs` estavam implementados, build+lint OK, mas **não
+    commitados** ao fim da sessão (usuário não autorizou o commit).
+  - **Pendente (teste manual):** replay cumulativo (gerar → 3-4 edições de texto → comparar com a
+    original) e o fix do caminho com foto de referência (`b132b6b`).
 
 ## Limites
 
