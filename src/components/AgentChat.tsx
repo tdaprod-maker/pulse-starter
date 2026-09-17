@@ -91,6 +91,17 @@ function extractQuotedText(text: string): string | null {
   return match ? match[1].trim() : null
 }
 
+/** Detecta menção explícita a um número de slide na mensagem do chat (ex: "no slide 3",
+ *  "slide número 2") — o número é 1-based na fala do usuário, retorna 0-based (ou null
+ *  se a mensagem não menciona nenhum slide). Usado para não deixar um ajuste pedido
+ *  para um slide específico mirar silenciosamente no slide que só está visível na tela. */
+function parseMentionedSlideIndex(msg: string): number | null {
+  const match = msg.match(/slide\s*(?:n[uú]mero\s*|n[°º]\s*)?(\d+)/i)
+  if (!match) return null
+  const n = parseInt(match[1], 10)
+  return n > 0 ? n - 1 : null
+}
+
 /** Replay cumulativo: junta as instruções já confirmadas de um slot + a nova numa
  *  única instrução pro modelo. UMA entrada → devolve verbatim, pra a 1ª edição de
  *  cada slot ser byte-idêntica ao comportamento antigo (sem risco de regressão pra
@@ -286,6 +297,11 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
   // Ajuste pós-geração de imagem Premium aguardando confirmação de custo.
   // slideIndex null = post único Premium; número = índice do slide do carrossel Premium.
   const [pendingPremiumAdjust, setPendingPremiumAdjust] = useState<{ instruction: string; slideIndex: number | null; mode: 'adjust' | 'recompose'; addingText: boolean } | null>(null)
+  // Usuário mencionou um número de slide na mensagem ("no slide 3...") diferente do
+  // slide visível no CarouselViewer — pede confirmação de QUAL slide antes de gastar
+  // pulses no slide errado (ver parseMentionedSlideIndex). visibleIndex/mentionedIndex
+  // já vêm 0-based.
+  const [pendingSlideMismatch, setPendingSlideMismatch] = useState<{ instruction: string; visibleIndex: number; mentionedIndex: number; mode: 'adjust' | 'recompose'; addingText: boolean } | null>(null)
   // Replay cumulativo do ajuste Premium (BUG 1 — drift de enquadramento em edições
   // em cadeia): cada ajuste confirmado é reaplicado SEMPRE a partir da imagem-base
   // pristina do slot (não do resultado da edição anterior), com todas as instruções
@@ -1476,9 +1492,33 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       }
 
       // ── Ajuste pós-geração da imagem: pede confirmação de custo antes de rodar. ──
-      const slideIndex = isPremiumCarouselActive ? (premiumCarouselCurrentIndex ?? 0) : null
+      const visibleIndex = isPremiumCarouselActive ? (premiumCarouselCurrentIndex ?? 0) : null
+      const mentionedIndex = parseMentionedSlideIndex(msgText)
+      // Só considera a menção válida se houver carrossel ativo e o número citado existir
+      // de fato entre os slides gerados — "slide 8" num carrossel de 4 é tratado como
+      // se nenhum número tivesse sido mencionado (cai no slide visível, comportamento atual).
+      const mentionedIndexInRange = isPremiumCarouselActive && mentionedIndex !== null
+        && premiumCarouselSlides && mentionedIndex >= 0 && mentionedIndex < premiumCarouselSlides.length
+        ? mentionedIndex
+        : null
       const mode: 'adjust' | 'recompose' = isRecomposeRequest(msgText) ? 'recompose' : 'adjust'
       const addingText = mode === 'adjust' && isAddTextRequest(msgText)
+
+      // Usuário citou um slide diferente do que está aberto na tela — não mira em
+      // silêncio no slide errado, pergunta qual valer antes de gastar pulses (ver
+      // parseMentionedSlideIndex acima e o bloco pendingSlideMismatch mais abaixo).
+      if (visibleIndex !== null && mentionedIndexInRange !== null && mentionedIndexInRange !== visibleIndex) {
+        setMessages(prev => [...prev, userMsg])
+        setInput('')
+        setPendingSlideMismatch({ instruction: msgText, visibleIndex, mentionedIndex: mentionedIndexInRange, mode, addingText })
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          content: `Você está vendo o slide ${visibleIndex + 1}, mas mencionou o slide ${mentionedIndexInRange + 1} — aplico no slide ${mentionedIndexInRange + 1}?`,
+        }])
+        return
+      }
+
+      const slideIndex = visibleIndex
       setMessages(prev => [...prev, userMsg])
       setInput('')
       setPendingPremiumAdjust({ instruction: msgText, slideIndex, mode, addingText })
@@ -1692,6 +1732,7 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
     setPendingEngineChoice(null)
     setPendingPhotoAsk(null)
     setPendingPremiumAdjust(null)
+    setPendingSlideMismatch(null)
     setUploadedPhotos([])
     setHasGeneratedPost(false)
     resetPremiumAdjustReplay()
@@ -1875,6 +1916,40 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
               }}
             >
               Cancelar
+            </button>
+          </div>
+        )}
+        {pendingSlideMismatch && !loading && !generating && (
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <button
+              onClick={() => {
+                const p = pendingSlideMismatch
+                setPendingSlideMismatch(null)
+                runPremiumAdjust(p.instruction, p.mentionedIndex, p.mode, p.addingText)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Sim, slide {pendingSlideMismatch.mentionedIndex + 1} · {PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses
+            </button>
+            <button
+              onClick={() => {
+                const p = pendingSlideMismatch
+                setPendingSlideMismatch(null)
+                runPremiumAdjust(p.instruction, p.visibleIndex, p.mode, p.addingText)
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'inherit',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Não, slide {pendingSlideMismatch.visibleIndex + 1} · {PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE} pulses
             </button>
           </div>
         )}
