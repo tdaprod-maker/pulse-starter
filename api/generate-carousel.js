@@ -12,6 +12,22 @@ function buildAntiHallucinationRules(dateCtx) {
 - NUNCA invente números específicos, percentuais ou estatísticas (ex: "80% mais engajamento", "3x mais confiança") a menos que o usuário tenha fornecido esse dado explicitamente. Prefira linguagem qualitativa quando não houver dado real disponível.`
 }
 
+// Teto de caracteres pro copywriting genérico (branch sem TEMPLATE_FIELDS, ou seja,
+// "texts": { title, body } cru) — mesmo alvo que buildTextTypographyRules() já impõe
+// em generate-premium.js pro modelo de IMAGEM (~25 caracteres/1 linha de headline).
+// Sem isso, o Haiku (que não sabe desse teto) gera títulos de 40-60+ caracteres, e o
+// gpt-image-2.5-flare então tenta espremer isso numa única linha ≤25 chars — é aí que
+// a safe zone estoura, o texto já nasce longo demais na etapa de copy. Só entra nesse
+// branch: templates Standard com campos próprios (ver TEMPLATE_FIELDS) já têm guidance
+// de tamanho específica por campo (ex: "body 15-25 palavras") que não deve ser
+// sobrescrita por um teto genérico de title/body pensado pro Premium.
+function buildGenericTextLengthRules() {
+  return `REGRA DE TAMANHO — "title" e "body" CURTOS (headline de verdade, sem enrolação):
+- "title": UMA linha, no máximo ~25 caracteres. É a headline principal, não uma frase — corte tudo que não for essencial, sem subtítulo embutido dentro do title.
+- "body" (quando presente): no máximo ~40-50 caracteres — um subtítulo curto de apoio, nunca um parágrafo. Se não houver nada relevante e curto pra complementar o title, deixe "body" vazio em vez de forçar uma frase longa.
+- Prefira cortar palavras a estourar o limite. Um título forte de 4-5 palavras vale mais que uma frase completa — esses campos viram texto renderizado sobre a imagem, não legenda.`
+}
+
 // Elimina os tiques mais reconhecíveis de texto gerado por IA — os mesmos que
 // fazem uma legenda "cheirar" a IA mesmo com gancho e CTA corretos.
 function buildAntiSlopRules() {
@@ -71,6 +87,13 @@ function buildCarouselPrompt(userInput, slideCount, brand, templateId) {
     ? `"texts": { ${templateFields.split(',').map(f => `"${f.trim().split(' ')[0]}": "..."`).join(', ')} }`
     : `"texts": { "title": "...", "body": "..." }`
 
+  // Sem template fixado, "texts" cai no par genérico title/body — é exatamente o
+  // caminho usado pelo carrossel Premium (que não referencia templates Standard) e
+  // pelo CarouselPage sem template escolhido. Ver buildGenericTextLengthRules acima.
+  const genericLengthInstruction = !(templateId && templateFields)
+    ? `\n${buildGenericTextLengthRules()}`
+    : ''
+
   return `Você é um especialista em criação de carrosséis para Instagram.
 
 ${buildAntiHallucinationRules(getCurrentDateContext())}
@@ -99,7 +122,7 @@ REGRAS DE TEXTO:
 - Tom direto e alinhado com a marca
 - Títulos sem ponto final
 - Cada slide deve avançar a narrativa do anterior
-- NUNCA use emojis nas legendas geradas, em nenhuma circunstância, mesmo que o tom seja casual ou divertido. Emojis em excesso são o principal sinal reconhecível de conteúdo gerado por IA genérica — evite completamente. Escreva com linguagem natural, sem símbolos decorativos.
+- NUNCA use emojis nas legendas geradas, em nenhuma circunstância, mesmo que o tom seja casual ou divertido. Emojis em excesso são o principal sinal reconhecível de conteúdo gerado por IA genérica — evite completamente. Escreva com linguagem natural, sem símbolos decorativos.${genericLengthInstruction}
 caption: legenda para Instagram — primeira linha com GANCHO forte que para o scroll (pergunta, dado surpreendente ou promessa), estrutura em lista ou dicas que gera salvamento, CTA explícito no final ("Salve este post", "Compartilhe com quem precisa"). Sem emojis. Máximo 2200 caracteres. Inclua 8-10 hashtags estratégicas por nicho no final (nunca genéricas como #marketing #success).
 Tema: "${userInput}"
 Responda SOMENTE com JSON válido, sem markdown, com EXATAMENTE ${slideCount} slides:
