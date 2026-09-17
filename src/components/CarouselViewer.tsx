@@ -466,7 +466,11 @@ export function CarouselViewer({
   // ── Modo premium: render puramente baseado em imagens ──────────────────────
   if (engine === 'premium') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)', overflow: 'hidden' }}>
+      // overflowY: 'auto' (não 'hidden') — o painel de Ações (logo + texto + legenda +
+      // publicar) cresce bastante com as camadas ativas; sem scroll aqui, o irmão flex:1
+      // da imagem (abaixo) era o único a cortar espaço e o hero encolhia a ponto de
+      // renderizar em tamanho de ícone (~34x43px) em viewports mais baixos.
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)', overflowY: 'auto', overflowX: 'hidden' }}>
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -495,7 +499,7 @@ export function CarouselViewer({
             viewport, sem depender de medição via JS nem de uma proporção fixa. */}
         <div style={{
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '24px', overflow: 'hidden', position: 'relative', minHeight: 0,
+          padding: '24px', overflow: 'hidden', position: 'relative', minHeight: '260px',
         }}>
           {slidesList[current].imageUrl ? (
             /* crossOrigin: essa URL é depois desenhada em <canvas> no ajuste
