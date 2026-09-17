@@ -242,6 +242,15 @@ ${buildTextTypographyRules()}` : ''
     ? 'minimalist typographic design, generous negative space, no photographic or illustrated elements'
     : styleForSegment(segment || styleContext)
 
+  // Slide 2+ de um carrossel com foto de referência: decisão de produto (17/09) de
+  // permitir variação de pose/ângulo/enquadramento do corpo entre slides — sem isso
+  // cada slide saía como a MESMA foto reenquadrada, sem sensação de ensaio
+  // fotográfico. Só entra em contexto de carrossel (totalSlides > 1); post único
+  // Premium com foto de referência continua travando a pose exata, já que ali não
+  // existe "outro slide" pra variar em relação — e os modos adjust/recompose nem
+  // passam por aqui (usam adjustPrompt/recomposePrompt, prompts próprios).
+  const isCarouselWithPhoto = hasReferencePhoto && Number(totalSlides) > 1
+
   // Seção dedicada (não só um bullet perdido em MANDATORY RULES) para dar o máximo
   // de peso possível à preservação de identidade — GPT Image 2 tende a distorcer
   // rostos, duplicar pessoas com o mesmo rosto e criar desproporções quando há
@@ -249,7 +258,7 @@ ${buildTextTypographyRules()}` : ''
   const photoIdentitySection = hasReferencePhoto ? `
 
 CRITICAL FACE AND IDENTITY PRESERVATION:
-When a reference photo is provided, you MUST preserve the exact facial features, proportions, and identity of every person shown. Do NOT alter, distort, duplicate, or generate variations of any face. Do NOT create multiple people with similar or identical faces unless the reference photo already shows multiple distinct people — in that case, preserve each person's individual distinct features exactly. Do NOT change body proportions, facial structure, or any physical characteristic. The person(s) in the output must be immediately recognizable as the exact same person(s) from the reference photo. Any deviation from the reference photo's human features is a critical failure.
+When a reference photo is provided, you MUST preserve the exact facial features, proportions, and identity of every person shown — same face, same bone structure, same skin tone, same distinguishing features, unmistakably the same individual. Do NOT alter, distort, duplicate, or reinterpret any face into a different-looking person. Do NOT create multiple people with similar or identical faces unless the reference photo already shows multiple distinct people — in that case, preserve each person's individual distinct features exactly. Do NOT change body proportions, facial structure, or any physical characteristic. The person(s) in the output must be immediately recognizable as the exact same person(s) from the reference photo. Any deviation from the reference photo's facial identity is a critical failure.${isCarouselWithPhoto ? ' Pose, camera angle and body framing are NOT part of identity and MAY vary between slides — see the pose variation rule below.' : ''}
 When the reference photo shows MULTIPLE people, you MUST preserve EACH individual person's exact facial features and identity — not just the most prominent one. Every single face in the group must remain recognizable and unaltered, regardless of how many people are present or their position in the frame.` : ''
 
   // Com foto de referência o endpoint roda `images/edits`. Esse modelo NÃO obedece
@@ -262,11 +271,12 @@ When the reference photo shows MULTIPLE people, you MUST preserve EACH individua
   const referenceBaseDirective = hasReferencePhoto ? `
 
 CRITICAL — THE REFERENCE PHOTO IS THE SOURCE OF THE SUBJECT AND THE LOOK (read first, overrides any instruction below that implies inventing a new scene):
-The provided image defines WHAT is in the picture and HOW it looks. You MUST preserve exactly, with no deviation:
-- every person's identity, face, features, proportions, hair, skin tone, expression, age and clothing (see the identity rule below)
+The provided image defines WHO is in the picture and HOW they look. You MUST preserve exactly, with no deviation:
+- every person's identity, face, features, proportions, hair, skin tone, age and clothing (see the identity rule below)
 - the specific subject / product / animal / location shown — never substitute it for a different one
 - the lighting direction and quality, the colour grading, and the overall photographic treatment
-You MAY and SHOULD recompose the FRAMING so the layout works: crop into the photo, zoom, move the subject off-centre, tighten or widen the shot, shift the horizon — whatever it takes to leave a clean, uncluttered area for the headline inside the text safe zone. Reframing this exact shot is expected and allowed; changing who or what is in it, their appearance, the setting, or the light is a critical failure.
+${isCarouselWithPhoto ? `POSE VARIATION (this slide is part of a multi-slide carousel): you MAY and SHOULD vary the person's pose, camera angle, and body framing on this slide compared to the other slides — treat the whole carousel like a real photoshoot session where a photographer takes several different shots of the same person in one sitting: a different stance, a slight turn, a different gesture, a closer or wider angle, a different natural expression. This is NOT permission to generate a different-looking person — it is the exact same individual, unmistakably recognizable, simply captured in a different natural moment of the same session. Repeating an identical pose on every slide is undesirable; producing a different-looking person is a critical failure — vary the shot, never the identity.
+` : ''}You MAY and SHOULD recompose the FRAMING so the layout works: crop into the photo, zoom, move the subject off-centre, tighten or widen the shot, shift the horizon — whatever it takes to leave a clean, uncluttered area for the headline inside the text safe zone. Reframing this exact shot is expected and allowed; changing WHO the person is, their facial identity, the setting, or the light is a critical failure.
 Do NOT add letterboxing, padding, or solid bars around the whole photo to "make room" — recompose the shot itself so the room is already there. Treat this like a director reframing existing footage for a title card, not like generating a new scene from text.` : ''
 
   const briefLabel = hasReferencePhoto
