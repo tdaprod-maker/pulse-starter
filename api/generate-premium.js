@@ -397,6 +397,15 @@ stay exactly as they already are — the photo must not grow, shrink, or shift e
 (The POSITION of any text is governed separately, in the TEXT block below — that is a
 different thing from reframing the photo.)
 
+EXCEPTION — ONLY if the specific adjustment requested below is about fixing the SUBJECT's own
+framing or crop (their head, face, or body being cut off at the edge of the photo): you MUST
+zoom out and/or reposition the shot just enough to bring the cut-off part fully into frame,
+while keeping the person's identity, pose, clothing, and the scene exactly as they are. This is
+the ONLY situation in which reframing the photo is allowed. If the request is about anything
+else (color, lighting, background, text, or any other adjustment), this exception does not
+apply and the "preserve the exact original framing" rule above holds in full — do not reframe
+just because it might look better.
+
 Apply ONLY this specific change to the image: ${prompt}. Preserve everything else exactly
 as is — composition, layout, framing, colors, subject, people, background, and every piece of
 text's exact wording and font — except for the specific adjustment requested and any text
@@ -428,12 +437,13 @@ QUALITY STANDARD: Polished, professional edit — indistinguishable from the ori
 with only the requested adjustment applied (plus any text moved inside the safe zone), at the
 exact same photo framing.
 
-Avoid: redrawing or reinterpreting the scene, zooming or re-cropping the image, enlarging or
-shifting the subject or the photo framing, rephrasing or restyling any text, moving text that
-is already correctly inside the safe zone, enlarging / moving / redrawing / duplicating a logo
-already in the image, leaving text across or outside the safe-zone margins, text over a face,
-changing the layout or composition, replacing the background, altering the subject, generic AI
-aesthetics, plastic skin, oversaturated colors,
+Avoid: redrawing or reinterpreting the scene, zooming or re-cropping the image (unless the
+request is specifically about fixing a cut-off subject, per the exception above), enlarging or
+shifting the subject or the photo framing for any other reason, rephrasing or restyling any
+text, moving text that is already correctly inside the safe zone, enlarging / moving / redrawing
+/ duplicating a logo already in the image, leaving text across or outside the safe-zone margins,
+text over a face, changing the layout or composition, replacing the background, altering the
+subject, generic AI aesthetics, plastic skin, oversaturated colors,
 fake HDR.`
 
   // Recomposição parcial: mantém a(s) pessoa(s) e o texto já embutido na imagem,
