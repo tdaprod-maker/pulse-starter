@@ -189,6 +189,46 @@ export async function updatePostThumbnail(
     .eq('id', postId)
 }
 
+export interface CarouselSaveInput {
+  title: string
+  prompt: string
+  template_id: string
+  slides: unknown
+  slide_images: string[]
+  caption: string
+  settings?: Record<string, unknown>
+}
+
+// Salva um carrossel recém-gerado na tabela `carousels`, pra aparecer na
+// Biblioteca (mesmo padrão do `savePost` pra posts únicos). `slides`/
+// `slide_images`/`settings` chegam como array/objeto e são serializados aqui —
+// os chamadores (AgentChat, CarouselPage, PremiumPage) não precisam repetir o
+// JSON.stringify. Retorna o id da linha criada, ou null em caso de erro.
+export async function saveCarousel(
+  userEmail: string,
+  carousel: CarouselSaveInput
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('carousels')
+    .insert({
+      user_email: userEmail,
+      title: carousel.title,
+      prompt: carousel.prompt,
+      template_id: carousel.template_id,
+      slides: JSON.stringify(carousel.slides),
+      slide_images: JSON.stringify(carousel.slide_images),
+      caption: carousel.caption,
+      settings: JSON.stringify(carousel.settings ?? {}),
+    })
+    .select('id')
+    .single()
+  if (error) {
+    console.error('[saveCarousel] falha ao salvar:', error)
+    return null
+  }
+  return data.id
+}
+
 // Sobrescreve as imagens de um carrossel já salvo (tabela `carousels`, coluna
 // `slide_images` — JSON string de data URLs). Usado quando um ajuste pós-geração
 // altera um slide de um carrossel Premium restaurado da Biblioteca, para o

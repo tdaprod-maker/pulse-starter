@@ -4,7 +4,7 @@ import { templateRegistry } from '../templates/index'
 import { useTheme } from '../contexts/ThemeContext'
 import { agentChat, generatePostContent, generateCarouselContent, generatePremiumCaption, adjustPremiumImage, type AgentMessage, type AgentResponse, type PremiumSlide, type SlideWithImage, type EditContext, type EditAction } from '../services/gemini'
 import { generateImage } from '../services/replicate'
-import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail, updateCarouselSlideImages } from '../services/brandKit'
+import { loadBrandConfig, savePost, uploadThumbnail, updatePostThumbnail, updateCarouselSlideImages, saveCarousel } from '../services/brandKit'
 import {
   composePremiumImage,
   DEFAULT_PREMIUM_LOGO_LAYER, DEFAULT_PREMIUM_TEXT_LAYER,
@@ -1257,6 +1257,20 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
       const debit = await debitToken(userEmail, PULSE_COSTS.CAROUSEL_SLIDE * slideCount)
       if (debit.success) notifyBalanceUpdate()
 
+      // Sem isso, o carrossel só existia no estado local do Editor — nunca aparecia
+      // na Biblioteca (só posts únicos são salvos via savePost, acima). Erro de save
+      // não deve quebrar a geração: o carrossel já está pronto na tela mesmo assim.
+      if (userEmail) {
+        await saveCarousel(userEmail, {
+          title: agentSlides[0]?.title || prompt.slice(0, 80),
+          prompt,
+          template_id: resolvedTemplateId,
+          slides: agentSlides,
+          slide_images: slidesWithImages.map(s => s.imageUrl),
+          caption: carouselData.caption,
+        })
+      }
+
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, resolvedTemplateId)
       if (uploadedPhotos.length) setUploadedPhotos([])
       setMessages(prev => [...prev, {
@@ -1416,6 +1430,22 @@ export function AgentChat({ onGenerating, onGenerated, onReset, onCarouselGenera
 
       const debit = await debitToken(userEmail, PULSE_COSTS.PREMIUM_CAROUSEL_SLIDE * cappedCount)
       if (debit.success) notifyBalanceUpdate()
+
+      // Mesmo motivo do carrossel Standard acima: sem isso, o carrossel Premium
+      // gerado pelo Editor nunca era gravado em `carousels` e não aparecia na
+      // Biblioteca. `template_id: 'premium-carousel'` é o mesmo literal que
+      // `PremiumPage.saveToLibrary` já usa e que `LibraryPage`/`handleOpenCarousel`
+      // checam para tratar o card como Premium.
+      if (userEmail) {
+        await saveCarousel(userEmail, {
+          title: agentSlides[0]?.title || prompt.slice(0, 80),
+          prompt,
+          template_id: 'premium-carousel',
+          slides: agentSlides,
+          slide_images: slidesWithImages.map(s => s.imageUrl),
+          caption: carouselData.caption,
+        })
+      }
 
       resetPremiumAdjustReplay()
       onCarouselGenerated?.(slidesWithImages, carouselData.caption, undefined, 'premium')
