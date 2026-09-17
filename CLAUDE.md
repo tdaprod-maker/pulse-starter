@@ -577,6 +577,89 @@ um `Template` com `elements[]`; um carrossel é uma lista de `Template`s com IDs
     commitados** ao fim da sessão (usuário não autorizou o commit).
   - **Pendente (teste manual):** replay cumulativo (gerar → 3-4 edições de texto → comparar com a
     original) e o fix do caminho com foto de referência (`b132b6b`).
+- **Sessão 17/09/2026 — 3 investigações + 3 fixes no carrossel Premium (edição de slide, teto de
+  caracteres, variação de pose).** Todos os 3 commitados e no `main` (push feito, deploy automático
+  do Vercel disparado a cada um).
+  - **Investigação (sem código) — 3 relatórios que motivaram os fixes abaixo:**
+    1. Confirmado por código (sem chamada real — a `ANTHROPIC_API_KEY` local em `.env.local` é um
+       placeholder de 32 chars, não uma chave real; `vercel env pull` da produção foi bloqueado pelo
+       classificador de "Credential Materialization" do harness) que `api/generate-carousel.js` —
+       usado tanto pelo carrossel Standard quanto pelo Premium via `generateCarouselContent` em
+       `src/services/gemini.ts` — não tinha NENHUM teto de tamanho pro `title`/`body` no branch
+       genérico (sem `templateId`), enquanto `buildTextTypographyRules()` em `generate-premium.js`
+       já impunha ~25 caracteres/1 linha do lado do modelo de imagem. O texto nascia longo na etapa
+       de copy (Haiku) antes de chegar no `gpt-image-2.5-flare`, que tentava espremer isso na safe
+       zone — corrigido no fix #2 abaixo.
+    2. Com foto de referência, o prompt de então (`referenceBaseDirective`/`photoIdentitySection`)
+       travava pose/expressão "exactly" junto com identidade — cada slide do carrossel saía como a
+       MESMA foto só reenquadrada, sem variação real entre slides. Corrigido no fix #3 abaixo.
+    3. `AgentChat.tsx:1479` (antes do fix #1) derivava `slideIndex` só de
+       `premiumCarouselCurrentIndex` (slide visível no `CarouselViewer`), nunca de um número citado
+       na mensagem do chat — "no slide 3, aumenta o texto" com o slide 1 aberto aplicava no slide 1,
+       e a mensagem de confirmação do bot ecoava "Ajuste no slide 1" sem o usuário notar a
+       divergência. Corrigido no fix #1 abaixo.
+  - **Fix #1 (`6072f47`) — edição de slide Premium respeita número mencionado no chat:** nova
+    `parseMentionedSlideIndex(msg)` em `AgentChat.tsx` (regex `slide\s*(?:número|n°|nº)?\s*(\d+)`,
+    1-based → 0-based). Sem menção → comportamento antigo (usa o slide visível). Menção fora do
+    range de slides do carrossel → tratada como se não houvesse menção. Menção = slide visível →
+    fluxo normal de sempre. Menção ≠ slide visível → novo estado `pendingSlideMismatch` pergunta
+    direto no chat ("Você está vendo o slide 1, mas mencionou o slide 3 — aplico no slide 3?") com
+    dois botões que já embutem o custo em pulses e executam `runPremiumAdjust` na hora — sem etapa
+    extra de confirmação depois da resposta.
+  - **Fix #2 (`c1d5f55`) — teto de caracteres no copywriting genérico do carrossel:** nova
+    `buildGenericTextLengthRules()` em `api/generate-carousel.js` (title ≤ 25 chars/1 linha, body ≤
+    40-50 chars quando presente, pode ficar vazio) injetada em `buildCarouselPrompt` só quando cai
+    no branch **sem** `templateId`/`TEMPLATE_FIELDS` — esse branch genérico é exatamente o caminho
+    do carrossel Premium (que nunca referencia templates Standard) e do `CarouselPage.tsx` sem
+    template escolhido. Templates Standard com campos próprios (`TEMPLATE_FIELDS`, ex: "body 15-25
+    palavras" de `health-content`) ficam intocados — evita o teto genérico conflitar com guidance de
+    tamanho já específica por campo.
+  - **Fix #3 (`17065d2`) — variação de pose/ângulo no carrossel Premium com foto de referência:**
+    em `api/generate-premium.js`, nova flag `isCarouselWithPhoto = hasReferencePhoto &&
+    Number(totalSlides) > 1`. Identidade (rosto, ossatura, tom de pele, traços distintivos) continua
+    "critical failure" se mudar — isso não mudou. `referenceBaseDirective` ganhou um parágrafo
+    **POSE VARIATION** (só quando `isCarouselWithPhoto`) instruindo variar pose/ângulo de
+    câmera/enquadramento do corpo entre slides como um "ensaio fotográfico com vários cliques da
+    mesma pessoa/sessão" — deixando explícito que isso é diferente de "gerar outra pessoa: é a
+    MESMA pessoa em posições diferentes". `photoIdentitySection` ganhou a ressalva "pose/ângulo/
+    enquadramento NÃO são identidade". Escopo: só ativa em geração nova de carrossel (`fullPrompt`)
+    — `adjust`/`recompose` usam prompts próprios (`adjustPrompt`/`recomposePrompt`) e não passam por
+    essas seções, então edições pontuais no chat continuam sem alterar pose. Post único Premium com
+    foto de referência (sem carrossel) continua travando a pose exata.
+  - **Descoberta (sem mudança de código): múltiplas fotos de referência por slide do carrossel JÁ
+    estavam implementadas ponta a ponta antes desta sessão** — `AgentChat.tsx` tem
+    `uploadedPhotos: string[]`, `<input type="file" multiple>` (linha ~2212), `photoForSlideIndex`
+    distribui uma foto por slide na ordem de envio (1 foto = mesma em todos, N fotos = uma por
+    slide), e a UI já avisa isso ("N fotos anexadas — uma por slide, na ordem"). Não precisou de
+    nenhuma mudança — só reforça o fix #3 (mais fotos diferentes + pose variável = mais variedade
+    real entre slides do carrossel).
+  - **Sessão 17/09/2026 (cont.) — fix "corrige o corte na cabeça" não funcionava no ajuste
+    Premium (`17417e7`):** causa era a regra `PRESERVE THE EXACT ORIGINAL FRAMING` do
+    `adjustPrompt` (ramo de ajuste normal, não-`addingText`) em `api/generate-premium.js`
+    bloqueando qualquer reenquadramento da foto — a única exceção existente era pra posição de
+    TEXTO (safe-zone), não cobria correção de enquadramento do SUJEITO. Adicionada uma segunda
+    exceção explícita logo após o bloco `PRESERVE THE EXACT ORIGINAL FRAMING`: se o pedido do
+    usuário (`${prompt}`) for sobre corrigir corte/enquadramento do sujeito (cabeça/rosto/corpo
+    cortado na borda), autoriza zoom out/reposicionamento — mantendo identidade, pose, roupa e
+    cena. Escopada só pra esse tipo de pedido (não é licença geral pra reenquadrar em qualquer
+    ajuste); a seção `Avoid:` do mesmo branch ganhou a ressalva correspondente pra não
+    contradizer a exceção. Build + lint OK (lint do arquivo isolado limpo — os 47 erros que
+    `npm run lint` reporta no projeto são pré-existentes, em arquivos não relacionados). Só
+    `api/generate-premium.js` foi commitado (havia `CLAUDE.md` modificado e arquivos não
+    rastreados de sessão anterior no working tree — deixados de fora do commit).
+  - **Investigação (sem mudança de código) — confirmação do modelo de cobrança do Plano Anual:**
+    pedido do usuário pra validar um cálculo de margem real. Confirmado que o Plano Anual é
+    cobrança ÚNICA de R$478,80/ano (`interval: 'year'` no Price da Stripe), não 12 cobranças
+    mensais de R$39,90. `api/stripe.js` não fixa o interval no código (só referencia
+    `STRIPE_PRICE_ANNUAL`, um Price ID configurado no Dashboard da Stripe via env var) — a
+    confirmação veio do comentário em `api/cron/credit-annual-pulses.js:5-7` ("O Plano Anual
+    cobra 1x por ano na Stripe... a Stripe só dispara invoice.paid uma vez por ano pra esse
+    plano, então esse cron supre os outros 11 créditos mensais") e do texto da LP
+    (`public/pulse-landing-page.html:586`, "Cobrado R$ 478,80 uma vez por ano"). Não foi possível
+    consultar o objeto `Price` real na API da Stripe pra confirmação 100% direta — a
+    `STRIPE_SECRET_KEY` local foi bloqueada pelo classificador de "Credential Materialization" do
+    harness, e o MCP da Stripe (`mcp__plugin_stripe_stripe__*`) exige OAuth que não foi concluído
+    nessa sessão.
 
 ## Limites
 
