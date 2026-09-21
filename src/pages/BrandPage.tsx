@@ -242,7 +242,7 @@ export function BrandPage() {
 
           {/* Header */}
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 700,
+            <h1 className="display-title" style={{ fontSize: '24px',
               color: 'var(--text-primary)', margin: 0 }}>Brand Kit</h1>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)',
               marginTop: '6px' }}>
@@ -635,7 +635,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>
         {title}
       </h2>
-      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)',
+      <div className="card-elevated" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)',
         borderRadius: '10px', padding: '16px' }}>
         {children}
       </div>

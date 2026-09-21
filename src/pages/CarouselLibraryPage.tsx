@@ -181,7 +181,7 @@ export function CarouselLibraryPage() {
             background: 'var(--bg-panel)', border: '1px dashed var(--border)', borderRadius: '12px',
             padding: '60px 24px', textAlign: 'center', color: 'var(--text-muted)',
           }}>
-            <p style={{ margin: 0, fontSize: '14px' }}>Nenhum carrossel salvo ainda</p>
+            <p style={{ margin: 0, fontSize: '14px' }}>Seus carrosséis ainda estão na prancheta</p>
             <p style={{ margin: '8px 0 0', fontSize: '12px', opacity: 0.6 }}>
               Gere um carrossel e clique em "Salvar" para aparecer aqui
             </p>

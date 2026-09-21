@@ -267,7 +267,7 @@ export function LibraryPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            <h1 className="display-title" style={{ fontSize: '24px', color: 'var(--text-primary)', margin: 0 }}>
               Biblioteca
             </h1>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px' }}>
@@ -299,7 +299,7 @@ export function LibraryPage() {
           </div>
         ) : items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 24px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '12px' }}>
-            <p style={{ fontSize: '16px', margin: '0 0 8px', color: 'var(--text-secondary)' }}>Nenhum item gerado ainda</p>
+            <p style={{ fontSize: '16px', margin: '0 0 8px', color: 'var(--text-secondary)' }}>Sua biblioteca está de portas abertas, esperando a primeira criação</p>
             <p style={{ fontSize: '13px', margin: 0 }}>Gere seu primeiro post ou carrossel no Editor</p>
           </div>
         ) : (
@@ -314,6 +314,7 @@ export function LibraryPage() {
                 return (
                   <div
                     key={key}
+                    className="card-elevated"
                     style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)', background: 'var(--bg-surface)', cursor: 'pointer', transition: 'border-color 0.15s' }}
                     onClick={() => handleOpenPost(post)}
                   >
@@ -325,7 +326,10 @@ export function LibraryPage() {
                       {isSelected && <span style={{ color: 'white', fontSize: '10px', lineHeight: 1 }}>✓</span>}
                     </div>
                     {/* Badge */}
-                    <div style={{ position: 'absolute', top: '8px', right: '8px', background: isPremiumPost(post) ? 'var(--accent)' : 'rgba(0,0,0,0.55)', color: 'white', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', zIndex: 2, letterSpacing: '0.05em' }}>
+                    <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: isPremiumPost(post) ? 'var(--accent)' : 'rgba(0,0,0,0.55)', color: 'white', fontSize: '9px', fontWeight: 700, padding: '3px 7px 3px 3px', borderRadius: '5px', zIndex: 2, letterSpacing: '0.05em' }}>
+                      <span style={{ width: '14px', height: '14px', borderRadius: '3px', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', lineHeight: 1 }}>
+                        {isPremiumPost(post) ? '✦' : '✎'}
+                      </span>
                       {isPremiumPost(post) ? 'PREMIUM' : 'POST'}
                     </div>
                     {/* Thumbnail */}
@@ -365,8 +369,9 @@ export function LibraryPage() {
               return (
                 <div
                   key={key}
+                  className="card-elevated"
                   onClick={() => handleOpenCarousel(carousel)}
-                  style={{ background: 'var(--bg-panel)', border: `1px solid ${isSelected ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`, borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s', boxShadow: isSelected ? '0 0 0 2px rgba(58,90,255,0.2)' : 'none', position: 'relative' }}
+                  style={{ background: 'var(--bg-panel)', border: `1px solid ${isSelected ? 'rgba(58,90,255,0.5)' : 'var(--border)'}`, borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s', boxShadow: isSelected ? '0 0 0 2px rgba(58,90,255,0.2), 0 2px 10px rgba(0,0,0,0.25)' : undefined, position: 'relative' }}
                 >
                   {/* Checkbox */}
                   <div
@@ -376,7 +381,10 @@ export function LibraryPage() {
                     {isSelected && <span style={{ color: 'white', fontSize: '10px', lineHeight: 1 }}>✓</span>}
                   </div>
                   {/* Badge */}
-                  <div style={{ position: 'absolute', top: '8px', right: '8px', background: isPremiumCarousel ? 'var(--accent)' : 'rgba(0,0,0,0.55)', color: 'white', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', zIndex: 2, letterSpacing: '0.05em' }}>
+                  <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: isPremiumCarousel ? 'var(--accent)' : 'rgba(0,0,0,0.55)', color: 'white', fontSize: '9px', fontWeight: 700, padding: '3px 7px 3px 3px', borderRadius: '5px', zIndex: 2, letterSpacing: '0.05em' }}>
+                    <span style={{ width: '14px', height: '14px', borderRadius: '3px', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', lineHeight: 1 }}>
+                      {isPremiumCarousel ? '✦' : '▦'}
+                    </span>
                     {isPremiumCarousel ? 'PREMIUM' : 'CARROSSEL'}
                   </div>
                   {/* Preview strip */}

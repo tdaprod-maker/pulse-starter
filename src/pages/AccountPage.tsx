@@ -83,7 +83,7 @@ export function AccountPage() {
     <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-base)' }}>
       <main style={{ maxWidth: '700px', margin: '0 auto', padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+        <h1 className="display-title" style={{ fontSize: '24px', color: 'var(--text-primary)', margin: 0 }}>
           Minha Conta
         </h1>
 
@@ -151,7 +151,7 @@ export function AccountPage() {
           </span>
 
           {plan && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-surface)', borderRadius: '8px', padding: '12px 16px' }}>
+            <div className="card-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-surface)', borderRadius: '8px', padding: '12px 16px' }}>
               <div>
                 <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
                   Plano {PLAN_LABEL[plan] ?? plan}
@@ -178,7 +178,7 @@ export function AccountPage() {
                 { item: 'monthly' as const, label: 'Plano Mensal', price: 'R$ 47,90/mês', detail: '200 pulses/mês' },
                 { item: 'annual' as const, label: 'Plano Anual', price: 'R$ 39,90/mês', detail: 'R$ 478,80/ano · 200 pulses/mês' },
               ].map(p => (
-                <div key={p.item} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px 16px' }}>
+                <div key={p.item} className="card-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px 16px' }}>
                   <div>
                     <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{p.label}</p>
                     <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{p.price} · {p.detail}</p>

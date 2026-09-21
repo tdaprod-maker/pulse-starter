@@ -123,7 +123,7 @@ export function PostLibraryPage() {
           <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Carregando...</div>
         ) : posts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 24px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '12px' }}>
-            <p style={{ fontSize: '16px', margin: '0 0 8px', color: 'var(--text-secondary)' }}>Nenhum post gerado ainda</p>
+            <p style={{ fontSize: '16px', margin: '0 0 8px', color: 'var(--text-secondary)' }}>Seus posts ainda estão na prancheta</p>
             <p style={{ fontSize: '13px', margin: 0 }}>Gere seu primeiro post no Editor ou em Posts Premium</p>
           </div>
         ) : (

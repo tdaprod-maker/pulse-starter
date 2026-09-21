@@ -111,7 +111,7 @@ export function TemplatesPage() {
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <p style={{ fontSize: '16px', color: 'var(--text-secondary)',
               marginBottom: '8px' }}>
-              Nenhum post gerado ainda
+              Seus posts ainda estão na prancheta
             </p>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
               Gere seu primeiro post no Editor

@@ -481,7 +481,8 @@ export function CarouselViewer({
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
               Carrossel Premium — {slidesList.length} slides
             </span>
-            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: '#3A5AFF', color: '#fff', fontWeight: 600 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '2px 8px 2px 3px', borderRadius: '4px', background: '#3A5AFF', color: '#fff', fontWeight: 600 }}>
+              <span style={{ width: '14px', height: '14px', borderRadius: '3px', background: 'rgba(255,255,255,0.22)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', lineHeight: 1 }}>✦</span>
               Premium
             </span>
             <span style={{
